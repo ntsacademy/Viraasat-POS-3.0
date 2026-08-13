@@ -7,6 +7,7 @@
     <title>Viraasat POS 3.0</title>
 
     <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
 </head>
 
 <body>
@@ -20,6 +21,23 @@
         <p>Test Project Successfully Connected</p>
 
     </div>
+
+    <script src="app.js"></script>
+
+    <script>
+        if ("serviceWorker" in navigator) {
+            window.addEventListener("load", () => {
+                navigator.serviceWorker
+                    .register("./sw.js")
+                    .then(() => {
+                        console.log("Viraasat Service Worker registered.");
+                    })
+                    .catch(error => {
+                        console.error("Service Worker registration failed:", error);
+                    });
+            });
+        }
+    </script>
 
 </body>
 </html>
