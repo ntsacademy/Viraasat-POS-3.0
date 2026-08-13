@@ -1,43 +1,1988 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Viraasat POS 3.0</title>
 
-    <title>Viraasat POS 3.0</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="style.css">
-    <link rel="manifest" href="manifest.json">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+:root{
+    --bg:#F7F5F2;
+    --surface:#FFFFFF;
+    --surface2:#FBFAF8;
+    --text:#1F2937;
+    --muted:#7B8490;
+    --border:#E8E2DA;
+    --gold:#A67C52;
+    --gold-light:#F4EBDD;
+    --green:#10B981;
+    --green-light:#E8F7F0;
+    --red:#EF5B68;
+    --red-light:#FDECEF;
+    --orange:#E65100;
+    --orange-light:#FFF1E7;
+    --shadow:0 6px 24px rgba(45,35,25,.06);
+}
+
+*{box-sizing:border-box}
+
+body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:Inter,Arial,sans-serif;
+}
+
+button,input,select{
+    font:inherit;
+}
+
+button{
+    cursor:pointer;
+}
+
+.app{
+    min-height:100vh;
+}
+
+.topbar{
+    height:72px;
+    background:rgba(255,255,255,.95);
+    border-bottom:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 28px;
+    position:sticky;
+    top:0;
+    z-index:20;
+    backdrop-filter:blur(12px);
+}
+
+.brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+}
+
+.brand-logo{
+    width:42px;
+    height:42px;
+    border-radius:12px;
+    background:#171717;
+    color:#D5AD73;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:"Playfair Display",serif;
+    font-size:24px;
+    font-weight:700;
+}
+
+.brand-title{
+    font-weight:800;
+    font-size:18px;
+}
+
+.brand-sub{
+    font-size:11px;
+    color:var(--muted);
+    margin-top:2px;
+}
+
+.status{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+    color:var(--muted);
+}
+
+.status-dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:var(--green);
+}
+
+.container{
+    max-width:1450px;
+    margin:auto;
+    padding:28px;
+}
+
+.page-heading{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    margin-bottom:22px;
+}
+
+.page-heading h1{
+    margin:0;
+    font-family:"Playfair Display",serif;
+    font-size:30px;
+}
+
+.page-heading p{
+    margin:6px 0 0;
+    color:var(--muted);
+    font-size:13px;
+}
+
+.refresh-btn{
+    border:1px solid var(--border);
+    background:white;
+    border-radius:10px;
+    padding:10px 15px;
+    font-weight:600;
+}
+
+.kpi-grid{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:16px;
+    margin-bottom:18px;
+}
+
+.card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:16px;
+    box-shadow:var(--shadow);
+}
+
+.kpi{
+    padding:20px;
+    position:relative;
+    overflow:hidden;
+}
+
+.kpi-label{
+    color:var(--muted);
+    font-size:12px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+}
+
+.kpi-value{
+    margin-top:10px;
+    font-size:25px;
+    font-weight:800;
+}
+
+.kpi-note{
+    margin-top:7px;
+    font-size:11px;
+    color:var(--muted);
+}
+
+.kpi-icon{
+    position:absolute;
+    right:16px;
+    top:16px;
+    width:38px;
+    height:38px;
+    border-radius:10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--gold-light);
+}
+
+.main-grid{
+    display:grid;
+    grid-template-columns:1.7fr 1fr;
+    gap:18px;
+    margin-bottom:18px;
+}
+
+.section-card{
+    padding:20px;
+}
+
+.section-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:18px;
+}
+
+.section-title{
+    font-size:16px;
+    font-weight:800;
+}
+
+.section-sub{
+    color:var(--muted);
+    font-size:12px;
+    margin-top:4px;
+}
+
+.filters{
+    display:flex;
+    gap:7px;
+    flex-wrap:wrap;
+}
+
+.filter-btn{
+    border:1px solid var(--border);
+    background:#fff;
+    color:var(--muted);
+    border-radius:8px;
+    padding:7px 11px;
+    font-size:11px;
+    font-weight:600;
+}
+
+.filter-btn.active{
+    background:#191919;
+    color:#fff;
+    border-color:#191919;
+}
+
+.chart-box{
+    height:310px;
+    position:relative;
+}
+
+.breakdown{
+    display:flex;
+    flex-direction:column;
+    gap:11px;
+}
+
+.break-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding-bottom:10px;
+    border-bottom:1px solid var(--border);
+    font-size:13px;
+}
+
+.break-row:last-child{
+    border-bottom:0;
+}
+
+.break-name{
+    color:var(--text);
+}
+
+.break-value{
+    font-weight:700;
+}
+
+.red{
+    color:var(--red);
+}
+
+.green{
+    color:var(--green);
+}
+
+.orange{
+    color:var(--orange);
+}
+
+.bottom-grid{
+    display:grid;
+    grid-template-columns:1.15fr 1fr 1fr;
+    gap:18px;
+}
+
+.recent-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+}
+
+.order{
+    display:flex;
+    align-items:center;
+    gap:11px;
+    padding:12px;
+    border:1px solid var(--border);
+    border-radius:11px;
+    background:var(--surface2);
+}
+
+.order-icon{
+    width:36px;
+    height:36px;
+    border-radius:9px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:#F3EEE7;
+}
+
+.order-info{
+    flex:1;
+}
+
+.order-title{
+    font-size:13px;
+    font-weight:700;
+}
+
+.order-sub{
+    font-size:11px;
+    color:var(--muted);
+    margin-top:3px;
+}
+
+.order-total{
+    font-weight:800;
+    color:var(--orange);
+}
+
+.stock-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+}
+
+.stock-tag{
+    border:1px solid #D9EEE3;
+    background:var(--green-light);
+    color:#087A55;
+    border-radius:8px;
+    padding:7px 9px;
+    font-size:11px;
+    font-weight:700;
+}
+
+.stock-tag.low{
+    background:var(--red-light);
+    border-color:#F6CCD2;
+    color:#C92F43;
+}
+
+.pnl-box{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:10px;
+}
+
+.pnl-item{
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:12px;
+}
+
+.pnl-label{
+    font-size:11px;
+    color:var(--muted);
+}
+
+.pnl-value{
+    font-size:17px;
+    font-weight:800;
+    margin-top:5px;
+}
+
+.sales-section{
+    margin-top:18px;
+}
+
+.date-filters{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+    align-items:center;
+}
+
+.date-filters input{
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:8px 10px;
+    background:white;
+    font-size:12px;
+}
+
+.total-sales{
+    background:#191919;
+    color:#fff;
+    padding:12px 16px;
+    border-radius:10px;
+    font-weight:800;
+    font-size:14px;
+}
+
+.sales-list{
+    margin-top:15px;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:12px;
+}
+
+.sale-card{
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:15px;
+    background:#fff;
+}
+
+.sale-top{
+    display:flex;
+    justify-content:space-between;
+    gap:10px;
+}
+
+.sale-table{
+    font-weight:800;
+}
+
+.sale-id{
+    color:var(--muted);
+    font-size:10px;
+    margin-top:3px;
+}
+
+.sale-items{
+    color:var(--muted);
+    font-size:11px;
+    line-height:1.5;
+    margin:14px 0;
+    min-height:32px;
+}
+
+.sale-bottom{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.sale-date{
+    color:var(--muted);
+    font-size:10px;
+}
+
+.sale-amount{
+    color:var(--orange);
+    font-size:16px;
+    font-weight:800;
+}
+
+.empty{
+    padding:30px;
+    text-align:center;
+    color:var(--muted);
+    font-size:13px;
+}
+
+.loader{
+    position:fixed;
+    inset:0;
+    background:rgba(247,245,242,.85);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:100;
+}
+
+.loader-box{
+    background:#fff;
+    border:1px solid var(--border);
+    box-shadow:var(--shadow);
+    border-radius:14px;
+    padding:22px 28px;
+    font-weight:700;
+}
+
+@media(max-width:1100px){
+    .kpi-grid{
+        grid-template-columns:repeat(3,1fr);
+    }
+
+    .main-grid,
+    .bottom-grid{
+        grid-template-columns:1fr;
+    }
+
+    .sales-list{
+        grid-template-columns:repeat(2,1fr);
+    }
+}
+
+@media(max-width:700px){
+    .topbar{
+        padding:0 15px;
+    }
+
+    .container{
+        padding:16px;
+    }
+
+    .page-heading{
+        align-items:flex-start;
+        gap:12px;
+    }
+
+    .page-heading h1{
+        font-size:25px;
+    }
+
+    .kpi-grid{
+        grid-template-columns:repeat(2,1fr);
+        gap:10px;
+    }
+
+    .kpi{
+        padding:15px;
+    }
+
+    .kpi-value{
+        font-size:20px;
+    }
+
+    .sales-list{
+        grid-template-columns:1fr;
+    }
+
+    .date-filters{
+        margin-top:10px;
+    }
+
+    .date-filters input{
+        width:100%;
+    }
+}
+</style>
 </head>
 
 <body>
 
-    <div class="container">
+<div class="loader" id="loader">
+    <div class="loader-box">Loading Viraasat Dashboard...</div>
+</div>
 
-        <h1>VIRAASAT</h1>
+<div class="app">
 
-        <p>Premium POS 3.0</p>
-
-        <p>Automatic Update Test - Viraasat POS 3.0</p>
-
+<header class="topbar">
+    <div class="brand">
+        <div class="brand-logo">V</div>
+        <div>
+            <div class="brand-title">VIRAASAT UDAIPUR</div>
+            <div class="brand-sub">A Taste Of Royal Mewar • POS 3.0</div>
+        </div>
     </div>
 
-    <script src="app.js"></script>
+    <div class="status">
+        <span class="status-dot"></span>
+        System Online
+    </div>
+</header>
 
-    <script>
-        if ("serviceWorker" in navigator) {
-            window.addEventListener("load", () => {
-                navigator.serviceWorker
-                    .register("./sw.js")
-                    .then(() => {
-                        console.log("Viraasat Service Worker registered.");
-                    })
-                    .catch(error => {
-                        console.error("Service Worker registration failed:", error);
-                    });
-            });
+<main class="container">
+
+    <div class="page-heading">
+        <div>
+            <h1>Dashboard</h1>
+            <p id="todayText"></p>
+        </div>
+
+        <button class="refresh-btn" onclick="loadData()">
+            ↻ Refresh
+        </button>
+    </div>
+
+    <!-- KPI -->
+    <section class="kpi-grid">
+
+        <div class="card kpi">
+            <div class="kpi-label">Today's Sale</div>
+            <div class="kpi-value" id="todaySale">₹0</div>
+            <div class="kpi-note" id="todayOrders">0 orders today</div>
+            <div class="kpi-icon">₹</div>
+        </div>
+
+        <div class="card kpi">
+            <div class="kpi-label">Average Order</div>
+            <div class="kpi-value" id="avgOrder">₹0</div>
+            <div class="kpi-note">Today's average</div>
+            <div class="kpi-icon">⌁</div>
+        </div>
+
+        <div class="card kpi">
+            <div class="kpi-label">Overall Sale</div>
+            <div class="kpi-value" id="overallSale">₹0</div>
+            <div class="kpi-note">Current database period</div>
+            <div class="kpi-icon">◈</div>
+        </div>
+
+        <div class="card kpi">
+            <div class="kpi-label">Active Tables</div>
+            <div class="kpi-value" id="activeTables">0 / 0</div>
+            <div class="kpi-note">Occupied / Total</div>
+            <div class="kpi-icon">▦</div>
+        </div>
+
+        <div class="card kpi">
+            <div class="kpi-label">Net Profit</div>
+            <div class="kpi-value green" id="netProfit">₹0</div>
+            <div class="kpi-note">Sales − Expenses</div>
+            <div class="kpi-icon">↗</div>
+        </div>
+
+    </section>
+
+    <!-- CHART + EXPENSE -->
+    <section class="main-grid">
+
+        <div class="card section-card">
+
+            <div class="section-head">
+                <div>
+                    <div class="section-title">Sales & Expense Trend</div>
+                    <div class="section-sub">Based on the same daily / weekly / monthly logic</div>
+                </div>
+
+                <div class="filters">
+                    <button class="filter-btn active" id="dailyBtn" onclick="renderPNLChart('daily')">Daily</button>
+                    <button class="filter-btn" id="weeklyBtn" onclick="renderPNLChart('weekly')">Weekly</button>
+                    <button class="filter-btn" id="monthlyBtn" onclick="renderPNLChart('monthly')">Monthly</button>
+                </div>
+            </div>
+
+            <div class="chart-box">
+                <canvas id="trendChart"></canvas>
+            </div>
+
+        </div>
+
+        <div class="card section-card">
+
+            <div class="section-head">
+                <div>
+                    <div class="section-title">Expense Breakdown</div>
+                    <div class="section-sub">Category-wise expenses</div>
+                </div>
+            </div>
+
+            <div class="breakdown" id="expenseBreakdown"></div>
+
+            <div style="margin-top:20px">
+                <div class="section-title">Staff Payments</div>
+                <div class="section-sub" style="margin-bottom:12px">
+                    Salary / advance payments
+                </div>
+
+                <div class="breakdown" id="staffBreakdown"></div>
+            </div>
+
+        </div>
+
+    </section>
+
+    <!-- PNL / STOCK / RECENT -->
+    <section class="bottom-grid">
+
+        <div class="card section-card">
+
+            <div class="section-head">
+                <div>
+                    <div class="section-title">P&L Summary</div>
+                    <div class="section-sub">Current period</div>
+                </div>
+            </div>
+
+            <div class="pnl-box">
+
+                <div class="pnl-item">
+                    <div class="pnl-label">Total Sales</div>
+                    <div class="pnl-value" id="pnlSales">₹0</div>
+                </div>
+
+                <div class="pnl-item">
+                    <div class="pnl-label">Total Expenses</div>
+                    <div class="pnl-value red" id="pnlExpenses">₹0</div>
+                </div>
+
+                <div class="pnl-item">
+                    <div class="pnl-label">Staff Salary</div>
+                    <div class="pnl-value red" id="pnlSalary">₹0</div>
+                </div>
+
+                <div class="pnl-item">
+                    <div class="pnl-label">Active Staff</div>
+                    <div class="pnl-value" id="pnlStaff">0</div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="card section-card">
+
+            <div class="section-head">
+                <div>
+                    <div class="section-title">Stock Status</div>
+                    <div class="section-sub">Low stock ≤ 5</div>
+                </div>
+            </div>
+
+            <div class="stock-list" id="stockList"></div>
+
+        </div>
+
+        <div class="card section-card">
+
+            <div class="section-head">
+                <div>
+                    <div class="section-title">Recent Orders</div>
+                    <div class="section-sub">Latest completed bills</div>
+                </div>
+            </div>
+
+            <div class="recent-list" id="recentOrders"></div>
+
+        </div>
+
+    </section>
+
+    <!-- LIVE SALES -->
+    <section class="card section-card sales-section">
+
+        <div class="section-head">
+
+            <div>
+                <div class="section-title">Live Sales</div>
+                <div class="section-sub">Filter and inspect completed orders</div>
+            </div>
+
+            <div class="total-sales" id="filteredTotal">
+                Total Sales: ₹0
+            </div>
+
+        </div>
+
+        <div class="date-filters">
+
+            <button class="filter-btn active" id="todayFilter" onclick="setTodayFilter()">
+                Today
+            </button>
+
+            <button class="filter-btn" id="yesterdayFilter" onclick="setYesterdayFilter()">
+                Yesterday
+            </button>
+
+            <button class="filter-btn" id="clearFilter" onclick="resetDateFilter()">
+                All
+            </button>
+
+            <input type="date" id="startDate" onchange="renderLiveSales()">
+            <input type="date" id="endDate" onchange="renderLiveSales()">
+
+        </div>
+
+        <div class="sales-list" id="salesList"></div>
+
+    </section>
+
+</main>
+
+</div>
+
+<script>
+
+/* ============================================================
+   VIRAASAT POS 3.0
+   DASHBOARD V1
+
+   CURRENT VERSION:
+   Demo data + old dashboard calculation logic
+
+   FUTURE:
+   loadData() will call Cloudflare Worker API
+   Worker will read from D1 database.
+============================================================ */
+
+
+/* -----------------------------
+   GLOBAL DATA
+----------------------------- */
+
+let menuData = [];
+let salesHistory = [];
+let expenseHistory = [];
+let staffData = [];
+let stockData = {};
+
+let runningTables = {
+    "Table 1": [],
+    "Table 2": [],
+    "Table 3": [],
+    "Table 4": []
+};
+
+let trendChartInstance = null;
+
+let rawChartSalesData = {};
+let rawChartExpenseData = {};
+
+
+/* -----------------------------
+   DEMO DATA
+----------------------------- */
+
+function getDemoData(){
+
+    const today = new Date();
+
+    const date = offset => {
+
+        const d = new Date(today);
+        d.setDate(d.getDate() - offset);
+
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+    };
+
+    return {
+
+        menu:[
+            {name:"Paneer Tikka",price:280},
+            {name:"Shahi Paneer",price:240},
+            {name:"Paneer Lababdar",price:260},
+            {name:"Dal Makhani",price:220},
+            {name:"Butter Naan",price:70},
+            {name:"Aloo Paratha",price:100}
+        ],
+
+        sales:[
+            {
+                date:date(0),
+                time:"10:30 PM",
+                orderid:"ORD1001",
+                table:"Table 4",
+                total:1450,
+                items:"Paneer Tikka (x2) ₹560, Dal Makhani (x1) ₹220, Butter Naan (x4) ₹280"
+            },
+            {
+                date:date(0),
+                time:"09:40 PM",
+                orderid:"ORD1000",
+                table:"Takeaway",
+                total:780,
+                items:"Shahi Paneer (x1) ₹240, Butter Naan (x3) ₹210, Cold Drink (x2) ₹330"
+            },
+            {
+                date:date(0),
+                time:"08:20 PM",
+                orderid:"ORD999",
+                table:"Table 2",
+                total:1120,
+                items:"Paneer Lababdar (x2) ₹520, Dal Makhani (x1) ₹220, Naan (x4) ₹280"
+            },
+            {
+                date:date(1),
+                time:"10:15 PM",
+                orderid:"ORD998",
+                table:"Table 1",
+                total:1850,
+                items:"Paneer Tikka (x3) ₹840, Shahi Paneer (x2) ₹480, Naan (x5) ₹350"
+            },
+            {
+                date:date(2),
+                time:"09:20 PM",
+                orderid:"ORD997",
+                table:"Home Delivery",
+                total:1250,
+                items:"Paneer Lababdar (x2) ₹520, Dal Makhani (x2) ₹440, Naan (x4) ₹280"
+            },
+            {
+                date:date(3),
+                time:"08:55 PM",
+                orderid:"ORD996",
+                table:"Table 5",
+                total:2100,
+                items:"Paneer Tikka (x4) ₹1120, Shahi Paneer (x2) ₹480, Naan (x6) ₹420"
+            },
+            {
+                date:date(7),
+                time:"09:10 PM",
+                orderid:"ORD995",
+                table:"Table 3",
+                total:1670,
+                items:"Paneer Tikka (x2) ₹560, Dal Makhani (x2) ₹440, Naan (x6) ₹420"
+            },
+            {
+                date:date(15),
+                time:"10:05 PM",
+                orderid:"ORD994",
+                table:"Table 6",
+                total:2480,
+                items:"Paneer Lababdar (x3) ₹780, Paneer Tikka (x3) ₹840, Naan (x8) ₹560"
+            }
+        ],
+
+        expenses:[
+            {date:date(0),category:"Raw Material",amount:3200},
+            {date:date(1),category:"Electricity",amount:1800},
+            {date:date(2),category:"Staff Salary",amount:4500,description:"[EMP001] Ramesh - Advance"},
+            {date:date(3),category:"Raw Material",amount:2600},
+            {date:date(4),category:"Maintenance",amount:1200},
+            {date:date(6),category:"Staff Salary",amount:6000,description:"[EMP002] Mohan - Salary"},
+            {date:date(10),category:"Marketing",amount:1500},
+            {date:date(15),category:"Raw Material",amount:4100}
+        ],
+
+        staff:[
+            {empid:"EMP001",name:"Ramesh"},
+            {empid:"EMP002",name:"Mohan"},
+            {empid:"EMP003",name:"Suresh"},
+            {empid:"EMP004",name:"Raj"}
+        ],
+
+        stock:{
+            "Paneer":12,
+            "Dal":8,
+            "Naan":4,
+            "Butter":3,
+            "Cream":7,
+            "Masala":15,
+            "Cold Drink":2
+        },
+
+        runningTables:{
+            "Table 1":[{name:"Paneer Tikka",qty:2}],
+            "Table 2":[],
+            "Table 3":[{name:"Dal Makhani",qty:1}],
+            "Table 4":[],
+            "Table 5":[{name:"Shahi Paneer",qty:1}]
         }
-    </script>
+
+    };
+
+}
+
+
+/* -----------------------------
+   HELPERS
+----------------------------- */
+
+function parseAmount(value){
+
+    if(value === null || value === undefined) return 0;
+
+    const number = Number(
+        String(value)
+        .replace(/₹/g,'')
+        .replace(/,/g,'')
+        .replace(/[^\d.-]/g,'')
+    );
+
+    return Number.isFinite(number) ? number : 0;
+
+}
+
+
+function getVal(obj, keys){
+
+    if(!obj) return "";
+
+    for(const key of keys){
+
+        if(
+            obj[key] !== undefined &&
+            obj[key] !== null &&
+            obj[key] !== ""
+        ){
+            return obj[key];
+        }
+
+    }
+
+    return "";
+
+}
+
+
+function formatINR(value){
+
+    return "₹" + Math.round(value || 0).toLocaleString("en-IN");
+
+}
+
+
+function formatDate(value){
+
+    if(!value) return "";
+
+    const d = new Date(value);
+
+    if(isNaN(d.getTime())) return String(value);
+
+    return d.toLocaleDateString("en-IN",{
+        day:"2-digit",
+        month:"short",
+        year:"numeric"
+    });
+
+}
+
+
+/* -----------------------------
+   LOAD DATA
+
+   FUTURE D1 API:
+   fetch("/api/dashboard")
+----------------------------- */
+
+async function loadData(){
+
+    document.getElementById("loader").style.display="flex";
+
+    try{
+
+        /*
+        FUTURE VERSION:
+
+        const response = await fetch("/api/dashboard");
+        const data = await response.json();
+
+        menuData = data.menu || [];
+        salesHistory = data.sales || [];
+        expenseHistory = data.expenses || [];
+        staffData = data.staff || [];
+        stockData = data.stock || {};
+        runningTables = data.runningTables || {};
+        */
+
+        const data = getDemoData();
+
+        menuData = data.menu || [];
+        salesHistory = data.sales || [];
+        expenseHistory = data.expenses || [];
+        staffData = data.staff || [];
+        stockData = data.stock || {};
+        runningTables = data.runningTables || {};
+
+        renderEverything();
+
+    }catch(error){
+
+        console.error(error);
+
+        alert("Dashboard loading error.");
+
+    }
+
+    document.getElementById("loader").style.display="none";
+
+}
+
+
+/* -----------------------------
+   MASTER RENDER
+----------------------------- */
+
+function renderEverything(){
+
+    const now = new Date();
+
+    document.getElementById("todayText").innerText =
+        now.toLocaleDateString("en-IN",{
+            weekday:"long",
+            day:"numeric",
+            month:"long",
+            year:"numeric"
+        });
+
+    calculateDashboard();
+    renderStock();
+    renderRecentOrders();
+    renderLiveSales();
+    renderPNLChart("daily");
+
+}
+
+
+/* -----------------------------
+   DASHBOARD CALCULATION
+
+   PRESERVES OLD LOGIC:
+   Total Sales
+   Today's Sales
+   Orders Today
+   Average Order
+   Expenses
+   Salary
+   Net Profit
+----------------------------- */
+
+function calculateDashboard(){
+
+    let totalSales = 0;
+    let totalExpenses = 0;
+    let totalSalary = 0;
+
+    let todaySales = 0;
+    let todayOrders = 0;
+
+    let expenseCategories = {};
+    let staffExpenseMap = {};
+
+    rawChartSalesData = {};
+    rawChartExpenseData = {};
+
+    const now = new Date();
+
+    const todayISO =
+        `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
+
+
+    /* SALES */
+
+    salesHistory.forEach(sale => {
+
+        const total =
+            parseAmount(
+                getVal(sale,["totalamount","total","amount"])
+            );
+
+        const dateValue =
+            String(
+                getVal(sale,["date","isodate"])
+            );
+
+        totalSales += total;
+
+        if(dateValue){
+
+            const d = new Date(dateValue);
+
+            let key = dateValue.split("T")[0].split(" ")[0];
+
+            if(!isNaN(d.getTime())){
+
+                key =
+                    `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+
+                if(key === todayISO){
+
+                    todaySales += total;
+                    todayOrders++;
+
+                }
+
+            }
+
+            rawChartSalesData[key] =
+                (rawChartSalesData[key] || 0) + total;
+
+        }
+
+    });
+
+
+    /* EXPENSES */
+
+    expenseHistory.forEach(exp => {
+
+        const amount =
+            parseAmount(
+                getVal(exp,["amount","total"])
+            );
+
+        const dateValue =
+            getVal(exp,["date","isodate"]);
+
+        const category =
+            getVal(exp,["category"]) || "Other";
+
+        const description =
+            getVal(exp,["description","note"]) || "";
+
+        totalExpenses += amount;
+
+        if(category === "Staff Salary"){
+
+            totalSalary += amount;
+
+            const match =
+                description.match(/\[(.*?)\]\s*(.*?)\s*-/);
+
+            const name =
+                match ? match[2] : description;
+
+            staffExpenseMap[name] =
+                (staffExpenseMap[name] || 0) + amount;
+
+        }else{
+
+            expenseCategories[category] =
+                (expenseCategories[category] || 0) + amount;
+
+        }
+
+
+        if(dateValue){
+
+            const d = new Date(dateValue);
+
+            let key =
+                String(dateValue).split("T")[0].split(" ")[0];
+
+            if(!isNaN(d.getTime())){
+
+                key =
+                    `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+
+            }
+
+            rawChartExpenseData[key] =
+                (rawChartExpenseData[key] || 0) + amount;
+
+        }
+
+    });
+
+
+    const netProfit =
+        totalSales - totalExpenses;
+
+    const avgOrder =
+        todayOrders > 0
+        ? todaySales / todayOrders
+        : 0;
+
+
+    /* KPI */
+
+    document.getElementById("todaySale").innerText =
+        formatINR(todaySales);
+
+    document.getElementById("todayOrders").innerText =
+        `${todayOrders} orders today`;
+
+    document.getElementById("avgOrder").innerText =
+        formatINR(avgOrder);
+
+    document.getElementById("overallSale").innerText =
+        formatINR(totalSales);
+
+    document.getElementById("netProfit").innerText =
+        formatINR(netProfit);
+
+    document.getElementById("pnlSales").innerText =
+        formatINR(totalSales);
+
+    document.getElementById("pnlExpenses").innerText =
+        formatINR(totalExpenses);
+
+    document.getElementById("pnlSalary").innerText =
+        formatINR(totalSalary);
+
+    document.getElementById("pnlStaff").innerText =
+        staffData.length;
+
+
+    /* ACTIVE TABLES */
+
+    let occupied = 0;
+    let totalTables = 0;
+
+    Object.keys(runningTables).forEach(table => {
+
+        if(
+            table !== "Takeaway" &&
+            table !== "Home Delivery"
+        ){
+
+            totalTables++;
+
+            if(
+                Array.isArray(runningTables[table]) &&
+                runningTables[table].length > 0
+            ){
+                occupied++;
+            }
+
+        }
+
+    });
+
+    document.getElementById("activeTables").innerText =
+        `${occupied} / ${totalTables}`;
+
+
+    /* EXPENSE BREAKDOWN */
+
+    const expenseHTML =
+        Object.keys(expenseCategories).length
+
+        ?
+
+        Object.entries(expenseCategories)
+        .sort((a,b)=>b[1]-a[1])
+        .map(([name,value])=>`
+
+            <div class="break-row">
+
+                <span class="break-name">${escapeHTML(name)}</span>
+
+                <span class="break-value red">
+                    - ${formatINR(value)}
+                </span>
+
+            </div>
+
+        `).join("")
+
+        :
+
+        `<div class="empty">No other expenses recorded.</div>`;
+
+
+    document.getElementById("expenseBreakdown").innerHTML =
+        expenseHTML;
+
+
+    /* STAFF BREAKDOWN */
+
+    const staffHTML =
+        Object.keys(staffExpenseMap).length
+
+        ?
+
+        Object.entries(staffExpenseMap)
+        .sort((a,b)=>b[1]-a[1])
+        .map(([name,value])=>`
+
+            <div class="break-row">
+
+                <span class="break-name">
+                    👤 ${escapeHTML(name)}
+                </span>
+
+                <span class="break-value red">
+                    - ${formatINR(value)}
+                </span>
+
+            </div>
+
+        `).join("")
+
+        :
+
+        `<div class="empty">No staff payments recorded.</div>`;
+
+
+    document.getElementById("staffBreakdown").innerHTML =
+        staffHTML;
+
+}
+
+
+/* -----------------------------
+   P&L CHART
+
+   SAME DAILY/WEEKLY/MONTHLY IDEA
+   AS OLD DASHBOARD
+----------------------------- */
+
+function renderPNLChart(viewType){
+
+    document.querySelectorAll(".filter-btn")
+    .forEach(btn=>btn.classList.remove("active"));
+
+    if(viewType === "daily"){
+        document.getElementById("dailyBtn").classList.add("active");
+    }
+
+    if(viewType === "weekly"){
+        document.getElementById("weeklyBtn").classList.add("active");
+    }
+
+    if(viewType === "monthly"){
+        document.getElementById("monthlyBtn").classList.add("active");
+    }
+
+
+    let sales = {};
+    let expenses = {};
+
+    const allKeys =
+        Array.from(
+            new Set([
+                ...Object.keys(rawChartSalesData),
+                ...Object.keys(rawChartExpenseData)
+            ])
+        ).sort();
+
+
+    allKeys.forEach(key=>{
+
+        const parts = key.split("-");
+
+        if(parts.length !== 3) return;
+
+        const date =
+            new Date(
+                Number(parts[0]),
+                Number(parts[1])-1,
+                Number(parts[2])
+            );
+
+        let newKey = key;
+
+
+        if(viewType === "monthly"){
+
+            newKey =
+                `${parts[0]}-${date.toLocaleString("en-IN",{month:"short"})}`;
+
+        }
+
+
+        if(viewType === "weekly"){
+
+            const start =
+                new Date(date.getFullYear(),0,1);
+
+            const days =
+                Math.floor(
+                    (date-start)/(24*60*60*1000)
+                );
+
+            const week =
+                Math.ceil(days/7);
+
+            newKey =
+                `${parts[0]} - Wk ${week}`;
+
+        }
+
+
+        sales[newKey] =
+            (sales[newKey] || 0)
+            + (rawChartSalesData[key] || 0);
+
+
+        expenses[newKey] =
+            (expenses[newKey] || 0)
+            + (rawChartExpenseData[key] || 0);
+
+    });
+
+
+    const labels =
+        Array.from(
+            new Set([
+                ...Object.keys(sales),
+                ...Object.keys(expenses)
+            ])
+        ).sort();
+
+
+    const salesValues =
+        labels.map(label=>sales[label] || 0);
+
+    const expenseValues =
+        labels.map(label=>expenses[label] || 0);
+
+
+    const ctx =
+        document.getElementById("trendChart")
+        .getContext("2d");
+
+
+    if(trendChartInstance){
+        trendChartInstance.destroy();
+    }
+
+
+    trendChartInstance =
+        new Chart(ctx,{
+
+            type:"line",
+
+            data:{
+
+                labels,
+
+                datasets:[
+
+                    {
+                        label:"Sales (₹)",
+                        data:salesValues,
+                        borderColor:"#07CDAE",
+                        backgroundColor:"rgba(7,205,174,.12)",
+                        borderWidth:3,
+                        tension:.4,
+                        fill:true,
+                        pointRadius:3
+                    },
+
+                    {
+                        label:"Expenses (₹)",
+                        data:expenseValues,
+                        borderColor:"#FE7096",
+                        backgroundColor:"rgba(254,112,150,.10)",
+                        borderWidth:3,
+                        tension:.4,
+                        fill:true,
+                        pointRadius:3
+                    }
+
+                ]
+
+            },
+
+            options:{
+
+                responsive:true,
+
+                maintainAspectRatio:false,
+
+                interaction:{
+                    mode:"index",
+                    intersect:false
+                },
+
+                plugins:{
+                    legend:{
+                        position:"top"
+                    }
+                },
+
+                scales:{
+
+                    y:{
+                        beginAtZero:true,
+
+                        ticks:{
+                            callback:value =>
+                                "₹" +
+                                Number(value).toLocaleString("en-IN")
+                        }
+
+                    }
+
+                }
+
+            }
+
+        });
+
+}
+
+
+/* -----------------------------
+   STOCK
+----------------------------- */
+
+function renderStock(){
+
+    const container =
+        document.getElementById("stockList");
+
+    const keys =
+        Object.keys(stockData);
+
+    if(!keys.length){
+
+        container.innerHTML =
+            `<div class="empty">No stock tracked.</div>`;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        keys.map(key=>{
+
+            const qty =
+                parseAmount(stockData[key]);
+
+            const low =
+                qty <= 5;
+
+            return `
+
+                <div class="stock-tag ${low ? "low" : ""}">
+                    ${escapeHTML(key)}:
+                    <span>${qty}</span>
+                </div>
+
+            `;
+
+        }).join("");
+
+}
+
+
+/* -----------------------------
+   RECENT ORDERS
+----------------------------- */
+
+function renderRecentOrders(){
+
+    const container =
+        document.getElementById("recentOrders");
+
+    const recent =
+        salesHistory.slice(0,5);
+
+    if(!recent.length){
+
+        container.innerHTML =
+            `<div class="empty">No orders found.</div>`;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        recent.map(sale=>{
+
+            const table =
+                getVal(sale,[
+                    "tablenumber",
+                    "table",
+                    "tablename"
+                ]) || "Table";
+
+            const id =
+                getVal(sale,[
+                    "orderid",
+                    "id"
+                ]) || "N/A";
+
+            const total =
+                parseAmount(
+                    getVal(sale,[
+                        "totalamount",
+                        "total",
+                        "amount"
+                    ])
+                );
+
+            const time =
+                getVal(sale,["time"]) || "";
+
+            let icon =
+                table.includes("Takeaway")
+                ? "🛍️"
+                : table.includes("Delivery")
+                ? "🛵"
+                : "🍽️";
+
+
+            return `
+
+                <div class="order">
+
+                    <div class="order-icon">
+                        ${icon}
+                    </div>
+
+                    <div class="order-info">
+
+                        <div class="order-title">
+                            Order #${escapeHTML(id)}
+                        </div>
+
+                        <div class="order-sub">
+                            ${escapeHTML(table)} •
+                            ${escapeHTML(time)}
+                        </div>
+
+                    </div>
+
+                    <div class="order-total">
+                        ${formatINR(total)}
+                    </div>
+
+                </div>
+
+            `;
+
+        }).join("");
+
+}
+
+
+/* -----------------------------
+   LIVE SALES
+----------------------------- */
+
+function renderLiveSales(){
+
+    const start =
+        document.getElementById("startDate").value;
+
+    const end =
+        document.getElementById("endDate").value;
+
+
+    let filtered =
+        salesHistory.filter(sale=>{
+
+            if(!start && !end) return true;
+
+            const raw =
+                getVal(sale,["date","isodate"]);
+
+            const d =
+                new Date(raw);
+
+            if(isNaN(d.getTime())) return false;
+
+            const iso =
+                `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+
+
+            if(start && iso < start) return false;
+
+            if(end && iso > end) return false;
+
+            return true;
+
+        });
+
+
+    const total =
+        filtered.reduce(
+            (sum,sale)=>
+                sum +
+                parseAmount(
+                    getVal(sale,[
+                        "totalamount",
+                        "total",
+                        "amount"
+                    ])
+                ),
+            0
+        );
+
+
+    document.getElementById("filteredTotal").innerText =
+        `Total Sales: ${formatINR(total)}`;
+
+
+    const container =
+        document.getElementById("salesList");
+
+
+    if(!filtered.length){
+
+        container.innerHTML =
+            `<div class="empty">No orders found.</div>`;
+
+        return;
+
+    }
+
+
+    container.innerHTML =
+        filtered.map(sale=>{
+
+            const id =
+                getVal(sale,["orderid","id"]) || "N/A";
+
+            const table =
+                getVal(sale,[
+                    "tablenumber",
+                    "table",
+                    "tablename"
+                ]) || "Table";
+
+            const total =
+                parseAmount(
+                    getVal(sale,[
+                        "totalamount",
+                        "total",
+                        "amount"
+                    ])
+                );
+
+            const items =
+                getVal(sale,[
+                    "items",
+                    "itemsstring"
+                ]) || "";
+
+
+            const date =
+                getVal(sale,["date","isodate"]);
+
+            const time =
+                getVal(sale,["time"]);
+
+
+            return `
+
+                <div class="sale-card">
+
+                    <div class="sale-top">
+
+                        <div>
+
+                            <div class="sale-table">
+                                ${escapeHTML(table)}
+                            </div>
+
+                            <div class="sale-id">
+                                #${escapeHTML(id)}
+                            </div>
+
+                        </div>
+
+                        <div class="sale-amount">
+                            ${formatINR(total)}
+                        </div>
+
+                    </div>
+
+
+                    <div class="sale-items">
+                        ${escapeHTML(cleanItems(items))}
+                    </div>
+
+
+                    <div class="sale-bottom">
+
+                        <div class="sale-date">
+                            ${formatDate(date)}
+                            ${time ? " • " + escapeHTML(time) : ""}
+                        </div>
+
+                        <div style="font-size:10px;color:#10B981;font-weight:700">
+                            COMPLETED
+                        </div>
+
+                    </div>
+
+                </div>
+
+            `;
+
+        }).join("");
+
+}
+
+
+/* -----------------------------
+   DATE FILTERS
+----------------------------- */
+
+function setTodayFilter(){
+
+    const today =
+        new Date();
+
+    const iso =
+        `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;
+
+    document.getElementById("startDate").value = iso;
+    document.getElementById("endDate").value = iso;
+
+    renderLiveSales();
+
+}
+
+
+function setYesterdayFilter(){
+
+    const d =
+        new Date();
+
+    d.setDate(d.getDate()-1);
+
+    const iso =
+        `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+
+    document.getElementById("startDate").value = iso;
+    document.getElementById("endDate").value = iso;
+
+    renderLiveSales();
+
+}
+
+
+function resetFilterButtons(){
+
+    document
+    .querySelectorAll(".date-filters .filter-btn")
+    .forEach(btn=>btn.classList.remove("active"));
+
+}
+
+
+function resetDateFilter(){
+
+    document.getElementById("startDate").value="";
+    document.getElementById("endDate").value="";
+
+    resetFilterButtons();
+
+    document.getElementById("clearFilter")
+        .classList.add("active");
+
+    renderLiveSales();
+
+}
+
+
+/* -----------------------------
+   ITEM CLEANER
+----------------------------- */
+
+function cleanItems(value){
+
+    return String(value || "")
+        .replace(/,?\s*\[Discount Applied:.*?\]/g,"")
+        .replace(/,?\s*\[Mode:.*?\]/g,"")
+        .replace(/,?\s*\[Address:.*?\]/g,"")
+        .replace(/ ₹\d+/g,"")
+        .trim()
+        .replace(/,+$/,"");
+
+}
+
+
+/* -----------------------------
+   BASIC XSS PROTECTION
+----------------------------- */
+
+function escapeHTML(value){
+
+    return String(value ?? "")
+        .replace(/&/g,"&amp;")
+        .replace(/</g,"&lt;")
+        .replace(/>/g,"&gt;")
+        .replace(/"/g,"&quot;")
+        .replace(/'/g,"&#039;");
+
+}
+
+
+/* -----------------------------
+   START
+----------------------------- */
+
+window.addEventListener("DOMContentLoaded",()=>{
+
+    setTodayFilter();
+
+    loadData();
+
+});
+
+</script>
 
 </body>
 </html>
