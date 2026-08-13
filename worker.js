@@ -36,7 +36,74 @@ export default {
         );
       }
     }
+// Import menu items
+if (url.pathname === "/api/menu/import" && request.method === "POST") {
+  try {
+    const data = await request.json();
 
+    if (!Array.isArray(data)) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Data must be an array"
+        }),
+        {
+          status: 400,
+          headers: {
+            "Content-Type": "application/json"
+          }
+        }
+      );
+    }
+
+    let imported = 0;
+
+    for (const item of data) {
+      await env.DB
+        .prepare(`
+          INSERT INTO menu_items
+          (name, category, price, gst_percent, is_available)
+          VALUES (?, ?, ?, ?, ?)
+        `)
+        .bind(
+          item.Item_Name,
+          item.Category,
+          Number(item.Price) || 0,
+          0,
+          1
+        )
+        .run();
+
+      imported++;
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        imported: imported
+      }),
+      {
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }
+    );
+
+  } catch (error) {
+    return new Response(
+      JSON.stringify({
+        success: false,
+        error: error.message
+      }),
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }
+    );
+  }
+}
     // Get all menu items
     if (url.pathname === "/api/menu" && request.method === "GET") {
       try {
