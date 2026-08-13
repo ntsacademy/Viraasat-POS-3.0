@@ -2,7 +2,6 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // Test D1 connection
     if (url.pathname === "/api/test-db") {
       try {
         const result = await env.DB
@@ -37,7 +36,6 @@ export default {
       }
     }
 
-    // Serve the existing dashboard/site
     return env.ASSETS.fetch(request);
   }
 };
