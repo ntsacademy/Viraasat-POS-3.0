@@ -1,8 +1,13 @@
 {
-  "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "viraasat-pos-3-0",
+  "name": "viraasat-pos",
   "compatibility_date": "2026-08-13",
-  "assets": {
-    "directory": "."
-  }
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "viraasat-pos-db",
+      "database_id": "dd761e92-dddd-42e7-b027-9f7903d8675d",
+      "migrations_dir": "migrations"
+    }
+  ]
 }
