@@ -1,0 +1,11 @@
+{
+  "name": "Viraasat POS 3.0",
+  "short_name": "Viraasat POS",
+  "description": "Viraasat Restaurant Point of Sale",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f8f5ef",
+  "theme_color": "#1a1a1a",
+  "orientation": "portrait",
+  "icons": []
+}
