@@ -562,6 +562,7 @@
                         <label>Search Menu Item</label>
                         <input list="menuItemsList" id="itemInput" placeholder="Type to search..." oninput="checkStockDisplay()" onchange="checkStockDisplay()">
                         <datalist id="menuItemsList"></datalist>
+                        <div id="menuSuggestionList" style="display:none; margin-top:8px; max-height:180px; overflow-y:auto; border:1px solid var(--border); border-radius:10px; background:var(--surface);"></div>
                         <div id="stockStatus" style="display:none; margin-top: 8px;"></div>
                     </div>
                 </div>
@@ -954,22 +955,35 @@ const APP_VERSION = "D1-Mobile-3.0";
             });
         }
 
-        function updateStockAdmin() {
-            let item = document.getElementById('adminStockItem').value.trim(); let qty = parseInt(document.getElementById('adminStockQty').value);
-            if(!item || isNaN(qty)) { showCustomAlert("Please enter valid item and quantity."); return; }
-            stockData[item] = qty; renderStockDashboard(); checkStockDisplay(); showCustomAlert("Stock updated to " + qty + " for " + item);
-            document.getElementById('adminStockItem').value = ""; document.getElementById('adminStockQty').value = "";
-            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'updateStock', item: item, qty: qty }) }).catch(e => console.log("Stock update sync failed"));
+                async function updateStockAdmin() {
+            const item = document.getElementById('adminStockItem').value.trim();
+            const qty = Number(document.getElementById('adminStockQty').value);
+            if(!item || !Number.isFinite(qty) || qty < 0) { showCustomAlert('Please enter valid item and quantity.'); return; }
+            try {
+                await d1Post('/stock', { name: item, quantity: qty, unit: 'pcs', low_stock_level: 5 });
+                stockData[item] = qty;
+                renderStockDashboard(); checkStockDisplay();
+                document.getElementById('adminStockItem').value = '';
+                document.getElementById('adminStockQty').value = '';
+                showCustomAlert('Stock updated to ' + qty + ' for ' + item);
+            } catch(e) { showCustomAlert('Stock update failed: ' + e.message); }
         }
 
-        function addMenuItemUI() {
-            let cat = document.getElementById('newMenuCategory').value; let name = document.getElementById('newMenuName').value.trim(); let price = parseInt(document.getElementById('newMenuPrice').value);
-            if(!name || isNaN(price) || price <= 0) { showCustomAlert("Please enter valid item name and price."); return; }
-            let existing = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === name.toLowerCase());
-            if(existing) { showCustomAlert("Item already exists!"); return; }
-            let newItem = { name: name, price: price, category: cat }; menuData.push(newItem); populateDropdown(); 
-            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'addMenu', category: cat, name: name, price: price }) }).catch(e => console.log("Menu addition failed"));
-            showCustomAlert(name + " added successfully!"); document.getElementById('newMenuName').value = ""; document.getElementById('newMenuPrice').value = "";
+                async function addMenuItemUI() {
+            const cat = document.getElementById('newMenuCategory').value;
+            const name = document.getElementById('newMenuName').value.trim();
+            const price = Number(document.getElementById('newMenuPrice').value);
+            if(!name || !Number.isFinite(price) || price <= 0) { showCustomAlert('Please enter valid item name and price.'); return; }
+            const existing = menuData.find(m => getVal(m, ['itemname','name']).toLowerCase() === name.toLowerCase());
+            if(existing) { showCustomAlert('Item already exists!'); return; }
+            try {
+                const result = await d1Post('/menu', { name, category: cat, price, gst_percent: 0, is_available: true });
+                menuData.push({ id: result.id, name, price, category: cat, is_available: 1 });
+                populateDropdown();
+                document.getElementById('newMenuName').value = '';
+                document.getElementById('newMenuPrice').value = '';
+                showCustomAlert(name + ' added successfully!');
+            } catch(e) { showCustomAlert('Menu addition failed: ' + e.message); }
         }
 
         function logoutUser(clearFields = true) {
@@ -986,14 +1000,22 @@ const APP_VERSION = "D1-Mobile-3.0";
             });
         }
 
-        function addStaffUI() {
-            let name = document.getElementById('newStaffName').value.trim(); let mobile = document.getElementById('newStaffMobile').value.trim(); let role = document.getElementById('newStaffRole').value; let salary = parseInt(document.getElementById('newStaffSalary').value); let joinDate = document.getElementById('newStaffDate').value; 
-            if(!name || mobile.length < 10 || isNaN(salary)) { showCustomAlert("Please fill all details correctly."); return; }
-            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'addStaff', name: name, mobile: mobile, role: role, salary: salary, joinDate: joinDate }) })
-            .then(res => res.json()).then(data => {
-                showCustomAlert(`${name} added successfully! Emp ID: ${data.empId}`);
-                document.getElementById('newStaffName').value = ""; document.getElementById('newStaffMobile').value = ""; document.getElementById('newStaffSalary').value = ""; document.getElementById('newStaffDate').value = ""; fetchData(); 
-            });
+                async function addStaffUI() {
+            const name = document.getElementById('newStaffName').value.trim();
+            const mobile = document.getElementById('newStaffMobile').value.trim();
+            const role = document.getElementById('newStaffRole').value;
+            const salary = Number(document.getElementById('newStaffSalary').value);
+            const joinDate = document.getElementById('newStaffDate').value;
+            if(!name || mobile.length < 10 || !Number.isFinite(salary)) { showCustomAlert('Please fill all details correctly.'); return; }
+            try {
+                const data = await d1Post('/staff', { name, mobile, role, salary, joinDate });
+                showCustomAlert(`${name} added successfully! Emp ID: ${data.id || 'Created'}`);
+                document.getElementById('newStaffName').value = '';
+                document.getElementById('newStaffMobile').value = '';
+                document.getElementById('newStaffSalary').value = '';
+                document.getElementById('newStaffDate').value = '';
+                await fetchData();
+            } catch(e) { showCustomAlert('Staff registration failed: ' + e.message); }
         }
 
         function calculateStaffBalance() {
@@ -1012,19 +1034,22 @@ const APP_VERSION = "D1-Mobile-3.0";
             infoDiv.innerHTML = `<b>Base Salary:</b> ₹${monthlySal}<br><b>Taken This Month:</b> <span style="color:var(--danger)">-₹${advTaken}</span><br><b style="font-size:1.1rem; color:var(--success)">Pending Balance: ₹${balance}</b>`;
         }
 
-        function submitStaffPayout() {
-            let empId = document.getElementById('payStaffSelect').value; let amount = document.getElementById('payStaffAmount').value; let type = document.getElementById('payStaffType').value;
-            if(!empId || !amount || amount <= 0) { showCustomAlert("Please select staff and enter valid amount."); return; }
-            let staff = staffData.find(s => getVal(s, ['empid', 'employeeid']) === empId); let sName = getVal(staff, ['name']); let sPhone = getVal(staff, ['mobile']); let desc = `[${empId}] ${sName} - ${type}`; 
-            let d = new Date(); let fDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-            expenseHistory.push({ date: fDate, isodate: fDate, category: 'Staff Salary', amount: parseInt(amount), description: desc });
-            
-            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'expense', category: 'Staff Salary', amount: amount, description: desc }) })
-            .then(res => res.json()).then(data => {
-                generateTrends(); calculateStaffBalance(); document.getElementById('payStaffAmount').value = "";
-                document.getElementById('salaryActionButtons').innerHTML = `<button class="btn" onclick="printSalarySlip('${sName}', '${empId}', '${amount}', '${type}'); document.getElementById('salaryActionModal').style.display='none';">🖨️ Print Slip</button><button class="btn" style="background:#10B981;" onclick="sendWASalarySlip('${sName}', '${empId}', '${amount}', '${type}', '${sPhone}'); document.getElementById('salaryActionModal').style.display='none';">📱 WhatsApp Slip</button><button class="btn btn-outline" onclick="document.getElementById('salaryActionModal').style.display='none';">Close</button>`;
-                document.getElementById('salaryActionModal').style.display = 'flex';
-            });
+                async function submitStaffPayout() {
+            const empId = document.getElementById('payStaffSelect').value;
+            const amount = Number(document.getElementById('payStaffAmount').value);
+            const type = document.getElementById('payStaffType').value;
+            if(!empId || !Number.isFinite(amount) || amount <= 0) { showCustomAlert('Please select staff and enter valid amount.'); return; }
+            const staff = staffData.find(s => String(getVal(s,['empid','employeeid','id'])) === String(empId));
+            const sName = getVal(staff,['name']) || 'Staff';
+            const sPhone = getVal(staff,['mobile','phone']) || '';
+            const desc = `[${empId}] ${sName} - ${type}`;
+            try {
+                await d1Post('/expenses', { category:'Staff Salary', amount, description:desc });
+                await fetchData();
+                document.getElementById('payStaffAmount').value = '';
+                document.getElementById('salaryActionButtons').innerHTML = `<button class="btn" onclick="printSalarySlip('${String(sName).replace(/'/g,"\\'")}', '${String(empId).replace(/'/g,"\\'")}', '${amount}', '${String(type).replace(/'/g,"\\'")}'); document.getElementById('salaryActionModal').style.display='none';">🖨️ Print Slip</button><button class="btn" style="background:#10B981;" onclick="sendWASalarySlip('${String(sName).replace(/'/g,"\\'")}', '${String(empId).replace(/'/g,"\\'")}', '${amount}', '${String(type).replace(/'/g,"\\'")}', '${String(sPhone).replace(/'/g,"\\'")}'); document.getElementById('salaryActionModal').style.display='none';">📱 WhatsApp Slip</button><button class="btn btn-outline" onclick="document.getElementById('salaryActionModal').style.display='none';">Close</button>`;
+                document.getElementById('salaryActionModal').style.display='flex';
+            } catch(e) { showCustomAlert('Salary payment failed: ' + e.message); }
         }
 
         function printSalarySlip(sName, empId, amount, type) {
@@ -1037,6 +1062,20 @@ const APP_VERSION = "D1-Mobile-3.0";
             let d = new Date(); let dStr = d.toLocaleDateString('en-IN') + ' ' + d.toLocaleTimeString('en-IN');
             let slipText = `*VIRAASAT UDAIPUR - SALARY SLIP*\n\n*Name:* ${sName}\n*Emp ID:* ${empId}\n*Date:* ${dStr}\n-----------------------\n*Transaction Type:* ${type}\n*Amount Paid:* ₹${amount}\n-----------------------\n_Recorded automatically by Viraasat ERP._`;
             window.open(`https://wa.me/91${sPhone}?text=${encodeURIComponent(slipText)}`, '_blank');
+        }
+
+        async function d1Post(path, payload) {
+            const response = await fetch(`${D1_API_BASE}${path}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(payload),
+                cache: 'no-store'
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || data.success === false) {
+                throw new Error(data.error || `D1 API error (${response.status})`);
+            }
+            return data;
         }
 
         async function d1Get(path) {
@@ -1052,72 +1091,82 @@ const APP_VERSION = "D1-Mobile-3.0";
             return data;
         }
 
-        async function fetchData() {
+                async function fetchData() {
             const loader = document.getElementById('loader');
             loader.style.display = 'flex';
             loader.innerHTML = '<div class="spinner"></div> <span>Syncing D1...</span>';
 
             try {
-                // Dashboard + menu + tables + orders + expenses are now loaded from Cloudflare D1.
-                const [dashboard, menu, tables, orders, expenses] = await Promise.all([
+                // D1 is the single source of truth. Read every dataset required by the mobile UI.
+                const [dashboard, menu, tables, orders, expenses, stock, staff] = await Promise.all([
                     d1Get('/dashboard'),
                     d1Get('/menu'),
                     d1Get('/tables'),
-                    d1Get('/orders?limit=200'),
-                    d1Get('/expenses?limit=500')
+                    d1Get('/orders?limit=500'),
+                    d1Get('/expenses?limit=1000'),
+                    d1Get('/stock'),
+                    d1Get('/staff')
                 ]);
 
-                menuData = menu.items || [];
+                menuData = (menu.items || []).filter(item => Number(item.is_available ?? 1) !== 0);
                 expenseHistory = expenses.expenses || [];
-                staffData = staffData || [];
+                staffData = staff.staff || [];
 
                 // Convert D1 orders into the field names used by the existing mobile UI.
-                salesHistory = (orders.orders || []).map(order => ({
-                    id: order.id,
-                    orderid: order.order_number || order.id,
-                    tablenumber: order.table_number ? `Table ${order.table_number}` : (order.order_type || 'Order'),
-                    table: order.table_number ? `Table ${order.table_number}` : (order.order_type || 'Order'),
-                    order_type: order.order_type,
-                    customerphone: order.customer_phone || '',
-                    phone: order.customer_phone || '',
-                    date: order.created_at || '',
-                    isodate: order.created_at || '',
-                    time: order.created_at || '',
-                    totalamount: Number(order.grand_total) || 0,
-                    total: Number(order.grand_total) || 0,
-                    amount: Number(order.grand_total) || 0,
-                    payment_method: order.payment_method || '',
-                    payment_status: order.payment_status || '',
-                    order_status: order.order_status || '',
-                    items: ''
-                }));
+                salesHistory = (orders.orders || []).map(order => {
+                    let itemsString = order.items_string || '';
+                    if (!itemsString && order.items) {
+                        try {
+                            const parsed = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+                            if (Array.isArray(parsed)) {
+                                itemsString = parsed.map(i => `${i.name || 'Item'} (x${Number(i.qty || i.quantity || 1)}) ₹${Number(i.total ?? ((i.price || 0) * (i.qty || i.quantity || 1)))}`).join(', ');
+                            }
+                        } catch(e) {}
+                    }
+                    return {
+                        id: order.id,
+                        orderid: order.order_number || order.id,
+                        tablenumber: order.table_number ? `Table ${order.table_number}` : (order.order_type || 'Order'),
+                        table: order.table_number ? `Table ${order.table_number}` : (order.order_type || 'Order'),
+                        order_type: order.order_type || '',
+                        customerphone: order.customer_phone || '',
+                        phone: order.customer_phone || '',
+                        date: order.created_at || '',
+                        isodate: order.created_at || '',
+                        time: order.created_at || '',
+                        totalamount: Number(order.grand_total) || 0,
+                        total: Number(order.grand_total) || 0,
+                        amount: Number(order.grand_total) || 0,
+                        payment_method: order.payment_method || '',
+                        payment_status: order.payment_status || '',
+                        order_status: order.order_status || 'completed',
+                        items: itemsString,
+                        items_string: itemsString
+                    };
+                });
+
+                // Stock is returned as rows; convert it to the legacy object used by the UI.
+                stockData = {};
+                (stock.stock || dashboard.stock || []).forEach(row => {
+                    const name = String(row.name || '').trim();
+                    if (name) stockData[name] = Number(row.quantity) || 0;
+                });
 
                 // D1 is the source of truth for restaurant tables.
                 const d1Tables = tables.tables || [];
                 tableSections = [
-                    { title: "Hut Seating", tables: [] },
-                    { title: "Ground Seating", tables: [] },
-                    { title: "Terrace Seating", tables: [] }
+                    { title: 'Hut Seating', tables: [] },
+                    { title: 'Ground Seating', tables: [] },
+                    { title: 'Terrace Seating', tables: [] }
                 ];
-
-                const areaMap = {
-                    'Hut Seating': 0,
-                    'Ground Seating': 1,
-                    'Terrace Seating': 2
-                };
-
+                const areaMap = { 'Hut Seating': 0, 'Ground Seating': 1, 'Terrace Seating': 2 };
                 runningTables = {};
 
                 d1Tables.forEach(t => {
                     const number = String(t.table_number);
                     const area = String(t.seating_area || '').trim();
                     const idx = areaMap[area] !== undefined ? areaMap[area] : 1;
-
-                    if (!tableSections[idx].tables.includes(number)) {
-                        tableSections[idx].tables.push(number);
-                    }
-
-                    // Keep a marker for occupied tables so the existing color coding works.
+                    tableSections[idx].tables.push(number);
                     if (String(t.status).toLowerCase() === 'occupied') {
                         runningTables[`Table ${number}`] = [{ __d1Occupied: true, orderId: t.current_order_id }];
                     } else {
@@ -1125,27 +1174,27 @@ const APP_VERSION = "D1-Mobile-3.0";
                     }
                 });
 
-                // Fallback only if the D1 table list is empty.
                 if (d1Tables.length === 0) {
                     tableSections = [
-                        { title: "Hut Seating", tables: ["1", "2", "3", "4"] },
-                        { title: "Ground Seating", tables: ["5", "6", "7"] },
-                        { title: "Terrace Seating", tables: ["8", "9", "10"] }
+                        { title: 'Hut Seating', tables: ['1','2','3','4'] },
+                        { title: 'Ground Seating', tables: ['5','6','7'] },
+                        { title: 'Terrace Seating', tables: ['8','9','10'] }
                     ];
                 }
 
-                // Dashboard summary comes directly from the Worker/D1 calculation.
-                const summary = dashboard.summary || {};
-                const tableSummary = dashboard.tables || {};
+                // Calculate sales from completed D1 orders only. Open KOTs must not count as revenue.
+                const completedSales = salesHistory.filter(o => String(o.order_status).toLowerCase() === 'completed');
+                const todayIST = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+                const todayOrders = completedSales.filter(o => String(o.date).slice(0,10) === todayIST);
+                const todaySales = todayOrders.reduce((sum,o) => sum + parseAmount(o.totalamount), 0);
+                const overallSales = completedSales.reduce((sum,o) => sum + parseAmount(o.totalamount), 0);
+                const averageOrder = todayOrders.length ? Math.round(todaySales / todayOrders.length) : 0;
+                const occupiedCount = d1Tables.filter(t => String(t.status).toLowerCase() === 'occupied').length;
 
-                document.getElementById('homeTodaySale').innerText =
-                    `₹${Math.round(Number(summary.today_sales) || 0).toLocaleString('en-IN')}`;
-                document.getElementById('homeAvgOrder').innerText =
-                    `₹${Math.round(Number(summary.average_order) || 0).toLocaleString('en-IN')}`;
-                document.getElementById('homeOverallSale').innerText =
-                    `₹${Math.round(Number(summary.overall_sales) || 0).toLocaleString('en-IN')}`;
-                document.getElementById('homeActiveTables').innerText =
-                    `${Number(tableSummary.occupied) || 0} / ${Number(tableSummary.total) || d1Tables.length}`;
+                document.getElementById('homeTodaySale').innerText = `₹${todaySales.toLocaleString('en-IN')}`;
+                document.getElementById('homeAvgOrder').innerText = `₹${averageOrder.toLocaleString('en-IN')}`;
+                document.getElementById('homeOverallSale').innerText = `₹${overallSales.toLocaleString('en-IN')}`;
+                document.getElementById('homeActiveTables').innerText = `${occupiedCount} / ${d1Tables.length}`;
 
                 populateDropdown();
                 populateStaffDropdown();
@@ -1161,13 +1210,12 @@ const APP_VERSION = "D1-Mobile-3.0";
                 console.log('D1 menu items:', menuData.length);
                 console.log('D1 tables:', d1Tables.length);
                 console.log('D1 orders:', salesHistory.length);
-                console.log('D1 expenses:', expenseHistory.length);
-
+                console.log('D1 stock:', Object.keys(stockData).length);
+                console.log('D1 staff:', staffData.length);
             } catch (error) {
                 console.error('D1 Sync Error:', error);
                 loader.innerHTML = `<span style="color:var(--danger);">D1 Sync Error: ${error.message}</span>`;
                 hideSplashScreen();
-                return;
             } finally {
                 setTimeout(() => {
                     loader.style.display = 'none';
@@ -1243,20 +1291,76 @@ const APP_VERSION = "D1-Mobile-3.0";
             trendChartInstance = new Chart(ctx, { type: 'line', data: { labels: finalLabels, datasets: [ { label: 'Sales (₹)', data: finalSales, borderColor: '#07CDAE', backgroundColor: 'rgba(7, 205, 174, 0.15)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#07CDAE', pointRadius: 4 }, { label: 'Expenses (₹)', data: finalExp, borderColor: '#FE7096', backgroundColor: 'rgba(254, 112, 150, 0.15)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#FE7096', pointRadius: 4 } ] }, options: { responsive: true, maintainAspectRatio: false } });
         }
 
-        function populateDropdown() { 
-            const datalist = document.getElementById('menuItemsList'); datalist.innerHTML = ""; 
-            menuData.forEach(item => { let itemName = getVal(item, ['itemname', 'name']); if(itemName) { let option = document.createElement('option'); option.value = itemName; datalist.appendChild(option); } }); 
+                function populateDropdown() {
+            const datalist = document.getElementById('menuItemsList');
+            const suggestionBox = document.getElementById('menuSuggestionList');
+            if (datalist) datalist.innerHTML = '';
+            menuData.forEach(item => {
+                const itemName = getVal(item, ['itemname','name']);
+                if (itemName && datalist) {
+                    const option = document.createElement('option');
+                    option.value = itemName;
+                    datalist.appendChild(option);
+                }
+            });
+            if (suggestionBox) {
+                const showSuggestions = () => {
+                    const q = (document.getElementById('itemInput')?.value || '').trim().toLowerCase();
+                    const matches = menuData.filter(item => {
+                        const n = String(getVal(item,['itemname','name']) || '').toLowerCase();
+                        return !q || n.includes(q);
+                    }).slice(0, 20);
+                    if (!matches.length) { suggestionBox.style.display='none'; suggestionBox.innerHTML=''; return; }
+                    suggestionBox.innerHTML = matches.map(item => {
+                        const n = getVal(item,['itemname','name']);
+                        const p = parseAmount(getVal(item,['price']));
+                        return `<button type="button" onclick="selectMenuSuggestion(${JSON.stringify(n).replace(/</g,'\u003c')})" style="display:flex;justify-content:space-between;align-items:center;width:100%;padding:10px 12px;border:0;border-bottom:1px solid var(--border);background:var(--surface);font-family:inherit;text-align:left;font-weight:600;color:var(--text-dark);"><span>${n}</span><span style="color:var(--success);">₹${p}</span></button>`;
+                    }).join('');
+                    suggestionBox.style.display='block';
+                };
+                const input = document.getElementById('itemInput');
+                if (input && !input.dataset.menuBound) {
+                    input.dataset.menuBound='1';
+                    input.addEventListener('focus', showSuggestions);
+                    input.addEventListener('input', showSuggestions);
+                    input.addEventListener('blur', () => setTimeout(() => { suggestionBox.style.display='none'; }, 200));
+                }
+            }
         }
 
-        function renderStockDashboard() { 
-            let stockDiv = document.getElementById('dashboardStockList'); if(!stockDiv) return; stockDiv.innerHTML = ""; let keys = Object.keys(stockData); 
-            if(keys.length === 0) { stockDiv.innerHTML = "<p style='color:var(--text-muted); font-size:0.85rem;'>No stock tracked.</p>"; return; } 
-            keys.forEach(key => { let qty = parseInt(stockData[key]); let tagClass = qty <= 5 ? 'stock-tag low' : 'stock-tag'; stockDiv.innerHTML += `<div class="${tagClass}">${key}: <span>${qty}</span></div>`; }); 
+        function selectMenuSuggestion(name) {
+            const input = document.getElementById('itemInput');
+            if (input) { input.value = name; input.dispatchEvent(new Event('input', {bubbles:true})); }
+            const box = document.getElementById('menuSuggestionList');
+            if (box) box.style.display='none';
+            checkStockDisplay();
         }
 
-        function checkStockDisplay() { 
-            let itemName = document.getElementById('itemInput').value; let statusDiv = document.getElementById('stockStatus'); let foundStockKey = Object.keys(stockData).find(key => key.trim().toLowerCase() === itemName.trim().toLowerCase()); 
-            if(foundStockKey !== undefined) { let currentQty = parseInt(stockData[foundStockKey]); statusDiv.style.color = ""; statusDiv.style.backgroundColor = ""; statusDiv.style.border = ""; statusDiv.className = currentQty > 5 ? "stock-tag" : "stock-tag low"; statusDiv.innerHTML = currentQty > 5 ? `Available: <span>${currentQty}</span>` : `Low Stock: <span>${currentQty}</span>`; statusDiv.style.display = "inline-flex"; statusDiv.style.marginTop = "8px"; } else { statusDiv.style.display = "none"; statusDiv.innerHTML = ""; } 
+                function renderStockDashboard() {
+            const stockDiv = document.getElementById('dashboardStockList');
+            if(!stockDiv) return;
+            const rows = Object.keys(stockData).map(name => ({ name, qty: Number(stockData[name]) || 0 })).sort((a,b) => a.qty-b.qty || a.name.localeCompare(b.name));
+            if(!rows.length) { stockDiv.innerHTML = "<p style='color:var(--text-muted); font-size:0.85rem;'>No stock tracked yet. Add stock from Admin → Quick Stock Update.</p>"; return; }
+            stockDiv.innerHTML = rows.map(row => {
+                const tagClass = row.qty <= 5 ? 'stock-tag low' : 'stock-tag';
+                return `<div class="${tagClass}">${row.name}: <span>${row.qty}</span></div>`;
+            }).join('');
+        }
+
+                function checkStockDisplay() {
+            const input = document.getElementById('itemInput');
+            const statusDiv = document.getElementById('stockStatus');
+            if (!input || !statusDiv) return;
+            const itemName = input.value;
+            const foundStockKey = Object.keys(stockData).find(key => key.trim().toLowerCase() === itemName.trim().toLowerCase());
+            if(foundStockKey !== undefined) {
+                const currentQty = Number(stockData[foundStockKey]) || 0;
+                statusDiv.className = currentQty > 5 ? 'stock-tag' : 'stock-tag low';
+                statusDiv.innerHTML = currentQty > 5 ? `Available: <span>${currentQty}</span>` : `Low Stock: <span>${currentQty}</span>`;
+                statusDiv.style.display = 'inline-flex'; statusDiv.style.marginTop = '8px';
+            } else {
+                statusDiv.style.display = 'none'; statusDiv.innerHTML = '';
+            }
         }
 
         function cleanDisplayDate(dStr) { 
@@ -1268,40 +1372,55 @@ const APP_VERSION = "D1-Mobile-3.0";
         }
 
         function renderLiveSales() {
-            const salesGrid = document.getElementById('salesGrid'); salesGrid.innerHTML = ""; const homeRecent = document.getElementById('homeRecentOrders'); homeRecent.innerHTML = "";
-            let startDateInput = document.getElementById('filterStartDate').value; let endDateInput = document.getElementById('filterEndDate').value;
-            
-            let filteredSales = salesHistory.filter(sale => {
-                if (!startDateInput && !endDateInput) return true;
-                let sDate = String(getVal(sale, ['date', 'isodate']) || '').trim(); let saleIsoDate = ""; let dObj = new Date(sDate);
-                if (!isNaN(dObj.getTime())) { saleIsoDate = `${dObj.getFullYear()}-${String(dObj.getMonth() + 1).padStart(2, '0')}-${String(dObj.getDate()).padStart(2, '0')}`; } else { saleIsoDate = sDate.split("T")[0].split(" ")[0]; }
-                if (startDateInput && saleIsoDate < startDateInput) return false; if (endDateInput && saleIsoDate > endDateInput) return false; return true;
-            });
-            
-            let displayTotal = filteredSales.reduce((acc, curr) => acc + parseAmount(getVal(curr, ['totalamount', 'total', 'amount'])), 0);
-            document.getElementById('totalSalesBox').innerText = `Total Sales: ₹ ${displayTotal.toLocaleString('en-IN')}`;
-            
-            if(filteredSales.length === 0) { salesGrid.innerHTML = "<p style='color:var(--text-muted); font-size:0.9rem; text-align:center;'>No orders found.</p>"; return; }
-            
-            let tableCounts = {};
-            [...filteredSales].reverse().forEach(sale => { let tName = getVal(sale, ['tablenumber', 'table', 'tablename']) || "Table"; tableCounts[tName] = (tableCounts[tName] || 0) + 1; sale.sessionIndex = tableCounts[tName]; });
-            
-            filteredSales.forEach(sale => {
-                let sOrderId = getVal(sale, ['orderid', 'id']) || 'N/A'; let tName = getVal(sale, ['tablenumber', 'table', 'tablename']) || "Table"; let sessionLabel = sale.sessionIndex > 1 ? ` (S${sale.sessionIndex})` : "";
-                let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getVal(sale, ['items', 'itemsstring']) || ''; let sDate = getVal(sale, ['date', 'isodate']) || ''; let sTime = getVal(sale, ['time']) || '';
-                
-                let cleanItemsView = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
+            const salesGrid = document.getElementById('salesGrid');
+            const homeRecent = document.getElementById('homeRecentOrders');
+            if (!salesGrid || !homeRecent) return;
+            salesGrid.innerHTML = ''; homeRecent.innerHTML = '';
+            const startDateInput = document.getElementById('filterStartDate').value;
+            const endDateInput = document.getElementById('filterEndDate').value;
 
-                salesGrid.innerHTML += `<div class="card" style="padding:16px; margin-bottom:12px; cursor:pointer;" onclick="openOrderDetails('${sOrderId}')"><div style="display:flex; justify-content:space-between; margin-bottom:12px;"><div><h4 style="margin-bottom:2px; font-weight:700; color:var(--text-dark);">${tName}${sessionLabel}</h4><span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">#${sOrderId}</span></div></div><div style="font-size:0.85rem; color:var(--text-muted); line-height:1.5; margin-bottom:16px; max-height:42px; overflow:hidden;">${cleanItemsView.replace(/ ₹\d+/g, '')}</div><div style="display:flex; justify-content:space-between; align-items:center;"><span style="background:#F4EFEA; color:var(--text-dark); padding:6px 10px; border-radius:6px; font-weight:600; font-size:0.78rem; border:1px solid var(--border); white-space:nowrap;">${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}</span><span style="color: #E65100; font-size: 1.2rem; font-weight: 800; background: #FFEDD5; padding: 6px 12px; border-radius: 8px; white-space: nowrap; border: 1px solid #FDE68A;">₹ ${sTotal}</span></div></div>`;
+            let filteredSales = salesHistory.filter(sale => String(sale.order_status || 'completed').toLowerCase() === 'completed').filter(sale => {
+                if (!startDateInput && !endDateInput) return true;
+                const sDate = String(getVal(sale, ['date','isodate']) || '').trim();
+                let saleIsoDate = '';
+                const dObj = new Date(sDate);
+                if (!isNaN(dObj.getTime())) saleIsoDate = `${dObj.getFullYear()}-${String(dObj.getMonth()+1).padStart(2,'0')}-${String(dObj.getDate()).padStart(2,'0')}`;
+                else saleIsoDate = sDate.split('T')[0].split(' ')[0];
+                if (startDateInput && saleIsoDate < startDateInput) return false;
+                if (endDateInput && saleIsoDate > endDateInput) return false;
+                return true;
             });
-            
-            filteredSales.slice(0, 3).forEach(sale => {
-                let sOrderId = getVal(sale, ['orderid', 'id']) || 'N/A'; let tName = getVal(sale, ['tablenumber', 'table', 'tablename']) || "Table"; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getVal(sale, ['items', 'itemsstring']) || ''; let sTime = getVal(sale, ['time']) || ''; let iconStr = tName.includes('Takeaway') ? '🛍️' : (tName.includes('Delivery') ? '🛵' : '🍽️'); 
-                
-                let cleanItemsView = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
-                let itemCount = cleanItemsView.split(', ').length;
-                
-                homeRecent.innerHTML += `<div class="h-order-card" onclick="openOrderDetails('${sOrderId}')"><div class="ho-icon">${iconStr}</div><div class="ho-info"><div class="ho-title">Order #${sOrderId}</div><div class="ho-sub">${tName} • ${cleanDisplayTime(sTime)}</div><div class="ho-sub" style="font-weight:600; color:var(--text-dark); margin-top:2px;">${itemCount} Items • ₹${sTotal}</div></div><div class="ho-badge" style="background:#E6F4EA; color:#10B981;">COMPLETED</div><div style="color:#CCC; font-size:1.3rem;">›</div></div>`;
+
+            const displayTotal = filteredSales.reduce((acc,curr) => acc + parseAmount(getVal(curr,['totalamount','total','amount'])), 0);
+            document.getElementById('totalSalesBox').innerText = `Total Sales: ₹ ${displayTotal.toLocaleString('en-IN')}`;
+
+            if(!filteredSales.length) {
+                salesGrid.innerHTML = "<p style='color:var(--text-muted); font-size:0.9rem; text-align:center; padding:20px 0;'>No completed orders found.</p>";
+                return;
+            }
+
+            [...filteredSales].reverse().forEach((sale,index) => { sale.sessionIndex = index + 1; });
+            filteredSales.forEach(sale => {
+                const sOrderId = getVal(sale,['orderid','id']) || 'N/A';
+                const tName = getVal(sale,['tablenumber','table','tablename']) || 'Order';
+                const sTotal = parseAmount(getVal(sale,['totalamount','total','amount']));
+                const sItems = getVal(sale,['items','itemsstring']) || '';
+                const sDate = getVal(sale,['date','isodate']) || '';
+                const sTime = getVal(sale,['time']) || '';
+                const cleanItemsView = String(sItems).replace(/,?\s*\[Discount Applied:.*?\]/g,'').replace(/,?\s*\[Mode:.*?\]/g,'').replace(/,?\s*\[Address:.*?\]/g,'').trim().replace(/,+$/,'');
+                salesGrid.innerHTML += `<div class="card" style="padding:16px; margin-bottom:12px; cursor:pointer;" onclick="openOrderDetails('${String(sOrderId).replace(/'/g,"\\'")}')"><div style="display:flex; justify-content:space-between; margin-bottom:12px;"><div><h4 style="margin-bottom:2px; font-weight:700; color:var(--text-dark);">${tName}</h4><span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">#${sOrderId}</span></div></div><div style="font-size:0.85rem; color:var(--text-muted); line-height:1.5; margin-bottom:16px; max-height:42px; overflow:hidden;">${cleanItemsView.replace(/ ₹\d+/g,'') || 'Order items saved in D1'}</div><div style="display:flex; justify-content:space-between; align-items:center;"><span style="background:#F4EFEA; color:var(--text-dark); padding:6px 10px; border-radius:6px; font-weight:600; font-size:0.78rem; border:1px solid var(--border); white-space:nowrap;">${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}</span><span style="color:#E65100; font-size:1.2rem; font-weight:800; background:#FFEDD5; padding:6px 12px; border-radius:8px; white-space:nowrap; border:1px solid #FDE68A;">₹ ${sTotal}</span></div></div>`;
+            });
+
+            filteredSales.slice(0,3).forEach(sale => {
+                const sOrderId = getVal(sale,['orderid','id']) || 'N/A';
+                const tName = getVal(sale,['tablenumber','table','tablename']) || 'Order';
+                const sTotal = parseAmount(getVal(sale,['totalamount','total','amount']));
+                const sItems = getVal(sale,['items','itemsstring']) || '';
+                const sTime = getVal(sale,['time']) || '';
+                const iconStr = tName.includes('Takeaway') ? '🛍️' : (tName.includes('Delivery') ? '🛵' : '🍽️');
+                const cleanItemsView = String(sItems).replace(/,?\s*\[Discount Applied:.*?\]/g,'').replace(/,?\s*\[Mode:.*?\]/g,'').replace(/,?\s*\[Address:.*?\]/g,'').trim().replace(/,+$/,'');
+                const itemCount = cleanItemsView ? cleanItemsView.split(', ').length : 0;
+                homeRecent.innerHTML += `<div class="h-order-card" onclick="openOrderDetails('${String(sOrderId).replace(/'/g,"\\'") }')"><div class="ho-icon">${iconStr}</div><div class="ho-info"><div class="ho-title">Order #${sOrderId}</div><div class="ho-sub">${tName} • ${cleanDisplayTime(sTime)}</div><div class="ho-sub" style="font-weight:600; color:var(--text-dark); margin-top:2px;">${itemCount} Items • ₹${sTotal}</div></div><div class="ho-badge">COMPLETED</div><div style="color:#CCC; font-size:1.3rem;">›</div></div>`;
             });
         }
 
@@ -1371,12 +1490,16 @@ const APP_VERSION = "D1-Mobile-3.0";
             let sel = document.getElementById('newTableCategory'); sel.innerHTML = ""; tableSections.forEach((sec, idx) => { sel.innerHTML += `<option value="${idx}">${sec.title}</option>`; }); document.getElementById('newTableNumber').value = ""; document.getElementById('addTableModal').style.display = 'flex'; 
         }
 
-        function confirmAddTable() { 
-            let catIdx = document.getElementById('newTableCategory').value; let tNum = document.getElementById('newTableNumber').value.trim(); 
-            if(!tNum) { showCustomAlert("Please enter a table number."); return; } 
-            let isDuplicate = false; tableSections.forEach(sec => { if(sec.tables.includes(tNum)) isDuplicate = true; }); 
-            if(isDuplicate) { showCustomAlert("Table " + tNum + " already exists!"); return; } 
-            tableSections[catIdx].tables.push(tNum); localStorage.setItem('viraasat_table_sections', JSON.stringify(tableSections)); document.getElementById('addTableModal').style.display = 'none'; renderTableGrid(); 
+                async function confirmAddTable() {
+            const catIdx = Number(document.getElementById('newTableCategory').value);
+            const tNum = document.getElementById('newTableNumber').value.trim();
+            if(!tNum) { showCustomAlert('Please enter a table number.'); return; }
+            if(tableSections.some(sec => sec.tables.includes(tNum))) { showCustomAlert('Table ' + tNum + ' already exists!'); return; }
+            try {
+                await d1Post('/tables', { table_number: tNum, seating_area: tableSections[catIdx]?.title || 'Ground Seating' });
+                document.getElementById('addTableModal').style.display = 'none';
+                await fetchData();
+            } catch(e) { showCustomAlert('Table creation failed: ' + e.message); }
         }
 
         function switchMainTab(tabName, btnElement, skipHistory = false) {
@@ -1412,20 +1535,24 @@ const APP_VERSION = "D1-Mobile-3.0";
             if(tabName === 'trendView') setTimeout(generateTrends, 100);
         }
 
-        function openTable(num) {
+                function openTable(num) {
             try { history.pushState({view: 'billing'}, '', '#billing'); } catch(e){}
-            activeTableNumber = (num === 'Takeaway' || num === 'Home Delivery') ? num : "Table " + num;
+            activeTableNumber = (num === 'Takeaway' || num === 'Home Delivery') ? num : 'Table ' + num;
             document.getElementById('billingTitle').innerText = activeTableNumber;
-            if(num === 'Home Delivery') { document.getElementById('deliveryAddressBox').style.display = 'flex'; } else { document.getElementById('deliveryAddressBox').style.display = 'none'; }
-            
-            currentBill = (runningTables[activeTableNumber] && Array.isArray(runningTables[activeTableNumber])) ? JSON.parse(JSON.stringify(runningTables[activeTableNumber])) : [];
-            document.getElementById('discountValue').value = 0; document.getElementById('customerPhone').value = ""; document.getElementById('deliveryAddress').value = ""; document.getElementById('stockStatus').style.display = "none"; 
-            
+            document.getElementById('deliveryAddressBox').style.display = num === 'Home Delivery' ? 'flex' : 'none';
+            let saved = runningTables[activeTableNumber];
+            currentBill = (Array.isArray(saved) ? saved.filter(i => !i.__d1Occupied) : []).map(i => ({...i}));
+            document.getElementById('discountValue').value = 0;
+            document.getElementById('customerPhone').value = '';
+            document.getElementById('deliveryAddress').value = '';
+            document.getElementById('stockStatus').style.display = 'none';
             updateBillTable();
-            document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display = 'none'; tab.classList.remove('active'); });
-            document.getElementById('appHeader').style.display = 'none';
-            document.getElementById('billingView').style.display = 'block'; setTimeout(() => document.getElementById('billingView').classList.add('active'), 10);
-            document.getElementById('appBottomNav').style.display = 'none';
+            document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display='none'; tab.classList.remove('active'); });
+            document.getElementById('appHeader').style.display='none';
+            document.getElementById('billingView').style.display='block';
+            setTimeout(() => document.getElementById('billingView').classList.add('active'),10);
+            document.getElementById('appBottomNav').style.display='none';
+            populateDropdown();
         }
 
         function goBackToTables(skipHistory = false) {
@@ -1436,13 +1563,17 @@ const APP_VERSION = "D1-Mobile-3.0";
             document.getElementById('appBottomNav').style.display = 'flex'; renderTableGrid(); 
         }
 
-        function addToBill() {
-            let itemName = document.getElementById('itemInput').value; let qty = parseInt(document.getElementById('itemQty').value) || 1;
-            if (!itemName) { showCustomAlert("Please select an item!"); return; }
-            let selectedItem = menuData.find(i => getVal(i, ['itemname', 'name']).trim().toLowerCase() === itemName.trim().toLowerCase());
-            if (!selectedItem) { showCustomAlert("Item not in menu. Use Custom Item box."); return; }
-            let itemPrice = parseInt(getVal(selectedItem, ['price'])); let existingItem = currentBill.find(i => i.name === getVal(selectedItem, ['itemname', 'name']));
-            if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ name: getVal(selectedItem, ['itemname', 'name']), price: itemPrice, qty: qty, total: itemPrice * qty }); }
+                function addToBill() {
+            const itemName = document.getElementById('itemInput').value.trim();
+            const qty = Math.max(1, parseInt(document.getElementById('itemQty').value) || 1);
+            if (!itemName) { showCustomAlert('Please select an item!'); return; }
+            const selectedItem = menuData.find(i => String(getVal(i,['itemname','name'])).trim().toLowerCase() === itemName.toLowerCase());
+            if (!selectedItem) { showCustomAlert('Item not in menu. Use Custom Item box.'); return; }
+            const itemPrice = parseAmount(getVal(selectedItem,['price']));
+            const itemDisplayName = getVal(selectedItem,['itemname','name']);
+            const existingItem = currentBill.find(i => i.name === itemDisplayName);
+            if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; }
+            else { currentBill.push({ id:selectedItem.id || null, name:itemDisplayName, price:itemPrice, qty, total:itemPrice*qty }); }
             updateBillTable();
         }
 
@@ -1469,59 +1600,99 @@ const APP_VERSION = "D1-Mobile-3.0";
 
         function removeItem(index) { currentBill.splice(index, 1); updateBillTable(); }
 
-        function clearTableWithoutCheckout() {
-            showCustomConfirm(`Are you sure you want to clear ${activeTableNumber}?`, () => {
-                fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'clear', tableName: activeTableNumber }) })
-                .then(res => res.json()).then(data => { delete runningTables[activeTableNumber]; currentBill = []; goBackToTables(); }).catch(e => { delete runningTables[activeTableNumber]; currentBill = []; goBackToTables(); });
+                async function clearTableWithoutCheckout() {
+            showCustomConfirm(`Are you sure you want to clear ${activeTableNumber}?`, async () => {
+                try {
+                    if (activeTableNumber.startsWith('Table ')) {
+                        await d1Post('/tables/clear', { table_number: activeTableNumber.replace(/^Table\s+/, '') });
+                    }
+                    delete runningTables[activeTableNumber];
+                    currentBill = [];
+                    await fetchData();
+                    goBackToTables();
+                } catch(e) { showCustomAlert('Could not clear table: ' + e.message); }
             }, null);
         }
 
-        function saveKOT() {
-            if (currentBill.length === 0) { showCustomAlert("Cart is empty!"); return; }
-            let btn = document.getElementById('btnKOT'); btn.innerText = "Saving..."; btn.disabled = true;
-            let isNew = !runningTables.hasOwnProperty(activeTableNumber);
-            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'kot', tableName: activeTableNumber, items: currentBill, isNewSession: isNew }) })
-            .then(res => res.json()).then(data => {
-                if(data.status === "Conflict") { document.getElementById('conflictModal').style.display = 'flex'; showSwitchTableModal(); btn.innerText = "Save KOT"; btn.disabled = false; } 
-                else { runningTables[activeTableNumber] = currentBill; btn.innerText = "Save KOT"; btn.disabled = false; goBackToTables(); }
-            }).catch(err => { btn.innerText = "Save KOT"; btn.disabled = false; });
+                async function saveKOT() {
+            if (currentBill.length === 0) { showCustomAlert('Cart is empty!'); return; }
+            const btn = document.getElementById('btnKOT');
+            btn.innerText = 'Saving...'; btn.disabled = true;
+            try {
+                if (!activeTableNumber.startsWith('Table ')) {
+                    // Takeaway/Delivery does not need a KOT table lock.
+                    btn.innerText = 'Save KOT'; btn.disabled = false;
+                    showCustomAlert('KOT is available for dine-in tables.');
+                    return;
+                }
+                const tableNumber = activeTableNumber.replace(/^Table\s+/, '');
+                await d1Post('/orders/kot', { table_number: tableNumber, items: currentBill });
+                runningTables[activeTableNumber] = JSON.parse(JSON.stringify(currentBill));
+                btn.innerText = 'Save KOT'; btn.disabled = false;
+                await fetchData();
+                goBackToTables();
+            } catch(e) {
+                btn.innerText = 'Save KOT'; btn.disabled = false;
+                showCustomAlert('KOT save failed: ' + e.message);
+            }
         }
 
         function openPaymentModal() { if (currentBill.length === 0) return; document.getElementById('paymentModal').style.display = 'flex'; }
         
         function selectPaymentMode(mode) { selectedPaymentMode = mode; document.querySelectorAll('.pay-btn').forEach(btn => btn.classList.remove('selected')); document.getElementById('pay' + mode).classList.add('selected'); }
 
-        function processFinalCheckout() {
-            let btn = document.getElementById('btnFinalCheckout'); btn.innerText = "Processing..."; btn.disabled = true;
-            let phone = document.getElementById('customerPhone').value || "NA"; let address = document.getElementById('deliveryAddressBox').style.display === 'flex' ? document.getElementById('deliveryAddress').value : "";
-            let orderId = "ORD" + Math.floor(Math.random() * 900000000 + 100000000); let discount = parseInt(document.getElementById('discountValue').value) || 0; 
-            
-            let itemsString = currentBill.map(i => `${i.name} (x${i.qty}) ₹${i.total}`).join(", ");
-            if (discount > 0) itemsString += `, [Discount Applied: -₹${discount}]`; 
-            itemsString += `, [Mode: ${selectedPaymentMode}]`; 
-            if(address) itemsString += `, [Address: ${address}]`;
+                async function processFinalCheckout() {
+            const btn = document.getElementById('btnFinalCheckout');
+            btn.innerText = 'Processing...'; btn.disabled = true;
+            try {
+                const phone = document.getElementById('customerPhone').value || 'NA';
+                const address = document.getElementById('deliveryAddressBox').style.display === 'flex' ? document.getElementById('deliveryAddress').value : '';
+                const orderId = 'ORD' + Date.now().toString().slice(-9);
+                const discount = Number(document.getElementById('discountValue').value) || 0;
+                const grandTotal = Math.max(0, parseAmount(document.getElementById('grandTotal').innerText));
+                const orderType = activeTableNumber === 'Takeaway' ? 'Takeaway' : (activeTableNumber === 'Home Delivery' ? 'Home Delivery' : 'Dine-in');
+                const tableNumber = activeTableNumber.startsWith('Table ') ? activeTableNumber.replace(/^Table\s+/, '') : '';
+                let itemsString = currentBill.map(i => `${i.name} (x${i.qty}) ₹${i.total}`).join(', ');
+                if (discount > 0) itemsString += `, [Discount Applied: -₹${discount}]`;
+                itemsString += `, [Mode: ${selectedPaymentMode}]`;
+                if (address) itemsString += `, [Address: ${address}]`;
 
-            let grandTotal = parseInt(document.getElementById('grandTotal').innerText.replace(/[^0-9]/g, '')) || 0;
+                await d1Post('/orders/checkout', {
+                    order_number: orderId,
+                    table_number: tableNumber || null,
+                    order_type: orderType,
+                    customer_phone: phone,
+                    items: currentBill,
+                    items_string: itemsString,
+                    subtotal: currentBill.reduce((s,i) => s + Number(i.total || 0), 0),
+                    discount,
+                    grand_total: grandTotal,
+                    payment_method: selectedPaymentMode
+                });
 
-            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'checkout', tableName: activeTableNumber, orderId: orderId, phone: phone, itemsString: itemsString, rawItems: currentBill, total: grandTotal, discount: discount }) })
-            .then(res => res.json()).then(data => {
-                delete runningTables[activeTableNumber]; 
-                currentBill.forEach(item => { let foundKey = Object.keys(stockData).find(key => key.trim().toLowerCase() === item.name.trim().toLowerCase()); if(foundKey) stockData[foundKey] -= item.qty; });
-                let now = new Date(); let fDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-                salesHistory.unshift({ date: fDate, isodate: fDate, time: now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), orderid: orderId, items: itemsString, total: grandTotal, table: activeTableNumber });
-                
-                btn.innerText = "Confirm Checkout"; btn.disabled = false; document.getElementById('paymentModal').style.display = 'none'; generateTrends(); goBackToTables();
-            }).catch(err => { btn.innerText = "Confirm Checkout"; btn.disabled = false; });
+                currentBill = [];
+                document.getElementById('paymentModal').style.display = 'none';
+                btn.innerText = 'Confirm Checkout'; btn.disabled = false;
+                await fetchData();
+                goBackToTables();
+            } catch(e) {
+                btn.innerText = 'Confirm Checkout'; btn.disabled = false;
+                showCustomAlert('Checkout failed: ' + e.message);
+            }
         }
 
-        function submitExpense() {
-            let category = document.getElementById('expCategory').value; let amount = document.getElementById('expAmount').value;
-            if (!amount || amount <= 0) { showCustomAlert("Enter valid amount."); return; }
-            let now = new Date(); let fDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-            expenseHistory.push({ date: fDate, isodate: fDate, amount: parseInt(amount) });
-            
-            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'expense', category: category, amount: amount, description: document.getElementById('expDescription').value || "NA" }) })
-            .then(res => res.json()).then(data => { showCustomAlert("Expense Saved!"); document.getElementById('expAmount').value = ""; document.getElementById('expDescription').value = ""; generateTrends(); });
+                async function submitExpense() {
+            const category = document.getElementById('expCategory').value;
+            const amount = Number(document.getElementById('expAmount').value);
+            const description = document.getElementById('expDescription').value || 'NA';
+            if (!Number.isFinite(amount) || amount <= 0) { showCustomAlert('Enter valid amount.'); return; }
+            try {
+                await d1Post('/expenses', { category, amount, description });
+                document.getElementById('expAmount').value = '';
+                document.getElementById('expDescription').value = '';
+                showCustomAlert('Expense Saved!');
+                await fetchData();
+            } catch(e) { showCustomAlert('Expense save failed: ' + e.message); }
         }
 
         function setActiveFilterBtn(id) { document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active')); if(id) document.getElementById(id).classList.add('active'); }
