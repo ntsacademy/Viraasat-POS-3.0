@@ -1,1 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Viraasat POS - Menu Import</title>
 
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f5f2;
+      margin: 0;
+      padding: 30px;
+      color: #222;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      border-radius: 14px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #8b6914;
+    }
+
+    .subtitle {
+      color: #666;
+      margin-bottom: 25px;
+    }
+
+    .upload-box {
+      border: 2px dashed #c9a227;
+      padding: 30px;
+      text-align: center;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      background: #fffdf7;
+    }
+
+    input[type="file"] {
+      margin: 15px 0;
+    }
+
+    button {
+      background: #8b6914;
+      color: white;
+      border: none;
+      padding: 12px 22px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 15px;
+      margin: 5px;
+    }
+
+    button:hover {
+      background: #6f540f;
+    }
+
+    button:disabled {
+      background: #aaa;
+      cursor: not-allowed;
+    }
+
+    .status {
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 8px;
+      display: none;
+    }
+
+    .success {
+      background: #e8f7ed;
+      color: #146c2e;
+    }
+
+    .error {
+      background: #fdeaea;
+      color: #a11a1a;
+    }
+
+    .info {
+      background: #eef5ff;
+      color: #24558a;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background: #f2ead2;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .count {
+      margin-top: 15px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>Viraasat POS — Menu Import</h1>
+
+  <div class="subtitle">
+    Excel / CSV se menu items ko Viraasat POS database me import karein.
+  </div>
+
+  <div class="upload-box">
+
+    <h3>📁 Menu File Select Karein</h3>
+
+    <p>
+      Excel file ko CSV format me save karke upload karein.
+    </p>
+
+    <input
+      type="file"
+      id="fileInput"
+      accept=".csv,.txt"
+    >
+
+    <br>
+
+    <button onclick="readFile()">
+      Preview File
+    </button>
+
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <div id="previewSection" class="hidden">
+
+    <h3>Menu Preview</h3>
+
+    <div id="count" class="count"></div>
+
+    <table id="previewTable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Price</th>
+          <th>GST %</th>
+          <th>Available</th>
+        </tr>
+      </thead>
+
+      <tbody></tbody>
+    </table>
+
+    <br>
+
+    <button id="importBtn" onclick="importMenu()">
+      🚀 Import All Menu Items
+    </button>
+
+  </div>
+
+</div>
+
+<script>
+
+let menuItems = [];
+
+function showStatus(message, type) {
+
+  const status = document.getElementById("status");
+
+  status.innerText = message;
+  status.className = "status " + type;
+  status.style.display = "block";
+}
+
+
+function readFile() {
+
+  const fileInput = document.getElementById("fileInput");
+
+  if (!fileInput.files.length) {
+
+    showStatus(
+      "Please pehle CSV file select karein.",
+      "error"
+    );
+
+    return;
+  }
+
+  const file = fileInput.files[0];
+
+  const reader = new FileReader();
+
+  reader.onload = function(event) {
+
+    try {
+
+      const text = event.target.result;
+
+      const lines = text
+        .split(/\r?\n/)
+        .filter(line => line.trim() !== "");
+
+      if (lines.length < 2) {
+
+        showStatus(
+          "File me data nahi mila.",
+          "error"
+        );
+
+        return;
+      }
+
+      const headers = lines[0]
+        .split(",")
+        .map(h => h.trim().toLowerCase());
+
+      menuItems = [];
+
+      for (let i = 1; i < lines.length; i++) {
+
+        const values = lines[i]
+          .split(",")
+          .map(v => v.trim());
+
+        if (!values.length) continue;
+
+        const row = {};
+
+        headers.forEach((header, index) => {
+          row[header] = values[index] || "";
+        });
+
+        const item = {
+
+          name:
+            row.name ||
+            row.item ||
+            row.item_name ||
+            "",
+
+          category:
+            row.category ||
+            "",
+
+          price:
+            Number(
+              row.price ||
+              row.rate ||
+              0
+            ),
+
+          gst_percent:
+            Number(
+              row.gst_percent ||
+              row.gst ||
+              0
+            ),
+
+          is_available:
+            row.is_available === "0"
+              ? 0
+              : 1
+        };
+
+        if (item.name) {
+          menuItems.push(item);
+        }
+      }
+
+      showPreview();
+
+    } catch (error) {
+
+      showStatus(
+        "File read karte waqt error: " + error.message,
+        "error"
+      );
+
+    }
+
+  };
+
+  reader.readAsText(file);
+}
+
+
+function showPreview() {
+
+  const section =
+    document.getElementById("previewSection");
+
+  const tbody =
+    document.querySelector("#previewTable tbody");
+
+  tbody.innerHTML = "";
+
+  menuItems.forEach(item => {
+
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+      <td>${escapeHtml(item.name)}</td>
+      <td>${escapeHtml(item.category)}</td>
+      <td>₹${item.price}</td>
+      <td>${item.gst_percent}%</td>
+      <td>${item.is_available ? "Yes" : "No"}</td>
+    `;
+
+    tbody.appendChild(tr);
+
+  });
+
+  document.getElementById("count").innerText =
+    "Total items found: " + menuItems.length;
+
+  section.classList.remove("hidden");
+
+  showStatus(
+    menuItems.length +
+    " menu items successfully read. Import karne ke liye button dabayein.",
+    "success"
+  );
+}
+
+
+async function importMenu() {
+
+  if (!menuItems.length) {
+
+    showStatus(
+      "Import karne ke liye koi menu item nahi hai.",
+      "error"
+    );
+
+    return;
+  }
+
+  const button =
+    document.getElementById("importBtn");
+
+  button.disabled = true;
+
+  button.innerText =
+    "⏳ Importing...";
+
+  showStatus(
+    "Menu database me save ho raha hai...",
+    "info"
+  );
+
+  try {
+
+    const response = await fetch(
+      "/api/menu/import",
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+          items: menuItems
+        })
+      }
+    );
+
+    const result =
+      await response.json();
+
+    if (!response.ok || !result.success) {
+
+      throw new Error(
+        result.error ||
+        "Import failed"
+      );
+
+    }
+
+    showStatus(
+      "✅ Menu successfully imported into Viraasat POS database.",
+      "success"
+    );
+
+    button.innerText =
+      "✅ Import Completed";
+
+  } catch (error) {
+
+    console.error(error);
+
+    showStatus(
+      "❌ Import failed: " + error.message,
+      "error"
+    );
+
+    button.disabled = false;
+
+    button.innerText =
+      "🚀 Import All Menu Items";
+  }
+}
+
+
+function escapeHtml(value) {
+
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+</script>
+
+</body>
+</html>
