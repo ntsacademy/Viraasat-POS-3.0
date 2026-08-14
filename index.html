@@ -656,7 +656,7 @@
         // Cloudflare Worker + D1 API. Dashboard data is now read from D1.
         const D1_API_BASE = '/api'; 
         
-const APP_VERSION = "D1-Mobile-3.2"; 
+const APP_VERSION = "D1-Mobile-3.3"; 
         
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
@@ -1071,17 +1071,33 @@ const APP_VERSION = "D1-Mobile-3.2";
             window.open(`https://wa.me/91${sPhone}?text=${encodeURIComponent(slipText)}`, '_blank');
         }
 
-        async function d1Get(path) {
-            const response = await fetch(`${D1_API_BASE}${path}`, {
-                method: 'GET',
-                headers: { 'Accept': 'application/json' },
-                cache: 'no-store'
-            });
-            const data = await response.json().catch(() => ({}));
-            if (!response.ok || data.success === false) {
-                throw new Error(data.error || `D1 API error (${response.status})`);
+        async function d1Get(path, timeoutMs = 8000) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+            try {
+                const response = await fetch(`${D1_API_BASE}${path}`, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' },
+                    cache: 'no-store',
+                    signal: controller.signal
+                });
+
+                const data = await response.json().catch(() => ({}));
+
+                if (!response.ok || data.success === false) {
+                    throw new Error(data.error || `D1 API error (${response.status})`);
+                }
+
+                return data;
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    throw new Error(`D1 request timeout: ${path}`);
+                }
+                throw error;
+            } finally {
+                clearTimeout(timer);
             }
-            return data;
         }
 
         async function d1Post(path, body) {
@@ -1109,7 +1125,7 @@ const APP_VERSION = "D1-Mobile-3.2";
 
             try {
                 // Dashboard + menu + tables + orders + expenses are now loaded from Cloudflare D1.
-                const [dashboard, menu, tables, orders, expenses, staff] = await Promise.all([
+                const results = await Promise.allSettled([
                     d1Get('/dashboard'),
                     d1Get('/menu'),
                     d1Get('/tables'),
@@ -1118,9 +1134,43 @@ const APP_VERSION = "D1-Mobile-3.2";
                     d1Get('/staff')
                 ]);
 
+                const [dashboardResult, menuResult, tablesResult, ordersResult, expensesResult, staffResult] = results;
+
+                const dashboard = dashboardResult.status === 'fulfilled'
+                    ? dashboardResult.value
+                    : { summary: {}, tables: {}, stock: [] };
+
+                const menu = menuResult.status === 'fulfilled'
+                    ? menuResult.value
+                    : { items: [] };
+
+                const tables = tablesResult.status === 'fulfilled'
+                    ? tablesResult.value
+                    : { tables: [] };
+
+                const orders = ordersResult.status === 'fulfilled'
+                    ? ordersResult.value
+                    : { orders: [] };
+
+                const expenses = expensesResult.status === 'fulfilled'
+                    ? expensesResult.value
+                    : { expenses: [] };
+
+                const staff = staffResult.status === 'fulfilled'
+                    ? staffResult.value
+                    : { staff: [] };
+
                 menuData = menu.items || [];
                 expenseHistory = expenses.expenses || [];
                 staffData = staff.staff || [];
+
+                const failedEndpoints = results
+                    .map((r, i) => r.status === 'rejected' ? ['/dashboard','/menu','/tables','/orders','/expenses','/staff'][i] : null)
+                    .filter(Boolean);
+
+                if (failedEndpoints.length) {
+                    console.warn('D1 endpoints unavailable:', failedEndpoints);
+                }
 
                 // Convert D1 orders into the field names used by the existing mobile UI.
                 salesHistory = (orders.orders || []).map(order => ({
