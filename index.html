@@ -15,6 +15,7 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <style>
@@ -397,24 +398,22 @@
                     <button class="premium-tab" onclick="showPremiumTab('sales',this)">Sales</button>
                     <button class="premium-tab" onclick="showPremiumTab('items',this)">Item Sales</button>
                     <button class="premium-tab" onclick="showPremiumTab('inventory',this)">Inventory</button>
-                    <button class="premium-tab" onclick="showPremiumTab('tables',this)">Tables</button>
-                    <button class="premium-tab" onclick="showPremiumTab('staff',this)">Staff</button>
+                                        <button class="premium-tab" onclick="showPremiumTab('staff',this)">Staff</button>
                     <button class="premium-tab" onclick="showPremiumTab('menu',this)">Menu</button>
                     <button class="premium-tab" onclick="showPremiumTab('expenses',this)">Expenses</button>
                     <button class="premium-tab" onclick="showPremiumTab('reports',this)">Reports</button>
-                    <button class="premium-tab" onclick="showPremiumTab('settings',this)">Settings</button>
+                    <button class="premium-tab" onclick="showPremiumTab('admin',this)">Admin</button>
                 </div>
 
                 <section id="premiumPanel-overview" class="premium-panel active"></section>
                 <section id="premiumPanel-sales" class="premium-panel"></section>
                 <section id="premiumPanel-items" class="premium-panel"></section>
                 <section id="premiumPanel-inventory" class="premium-panel"></section>
-                <section id="premiumPanel-tables" class="premium-panel"></section>
-                <section id="premiumPanel-staff" class="premium-panel"></section>
+                                <section id="premiumPanel-staff" class="premium-panel"></section>
                 <section id="premiumPanel-menu" class="premium-panel"></section>
                 <section id="premiumPanel-expenses" class="premium-panel"></section>
                 <section id="premiumPanel-reports" class="premium-panel"></section>
-                <section id="premiumPanel-settings" class="premium-panel"></section>
+                <section id="premiumPanel-admin" class="premium-panel"></section>
             </div>
         </div>
 
@@ -1671,11 +1670,172 @@ const APP_VERSION = "D1-Hybrid-4.1";
 
         function renderPremiumSettings(){
             const panel=document.getElementById('premiumPanel-settings');if(!panel)return;
-            panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>System & Data</h3><span>Viraasat Premium POS</span></div>
-            <div class="premium-grid-3"><div class="report-stat"><div class="rlabel">Sales Source</div><div class="rvalue" style="font-size:.9rem">Google Sheet + D1</div></div><div class="report-stat"><div class="rlabel">Orders Loaded</div><div class="rvalue">${salesHistory.length}</div></div><div class="report-stat"><div class="rlabel">Menu Items</div><div class="rvalue">${menuData.length}</div></div></div>
-            <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"><button class="premium-btn" onclick="fetchData()">↻ Refresh All Data</button><button class="premium-btn alt" onclick="exportAllData()">Export All Data</button><button class="premium-btn light" onclick="downloadMenuSample()">Download Menu Sample</button></div>
-            <div class="premium-card" style="margin-top:16px;background:#FFFCFA"><b style="font-size:.82rem">Data rule</b><p style="font-size:.72rem;color:var(--text-muted);margin-top:6px;line-height:1.5">Historical sales from the Google Sheet are kept authoritative. D1 fills only records that are not already present, preventing duplicate or incorrect sales totals.</p></div></div>`;
+            panel.innerHTML=`<div class="premium-card">
+                <div class="premium-card-head"><h3>System & Data Center</h3><span>Viraasat Premium POS</span></div>
+                <div class="premium-grid-3">
+                    <div class="report-stat"><div class="rlabel">Live Database</div><div class="rvalue" style="font-size:.9rem">Cloudflare D1</div></div>
+                    <div class="report-stat"><div class="rlabel">Orders Loaded</div><div class="rvalue">${salesHistory.length}</div></div>
+                    <div class="report-stat"><div class="rlabel">Menu Items</div><div class="rvalue">${menuData.length}</div></div>
+                </div>
+
+                <div class="premium-card" style="margin-top:16px;background:#FFF8FB;border:1px solid rgba(255,95,142,.18)">
+                    <div class="premium-card-head"><h3>🚀 One-Time Full Database Import</h3><span>Recommended</span></div>
+                    <p style="font-size:.78rem;color:var(--text-muted);line-height:1.55;margin:0 0 14px">
+                        Download the Excel template, fill the <b>Sales</b>, <b>Menu</b>, <b>Staff</b>, <b>Stock</b> and <b>Expenses</b> sheets, then upload the single workbook. Existing orders are matched by Order ID, so the same file can be uploaded again without creating duplicate orders.
+                    </p>
+                    <div class="premium-toolbar">
+                        <button class="premium-btn" onclick="downloadFullImportSample()">⬇ Download Full Sample</button>
+                        <label class="premium-btn alt" style="display:flex;align-items:center;cursor:pointer">📤 Upload Full Excel
+                            <input type="file" id="fullImportInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFullDatabaseImport(this.files[0])">
+                        </label>
+                        <button class="premium-btn light" onclick="exportFullDatabaseWorkbook()">⬆ Export Current Data</button>
+                    </div>
+                    <div id="fullImportStatus" style="margin-top:12px;font-size:.75rem;color:var(--text-muted)">No import running.</div>
+                </div>
+
+                <div class="premium-card" style="margin-top:16px;background:#FFFCFA">
+                    <div class="premium-card-head"><h3>Quick Controls</h3><span>Safe operations</span></div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        <button class="premium-btn" onclick="fetchData()">↻ Refresh All Data</button>
+                        <button class="premium-btn alt" onclick="exportAllData()">Export CSV Reports</button>
+                        <button class="premium-btn light" onclick="downloadMenuSample()">Download Menu Sample</button>
+                    </div>
+                </div>
+
+                <div class="premium-card" style="margin-top:16px;background:#FFFDF8">
+                    <b style="font-size:.82rem">How this works</b>
+                    <ol style="font-size:.72rem;color:var(--text-muted);line-height:1.65;margin:8px 0 0 18px;padding:0">
+                        <li>Export your current Google Sheet as Excel.</li>
+                        <li>Put the data into the matching sheets/columns of the template.</li>
+                        <li>Upload one Excel file here.</li>
+                        <li>Worker imports it into D1 and skips duplicate Order IDs.</li>
+                        <li>After verification, Google Sheet can be removed from live POS completely.</li>
+                    </ol>
+                </div>
+            </div>`;
         }
+
+        function normalizeWorkbookDate(value){
+            if(value instanceof Date && !isNaN(value.getTime())){
+                return `${value.getFullYear()}-${String(value.getMonth()+1).padStart(2,'0')}-${String(value.getDate()).padStart(2,'0')}`;
+            }
+            const s=String(value??'').trim();
+            if(!s)return '';
+            if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+            const d=new Date(s);
+            if(!isNaN(d.getTime()))return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            return s;
+        }
+
+        function normalizeWorkbookTime(value){
+            if(value instanceof Date && !isNaN(value.getTime())){
+                return value.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
+            }
+            if(typeof value==='number' && value>=0 && value<1){
+                const total=Math.round(value*24*60);let h=Math.floor(total/60)%24;const m=total%60;const ap=h>=12?'PM':'AM';let hh=h%12||12;return `${hh}:${String(m).padStart(2,'0')} ${ap}`;
+            }
+            return String(value??'').trim();
+        }
+
+        function workbookRows(wb,sheetName){
+            const ws=wb.Sheets[sheetName];
+            return ws?XLSX.utils.sheet_to_json(ws,{defval:'',raw:true}):[];
+        }
+
+        function normalizeImportSales(rows){
+            return rows.map(r=>({
+                date:normalizeWorkbookDate(r.Date??r.date),
+                time:normalizeWorkbookTime(r.Time??r.time),
+                order_id:String(r.Order_ID??r.order_id??r.Order_Number??r.order_number??'').trim(),
+                phone:String(r.Phone??r.phone??r.Customer_Phone??r.customer_phone??'NA').trim()||'NA',
+                items:String(r.Items??r.items??r.Items_String??r.items_string??''),
+                total_amount:parseAmount(r.Total_Amount??r.total_amount??r.Total??r.total),
+                table_number:String(r.Table_Number??r.table_number??r.Table??r.table??'').trim(),
+                discount:parseAmount(r.Discount??r.discount),
+                payment_method:String(r.Payment_Mode??r.payment_method??r.Mode??r.mode??'').trim()
+            })).filter(r=>r.order_id);
+        }
+
+        async function handleFullDatabaseImport(file){
+            if(!file)return;
+            if(typeof XLSX==='undefined'){showCustomAlert('Excel engine is not loaded. Refresh the POS and try again.');return;}
+            const status=document.getElementById('fullImportStatus');
+            if(status)status.innerHTML='Reading workbook...';
+            try{
+                const buf=await file.arrayBuffer();
+                const wb=XLSX.read(buf,{type:'array',cellDates:true});
+                const salesRows=workbookRows(wb,'Sales');
+                const menuRows=workbookRows(wb,'Menu');
+                const staffRows=workbookRows(wb,'Staff');
+                const stockRows=workbookRows(wb,'Stock');
+                const expenseRows=workbookRows(wb,'Expenses');
+
+                // A single CSV is also accepted as Sales-only import.
+                if(!salesRows.length && wb.SheetNames.length===1){
+                    const first=wb.SheetNames[0];
+                    const rows=workbookRows(wb,first);
+                    salesRows.push(...rows);
+                }
+
+                const payload={
+                    sales:normalizeImportSales(salesRows),
+                    menu:menuRows,
+                    staff:staffRows,
+                    stock:stockRows,
+                    expenses:expenseRows
+                };
+
+                const counts=`Sales ${payload.sales.length} • Menu ${payload.menu.length} • Staff ${payload.staff.length} • Stock ${payload.stock.length} • Expenses ${payload.expenses.length}`;
+                if(status)status.innerHTML=`Uploading: ${counts}`;
+
+                const response=await fetch(`${D1_API_BASE}/import/full`,{
+                    method:'POST',
+                    headers:{'Content-Type':'application/json','Accept':'application/json'},
+                    body:JSON.stringify(payload)
+                });
+                const data=await response.json().catch(()=>({}));
+                if(!response.ok || data.success===false)throw new Error(data.error||`Import failed (${response.status})`);
+
+                if(status)status.innerHTML=`<b style="color:#10B981">Import complete.</b> Sales inserted ${data.sales?.inserted||0}, duplicates skipped ${data.sales?.skipped||0}, item rows ${data.sales?.itemsInserted||0}. Menu ${data.menu?.upserted||0}, Staff ${data.staff?.upserted||0}, Stock ${data.stock?.upserted||0}, Expenses ${data.expenses?.inserted||0}.`;
+                await fetchData();
+                showCustomAlert('Full database import completed successfully.');
+            }catch(e){
+                console.error('Full import error',e);
+                if(status)status.innerHTML=`<span style="color:var(--danger)">Import failed: ${esc(e.message||e)}</span>`;
+                showCustomAlert(`Import failed: ${e.message||e}`);
+            }
+        }
+
+        function downloadFullImportSample(){
+            if(typeof XLSX==='undefined'){showCustomAlert('Excel engine is not loaded. Refresh the POS and try again.');return;}
+            const wb=XLSX.utils.book_new();
+            const sales=[
+                {Date:'2026-08-14',Time:'1:20 PM',Order_ID:'ORD-EXAMPLE-001',Phone:'NA',Items:'Tea (x2) ₹40, Classic Mild (x1) ₹30, [Mode: UPI]',Total_Amount:70,Table_Number:'Table 1',Discount:0,Payment_Mode:'UPI'}
+            ];
+            const menu=[{Name:'Paneer Butter Masala',Category:'Main Course',Price:170,Active:'Yes',GST:0}];
+            const staff=[{Emp_ID:'EMP001',Name:'Sample Staff',Role:'Waiter',Mobile:'9999999999',Monthly_Salary:15000,Date_of_Joining:'2026-08-01',Status:'Active'}];
+            const stock=[{Name:'Water Bottle',Quantity:50,Unit:'pcs',Low_Stock_Level:5}];
+            const expenses=[{Date:'2026-08-14',Category:'Electricity',Description:'Sample expense',Amount:1000}];
+            [
+                ['Sales',sales],['Menu',menu],['Staff',staff],['Stock',stock],['Expenses',expenses]
+            ].forEach(([name,rows])=>XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),name));
+            XLSX.writeFile(wb,'Viraasat-Full-Database-Import-Sample.xlsx');
+        }
+
+        function exportFullDatabaseWorkbook(){
+            if(typeof XLSX==='undefined'){showCustomAlert('Excel engine is not loaded. Refresh the POS and try again.');return;}
+            const wb=XLSX.utils.book_new();
+            const sales=getFilteredPremiumSales().map(s=>({
+                Date:saleDateKey(s),Time:saleTimeText(s),Order_ID:getVal(s,['orderid','id']),Phone:getVal(s,['phone','customerphone'])||'NA',Items:getVal(s,['items','itemsstring']),Total_Amount:parseAmount(getVal(s,['totalamount','total','amount'])),Table_Number:getVal(s,['tablenumber','table','tablename']),Discount:parseAmount(getVal(s,['discount'])),Payment_Mode:getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items','itemsstring']))
+            }));
+            const menu=menuData.map(m=>({Name:getVal(m,['itemname','name']),Category:getVal(m,['category','cat']),Price:parseAmount(getVal(m,['price'])),Active:getVal(m,['active','status'])||'Yes',Stock:stockData[getVal(m,['itemname','name'])]??''}));
+            const staff=staffData.map(s=>({Emp_ID:getVal(s,['empid','employeeid']),Name:getVal(s,['name']),Role:getVal(s,['role']),Mobile:getVal(s,['mobile','phone']),Monthly_Salary:parseAmount(getVal(s,['monthlysalary','salary'])),Date_of_Joining:getVal(s,['dateofjoining','joindate','date','doj']),Status:getStaffStatus(s)}));
+            const stock=Object.entries(stockData).map(([Name,Quantity])=>({Name,Quantity,Unit:'pcs',Low_Stock_Level:5}));
+            const expenses=expenseHistory.map(e=>({Date:getVal(e,['date','isodate']),Category:getVal(e,['category']),Description:getVal(e,['description','note']),Amount:parseAmount(getVal(e,['amount','total']))}));
+            [['Sales',sales],['Menu',menu],['Staff',staff],['Stock',stock],['Expenses',expenses]].forEach(([name,rows])=>XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),name));
+            XLSX.writeFile(wb,'Viraasat-Full-Database-Export.xlsx');
+        }
+
         function exportAllData(){exportPremiumSales();setTimeout(()=>exportItemSales(),250);setTimeout(()=>exportMenu(),500);setTimeout(()=>exportStaff(),750);setTimeout(()=>exportExpenses(),1000);}
 
         function downloadCSV(rows,filename){
