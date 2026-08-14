@@ -15,6 +15,7 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 
     <style>
         :root {
@@ -443,6 +444,22 @@
         <!-- ADMIN (USERS + HR) VIEW -->
         <div id="usersManager" class="tab-content" style="padding-top: 10px;">
             
+            <!-- FULL DATABASE IMPORT CARD -->
+            <div class="card" style="border-color: #D03B3B; background: #FFFDF8;">
+                <div class="section-header" style="margin-top:0;"><h4>🚀 Full Database Import</h4></div>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px; line-height: 1.5;">
+                    Apni current <b>Viraasat_DB.xlsx</b> (Excel) file yahan select karein aur upload karein. Saara data D1 me auto-map ho jayega.
+                </p>
+                <div class="premium-toolbar" style="display: flex; gap: 8px; margin-bottom: 12px;">
+                    <button class="btn btn-outline" style="height:42px; font-size:0.8rem;" onclick="downloadFullImportSample()">⬇ Download Sample Format</button>
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <input type="file" id="fullImportInput" accept=".xlsx,.xls" style="padding: 10px; border: 1px dashed var(--border); width: 100%; height: auto; cursor: pointer; background: #FFF;">
+                    <button class="btn" style="background:#D03B3B; margin-top: 12px;" onclick="runFullImport()" id="btnFullImport">📤 Upload & Import Data</button>
+                    <div id="importStatusText" style="margin-top: 10px; font-size: 0.85rem; font-weight: 600; text-align: center; color: var(--text-muted);">No import running.</div>
+                </div>
+            </div>
+
             <div class="card" style="border-color:#10B981;">
                 <div class="section-header" style="margin-top:0;"><h4>Staff Payroll & Advance</h4></div>
                 <div class="form-group" style="margin-bottom:0;">
@@ -1574,6 +1591,73 @@
             window.open(waLink, '_blank');
         }
 
+        // FULL IMPORT FUNCTION (Auto-mapped for Viraasat_DB.xlsx)
+        function downloadFullImportSample() {
+            if(typeof XLSX === 'undefined') { showCustomAlert("Excel system is loading..."); return; }
+            const wb = XLSX.utils.book_new();
+            const sales = [{Date:'2026-08-14', Time:'1:20 PM', Order_ID:'ORD-EXAMPLE-001', Phone:'NA', Items:'Tea (x2) ₹40, Classic Mild (x1) ₹30, [Mode: UPI]', Total_Amount:70, Table_Number:'Table 1', Discount:0, Payment_Mode:'UPI'}];
+            const menu = [{Item_Name:'Paneer Butter Masala', Category:'Main Course', Price:170}];
+            const staff = [{Name:'Sample Staff', Mobile:'9999999999', Role:'Waiter', 'Monthly Salary':15000, 'Join Date':'2026-08-01'}];
+            const stock = [{Item_Name:'Water Bottle', Current_Stock:50}];
+            const expenses = [{Date:'2026-08-14', Category:'Electricity', Description:'Sample expense', Amount:1000}];
+            [['Sales',sales],['Menu',menu],['Staff',staff],['Stock',stock],['Expenses',expenses]].forEach(([name,rows])=>XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),name));
+            XLSX.writeFile(wb,'Viraasat_Sample_Import.xlsx');
+        }
+
+        async function runFullImport() {
+            let fileInput = document.getElementById('fullImportInput');
+            let statusText = document.getElementById('importStatusText');
+            let btn = document.getElementById('btnFullImport');
+
+            if (!fileInput.files.length) { showCustomAlert("Please select an Excel file first."); return; }
+            if (typeof XLSX === 'undefined') { showCustomAlert("Excel system is loading. Please try again."); return; }
+
+            btn.innerText = "⏳ Reading File..."; btn.disabled = true;
+            statusText.innerText = "File format check ho rahi hai..."; statusText.style.color = "var(--text-dark)";
+
+            try {
+                let file = fileInput.files[0];
+                let data = await file.arrayBuffer();
+                let wb = XLSX.read(data, { type: 'array' }); // Do NOT use cellDates:true to keep dates as strings
+
+                let getSheetData = (sheetName) => wb.Sheets[sheetName] ? XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: '', raw: false }) : [];
+
+                let salesRows = getSheetData('Sales');
+                if(!salesRows.length && wb.SheetNames.length === 1) salesRows = getSheetData(wb.SheetNames[0]);
+
+                let rawMenu = getSheetData('Menu');
+                let mappedMenu = rawMenu.map(m => ({ Name: m.Item_Name || m.Name || "", Category: m.Category || "", Price: m.Price || 0, Active: 1 }));
+
+                let rawStock = getSheetData('Stock');
+                let mappedStock = rawStock.map(s => ({ Name: s.Item_Name || s.Name || "", Quantity: s.Current_Stock || s.Quantity || 0 }));
+
+                let rawStaff = getSheetData('Staff');
+                let mappedStaff = rawStaff.map(s => ({ Name: s.Name || "", Mobile: s.Mobile || "", Role: s.Role || "", Monthly_Salary: s['Monthly Salary'] || s.Monthly_Salary || 0, Date_of_Joining: s['Join Date'] || s.Date_of_Joining || "" }));
+
+                let payload = {
+                    sales: salesRows,
+                    menu: mappedMenu,
+                    staff: mappedStaff,
+                    stock: mappedStock,
+                    expenses: getSheetData('Expenses')
+                };
+
+                statusText.innerText = `🚀 Uploading ${payload.sales.length} Orders to Database...`;
+
+                let res = await fetch(`${API_BASE}/import/full`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                let resultData = await res.json();
+
+                if (resultData.success) {
+                    statusText.innerText = "✅ Import Successful! Dashboard refresh ho raha hai...";
+                    statusText.style.color = "var(--success)";
+                    setTimeout(() => { window.location.reload(true); }, 2000);
+                } else { throw new Error(resultData.error || "Import me error aayi hai."); }
+            } catch (error) {
+                console.error(error); statusText.innerText = "❌ Error: " + error.message; statusText.style.color = "var(--danger)";
+            } finally {
+                btn.innerText = "📤 Upload & Import Data"; btn.disabled = false;
+            }
+        }
     </script>
 </body>
 </html>
