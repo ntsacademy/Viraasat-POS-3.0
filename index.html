@@ -22,10 +22,10 @@
             --surface: #FFFFFF;        
             --border: #E5E7EB;         
             
-            --primary: #111827;        
+            --primary: #111827; /* Premium Black */
             --primary-light: #F3F4F6;  
             --accent-gold: #B48E5D;
-            --zepto-pink: #E21B70; 
+            --zepto-pink: #E21B70; /* Zepto Active Color */
             
             --text-dark: #111827;      
             --text-muted: #6B7280;     
@@ -33,12 +33,12 @@
             --danger: #EF4444;
             --success: #10B981;
             
-            /* Zepto Pastel Card Colors (From Screenshots) */
+            /* Zepto Pastel Card Colors */
             --z-card-purple: #F3EDF7;
             --z-card-peach: #FEF2E8;
             --z-card-mint: #E6F4EA;
             --z-card-blue: #E8F0FE;
-            --z-card-red: #FEE2E2;
+            --z-card-grey: #F8F9FA;
             
             --shadow-card: 0 4px 16px rgba(17, 24, 39, 0.05); 
             --border-radius: 16px;      
@@ -58,7 +58,7 @@
             max-width: 600px; margin: 0 auto; position: relative;
         } 
 
-        /* CSS Graphic Logo Styling */
+        /* Typography Graphic Logo Styling (No Image) */
         .logo-graphic { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 800; color: var(--primary); position: relative; display: inline-block; line-height: 1; letter-spacing: 0.5px;}
         .logo-graphic::after { content: '™'; font-size: 0.6rem; position: absolute; top: 0; right: -12px; color: var(--accent-gold); font-family: 'Inter', sans-serif;}
         .logo-accent { display: block; width: 36px; height: 3px; background: var(--accent-gold); margin: 4px 0 0 2px; border-radius: 2px; }
@@ -92,10 +92,10 @@
 
         /* Zepto Style Table Cards */
         .table-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
-        .table-card { background: var(--surface); border-radius: var(--border-radius); padding: 20px 14px; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: var(--shadow-card); cursor: pointer; transition: 0.15s; border: 1.5px solid transparent;}
+        .table-card { background: var(--surface); border-radius: var(--border-radius); padding: 20px 14px; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: var(--shadow-card); cursor: pointer; transition: 0.15s; border: 1px solid var(--border);}
         .table-card:active { transform: scale(0.96); }
         .table-card.occupied { background: var(--z-card-peach); border-color: #FCD3A8; }
-        .table-card.available { background: var(--surface); border-color: var(--border); }
+        .table-card.available { background: var(--z-card-mint); border-color: #C6E7D2; }
         .tc-name { font-size: 1.15rem; font-weight: 800; color: var(--text-dark); margin-bottom: 6px; letter-spacing: -0.3px;}
         .tc-status { font-size: 0.65rem; font-weight: 800; padding: 6px 14px; border-radius: 20px; letter-spacing: 0.5px; text-transform: uppercase; background: #FFF; box-shadow: 0 2px 6px rgba(0,0,0,0.05);}
         .table-card.occupied .tc-status { color: #EA580C; }
@@ -129,9 +129,9 @@
         .btn-outline:active { background: var(--primary-light); }
         .btn-danger { background: var(--occ-bg); color: var(--danger); border: none; }
 
-        /* Zepto Order Cards */
+        /* Zepto Order Cards with Highlighted Amount/Date */
         .order-card { padding: 18px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); margin-bottom: 16px; cursor: pointer; transition: 0.1s; box-shadow: var(--shadow-card);}
-        .order-card:active { transform: scale(0.98); background: var(--primary-light); }
+        .order-card:active { transform: scale(0.98); background: var(--z-card-grey); }
         .oc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 1px dashed var(--border); padding-bottom: 12px;}
         .oc-title { font-weight: 800; font-size: 1.1rem; color: var(--text-dark); }
         .oc-date-pill { background: var(--primary-light); color: var(--text-dark); padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px;}
@@ -149,7 +149,6 @@
         .swipe-filters::-webkit-scrollbar { display: none; }
         .filter-chip { flex: 0 0 auto; height: 38px; padding: 0 20px; font-size: 0.85rem; border-radius: 19px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dark); font-weight: 700; display: flex; align-items: center; transition: 0.2s; cursor: pointer;}
         .filter-chip.active { background: var(--primary); color: #FFF; border-color: var(--primary); }
-        .filter-chip.active-red { color: var(--danger); border-color: var(--danger); }
 
         /* Progress Bar */
         .progress-container { width: 100%; height: 10px; background: var(--primary-light); border-radius: 5px; overflow: hidden; display: flex; margin-top: 12px; }
@@ -161,7 +160,7 @@
         .sheet-handle { width: 40px; height: 5px; background: #E5E7EB; border-radius: 3px; margin: 0 auto 24px auto; }
         
         #loader { position: fixed; inset: 0; background: rgba(253,252,248,0.95); z-index: 99999; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 16px; color: var(--primary); font-weight: 700; font-size: 1rem; backdrop-filter: blur(4px); }
-        .spinner { width: 36px; height: 36px; border: 4px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+        .spinner { width: 36px; height: 36px; border: 4px solid var(--border); border-top-color: var(--zepto-pink); border-radius: 50%; animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
 
         #splashScreen { position: fixed; inset: 0; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.4s ease; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -333,7 +332,7 @@
             <button class="btn btn-outline" onclick="showAddTableModal()" style="margin: 24px 0; height: 56px;">+ Deploy New Table</button>
         </div>
 
-        <!-- TAB 2: REGISTRY (LIVE SALES) -->
+        <!-- TAB 2: LIVE SALE -->
         <div id="salesDashboard" class="tab-content">
             <div class="card" style="padding: 24px; margin-top: 16px;">
                 <div class="input-row" style="margin-bottom: 16px;">
@@ -390,6 +389,23 @@
                 <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px;">Ranked by units sold based on current timeframe.</p>
                 <div id="itemAnalyticsList" style="display:flex; flex-direction:column; gap:12px;"></div>
             </div>
+
+            <!-- SLOW MOVERS -->
+            <div class="card" style="border-color: var(--border); background: var(--bg-color);">
+                <div class="section-header" style="margin-top:0;"><h4>Zero Traction Items</h4></div>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px;">Items not sold in the current period.</p>
+                <div id="slowMoversList" style="display:flex; flex-wrap: wrap; gap:8px;"></div>
+            </div>
+            
+            <div class="card">
+                <div class="section-header" style="margin-top:0;"><h4>Revenue Trend</h4></div>
+                <div class="chart-filters" style="display:flex; gap:8px; margin-bottom:16px;">
+                    <button class="filter-chip active" id="btnChartDOD" onclick="renderPNLChart('daily')">Daily</button>
+                    <button class="filter-chip" id="btnChartWeekly" onclick="renderPNLChart('weekly')">Weekly</button>
+                    <button class="filter-chip" id="btnChartMonthly" onclick="renderPNLChart('monthly')">Monthly</button>
+                </div>
+                <div class="chart-wrapper" style="height:260px; position:relative;"><canvas id="trendChart"></canvas></div>
+            </div>
         </div>
 
         <!-- TAB 4: EXPENDITURE (EXPENSES) -->
@@ -437,20 +453,19 @@
                 <h2 style="font-size: 1.6rem;">Admin Console</h2>
             </div>
 
-            <!-- SYSTEM RESTORATION -->
+            <!-- CANCELLATION / AUDIT LOGS (NEW) -->
+            <div class="card" id="adminAuditCard" style="border-color: var(--danger); background: #FEF2F2; display: none;">
+                <div class="section-header" style="margin-top:0;"><h4>⚠️ Cancellation / Audit Logs</h4></div>
+                <p style="font-size: 0.8rem; color: var(--danger); margin-bottom: 16px; font-weight:600;">Track orders requested for deletion or already deleted.</p>
+                <div id="adminApprovalsList" style="display:flex; flex-direction:column; gap:12px;"></div>
+            </div>
+
             <div class="card" style="border-color:#10B981;">
                 <div class="section-header" style="margin-top:0;"><h4>System Restoration</h4></div>
                 <div class="form-group" style="margin-bottom:0;">
                     <input type="file" id="fullImportInput" accept=".xlsx,.xls,.csv" style="padding:12px; border:1px dashed var(--border); background:#FFF; cursor:pointer;">
                     <button class="btn" style="margin-top:12px; background:#10B981;" onclick="runFullImport()">Execute Master Import</button>
                 </div>
-            </div>
-
-            <!-- CANCELLATION / AUDIT LOGS (NEW) -->
-            <div class="card" id="adminAuditCard" style="border-color: var(--danger); background: #FEF2F2;">
-                <div class="section-header" style="margin-top:0;"><h4>⚠️ Cancellation / Audit Logs</h4></div>
-                <p style="font-size: 0.8rem; color: var(--danger); margin-bottom: 16px; font-weight:600;">Track orders requested for deletion or already deleted.</p>
-                <div id="adminApprovalsList" style="display:flex; flex-direction:column; gap:12px;"></div>
             </div>
 
             <div class="section-header" style="margin-top:32px;"><h4>Personnel Directory</h4></div>
@@ -535,7 +550,7 @@
         </button>
         <button class="nav-item" id="navOrders" onclick="switchMainTab('salesDashboard', this)">
             <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-            <span>Registry</span>
+            <span>Live sale</span>
         </button>
         <button class="nav-item" id="navAnalytics" onclick="switchMainTab('trendView', this)">
             <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
@@ -549,19 +564,20 @@
             <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
             <span>Admin</span>
         </button>
+        <button class="nav-item" onclick="haptic(); logoutUser();">
+            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            <span>Logout</span>
+        </button>
     </nav>
 
     <div id="printSection"></div>
 
     <script>
-        // ==========================================
-        // SYSTEM CONFIGURATION
-        // ==========================================
-        const API_BASE = '/api'; 
-        const APP_VERSION = "Enterprise Cloud D1 Final"; 
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbyKuVmEYRbJaYkdUDVNcU9c6mDT4q-VMTESwrikIZvJwK6PteEVwMObdmTMcgqR12KIPA/exec'; 
+        const APP_VERSION = "Enterprise V6.0 Stable"; 
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
-        let menuData = []; let stockData = {}; let runningTables = {}; 
+        let menuData = []; let runningTables = {}; 
         let salesHistory = []; let expenseHistory = []; let currentBill = []; let staffData = [];
         let activeTableNumber = ""; let trendChartInstance = null; let donutChartInstance = null; let selectedPaymentMode = "Cash";
         let rawChartSalesData = {}; let rawChartExpenseData = {};
@@ -621,17 +637,14 @@
             let parsed = parseFloat(str); return isNaN(parsed) ? 0 : Math.round(parsed);
         }
 
-        // SMART ITEM PARSER (Fixes missing items issue perfectly for D1 & Old Formats)
+        // SMART ITEM PARSER (Fixes missing items for Google Sheet JSON/Text format)
         function getSaleItemsText(sale) {
-            let text = sale.itemsstring || sale.items_string || '';
-            if (!text && sale.items) {
-                try {
-                    let arr = typeof sale.items === 'string' ? JSON.parse(sale.items) : sale.items;
-                    if(Array.isArray(arr)) return arr.map(i => `${i.name} (x${i.qty}) ₹${i.total}`).join(", ");
-                } catch(e) {}
-                text = sale.items;
-            }
-            return text || '';
+            let text = sale.itemsstring || sale.items_string || sale.items || '';
+            try {
+                let arr = JSON.parse(text);
+                if(Array.isArray(arr)) return arr.map(i => `${i.name} (x${i.qty}) ₹${i.total}`).join(", ");
+            } catch(e) {}
+            return text;
         }
 
         // ==========================================
@@ -722,18 +735,15 @@
             if(!mobile || !pass) { err.innerText = "Credentials required."; return; }
             btn.innerText = "Verifying..."; btn.disabled = true;
 
-            setTimeout(() => {
-                let isValid = false;
-                if(ADMIN_NUMBERS.includes(mobile) || pass === 'admin') isValid = true; 
-                else if(userPermissions[mobile] && userPermissions[mobile].password === pass) isValid = true;
-
-                if(isValid) { 
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'login', mobile: mobile, password: pass }) })
+            .then(res => res.json()).then(data => {
+                if(data.success) { 
                     localStorage.setItem('viraasat_user', mobile); localStorage.setItem('viraasat_pass', pass); 
                     window.location.reload(true); 
                 } else { 
-                    btn.innerText = "Authenticate"; btn.disabled = false; showCustomAlert("Authorization Failed!"); 
+                    btn.innerText = "Authenticate"; btn.disabled = false; showCustomAlert(data.message || "Invalid Credentials!"); 
                 }
-            }, 600); 
+            }).catch(e => { btn.innerText = "Authenticate"; btn.disabled = false; showCustomAlert("Network Error. Please try again."); }); 
         }
 
         function applyAdminRights(mobile) {
@@ -755,40 +765,31 @@
         }
 
         // ==========================================
-        // DATA FETCHING (CLOUDFLARE D1)
+        // DATA FETCHING (Google Apps Script)
         // ==========================================
         async function fetchData() {
             document.getElementById('loader').style.display = 'flex';
             try {
-                const [menuRes, stockRes, tablesRes, ordersRes, expRes] = await Promise.all([
-                    fetch(`${API_BASE}/menu`).then(r => r.json()),
-                    fetch(`${API_BASE}/stock`).then(r => r.json()),
-                    fetch(`${API_BASE}/tables`).then(r => r.json()),
-                    fetch(`${API_BASE}/orders?limit=500`).then(r => r.json()),
-                    fetch(`${API_BASE}/expenses`).then(r => r.json())
-                ]);
+                const response = await fetch(scriptURL);
+                const data = await response.json();
 
-                menuData = menuRes.items || [];
-                stockData = {}; (stockRes.stock || []).forEach(s => { stockData[s.name] = s.quantity; });
-                runningTables = {}; (tablesRes.tables || []).forEach(t => { if (t.status === 'occupied') { runningTables[`Table ${t.table_number}`] = []; } });
+                menuData = data.menu || [];
+                runningTables = data.runningTables || {};
+                staffData = data.staff || [];
+                expenseHistory = data.expenses || [];
 
-                salesHistory = (ordersRes.orders || []).filter(o => o.order_status !== 'deleted').map(o => {
-                    let d = new Date(o.created_at);
+                salesHistory = (data.sales || []).reverse().map(o => {
+                    let d = new Date(o.date || o.isodate || new Date());
                     return {
-                        id: o.id, orderid: o.order_number, table: o.table_number ? `Table ${o.table_number}` : o.order_type,
+                        id: o.orderid || o.id, orderid: o.orderid || o.id, table: o.table || o.tablename || o.tablenumber,
                         date: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,
-                        isodate: o.created_at, time: d.toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit', hour12: true}),
-                        totalamount: o.grand_total, total: o.grand_total, amount: o.grand_total,
-                        items: o.items, itemsstring: o.items_string, discount: o.discount, payment_method: o.payment_method, status: o.order_status
+                        isodate: o.date || o.isodate, time: o.time || d.toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit', hour12: true}),
+                        totalamount: o.amount || o.total || o.totalamount, total: o.amount || o.total || o.totalamount,
+                        itemsstring: o.items || o.itemsstring || o.items_string, discount: o.discount, payment_method: o.payment_method, status: o.status || o.order_status
                     };
                 });
 
-                expenseHistory = (expRes.expenses || []).map(e => ({
-                    id: e.id, date: e.expense_date || e.created_at, isodate: e.expense_date || e.created_at,
-                    category: e.category, amount: e.amount, description: e.description, image: e.receipt_image
-                }));
-
-                renderTableGrid(); renderLiveSales(); generateOverview(); renderExpensesList();
+                renderTableGrid(); renderLiveSales(); generateOverview(); renderExpensesList(); renderEmployeeList();
                 if(window.isUserAdmin) fetchApprovals();
                 
                 hideSplashScreen();
@@ -900,7 +901,35 @@
                 });
                 document.getElementById('itemAnalyticsList').innerHTML = itemHtml || "<span style='color:var(--text-muted); font-size:0.85rem;'>No item data available.</span>";
 
+                // Slow Movers
+                menuData.forEach(mi => {
+                    let n = getVal(mi, ['itemname','name']);
+                    if(!itemStats[n]) slowHtml += `<span style="background:var(--primary-light); color:var(--text-muted); padding:6px 12px; border-radius:8px; font-size:0.75rem; font-weight:600;">${n}</span>`;
+                });
+                document.getElementById('slowMoversList').innerHTML = slowHtml || "<span style='color:var(--text-muted); font-size:0.85rem;'>All items have traction!</span>";
+
+                renderPNLChart('daily');
+
             } catch(e) { console.error("Overview Error", e); }
+        }
+
+        function renderPNLChart(viewType) {
+            document.querySelectorAll('.chart-filters .filter-chip').forEach(btn => btn.classList.remove('active'));
+            if(viewType === 'daily') document.getElementById('btnChartDOD').classList.add('active'); else if(viewType === 'weekly') document.getElementById('btnChartWeekly').classList.add('active'); else if(viewType === 'monthly') document.getElementById('btnChartMonthly').classList.add('active');
+
+            let aggSales = {}; let aggExp = {}; let allKeys = Array.from(new Set([...Object.keys(rawChartSalesData), ...Object.keys(rawChartExpenseData)])).sort();
+            allKeys.forEach(key => {
+                let dParts = key.split('-'); if(dParts.length !== 3) return; let dObj = new Date(dParts[0], dParts[1]-1, dParts[2]); let newKey = key;
+                if(viewType === 'monthly') { newKey = `${dParts[0]}-${dObj.toLocaleString('default', { month: 'short' })}`; } else if (viewType === 'weekly') { var start = new Date(dObj.getFullYear(), 0, 1); var days = Math.floor((dObj - start) / (24 * 60 * 60 * 1000)); var weekNumber = Math.ceil(days / 7); newKey = `${dParts[0]} - Wk ${weekNumber}`; }
+                aggSales[newKey] = (aggSales[newKey] || 0) + (rawChartSalesData[key] || 0); aggExp[newKey] = (aggExp[newKey] || 0) + (rawChartExpenseData[key] || 0);
+            });
+
+            let finalLabels = Array.from(new Set([...Object.keys(aggSales), ...Object.keys(aggExp)])).sort();
+            let finalSales = []; let finalExp = [];
+            finalLabels.forEach(lbl => { finalSales.push(aggSales[lbl] || 0); finalExp.push(aggExp[lbl] || 0); });
+
+            const canvas = document.getElementById('trendChart'); if(!canvas) return; const ctx = canvas.getContext('2d'); if(typeof Chart === 'undefined') return; if(trendChartInstance) trendChartInstance.destroy();
+            trendChartInstance = new Chart(ctx, { type: 'line', data: { labels: finalLabels, datasets: [ { label: 'Sales (₹)', data: finalSales, borderColor: '#10B981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#10B981', pointRadius: 4 }, { label: 'Expenses (₹)', data: finalExp, borderColor: '#EF4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#EF4444', pointRadius: 4 } ] }, options: { responsive: true, maintainAspectRatio: false } });
         }
 
         // =====================================
@@ -960,19 +989,19 @@
             haptic();
             let category = document.getElementById('expCategory').value; let amount = document.getElementById('expAmount').value;
             if (!amount || amount <= 0) { showCustomAlert("Invalid numeric value."); return; }
-            let payload = { category: category, amount: amount, description: document.getElementById('expDescription').value || "NA", receipt_image: expenseImageBase64 };
+            let now = new Date(); let fDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
             
-            fetch(`${API_BASE}/expenses`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-            .then(r=>r.json()).then(data => { 
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'expense', category: category, amount: amount, description: document.getElementById('expDescription').value || "NA", receipt_image: expenseImageBase64 }) })
+            .then(res => res.json()).then(data => { 
                 showCustomAlert("Expenditure Logged."); document.getElementById('expAmount').value = ""; document.getElementById('expDescription').value = ""; document.getElementById('expImage').value = ""; expenseImageBase64 = null; document.getElementById('expImagePreview').style.display = 'none'; fetchData(); 
             });
         }
 
         // =====================================
-        // LIVE SALES & TABLES (HUB)
+        // LIVE SALES (REGISTRY)
         // =====================================
         function renderLiveSales() {
-            const salesGrid = document.getElementById('salesGrid'); salesGrid.innerHTML = "";
+            const salesGrid = document.getElementById('salesGrid'); salesGrid.innerHTML = ""; const homeRecent = document.getElementById('homeRecentOrders'); homeRecent.innerHTML = "";
             let startDateInput = document.getElementById('filterStartDate').value; let endDateInput = document.getElementById('filterEndDate').value;
             
             let filteredSales = salesHistory.filter(sale => {
@@ -1014,6 +1043,24 @@
                     </div>
                 </div>`;
             });
+            
+            filteredSales.slice(0, 4).forEach(sale => {
+                let sOrderId = getVal(sale, ['orderid', 'id']) || 'NA'; let tName = getVal(sale, ['tablenumber', 'table', 'tablename']) || "Table"; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getSaleItemsText(sale); let sTime = getVal(sale, ['time']) || ''; let iconStr = tName.includes('Takeaway') ? '🛍️' : (tName.includes('Delivery') ? '🛵' : '🍽️'); 
+                let cleanItemsView = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
+                let itemCount = cleanItemsView.split(', ').length;
+                let statusBadge = sale.status === 'deletion_pending' ? `<span class="pill pill-warning" style="font-size:0.6rem;">PENDING</span>` : `<span class="pill pill-success" style="font-size:0.6rem;">CLEARED</span>`;
+                
+                homeRecent.innerHTML += `
+                <div class="order-card" onclick="openOrderDetails('${sOrderId}')" style="display:flex; align-items:center; gap:12px; padding:16px;">
+                    <div class="ho-icon" style="width:42px; height:42px; border-radius:12px; background:var(--primary-light); display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0;">${iconStr}</div>
+                    <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
+                        <div style="font-size:0.92rem; font-weight:700; color:var(--text-dark);">INV #${sOrderId}</div>
+                        <div style="font-size:0.75rem; color:var(--text-muted); font-weight:500;">${tName} • ${cleanDisplayTime(sTime)}</div>
+                        <div style="font-size:0.75rem; font-weight:700; color:var(--text-dark); margin-top:2px;">${itemCount} Items • ₹${sTotal}</div>
+                    </div>
+                    ${statusBadge}
+                </div>`;
+            });
         }
 
         function renderTableGrid() {
@@ -1024,7 +1071,7 @@
                     let tName = "Table " + i; let isOccupied = runningTables.hasOwnProperty(tName) && runningTables[tName] && runningTables[tName].length > 0;
                     if(isOccupied) activeCount++; totalCount++;
                     let statusStr = isOccupied ? "ENGAGED" : "VACANT"; let statusCls = isOccupied ? "status-occ" : "status-avail"; let cardCls = isOccupied ? "table-card occupied" : "table-card available";
-                    gridHTML += `<div class="${cardCls}" onclick="openTable('${i}')"><div class="tc-name">Zone ${i}</div><div class="tc-sub">Operations</div><div class="tc-status ${statusCls}">${statusStr}</div></div>`;
+                    gridHTML += `<div class="${cardCls}" onclick="openTable('${i}')"><div class="tc-name">Table ${i}</div><div class="tc-sub">Operations</div><div class="tc-status ${statusCls}">${statusStr}</div></div>`;
                 }); 
                 gridContainer.innerHTML += gridHTML + '</div>';
             });
@@ -1033,17 +1080,9 @@
             document.getElementById('deliveryStatus').innerText = (runningTables["Home Delivery"] && runningTables["Home Delivery"].length > 0) ? "Engaged" : "Ready";
         }
 
-        function confirmAddTable() { 
-            haptic();
-            let catIdx = document.getElementById('newTableCategory').value; let tNum = document.getElementById('newTableNumber').value.trim(); 
-            if(!tNum) { showCustomAlert("Invalid table designation."); return; } 
-            let isDuplicate = false; tableSections.forEach(sec => { if(sec.tables.includes(tNum)) isDuplicate = true; }); 
-            if(isDuplicate) { showCustomAlert("Zone " + tNum + " already deployed."); return; } 
-            tableSections[catIdx].tables.push(tNum); localStorage.setItem('viraasat_table_sections', JSON.stringify(tableSections)); closeModal('addTableModal'); renderTableGrid(); 
-        }
-
         function switchMainTab(tabName, btnElement, skipHistory = false) {
             haptic();
+            let htmlMap = { 'tableDashboard': `Terminal Hub`, 'salesDashboard': `Registry`, 'trendView': `Intelligence`, 'expenses': `Expenditure`, 'usersManager': `System Admin` };
             if(!skipHistory) { try { history.pushState({view: tabName}, '', '#' + tabName); } catch(e){} }
             
             document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display = 'none'; tab.classList.remove('active'); });
@@ -1055,6 +1094,11 @@
             document.getElementById(tabName).style.display = 'block'; setTimeout(() => document.getElementById(tabName).classList.add('active'), 10);
             document.getElementById('appBottomNav').style.display = 'flex';
             
+            let tickerEl = document.getElementById('pageMainTitle');
+            if(tickerEl) {
+                if(tabName === 'tableDashboard') { tickerEl.style.color = 'var(--accent-gold)'; tickerEl.innerText = royalTaglines[tickerIndex]; } 
+                else { tickerEl.style.color = 'var(--text-muted)'; tickerEl.innerText = htmlMap[tabName]; }
+            }
             if(tabName === 'trendView') setTimeout(generateOverview, 100);
             if(tabName === 'expenses') renderExpensesList();
         }
@@ -1085,7 +1129,7 @@
         }
 
         // =====================================
-        // BILLING OPERATIONS (FIXED)
+        // BILLING OPERATIONS
         // =====================================
         function addToBill() {
             haptic();
@@ -1123,7 +1167,7 @@
 
         function clearTableWithoutCheckout() {
             showCustomConfirm(`Terminate operations for ${activeTableNumber}?`, () => {
-                fetch(`${API_BASE}/tables/clear`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table_number: activeTableNumber }) })
+                fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'clear', tableName: activeTableNumber }) })
                 .then(r=>r.json()).then(data => { delete runningTables[activeTableNumber]; currentBill = []; goBackToTables(); }).catch(e => { delete runningTables[activeTableNumber]; currentBill = []; goBackToTables(); });
             }, null);
         }
@@ -1132,7 +1176,8 @@
             haptic();
             if (currentBill.length === 0) { showCustomAlert("Invoice is empty."); return; }
             let btn = document.getElementById('btnKOT'); btn.innerText = "Registering..."; btn.disabled = true;
-            fetch(`${API_BASE}/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table_number: activeTableNumber, items: currentBill, order_status: "pending" }) })
+            let isNew = !runningTables.hasOwnProperty(activeTableNumber);
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'kot', tableName: activeTableNumber, items: currentBill, isNewSession: isNew }) })
             .then(r=>r.json()).then(data => { runningTables[activeTableNumber] = currentBill; btn.innerText = "Register KOT"; btn.disabled = false; goBackToTables(); }).catch(err => { btn.innerText = "Register KOT"; btn.disabled = false; });
         }
 
@@ -1143,13 +1188,15 @@
             let btn = document.getElementById('btnFinalCheckout'); btn.innerText = "Processing..."; btn.disabled = true;
             let phone = document.getElementById('customerPhone').value || "NA";
             let discount = parseInt(document.getElementById('discountValue').value) || 0; 
+            let orderId = "ORD" + Math.floor(Math.random() * 900000000 + 100000000);
+            
             let itemsString = currentBill.map(i => `${i.name} (x${i.qty}) ₹${i.total}`).join(", ");
             if (discount > 0) itemsString += `, [Discount Applied: -₹${discount}]`; 
             itemsString += `, [Mode: ${selectedPaymentMode}]`; 
 
             let grandTotal = parseInt(document.getElementById('grandTotal').innerText.replace(/[^0-9.-]/g, '')) || 0;
 
-            fetch(`${API_BASE}/orders/checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table_number: activeTableNumber, customer_phone: phone, items: currentBill, items_string: itemsString, total: grandTotal, discount: discount, payment_method: selectedPaymentMode }) })
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'checkout', tableName: activeTableNumber, orderId: orderId, phone: phone, itemsString: itemsString, rawItems: currentBill, total: grandTotal, discount: discount, payment_method: selectedPaymentMode }) })
             .then(r=>r.json()).then(data => {
                 delete runningTables[activeTableNumber]; 
                 btn.innerText = "Complete Checkout"; btn.disabled = false; closeModal('paymentModal'); fetchData(); goBackToTables();
@@ -1165,40 +1212,35 @@
             if(!reason) return;
             let orderId = currentViewingSale.id || currentViewingSale.orderid;
             
-            fetch(`${API_BASE}/orders/request-delete`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ order_id: orderId, reason: reason, requested_by: localStorage.getItem('viraasat_user') || 'Terminal' })
-            }).then(r=>r.json()).then(data => {
-                showCustomAlert("Cancellation flagged. Sent to Admin Audit Logs.");
-                closeModal('orderDetailsModal'); fetchData();
-            });
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'requestDelete', orderId: orderId, reason: reason, requestedBy: localStorage.getItem('viraasat_user') }) })
+            .then(r=>r.json()).then(data => { showCustomAlert("Cancellation flagged. Sent to Admin Audit Logs."); closeModal('orderDetailsModal'); fetchData(); }).catch(e=>console.log(e)); 
         }
 
         function fetchApprovals() {
-            fetch(`${API_BASE}/approvals`).then(r=>r.json()).then(data => {
-                let card = document.getElementById('adminAuditCard'); let list = document.getElementById('adminApprovalsList');
-                if(!data.success || !data.requests || !data.requests.length) { card.style.display = 'none'; return; }
-                card.style.display = 'block'; list.innerHTML = "";
-                
-                data.requests.forEach(req => {
-                    list.innerHTML += `<div style="background:#FFF; padding:16px; border-radius:12px; border:1px solid var(--occ-border);">
-                        <div style="font-weight:800; margin-bottom:4px; font-size:1.05rem;">Invoice: #${req.order_id}</div>
-                        <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">Reason: ${req.reason}<br>Requested By: ${req.requested_by}</div>
-                        <div style="display:flex; gap:8px;">
-                            <button class="btn" style="background:var(--success); color:#FFF; border:none; padding:8px 16px; border-radius:8px; font-weight:700; font-size:0.8rem; flex:1;" onclick="resolveApproval(${req.id}, 'approved', '${req.order_id}')">Approve</button>
-                            <button class="btn" style="background:var(--primary-light); color:var(--text-dark); border:none; padding:8px 16px; border-radius:8px; font-weight:700; font-size:0.8rem; flex:1;" onclick="resolveApproval(${req.id}, 'rejected', '${req.order_id}')">Reject</button>
-                        </div>
-                    </div>`;
-                });
-            }).catch(e=>console.log(e));
+            let card = document.getElementById('adminAuditCard'); let list = document.getElementById('adminApprovalsList');
+            let deletedOrders = salesHistory.filter(s => s.status === 'deleted' || s.status === 'cancelled' || s.status === 'deletion_pending');
+            
+            if(!deletedOrders.length) { card.style.display = 'none'; return; }
+            card.style.display = 'block'; list.innerHTML = "";
+            
+            deletedOrders.forEach(req => {
+                let badge = req.status === 'deletion_pending' ? `<span class="pill pill-warning">Pending</span>` : `<span class="pill pill-danger">Deleted</span>`;
+                list.innerHTML += `<div style="background:#FFF; padding:16px; border-radius:12px; border:1px solid var(--occ-border);">
+                    <div style="font-weight:800; margin-bottom:4px; font-size:1.05rem; display:flex; justify-content:space-between;"><span>Invoice: #${req.orderid}</span> ${badge}</div>
+                    <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">Amount: <b style="color:var(--danger);">₹${req.total}</b><br>Timestamp: ${req.date}</div>
+                    ${req.status === 'deletion_pending' ? `
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn" style="background:var(--success); color:#FFF; border:none; padding:8px 16px; border-radius:8px; font-weight:700; font-size:0.8rem; flex:1;" onclick="resolveApproval('${req.orderid}', 'approved')">Approve</button>
+                        <button class="btn" style="background:var(--primary-light); color:var(--text-dark); border:none; padding:8px 16px; border-radius:8px; font-weight:700; font-size:0.8rem; flex:1;" onclick="resolveApproval('${req.orderid}', 'rejected')">Reject</button>
+                    </div>` : ''}
+                </div>`;
+            });
         }
 
-        function resolveApproval(reqId, status, orderId) {
+        function resolveApproval(orderId, status) {
             haptic();
-            fetch(`${API_BASE}/approvals/resolve`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ request_id: reqId, status: status, order_id: orderId, reviewed_by: localStorage.getItem('viraasat_user') })
-            }).then(r=>r.json()).then(data => { showCustomAlert("Action logged."); fetchApprovals(); fetchData(); });
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'resolveDelete', orderId: orderId, status: status, reviewedBy: localStorage.getItem('viraasat_user') }) })
+            .then(r=>r.json()).then(data => { showCustomAlert("Action logged."); fetchData(); }).catch(e=>console.log(e));
         }
 
         // =====================================
@@ -1222,11 +1264,16 @@
                 } else { modalItemsHtml += `<div style="margin-bottom:12px; border-bottom:1px dashed var(--border); padding-bottom:12px; font-weight:600;">${itemStr}</div>`; }
             });
             document.getElementById('modalOrderItems').innerHTML = modalItemsHtml; document.getElementById('modalOrderTotal').innerText = `₹ ${sTotal.toLocaleString('en-IN')}`; document.getElementById('modalCustomerPhone').value = (sPhone && sPhone !== "NA") ? sPhone : ""; 
+            
+            let delBtn = document.getElementById('btnRequestDelete');
+            if(sale.status === 'deletion_pending' || sale.status === 'deleted' || sale.status === 'cancelled') { delBtn.innerText = "Cancellation Actioned"; delBtn.disabled = true; delBtn.style.opacity = 0.5; }
+            else { delBtn.innerText = "Request Cancellation"; delBtn.disabled = false; delBtn.style.opacity = 1; }
+            
             openModal('orderDetailsModal');
         }
 
         // =====================================
-        // PERFECTED PRINTING & WA COMMANDS
+        // PRINTING & WA COMMANDS
         // =====================================
         function printBill(type) {
             try {
@@ -1333,7 +1380,7 @@
         function exportItemSales() {
             let itemStats = {};
             salesHistory.forEach(sale => { 
-                if(sale.status === 'deleted' || sale.status === 'deletion_pending') return;
+                if(sale.status === 'deleted' || sale.status === 'deletion_pending' || sale.status === 'cancelled') return;
                 let rawItems = getSaleItemsText(sale); let cleanItems = rawItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
                 cleanItems.split(', ').forEach(str => { let m = str.match(/(.+?)\s*\(x(\d+)\)/); if(m) { let name = m[1].trim(); let qty = parseInt(m[2]); itemStats[name] = (itemStats[name]||0) + qty; } });
             });
@@ -1347,7 +1394,7 @@
             let file = fileInput.files[0]; let data = await file.arrayBuffer(); let wb = XLSX.read(data, { type: 'array' });
             let getSheet = (name) => wb.Sheets[name] ? XLSX.utils.sheet_to_json(wb.Sheets[name], {defval:'', raw:false}) : [];
             let payload = { sales: getSheet('Sales'), menu: getSheet('Menu').map(m => ({ Name: m.Item_Name || m.Name, Category: m.Category, Price: m.Price, Active: 1 })), staff: getSheet('Staff').map(s => ({ Name: s.Name, Mobile: s.Mobile, Role: s.Role, Monthly_Salary: s['Monthly Salary']||s.Monthly_Salary, Date_of_Joining: s['Join Date']||s.Date_of_Joining })), stock: getSheet('Stock').map(st => ({ Name: st.Item_Name || st.Name, Quantity: st.Current_Stock || st.Quantity })), expenses: getSheet('Expenses') };
-            fetch(`${API_BASE}/import/full`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) }).then(r=>r.json()).then(res => { showCustomAlert("Import Complete!"); fetchData(); }).catch(e=>console.log(e));
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({type: 'import', data: payload}) }).then(r=>r.json()).then(res => { showCustomAlert("Import Complete!"); fetchData(); }).catch(e=>console.log(e));
         }
     </script>
 </body>
