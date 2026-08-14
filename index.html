@@ -22,10 +22,10 @@
             --surface: #FFFFFF;        
             --border: #E5E7EB;         
             
-            --primary: #111827; /* Tira Premium Black */
+            --primary: #111827;        
             --primary-light: #F3F4F6;  
             --accent-gold: #B48E5D;
-            --zepto-pink: #E21B70; /* Zepto Active Color */
+            --zepto-pink: #E21B70; 
             
             --text-dark: #111827;      
             --text-muted: #6B7280;     
@@ -33,12 +33,12 @@
             --danger: #EF4444;
             --success: #10B981;
             
-            /* Zepto Pastel Card Colors */
+            /* Zepto Pastel Card Colors (From Screenshots) */
             --z-card-purple: #F3EDF7;
             --z-card-peach: #FEF2E8;
             --z-card-mint: #E6F4EA;
             --z-card-blue: #E8F0FE;
-            --z-card-grey: #F8F9FA;
+            --z-card-red: #FEE2E2;
             
             --shadow-card: 0 4px 16px rgba(17, 24, 39, 0.05); 
             --border-radius: 16px;      
@@ -87,8 +87,8 @@
         .zepto-card { border-radius: var(--border-radius); padding: 18px; display: flex; flex-direction: column; box-shadow: var(--shadow-card); cursor: pointer; transition: 0.1s; position: relative; overflow: hidden; border: 1px solid rgba(0,0,0,0.03);}
         .zepto-card:active { transform: scale(0.97); filter: brightness(0.95); }
         .zepto-card-title { font-size: 0.85rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; text-transform: uppercase; letter-spacing: 0.5px;}
-        .zepto-card-val { font-size: 1.5rem; font-weight: 900; color: var(--text-dark); letter-spacing: -0.5px;}
-        .zepto-card-sub { font-size: 0.7rem; font-weight: 700; margin-top: 6px; display: inline-block; padding: 4px 8px; border-radius: 8px; background: rgba(0,0,0,0.05); color: var(--text-dark);}
+        .zepto-card-val { font-size: 1.6rem; font-weight: 900; color: var(--text-dark); letter-spacing: -0.5px;}
+        .zepto-card-sub { font-size: 0.75rem; font-weight: 700; margin-top: 6px; display: inline-block; padding: 4px 8px; border-radius: 8px; background: rgba(255,255,255,0.6); color: var(--text-dark);}
 
         /* Zepto Style Table Cards */
         .table-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
@@ -103,6 +103,8 @@
 
         .section-header { display: flex; justify-content: space-between; align-items: center; margin: 28px 0 16px 0; }
         .section-header h4 { font-weight: 800; font-size: 0.95rem; color: var(--text-dark); text-transform: uppercase; letter-spacing: 0.5px; }
+        .section-header span { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: 0.1s;}
+        .section-header span:active { opacity: 0.6; }
         
         /* Zepto Bottom Navigation */
         .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; padding: 12px 8px calc(12px + env(safe-area-inset-bottom)) 8px; border-top: 1px solid var(--border); z-index: 1000; box-shadow: 0 -10px 30px rgba(17,24,39,0.03); }
@@ -125,10 +127,11 @@
         .btn:active { transform: scale(0.97); }
         .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-dark); }
         .btn-outline:active { background: var(--primary-light); }
-        
-        /* Zepto Order Cards with Highlighted Amount/Date */
+        .btn-danger { background: var(--occ-bg); color: var(--danger); border: none; }
+
+        /* Zepto Order Cards */
         .order-card { padding: 18px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); margin-bottom: 16px; cursor: pointer; transition: 0.1s; box-shadow: var(--shadow-card);}
-        .order-card:active { transform: scale(0.98); background: var(--z-card-grey); }
+        .order-card:active { transform: scale(0.98); background: var(--primary-light); }
         .oc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 1px dashed var(--border); padding-bottom: 12px;}
         .oc-title { font-weight: 800; font-size: 1.1rem; color: var(--text-dark); }
         .oc-date-pill { background: var(--primary-light); color: var(--text-dark); padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px;}
@@ -144,8 +147,9 @@
         /* Swipeable Filters */
         .swipe-filters { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 16px; scroll-behavior: smooth; }
         .swipe-filters::-webkit-scrollbar { display: none; }
-        .filter-chip { flex: 0 0 auto; height: 38px; padding: 0 20px; font-size: 0.85rem; border-radius: 19px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dark); font-weight: 700; display: flex; align-items: center; transition: 0.2s;}
+        .filter-chip { flex: 0 0 auto; height: 38px; padding: 0 20px; font-size: 0.85rem; border-radius: 19px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dark); font-weight: 700; display: flex; align-items: center; transition: 0.2s; cursor: pointer;}
         .filter-chip.active { background: var(--primary); color: #FFF; border-color: var(--primary); }
+        .filter-chip.active-red { color: var(--danger); border-color: var(--danger); }
 
         /* Progress Bar */
         .progress-container { width: 100%; height: 10px; background: var(--primary-light); border-radius: 5px; overflow: hidden; display: flex; margin-top: 12px; }
@@ -157,7 +161,7 @@
         .sheet-handle { width: 40px; height: 5px; background: #E5E7EB; border-radius: 3px; margin: 0 auto 24px auto; }
         
         #loader { position: fixed; inset: 0; background: rgba(253,252,248,0.95); z-index: 99999; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 16px; color: var(--primary); font-weight: 700; font-size: 1rem; backdrop-filter: blur(4px); }
-        .spinner { width: 36px; height: 36px; border: 4px solid var(--border); border-top-color: var(--zepto-pink); border-radius: 50%; animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+        .spinner { width: 36px; height: 36px; border: 4px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
 
         #splashScreen { position: fixed; inset: 0; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.4s ease; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -284,7 +288,7 @@
             <div class="logo-graphic" style="font-size: 1.4rem;">Viraasat<div class="logo-accent" style="width: 24px; margin-top: 4px;"></div></div>
             <div class="page-subtitle" id="pageMainTitle">A Taste Of Royal Heritage</div>
         </div>
-        <button class="icon-btn" onclick="fetchData()" title="Synchronize Data">
+        <button class="icon-btn" onclick="haptic(); fetchData();" title="Synchronize Data">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path></svg>
         </button>
     </header>
@@ -363,7 +367,7 @@
                     <div class="zepto-card-title">Gross Sales</div>
                     <div class="zepto-card-val" id="kpiTotalSales">₹ 0</div>
                 </div>
-                <div class="zepto-card" style="background: #FEE2E2;">
+                <div class="zepto-card" style="background: var(--z-card-red);">
                     <div class="zepto-card-title" style="color: var(--danger);">Gross Expenses</div>
                     <div class="zepto-card-val" id="kpiTotalExpenses" style="color: var(--danger);">₹ 0</div>
                 </div>
@@ -385,23 +389,6 @@
                 </div>
                 <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px;">Ranked by units sold based on current timeframe.</p>
                 <div id="itemAnalyticsList" style="display:flex; flex-direction:column; gap:12px;"></div>
-            </div>
-
-            <!-- SLOW MOVERS -->
-            <div class="card" style="border-color: var(--border); background: var(--bg-color);">
-                <div class="section-header" style="margin-top:0;"><h4>Zero Traction Items</h4></div>
-                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px;">Items not sold in the current period.</p>
-                <div id="slowMoversList" style="display:flex; flex-wrap: wrap; gap:8px;"></div>
-            </div>
-            
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Revenue Trend</h4></div>
-                <div class="chart-filters" style="display:flex; gap:8px; margin-bottom:16px;">
-                    <button class="filter-chip active" id="btnChartDOD" onclick="renderPNLChart('daily')">Daily</button>
-                    <button class="filter-chip" id="btnChartWeekly" onclick="renderPNLChart('weekly')">Weekly</button>
-                    <button class="filter-chip" id="btnChartMonthly" onclick="renderPNLChart('monthly')">Monthly</button>
-                </div>
-                <div class="chart-wrapper" style="height:260px; position:relative;"><canvas id="trendChart"></canvas></div>
             </div>
         </div>
 
@@ -450,19 +437,20 @@
                 <h2 style="font-size: 1.6rem;">Admin Console</h2>
             </div>
 
-            <!-- CANCELLATION / AUDIT LOGS (NEW) -->
-            <div class="card" id="adminAuditCard" style="border-color: var(--danger); background: #FEF2F2;">
-                <div class="section-header" style="margin-top:0;"><h4>⚠️ Cancellation / Audit Logs</h4></div>
-                <p style="font-size: 0.8rem; color: var(--danger); margin-bottom: 16px; font-weight:600;">Track orders requested for deletion or already deleted.</p>
-                <div id="adminApprovalsList" style="display:flex; flex-direction:column; gap:12px;"></div>
-            </div>
-
+            <!-- SYSTEM RESTORATION -->
             <div class="card" style="border-color:#10B981;">
                 <div class="section-header" style="margin-top:0;"><h4>System Restoration</h4></div>
                 <div class="form-group" style="margin-bottom:0;">
                     <input type="file" id="fullImportInput" accept=".xlsx,.xls,.csv" style="padding:12px; border:1px dashed var(--border); background:#FFF; cursor:pointer;">
                     <button class="btn" style="margin-top:12px; background:#10B981;" onclick="runFullImport()">Execute Master Import</button>
                 </div>
+            </div>
+
+            <!-- CANCELLATION / AUDIT LOGS (NEW) -->
+            <div class="card" id="adminAuditCard" style="border-color: var(--danger); background: #FEF2F2;">
+                <div class="section-header" style="margin-top:0;"><h4>⚠️ Cancellation / Audit Logs</h4></div>
+                <p style="font-size: 0.8rem; color: var(--danger); margin-bottom: 16px; font-weight:600;">Track orders requested for deletion or already deleted.</p>
+                <div id="adminApprovalsList" style="display:flex; flex-direction:column; gap:12px;"></div>
             </div>
 
             <div class="section-header" style="margin-top:32px;"><h4>Personnel Directory</h4></div>
@@ -482,7 +470,7 @@
                 <div class="form-group" style="margin-bottom: 16px;">
                     <div class="input-box">
                         <label>Lookup Catalog</label>
-                        <input list="menuItemsList" id="itemInput" placeholder="Search registry..." oninput="checkStockDisplay()" onchange="checkStockDisplay()">
+                        <input list="menuItemsList" id="itemInput" placeholder="Search registry...">
                         <datalist id="menuItemsList"></datalist>
                     </div>
                 </div>
@@ -532,7 +520,7 @@
             
             <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:40px;">
                 <button class="btn btn-outline" onclick="printBill('final')">Generate Final Invoice</button>
-                <button class="btn btn-outline" style="border-color:#10B981; color:#10B981; background:#F0FDF4;" onclick="sendWA_Customer()">Transmit Digital Invoice (WA)</button>
+                <button class="btn btn-outline" style="border-color:#047857; color:#047857; background:#F0FDF4;" onclick="sendWA_Customer()">Transmit Digital Invoice (WA)</button>
                 <button class="btn btn-danger" onclick="clearTableWithoutCheckout()" style="height:56px;">Terminate Session (Clear)</button>
                 <button class="btn" style="margin-top:12px; height: 64px; font-size:1.15rem; background:var(--zepto-pink);" onclick="openModal('paymentModal')">Execute Checkout</button>
             </div>
@@ -561,10 +549,6 @@
             <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
             <span>Admin</span>
         </button>
-        <button class="nav-item" onclick="haptic(); logoutUser();">
-            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-            <span>Logout</span>
-        </button>
     </nav>
 
     <div id="printSection"></div>
@@ -574,7 +558,7 @@
         // SYSTEM CONFIGURATION
         // ==========================================
         const API_BASE = '/api'; 
-        const APP_VERSION = "Enterprise v5.0 Final"; 
+        const APP_VERSION = "Enterprise Cloud D1 Final"; 
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
         let menuData = []; let stockData = {}; let runningTables = {}; 
@@ -804,7 +788,7 @@
                     category: e.category, amount: e.amount, description: e.description, image: e.receipt_image
                 }));
 
-                populateDropdown(); renderTableGrid(); renderLiveSales(); generateOverview(); renderExpensesList();
+                renderTableGrid(); renderLiveSales(); generateOverview(); renderExpensesList();
                 if(window.isUserAdmin) fetchApprovals();
                 
                 hideSplashScreen();
@@ -916,35 +900,7 @@
                 });
                 document.getElementById('itemAnalyticsList').innerHTML = itemHtml || "<span style='color:var(--text-muted); font-size:0.85rem;'>No item data available.</span>";
 
-                // Slow Movers
-                menuData.forEach(mi => {
-                    let n = getVal(mi, ['itemname','name']);
-                    if(!itemStats[n]) slowHtml += `<span style="background:var(--primary-light); color:var(--text-muted); padding:6px 12px; border-radius:8px; font-size:0.75rem; font-weight:600;">${n}</span>`;
-                });
-                document.getElementById('slowMoversList').innerHTML = slowHtml || "<span style='color:var(--text-muted); font-size:0.85rem;'>All items have traction!</span>";
-
-                renderPNLChart('daily');
-
             } catch(e) { console.error("Overview Error", e); }
-        }
-
-        function renderPNLChart(viewType) {
-            document.querySelectorAll('.chart-filters .filter-chip').forEach(btn => btn.classList.remove('active'));
-            if(viewType === 'daily') document.getElementById('btnChartDOD').classList.add('active'); else if(viewType === 'weekly') document.getElementById('btnChartWeekly').classList.add('active'); else if(viewType === 'monthly') document.getElementById('btnChartMonthly').classList.add('active');
-
-            let aggSales = {}; let aggExp = {}; let allKeys = Array.from(new Set([...Object.keys(rawChartSalesData), ...Object.keys(rawChartExpenseData)])).sort();
-            allKeys.forEach(key => {
-                let dParts = key.split('-'); if(dParts.length !== 3) return; let dObj = new Date(dParts[0], dParts[1]-1, dParts[2]); let newKey = key;
-                if(viewType === 'monthly') { newKey = `${dParts[0]}-${dObj.toLocaleString('default', { month: 'short' })}`; } else if (viewType === 'weekly') { var start = new Date(dObj.getFullYear(), 0, 1); var days = Math.floor((dObj - start) / (24 * 60 * 60 * 1000)); var weekNumber = Math.ceil(days / 7); newKey = `${dParts[0]} - Wk ${weekNumber}`; }
-                aggSales[newKey] = (aggSales[newKey] || 0) + (rawChartSalesData[key] || 0); aggExp[newKey] = (aggExp[newKey] || 0) + (rawChartExpenseData[key] || 0);
-            });
-
-            let finalLabels = Array.from(new Set([...Object.keys(aggSales), ...Object.keys(aggExp)])).sort();
-            let finalSales = []; let finalExp = [];
-            finalLabels.forEach(lbl => { finalSales.push(aggSales[lbl] || 0); finalExp.push(aggExp[lbl] || 0); });
-
-            const canvas = document.getElementById('trendChart'); if(!canvas) return; const ctx = canvas.getContext('2d'); if(typeof Chart === 'undefined') return; if(trendChartInstance) trendChartInstance.destroy();
-            trendChartInstance = new Chart(ctx, { type: 'line', data: { labels: finalLabels, datasets: [ { label: 'Sales (₹)', data: finalSales, borderColor: '#10B981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#10B981', pointRadius: 4 }, { label: 'Expenses (₹)', data: finalExp, borderColor: '#EF4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#EF4444', pointRadius: 4 } ] }, options: { responsive: true, maintainAspectRatio: false } });
         }
 
         // =====================================
@@ -1016,7 +972,7 @@
         // LIVE SALES & TABLES (HUB)
         // =====================================
         function renderLiveSales() {
-            const salesGrid = document.getElementById('salesGrid'); salesGrid.innerHTML = ""; const homeRecent = document.getElementById('homeRecentOrders'); homeRecent.innerHTML = "";
+            const salesGrid = document.getElementById('salesGrid'); salesGrid.innerHTML = "";
             let startDateInput = document.getElementById('filterStartDate').value; let endDateInput = document.getElementById('filterEndDate').value;
             
             let filteredSales = salesHistory.filter(sale => {
@@ -1058,24 +1014,6 @@
                     </div>
                 </div>`;
             });
-            
-            filteredSales.slice(0, 4).forEach(sale => {
-                let sOrderId = getVal(sale, ['orderid', 'id']) || 'NA'; let tName = getVal(sale, ['tablenumber', 'table', 'tablename']) || "Table"; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getSaleItemsText(sale); let sTime = getVal(sale, ['time']) || ''; let iconStr = tName.includes('Takeaway') ? '🛍️' : (tName.includes('Delivery') ? '🛵' : '🍽️'); 
-                let cleanItemsView = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
-                let itemCount = cleanItemsView.split(', ').length;
-                let statusBadge = sale.status === 'deletion_pending' ? `<span class="pill pill-warning" style="font-size:0.6rem;">PENDING</span>` : `<span class="pill pill-success" style="font-size:0.6rem;">CLEARED</span>`;
-                
-                homeRecent.innerHTML += `
-                <div class="order-card" onclick="openOrderDetails('${sOrderId}')" style="display:flex; align-items:center; gap:12px; padding:16px;">
-                    <div class="ho-icon" style="width:42px; height:42px; border-radius:12px; background:var(--primary-light); display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0;">${iconStr}</div>
-                    <div style="flex:1; display:flex; flex-direction:column; gap:2px;">
-                        <div style="font-size:0.92rem; font-weight:700; color:var(--text-dark);">INV #${sOrderId}</div>
-                        <div style="font-size:0.75rem; color:var(--text-muted); font-weight:500;">${tName} • ${cleanDisplayTime(sTime)}</div>
-                        <div style="font-size:0.75rem; font-weight:700; color:var(--text-dark); margin-top:2px;">${itemCount} Items • ₹${sTotal}</div>
-                    </div>
-                    ${statusBadge}
-                </div>`;
-            });
         }
 
         function renderTableGrid() {
@@ -1095,9 +1033,17 @@
             document.getElementById('deliveryStatus').innerText = (runningTables["Home Delivery"] && runningTables["Home Delivery"].length > 0) ? "Engaged" : "Ready";
         }
 
+        function confirmAddTable() { 
+            haptic();
+            let catIdx = document.getElementById('newTableCategory').value; let tNum = document.getElementById('newTableNumber').value.trim(); 
+            if(!tNum) { showCustomAlert("Invalid table designation."); return; } 
+            let isDuplicate = false; tableSections.forEach(sec => { if(sec.tables.includes(tNum)) isDuplicate = true; }); 
+            if(isDuplicate) { showCustomAlert("Zone " + tNum + " already deployed."); return; } 
+            tableSections[catIdx].tables.push(tNum); localStorage.setItem('viraasat_table_sections', JSON.stringify(tableSections)); closeModal('addTableModal'); renderTableGrid(); 
+        }
+
         function switchMainTab(tabName, btnElement, skipHistory = false) {
             haptic();
-            let htmlMap = { 'tableDashboard': `Terminal Hub`, 'salesDashboard': `Registry`, 'trendView': `Intelligence`, 'expenses': `Expenditure`, 'usersManager': `System Admin` };
             if(!skipHistory) { try { history.pushState({view: tabName}, '', '#' + tabName); } catch(e){} }
             
             document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display = 'none'; tab.classList.remove('active'); });
@@ -1109,11 +1055,6 @@
             document.getElementById(tabName).style.display = 'block'; setTimeout(() => document.getElementById(tabName).classList.add('active'), 10);
             document.getElementById('appBottomNav').style.display = 'flex';
             
-            let tickerEl = document.getElementById('pageMainTitle');
-            if(tickerEl) {
-                if(tabName === 'tableDashboard') { tickerEl.style.color = 'var(--accent-gold)'; tickerEl.innerText = royalTaglines[tickerIndex]; } 
-                else { tickerEl.style.color = 'var(--text-muted)'; tickerEl.innerText = htmlMap[tabName]; }
-            }
             if(tabName === 'trendView') setTimeout(generateOverview, 100);
             if(tabName === 'expenses') renderExpensesList();
         }
@@ -1144,12 +1085,12 @@
         }
 
         // =====================================
-        // BILLING OPERATIONS
+        // BILLING OPERATIONS (FIXED)
         // =====================================
         function addToBill() {
             haptic();
             let itemName = document.getElementById('itemInput').value; let qty = parseInt(document.getElementById('itemQty').value) || 1;
-            if (!itemName) { showCustomAlert("Please select an item from registry."); return; }
+            
             let selectedItem = menuData.find(i => getVal(i, ['itemname', 'name']).trim().toLowerCase() === itemName.trim().toLowerCase());
             if (!selectedItem) { showCustomAlert("Item absent from registry. Use Custom Entry."); return; }
             let itemPrice = parseInt(getVal(selectedItem, ['price'])); let existingItem = currentBill.find(i => i.name === getVal(selectedItem, ['itemname', 'name']));
@@ -1281,11 +1222,6 @@
                 } else { modalItemsHtml += `<div style="margin-bottom:12px; border-bottom:1px dashed var(--border); padding-bottom:12px; font-weight:600;">${itemStr}</div>`; }
             });
             document.getElementById('modalOrderItems').innerHTML = modalItemsHtml; document.getElementById('modalOrderTotal').innerText = `₹ ${sTotal.toLocaleString('en-IN')}`; document.getElementById('modalCustomerPhone').value = (sPhone && sPhone !== "NA") ? sPhone : ""; 
-            
-            let delBtn = document.getElementById('btnRequestDelete');
-            if(sale.status === 'deletion_pending') { delBtn.innerText = "Cancellation Pending"; delBtn.disabled = true; delBtn.style.opacity = 0.5; }
-            else { delBtn.innerText = "Request Cancellation"; delBtn.disabled = false; delBtn.style.opacity = 1; }
-            
             openModal('orderDetailsModal');
         }
 
@@ -1402,6 +1338,16 @@
                 cleanItems.split(', ').forEach(str => { let m = str.match(/(.+?)\s*\(x(\d+)\)/); if(m) { let name = m[1].trim(); let qty = parseInt(m[2]); itemStats[name] = (itemStats[name]||0) + qty; } });
             });
             downloadCSV(Object.entries(itemStats).sort((a,b)=>b[1]-a[1]).map(([Item, Qty]) => ({Item, Units_Sold: Qty})), 'Viraasat-Item-Analytics.csv');
+        }
+        function exportAllData() { downloadCSV(salesHistory.map(s=>({Date:s.date,Time:s.time,Order_ID:s.orderid,Table:s.table,Amount:s.amount,Status:s.status})), 'Viraasat-Master-Sales.csv'); }
+        
+        async function runFullImport() {
+            let fileInput = document.getElementById('fullImportInput'); 
+            if(!fileInput.files.length) { showCustomAlert("Select full Excel workbook."); return; }
+            let file = fileInput.files[0]; let data = await file.arrayBuffer(); let wb = XLSX.read(data, { type: 'array' });
+            let getSheet = (name) => wb.Sheets[name] ? XLSX.utils.sheet_to_json(wb.Sheets[name], {defval:'', raw:false}) : [];
+            let payload = { sales: getSheet('Sales'), menu: getSheet('Menu').map(m => ({ Name: m.Item_Name || m.Name, Category: m.Category, Price: m.Price, Active: 1 })), staff: getSheet('Staff').map(s => ({ Name: s.Name, Mobile: s.Mobile, Role: s.Role, Monthly_Salary: s['Monthly Salary']||s.Monthly_Salary, Date_of_Joining: s['Join Date']||s.Date_of_Joining })), stock: getSheet('Stock').map(st => ({ Name: st.Item_Name || st.Name, Quantity: st.Current_Stock || st.Quantity })), expenses: getSheet('Expenses') };
+            fetch(`${API_BASE}/import/full`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) }).then(r=>r.json()).then(res => { showCustomAlert("Import Complete!"); fetchData(); }).catch(e=>console.log(e));
         }
     </script>
 </body>
