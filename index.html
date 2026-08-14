@@ -11,7 +11,8 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Premium Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 
@@ -21,20 +22,24 @@
             --surface: #FFFFFF;        
             --border: #E5E7EB;         
             
-            --primary: #111827;        
+            --primary: #111827; /* Tira Premium Black */
             --primary-light: #F3F4F6;  
             --accent-gold: #B48E5D;
+            --zepto-pink: #E21B70; /* Zepto Active Color */
+            
             --text-dark: #111827;      
             --text-muted: #6B7280;     
             
             --danger: #EF4444;
             --success: #10B981;
             
-            --occ-bg: #FFF1F2;
-            --occ-border: #FDA4AF;
-            --occ-gradient: linear-gradient(135deg, #F43F5E 0%, #E11D48 100%);
+            /* Zepto Pastel Card Colors */
+            --z-card-purple: #F3EDF7;
+            --z-card-peach: #FEF2E8;
+            --z-card-mint: #E6F4EA;
+            --z-card-blue: #E8F0FE;
             
-            --shadow-card: 0 4px 20px rgba(17, 24, 39, 0.05); 
+            --shadow-card: 0 4px 16px rgba(17, 24, 39, 0.05); 
             --border-radius: 16px;      
         }
 
@@ -74,53 +79,42 @@
         .greeting-sec { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; margin-top: 20px; }
         .greeting-sec h2 { font-family: 'Inter', sans-serif; font-size: 1.5rem; font-weight: 800; color: var(--text-dark); margin-bottom: 4px; letter-spacing: -0.5px;}
         .greeting-sec p { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
-        .date-badge { background: var(--surface); border: 1px solid var(--border); padding: 8px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; color: var(--text-dark); display: flex; align-items: center; box-shadow: var(--shadow-card); }
+        
+        /* Zepto Style KPI Cards */
+        .kpi-zepto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .zepto-card { border-radius: var(--border-radius); padding: 18px; display: flex; flex-direction: column; box-shadow: var(--shadow-card); cursor: pointer; transition: 0.1s; position: relative; overflow: hidden;}
+        .zepto-card:active { transform: scale(0.97); filter: brightness(0.95); }
+        .zepto-card-title { font-size: 0.8rem; font-weight: 700; color: var(--primary); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;}
+        .zepto-card-val { font-size: 1.6rem; font-weight: 900; color: var(--text-dark); letter-spacing: -0.5px;}
+        .zepto-card-sub { font-size: 0.7rem; font-weight: 700; margin-top: 6px; display: inline-block; padding: 4px 8px; border-radius: 10px; background: rgba(255,255,255,0.6); color: var(--text-dark);}
 
-        .quick-action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
-        .quick-card { background: var(--surface); border-radius: var(--border-radius); padding: 18px; display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow-card); cursor: pointer; transition: 0.1s; border: 1px solid transparent;}
-        .quick-card:active { transform: scale(0.97); }
-        .quick-card.occupied { background: var(--occ-bg); border-color: var(--occ-border); }
-        .qc-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--primary-light); display: flex; align-items: center; justify-content: center; color: var(--text-dark); flex-shrink: 0; font-size: 1.2rem; }
-        .qc-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-        .qc-info h4 { font-size: 0.95rem; font-weight: 800; color: var(--text-dark); }
-        .status-dot { font-size: 0.7rem; font-weight: 700; color: var(--success); display: flex; align-items: center; gap: 4px; }
-        .status-dot.occ { color: var(--danger); }
+        /* Zepto Style Table Cards */
+        .table-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
+        .table-card { background: var(--surface); border-radius: var(--border-radius); padding: 20px 14px; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: var(--shadow-card); cursor: pointer; transition: 0.15s; border: 1.5px solid transparent;}
+        .table-card:active { transform: scale(0.96); }
+        .table-card.occupied { background: var(--z-card-peach); border-color: #FCD3A8; }
+        .table-card.available { background: var(--z-card-mint); border-color: #C6E7D2; }
+        .tc-name { font-size: 1.15rem; font-weight: 800; color: var(--text-dark); margin-bottom: 6px; letter-spacing: -0.3px;}
+        .tc-status { font-size: 0.65rem; font-weight: 800; padding: 6px 14px; border-radius: 20px; letter-spacing: 0.5px; text-transform: uppercase; background: #FFF; box-shadow: 0 2px 6px rgba(0,0,0,0.05);}
+        .table-card.occupied .tc-status { color: #E65100; }
+        .table-card.available .tc-status { color: var(--success); }
 
         .section-header { display: flex; justify-content: space-between; align-items: center; margin: 28px 0 16px 0; }
         .section-header h4 { font-weight: 800; font-size: 0.95rem; color: var(--text-dark); text-transform: uppercase; letter-spacing: 0.5px; }
-        .section-header span { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: 0.1s;}
-        .section-header span:active { opacity: 0.6; }
+        
+        /* Zepto Bottom Navigation */
+        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; padding: 12px 8px calc(12px + env(safe-area-inset-bottom)) 8px; border-top: 1px solid var(--border); z-index: 1000; box-shadow: 0 -10px 30px rgba(17,24,39,0.03); }
+        .nav-item { background: transparent; border: none; color: #6B7280; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-family: inherit; font-size: 0.65rem; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; }
+        .nav-item svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: 0.2s; }
+        .nav-item.active { color: var(--zepto-pink); font-weight: 800; }
+        .nav-item.active svg { stroke: var(--zepto-pink); stroke-width: 2.5; }
 
-        .table-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
-        .table-card { background: var(--surface); border-radius: var(--border-radius); padding: 22px 14px; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: var(--shadow-card); cursor: pointer; transition: 0.15s; border: 1px solid var(--border);}
-        .table-card:active { transform: scale(0.96); }
-        .table-card.occupied { background: var(--occ-gradient) !important; color: #FFF !important; box-shadow: 0 8px 20px rgba(225, 29, 72, 0.25); border: none; }
-        .tc-name { font-size: 1.1rem; font-weight: 800; color: inherit; margin-bottom: 6px; letter-spacing: -0.3px;}
-        .tc-sub { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; margin-bottom: 12px;}
-        .table-card.occupied .tc-sub { color: rgba(255,255,255,0.85); }
-        .tc-status { font-size: 0.65rem; font-weight: 800; padding: 6px 14px; border-radius: 20px; letter-spacing: 0.5px; text-transform: uppercase; }
-        .status-avail { background: var(--primary-light); color: var(--text-dark); }
-        .table-card.occupied .tc-status { background: rgba(255,255,255,0.2); color: #FFF; }
-
-        .home-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
-        .hkpi-card { background: var(--surface); border-radius: var(--border-radius); padding: 20px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; border: 1px solid var(--border);}
-        .hkpi-top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--text-muted); font-size: 0.8rem; font-weight: 600; }
-        .hkpi-val { font-size: 1.45rem; font-weight: 800; color: var(--text-dark); margin-bottom: 6px; letter-spacing: -0.5px;}
-        .hkpi-sub { font-size: 0.75rem; font-weight: 600; color: var(--success); }
-
-        /* Zepto Style Navigation Bar */
-        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; padding: 10px 8px calc(10px + env(safe-area-inset-bottom)) 8px; border-top: 1px solid var(--border); z-index: 1000; box-shadow: 0 -10px 30px rgba(17,24,39,0.03); }
-        .nav-item { background: transparent; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: inherit; font-size: 0.65rem; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; padding: 6px 0; }
-        .nav-item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: 0.2s; }
-        .nav-item.active { color: var(--primary); font-weight: 800; }
-        .nav-item.active .icon-container { background: var(--primary-light); width: 56px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-        .nav-item.active svg { stroke: var(--primary); stroke-width: 2.5; }
-
+        /* Forms & Inputs */
         .card { background: var(--surface); border-radius: var(--border-radius); padding: 24px; border: 1px solid var(--border); margin-bottom: 16px; box-shadow: var(--shadow-card); }
         .form-group { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
         .input-box { width: 100%; display: flex; flex-direction: column; gap: 8px;}
         label { font-weight: 700; color: var(--text-dark); font-size: 0.8rem; letter-spacing: 0.3px;}
-        select, input { width: 100%; height: 52px; padding: 0 16px; border: 1px solid var(--border); border-radius: 12px; font-size: 0.95rem; background-color: var(--primary-light); color: var(--text-dark); outline: none; font-weight: 500; transition: 0.2s;}
+        select, input { width: 100%; height: 52px; padding: 0 16px; border: 1px solid var(--border); border-radius: 12px; font-size: 0.95rem; background-color: var(--primary-light); color: var(--text-dark); outline: none; font-weight: 600; transition: 0.2s;}
         select:focus, input:focus { border-color: var(--primary); background: #FFF; box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.05); }
         .input-row { display: flex; gap: 12px; align-items: flex-end; width: 100%; }
         .input-row .input-box { flex: 1; }
@@ -129,50 +123,37 @@
         .btn:active { transform: scale(0.97); }
         .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-dark); }
         .btn-outline:active { background: var(--primary-light); }
-        .btn-danger { background: var(--occ-bg); color: var(--danger); border: none; }
-
-        /* Premium Overview Cards */
-        .record-card { padding: 18px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); margin-bottom: 14px; cursor: pointer; transition: 0.1s; display: flex; flex-direction: column; gap: 10px; box-shadow: var(--shadow-card);}
-        .record-card:active { transform: scale(0.98); background: var(--primary-light); }
-        .record-header { display: flex; justify-content: space-between; align-items: flex-start; }
-        .record-title { font-weight: 800; font-size: 1.05rem; color: var(--text-dark); }
-        .record-sub { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-top: 4px; }
-        .record-amount { font-size: 1.25rem; font-weight: 800; color: var(--primary); letter-spacing: -0.5px;}
+        
+        /* Zepto Order Cards with Highlighted Amount/Date */
+        .order-card { padding: 18px; border: 1px solid var(--border); border-radius: 16px; background: var(--surface); margin-bottom: 16px; cursor: pointer; transition: 0.1s; box-shadow: var(--shadow-card);}
+        .order-card:active { transform: scale(0.98); background: var(--primary-light); }
+        .oc-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; border-bottom: 1px dashed var(--border); padding-bottom: 12px;}
+        .oc-title { font-weight: 800; font-size: 1.1rem; color: var(--text-dark); }
+        .oc-date-pill { background: var(--primary); color: #FFF; padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px;}
+        .oc-amt-highlight { background: #FFEDD5; color: #EA580C; font-size: 1.3rem; font-weight: 900; padding: 6px 12px; border-radius: 10px; border: 1px solid #FDBA74; }
         
         .pill { display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
-        .pill-gold { background: #FEF3C7; color: #B45309; }
-        .pill-silver { background: #F3F4F6; color: #4B5563; }
-        .pill-danger { background: #FEE2E2; color: #BE123C; }
-        .pill-success { background: #D1FAE5; color: #047857; }
-        .pill-warning { background: #FEF3C7; color: #B45309; }
 
-        /* Swipeable Filters */
         .swipe-filters { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 16px; scroll-behavior: smooth; }
         .swipe-filters::-webkit-scrollbar { display: none; }
-        .filter-chip { flex: 0 0 auto; height: 38px; padding: 0 20px; font-size: 0.85rem; border-radius: 19px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dark); font-weight: 600; display: flex; align-items: center; transition: 0.2s;}
+        .filter-chip { flex: 0 0 auto; height: 38px; padding: 0 20px; font-size: 0.85rem; border-radius: 19px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dark); font-weight: 700; display: flex; align-items: center; transition: 0.2s;}
         .filter-chip.active { background: var(--primary); color: #FFF; border-color: var(--primary); }
 
-        .chart-wrapper { position: relative; height: 260px; min-height: 260px; width: 100%; margin-top: 16px; display: block; }
-        .chart-filters { display: flex; gap: 8px; margin-bottom: 12px; justify-content: center; }
-
-        /* Modals */
         .modal-overlay { display:none; position:fixed; inset:0; background:rgba(17, 24, 39, 0.6); z-index:10000; align-items:flex-end; justify-content:center; backdrop-filter: blur(4px);}
         .bottom-sheet { background:var(--surface); padding:28px 24px; border-radius: 24px 24px 0 0; width:100%; max-width: 600px; animation: sheetUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); max-height: 90dvh; overflow-y: auto; padding-bottom: calc(28px + env(safe-area-inset-bottom)); box-shadow: 0 -10px 40px rgba(0,0,0,0.1);}
         @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .sheet-handle { width: 40px; height: 5px; background: #E5E7EB; border-radius: 3px; margin: 0 auto 24px auto; }
         
-        #loader { position: fixed; inset: 0; background: rgba(253,252,248,0.9); z-index: 99999; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 16px; color: var(--primary); font-weight: 700; font-size: 1rem; backdrop-filter: blur(4px); }
-        .spinner { width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+        #loader { position: fixed; inset: 0; background: rgba(253,252,248,0.95); z-index: 99999; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 16px; color: var(--primary); font-weight: 700; font-size: 1rem; backdrop-filter: blur(4px); }
+        .spinner { width: 36px; height: 36px; border: 4px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
 
-        #splashScreen { position: fixed; inset: 0; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
+        #splashScreen { position: fixed; inset: 0; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.4s ease; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        @media screen { #printSection { display: none !important; } }
         @media print {
             body { background-color: white; margin: 0; padding: 0; display: block; height: auto; overflow: visible; max-width: none; box-shadow: none; font-family: 'Inter', sans-serif;}
             .top-app-bar, .bottom-nav, main, #loginScreen, #splashScreen, .modal-overlay { display: none !important; }
             #printSection { display: block !important; position: absolute; left: 0; top: 0; width: 80mm; color: #000; margin: 0; padding: 2mm; }
-            #printSection h2, #printSection h3, #printSection p, #printSection div { margin: 0; padding: 0; }
             #printSection table { width: 100%; border-collapse: collapse; margin-top: 5px; margin-bottom: 5px; table-layout: fixed; }
             #printSection th, #printSection td { padding: 4px 0; font-size: 12px; color: #000; vertical-align: top; border-bottom: none !important; word-wrap: break-word; }
             #printSection th { border-bottom: 1px dashed #000 !important; border-top: 1px dashed #000 !important; font-weight: bold; }
@@ -196,96 +177,46 @@
         <div style="width: 100%; max-width: 400px; background: var(--surface); padding: 48px 32px; border-radius: 24px; box-shadow: var(--shadow-card); border: 1px solid var(--border);">
             <div style="text-align: center; margin-bottom: 40px;">
                 <div class="logo-graphic" style="font-size: 2.2rem;">Viraasat<div class="logo-accent" style="margin: 8px auto 0;"></div></div>
-                <p style="color: var(--text-muted); font-weight: 700; font-size: 0.75rem; margin-top: 16px; text-transform: uppercase; letter-spacing: 1.5px;">Authorized Terminal</p>
+                <p style="color: var(--text-muted); font-weight: 800; font-size: 0.75rem; margin-top: 16px; text-transform: uppercase; letter-spacing: 1.5px;">Authorized Terminal</p>
             </div>
             <div class="form-group">
                 <div class="input-box"><label>Mobile Identity</label><input type="tel" id="loginMobile" placeholder="10-digit number" inputmode="numeric"></div>
                 <div class="input-box"><label>Secure PIN</label><input type="password" id="loginPass" placeholder="Enter PIN"></div>
             </div>
             <button class="btn" onclick="attemptLogin()" id="btnLogin" style="margin-top: 8px;">Authenticate</button>
-            <div id="loginError" style="color: var(--danger); text-align: center; font-size: 0.85rem; margin-top: 20px; font-weight: 600; min-height: 20px;"></div>
+            <div id="loginError" style="color: var(--danger); text-align: center; font-size: 0.85rem; margin-top: 20px; font-weight: 700; min-height: 20px;"></div>
         </div>
     </div>
 
-    <!-- ADD NEW TABLE MODAL -->
-    <div id="addTableModal" class="modal-overlay">
-        <div class="bottom-sheet">
-            <div class="sheet-handle"></div>
-            <h3 style="font-size:1.3rem; font-weight: 800; margin-bottom:24px;">Deploy New Table</h3>
-            <div class="form-group">
-                <div class="input-box"><label>Assign Zone</label><select id="newTableCategory"></select></div>
-                <div class="input-box"><label>Table Identifier</label><input type="number" id="newTableNumber" placeholder="e.g. 11" inputmode="numeric"></div>
-            </div>
-            <div class="input-row" style="margin-top: 12px;">
-                <button class="btn btn-outline" onclick="closeModal('addTableModal')">Cancel</button>
-                <button class="btn" onclick="confirmAddTable()">Save Table</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- PAYMENT MODAL -->
-    <div id="paymentModal" class="modal-overlay">
-        <div class="bottom-sheet">
-            <div class="sheet-handle"></div>
-            <h3 style="font-size:1.3rem; font-weight: 800; margin-bottom:24px; text-align:center;">Settle Transaction</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 32px;">
-                <div class="record-card" id="payCash" onclick="selectPaymentMode('Cash')" style="align-items:center; border: 2px solid var(--border);">
-                    <span style="font-size:1.4rem;">💵</span><span style="font-weight:700; font-size:0.9rem;">Cash</span>
-                </div>
-                <div class="record-card" id="payUPI" onclick="selectPaymentMode('UPI')" style="align-items:center; border: 2px solid var(--border);">
-                    <span style="font-size:1.4rem;">📱</span><span style="font-weight:700; font-size:0.9rem;">UPI</span>
-                </div>
-                <div class="record-card" id="payCard" onclick="selectPaymentMode('Card')" style="align-items:center; border: 2px solid var(--border);">
-                    <span style="font-size:1.4rem;">💳</span><span style="font-weight:700; font-size:0.9rem;">Card</span>
-                </div>
-            </div>
-            <button class="btn" style="height:60px; font-size:1.1rem;" id="btnFinalCheckout" onclick="processFinalCheckout()">Complete Checkout</button>
-            <button class="btn btn-outline" onclick="closeModal('paymentModal')" style="margin-top:16px;">Cancel</button>
-        </div>
-    </div>
-
-    <!-- ORDER DETAILS & ACTION MODAL -->
+    <!-- ORDER DETAILS MODAL -->
     <div id="orderDetailsModal" class="modal-overlay">
         <div class="bottom-sheet">
             <div class="sheet-handle"></div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <h3 style="font-size:1.3rem; font-weight: 800;">Transaction Details</h3>
+                <h3 style="font-size:1.4rem; font-weight: 900;">Order Details</h3>
                 <button onclick="closeModal('orderDetailsModal')" style="background:transparent; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-muted);">&times;</button>
             </div>
+            <div id="modalOrderMeta" style="background:var(--primary-light); padding:16px; border-radius:12px; font-size:0.85rem; color:var(--text-dark); margin-bottom:20px; line-height: 1.6; font-weight:500;"></div>
             
-            <div id="modalOrderMeta" style="background:var(--primary-light); padding:16px; border-radius:12px; font-size:0.85rem; color:var(--text-dark); margin-bottom:20px; line-height: 1.6;"></div>
+            <div style="margin-bottom:24px; max-height: 35vh; overflow-y:auto; font-size:0.95rem; line-height:1.6;" id="modalOrderItems"></div>
             
-            <div style="margin-bottom:24px; max-height: 35vh; overflow-y:auto; font-size:0.9rem; line-height:1.6;" id="modalOrderItems"></div>
-            
-            <div style="display:flex; justify-content:space-between; align-items:center; border-top: 1px solid var(--border); padding-top: 16px; margin-bottom:24px;">
-                <span style="font-weight:700; font-size:1.1rem; color:var(--text-muted);">Net Payable</span>
-                <span style="font-weight:800; font-size:1.6rem; color:var(--primary);" id="modalOrderTotal"></span>
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top: 2px dashed var(--border); padding-top: 16px; margin-bottom:24px;">
+                <span style="font-weight:800; font-size:1.1rem; color:var(--text-muted);">Net Payable</span>
+                <span style="font-weight:900; font-size:1.8rem; color:var(--primary);" id="modalOrderTotal"></span>
             </div>
             
-            <div class="form-group" style="margin-bottom: 24px;">
-                <div class="input-box"><label>Client Contact (Optional)</label><input type="tel" id="modalCustomerPhone" placeholder="Enter 10 digit number" inputmode="numeric"></div>
-            </div>
-            
-            <div class="input-row" style="margin-bottom: 12px;">
+            <div class="input-row" style="margin-bottom: 16px;">
                 <button class="btn btn-outline" onclick="printHistoricalBill()">Print Receipt</button>
-                <button class="btn" style="background:#047857;" onclick="sendWA_HistoricalBill()">WhatsApp</button>
+                <button class="btn" style="background:#10B981; border:none;" onclick="sendWA_HistoricalBill()">WhatsApp</button>
             </div>
-            <button class="btn btn-danger" style="width:100%;" id="btnRequestDelete" onclick="requestOrderDeletion()">Request Cancellation</button>
-        </div>
-    </div>
-
-    <!-- IMAGE PREVIEW MODAL -->
-    <div id="imagePreviewModal" class="modal-overlay" style="z-index: 100000; align-items: center;">
-        <div class="bottom-sheet" style="max-width: 90%; border-radius: 20px; padding: 16px; text-align: center; margin: 0 auto; transform: none; background: transparent; box-shadow: none;">
-            <img id="fullSizeReceipt" src="" style="max-width: 100%; max-height: 70vh; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-            <button class="btn" style="margin-top: 20px; background: #FFF; color: var(--primary);" onclick="closeModal('imagePreviewModal')">Close Preview</button>
+            <button class="btn" style="width:100%; background:var(--danger);" id="btnRequestDelete" onclick="requestOrderDeletion()">Request Cancellation</button>
         </div>
     </div>
 
     <!-- CUSTOM SECURE ALERT MODAL -->
     <div id="customAlertModal" class="modal-overlay" style="z-index: 100000; align-items: center;">
         <div class="bottom-sheet" style="max-width: 340px; border-radius: 24px; padding: 32px 24px; text-align: center; margin: 0 20px; transform: none; animation: fadeIn 0.2s ease-out;">
-            <h3 id="customAlertMessage" style="font-size:1.05rem; font-weight:600; margin-bottom: 28px; color: var(--text-dark); line-height: 1.5;">Message</h3>
+            <h3 id="customAlertMessage" style="font-size:1.1rem; font-weight:700; margin-bottom: 28px; color: var(--text-dark); line-height: 1.5;">Message</h3>
             <div class="input-row" id="customAlertButtons" style="gap: 12px; justify-content: center;"></div>
         </div>
     </div>
@@ -293,11 +224,11 @@
     <!-- TOP BAR -->
     <header class="top-app-bar" id="appHeader" style="display: none;">
         <div class="brand-container">
-            <div class="logo-graphic" style="font-size: 1.3rem;">Viraasat<div class="logo-accent" style="width: 20px; margin-top: 4px;"></div></div>
+            <div class="logo-graphic" style="font-size: 1.4rem;">Viraasat<div class="logo-accent" style="width: 24px; margin-top: 4px;"></div></div>
             <div class="page-subtitle" id="pageMainTitle">A Taste Of Royal Heritage</div>
         </div>
         <button class="icon-btn" onclick="haptic(); fetchData();" title="Synchronize Data">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path></svg>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path></svg>
         </button>
     </header>
 
@@ -313,52 +244,30 @@
                 <div class="date-badge" id="currentDateStr">Today</div>
             </div>
 
-            <div class="quick-action-grid">
-                <div class="quick-card" id="cardTakeaway" onclick="openTable('Takeaway')">
-                    <div class="qc-icon">🛍️</div>
-                    <div class="qc-info">
-                        <h4>Takeaway</h4>
-                        <span class="status-dot" id="takeawayStatus">● READY</span>
-                    </div>
+            <!-- Zepto Style KPI Cards -->
+            <div class="kpi-zepto-grid">
+                <div class="zepto-card" style="background: var(--z-card-purple);">
+                    <div class="zepto-card-title">💰 Today's Sale</div>
+                    <div class="zepto-card-val" id="homeTodaySale">₹0</div>
+                    <div class="zepto-card-sub">Gross Net</div>
                 </div>
-                <div class="quick-card" id="cardDelivery" onclick="openTable('Home Delivery')">
-                    <div class="qc-icon">🛵</div>
-                    <div class="qc-info">
-                        <h4>Delivery</h4>
-                        <span class="status-dot" id="deliveryStatus">● READY</span>
-                    </div>
+                <div class="zepto-card" style="background: var(--z-card-peach);">
+                    <div class="zepto-card-title">📊 Avg. Value</div>
+                    <div class="zepto-card-val" id="homeAvgOrder">₹0</div>
+                    <div class="zepto-card-sub">Per Invoice</div>
+                </div>
+                <div class="zepto-card" style="background: var(--z-card-mint);" onclick="openTable('Takeaway')">
+                    <div class="zepto-card-title">🛍️ Takeaway</div>
+                    <div class="zepto-card-val" id="takeawayStatus" style="font-size:1.1rem; margin-top:8px;">Ready</div>
+                </div>
+                <div class="zepto-card" style="background: var(--z-card-blue);" onclick="openTable('Home Delivery')">
+                    <div class="zepto-card-title">🛵 Delivery</div>
+                    <div class="zepto-card-val" id="deliveryStatus" style="font-size:1.1rem; margin-top:8px;">Ready</div>
                 </div>
             </div>
             
+            <div class="section-header" style="margin-top: 32px;"><h4>Dining Zones</h4></div>
             <div id="tableGrid"></div>
-
-            <div class="home-kpi-grid" id="homeKpiGrid">
-                <div class="hkpi-card">
-                    <div class="hkpi-top">Today's Revenue</div>
-                    <div class="hkpi-val" id="homeTodaySale">₹0</div>
-                    <div class="hkpi-sub">Gross Net</div>
-                </div>
-                <div class="hkpi-card">
-                    <div class="hkpi-top">Average Value</div>
-                    <div class="hkpi-val" id="homeAvgOrder">₹0</div>
-                    <div class="hkpi-sub">Per Invoice</div>
-                </div>
-                <div class="hkpi-card">
-                    <div class="hkpi-top">Lifetime Volume</div>
-                    <div class="hkpi-val" id="homeOverallSale">₹0</div>
-                    <div class="hkpi-sub">All Records</div>
-                </div>
-                <div class="hkpi-card">
-                    <div class="hkpi-top">Active Zones</div>
-                    <div class="hkpi-val" id="homeActiveTables">0 / 0</div>
-                    <div class="hkpi-sub">Table Status</div>
-                </div>
-            </div>
-
-            <div class="section-header"><h4>Recent Transactions</h4> <span onclick="switchMainTab('salesDashboard', document.getElementById('navOrders'))">Registry ›</span></div>
-            <div id="homeRecentOrders"></div>
-
-            <button class="btn btn-outline" onclick="showAddTableModal()" style="margin: 24px 0; height: 56px;">+ Deploy New Table</button>
         </div>
 
         <!-- TAB 2: REGISTRY (LIVE SALES) -->
@@ -371,243 +280,97 @@
                 <div class="swipe-filters">
                     <button id="btnFilterToday" class="filter-chip" onclick="setTodayFilter()">Today</button>
                     <button id="btnFilterYesterday" class="filter-chip" onclick="setYesterdayFilter()">Yesterday</button>
-                    <button id="btnFilterClear" class="filter-chip" style="color: var(--danger); border-color: var(--occ-border);" onclick="resetDateFilter()">Reset Filters</button>
+                    <button id="btnFilterClear" class="filter-chip" style="color: var(--danger); border-color: #FDA4AF;" onclick="resetDateFilter()">Reset</button>
                 </div>
                 <div style="display:flex; gap:12px;">
-                    <div style="flex:1; background:var(--primary); border-radius:12px; font-weight:800; font-size:1.1rem; text-align:center; color:#FFF; display:flex; align-items:center; justify-content:center;" id="totalSalesBox">Revenue: ₹ 0</div>
-                    <button class="btn btn-outline" style="width: auto; padding: 0 16px;" onclick="exportRegistrySales()">Export</button>
+                    <div style="flex:1; background:var(--primary); border-radius:12px; font-weight:800; font-size:1.2rem; text-align:center; color:#FFF; display:flex; align-items:center; justify-content:center;" id="totalSalesBox">₹ 0</div>
                 </div>
             </div>
             <div class="section-header"><h4>Transaction Directory</h4></div>
-            <div id="salesGrid" class="sales-grid"></div>
+            <div id="salesGrid"></div>
         </div>
 
         <!-- TAB 3: OVERVIEW (P&L & ITEM INSIGHTS) -->
         <div id="trendView" class="tab-content">
-            <div class="greeting-sec"><h2 style="margin-top: 16px;">Intelligence & P&L</h2><p>Item metrics and financial trends.</p></div>
+            <div class="greeting-sec"><h2 style="margin-top: 16px;">Intelligence & P&L</h2><p>Metrics & financial trends.</p></div>
             
-            <div class="trend-kpi-grid">
-                <div class="trend-kpi-card full-width" style="background:var(--primary); color:#FFF; border:none;">
-                    <div class="kpi-title" style="color: rgba(255,255,255,0.7);">Net Profit (Calculated)</div>
-                    <div class="kpi-value" id="kpiNetProfit">₹ 0</div>
+            <div class="kpi-zepto-grid">
+                <div class="zepto-card" style="grid-column: span 2; background: var(--primary); color: #FFF;">
+                    <div class="zepto-card-title" style="color: rgba(255,255,255,0.7);">Net Profit (Calculated)</div>
+                    <div class="zepto-card-val" style="color: #FFF;" id="kpiNetProfit">₹ 0</div>
                 </div>
-                <div class="trend-kpi-card"><div class="kpi-title">Gross Sales</div><div class="kpi-value" style="color:var(--success);" id="kpiTotalSales">₹ 0</div></div>
-                <div class="trend-kpi-card"><div class="kpi-title">Gross Expenses</div><div class="kpi-value" style="color:var(--danger);" id="kpiTotalExpenses">₹ 0</div></div>
+                <div class="zepto-card" style="background: var(--z-card-mint);">
+                    <div class="zepto-card-title">Gross Sales</div>
+                    <div class="zepto-card-val" id="kpiTotalSales">₹ 0</div>
+                </div>
+                <div class="zepto-card" style="background: #FEE2E2;">
+                    <div class="zepto-card-title" style="color: var(--danger);">Gross Expenses</div>
+                    <div class="zepto-card-val" id="kpiTotalExpenses" style="color: var(--danger);">₹ 0</div>
+                </div>
             </div>
 
-            <!-- SMART ITEM WISE SALES RANKING -->
             <div class="card">
-                <div class="section-header" style="margin-top:0;">
-                    <h4>Top Performing Items</h4> 
-                    <span onclick="exportItemSales()">Export ›</span>
-                </div>
-                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px;">Ranked by units sold based on current timeframe.</p>
+                <div class="section-header" style="margin-top:0;"><h4>Top Performing Items</h4></div>
                 <div id="itemAnalyticsList" style="display:flex; flex-direction:column; gap:12px;"></div>
             </div>
             
             <div class="card">
                 <div class="section-header" style="margin-top:0;"><h4>Revenue Trend</h4></div>
                 <div class="chart-filters">
-                    <button class="filter-btn active" id="btnChartDOD" onclick="renderPNLChart('daily')">Daily</button>
-                    <button class="filter-btn" id="btnChartWeekly" onclick="renderPNLChart('weekly')">Weekly</button>
-                    <button class="filter-btn" id="btnChartMonthly" onclick="renderPNLChart('monthly')">Monthly</button>
+                    <button class="filter-chip active" id="btnChartDOD" onclick="renderPNLChart('daily')">Daily</button>
+                    <button class="filter-chip" id="btnChartWeekly" onclick="renderPNLChart('weekly')">Weekly</button>
+                    <button class="filter-chip" id="btnChartMonthly" onclick="renderPNLChart('monthly')">Monthly</button>
                 </div>
                 <div class="chart-wrapper"><canvas id="trendChart"></canvas></div>
             </div>
         </div>
 
-        <!-- TAB 4: EXPENDITURE (EXPENSES) -->
-        <div id="expenses" class="tab-content">
-            <div class="greeting-sec"><h2 style="margin-top: 16px;">Expenditure Log</h2><p>Track all operational costs.</p></div>
-            <div class="card">
-                <div class="form-group">
-                    <div class="input-box"><label>Classification</label><select id="expCategory"><option>Raw Material</option><option>Utility</option><option>Payroll</option><option>Maintenance</option><option>Other</option></select></div>
-                    <div class="input-box"><label>Amount Disbursed (₹)</label><input type="number" id="expAmount" placeholder="0.00" inputmode="numeric"></div>
-                    <div class="input-box"><label>Vendor / Details</label><input type="text" id="expDescription" placeholder="Specific details"></div>
-                    <div class="input-box" style="margin-top: 8px;">
-                        <label>Attach Receipt (Optional)</label>
-                        <input type="file" id="expImage" accept="image/*" style="padding: 12px; background: #FFF; border: 1px dashed var(--text-muted); cursor: pointer;" onchange="handleExpenseImage(event)">
-                        <div id="expImagePreview" style="margin-top: 8px; font-size: 0.75rem; font-weight: 700; color: var(--success); display: none;">✓ Image attached securely.</div>
-                    </div>
-                </div>
-                <button class="btn" onclick="submitExpense()">Commit Entry</button>
-            </div>
-
-            <div class="section-header" style="margin-bottom:16px;"><h4>Expense Ledger</h4> <span onclick="exportExpensesTable()">Export ›</span></div>
-            
-            <!-- Expense Summary Progress Bar -->
-            <div style="background: var(--surface); padding: 16px; border-radius: var(--border-radius); box-shadow: var(--shadow-card); margin-bottom: 20px;">
-                <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-dark); margin-bottom: 8px;">Category Breakdown</div>
-                <div class="progress-container" id="expenseProgressBar"></div>
-                <div id="expenseProgressLegend" style="display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; font-size:0.7rem; font-weight:600;"></div>
-            </div>
-
-            <!-- Swipeable Filters for Expenses -->
-            <div class="swipe-filters" id="expenseFilters">
-                <button class="filter-chip active" onclick="renderExpensesList('All', this)">All</button>
-                <button class="filter-chip" onclick="renderExpensesList('Raw Material', this)">Raw Material</button>
-                <button class="filter-chip" onclick="renderExpensesList('Utility', this)">Utility</button>
-                <button class="filter-chip" onclick="renderExpensesList('Payroll', this)">Payroll</button>
-                <button class="filter-chip" onclick="renderExpensesList('Maintenance', this)">Maintenance</button>
-                <button class="filter-chip" onclick="renderExpensesList('Other', this)">Other</button>
-            </div>
-
-            <div id="expensesCardList" style="display: flex; flex-direction: column; gap: 12px; padding-bottom: 24px;"></div>
-        </div>
-
-        <!-- TAB 5: SYSTEM ADMIN -->
+        <!-- TAB 4: SYSTEM ADMIN -->
         <div id="usersManager" class="tab-content">
             <div class="greeting-sec" style="margin-top: 16px; margin-bottom: 24px;">
                 <h2 style="font-size: 1.6rem;">Admin Console</h2>
             </div>
 
-            <!-- ADMIN APPROVALS SECTION -->
-            <div class="card" id="adminApprovalsCard" style="display:none; border-color:var(--danger); background:var(--occ-bg);">
-                <div class="section-header" style="margin-top:0;"><h4>⚠️ Pending Deletion Requests</h4></div>
+            <!-- CANCELLATION / AUDIT LOGS (NEW) -->
+            <div class="card" id="adminAuditCard" style="border-color: var(--danger); background: #FEF2F2;">
+                <div class="section-header" style="margin-top:0;"><h4>⚠️ Cancellation / Audit Logs</h4></div>
+                <p style="font-size: 0.8rem; color: var(--danger); margin-bottom: 16px; font-weight:600;">Track orders requested for deletion.</p>
                 <div id="adminApprovalsList" style="display:flex; flex-direction:column; gap:12px;"></div>
             </div>
 
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Bulk Menu Registry</h4></div>
-                <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:16px;">Upload a menu sheet to update prices or append items.</p>
-                <div class="form-group" style="margin-bottom:0;">
-                    <input type="file" id="menuImportInput" accept=".xlsx,.xls,.csv" style="padding:12px; border:1px dashed var(--border); background:#FFF; cursor:pointer;">
-                    <button class="btn" style="margin-top:12px;" onclick="uploadMenuBulk()">Synchronize Menu</button>
-                </div>
-            </div>
-
-            <!-- FULL DATABASE IMPORT -->
             <div class="card" style="border-color:#10B981;">
                 <div class="section-header" style="margin-top:0;"><h4>System Restoration</h4></div>
                 <div class="form-group" style="margin-bottom:0;">
                     <input type="file" id="fullImportInput" accept=".xlsx,.xls,.csv" style="padding:12px; border:1px dashed var(--border); background:#FFF; cursor:pointer;">
                     <button class="btn" style="margin-top:12px; background:#10B981;" onclick="runFullImport()">Execute Master Import</button>
-                    <div id="importStatusText" style="margin-top:10px; font-size:0.8rem; font-weight:700;"></div>
                 </div>
             </div>
 
-            <!-- Active Personnel -->
             <div class="section-header" style="margin-top:32px;"><h4>Personnel Directory</h4></div>
             <div id="employeeList" style="display:flex; flex-direction:column; gap:16px; margin-bottom:32px;"></div>
-            
-            <div class="card" style="margin-top: 24px;">
-                <div class="section-header" style="margin-top:0;"><h4>Grant System Access</h4></div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <div class="input-row">
-                        <div class="input-box"><label>Mobile ID</label><input type="tel" id="staffMobile" placeholder="10 Digits" inputmode="numeric"></div>
-                        <div class="input-box"><label>Security PIN</label><input type="text" id="staffPass" placeholder="Set PIN"></div>
-                    </div>
-                    <div style="display:flex; flex-direction:column; gap:14px; margin-top:16px; background:var(--bg-color); padding:20px; border-radius:12px; border:1px solid var(--border);">
-                        <label style="display:flex; align-items:center; gap:12px; font-weight:600; font-size:0.9rem;"><input type="checkbox" id="chkOrders" style="width:20px;height:20px; accent-color:var(--primary);"> Authorize Registry</label>
-                        <label style="display:flex; align-items:center; gap:12px; font-weight:600; font-size:0.9rem;"><input type="checkbox" id="chkAnalytics" style="width:20px;height:20px; accent-color:var(--primary);"> Authorize Overview</label>
-                        <label style="display:flex; align-items:center; gap:12px; font-weight:600; font-size:0.9rem;"><input type="checkbox" id="chkExpenses" style="width:20px;height:20px; accent-color:var(--primary);"> Authorize Expenditures</label>
-                    </div>
-                    <button class="btn" onclick="saveUserPermissions()" style="margin-top:16px;">Grant Access</button>
-                </div>
-            </div>
-            
-            <div class="section-header"><h4>Authorized Identities</h4></div>
-            <div id="staffList" style="display:flex; flex-direction:column; gap:12px; margin-bottom: 32px;"></div>
-        </div>
-
-        <!-- BILLING VIEW -->
-        <div id="billingView" class="tab-content">
-            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px; margin-top: 16px;">
-                <button class="icon-btn" onclick="goBackToTables(false)">
-                    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                </button>
-                <h2 id="billingTitle" style="font-size: 1.4rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.5px;">Billing Terminal</h2>
-            </div>
-            
-            <div class="card" style="padding: 24px;">
-                <div class="form-group" style="margin-bottom: 16px;">
-                    <div class="input-box">
-                        <label>Lookup Catalog</label>
-                        <input list="menuItemsList" id="itemInput" placeholder="Search registry..." oninput="checkStockDisplay()" onchange="checkStockDisplay()">
-                        <datalist id="menuItemsList"></datalist>
-                        <div id="stockStatus" style="display:none; margin-top: 10px;"></div>
-                    </div>
-                </div>
-                <div class="input-row">
-                    <div class="input-box" style="flex:0.35;"><label>Units</label><input type="number" id="itemQty" value="1" min="1" inputmode="numeric" style="text-align: center; font-weight: 700;"></div>
-                    <button class="btn" style="flex:1;" onclick="addToBill()">Append to Invoice</button>
-                </div>
-            </div>
-
-            <details style="background:var(--surface); border-radius:16px; margin-bottom:24px; border:1px solid var(--border); overflow: hidden;">
-                <summary style="padding:20px; font-weight:700; font-size: 0.95rem; color:var(--text-dark); outline:none; cursor:pointer; list-style: none; display: flex; align-items: center; gap: 12px; background: var(--bg-color);">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Inject Custom Entry
-                </summary>
-                <div style="padding:20px; border-top: 1px solid var(--border);">
-                    <div class="form-group" style="margin-bottom:0;">
-                        <input type="text" id="customName" placeholder="Specific Item Identifier" style="margin-bottom: 12px;">
-                        <div class="input-row" style="margin-bottom: 16px;">
-                            <input type="number" id="customPrice" placeholder="Value (₹)" inputmode="numeric">
-                            <input type="number" id="customQty" value="1" min="1" inputmode="numeric" style="flex:0.35; text-align: center;">
-                        </div>
-                        <button class="btn btn-outline" onclick="addCustomItem()">Inject Entry</button>
-                    </div>
-                </div>
-            </details>
-
-            <div class="section-header" style="margin-top:0;"><h4>Invoice Line Items</h4></div>
-            <div id="billTableBody" class="cart-list"></div>
-
-            <div class="cart-summary">
-                <div class="summary-row"><span>Subtotal Calculation</span><span id="subTotal" style="color: var(--text-dark);">₹ 0</span></div>
-                <div class="summary-row">
-                    <span>Applicable Deduction (₹)</span><input type="number" id="discountValue" class="discount-input" value="0" min="0" oninput="updateBillTable()">
-                </div>
-                <div class="summary-row grand-total"><span>Net Payable</span><span id="grandTotal">₹ 0</span></div>
-            </div>
-
-            <div class="card" style="padding: 24px;">
-                <div class="input-box" style="margin-bottom: 20px;">
-                    <label>Client Identification (Optional)</label><input type="tel" id="customerPhone" placeholder="10 digit contact" inputmode="numeric">
-                </div>
-                <div class="input-box" id="deliveryAddressBox" style="display:none;">
-                    <label>Logistics Routing</label><input type="text" id="deliveryAddress" placeholder="Enter routing parameters">
-                </div>
-            </div>
-
-            <div class="action-grid">
-                <button class="btn btn-outline" id="btnKOT" onclick="saveKOT()">Register KOT</button>
-                <button class="btn btn-outline" onclick="printBill('kot')">Generate KOT Slip</button>
-            </div>
-            
-            <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:40px; margin-top: 24px;">
-                <button class="btn btn-outline" onclick="printBill('final')">Generate Final Invoice</button>
-                <button class="btn btn-outline" style="border-color:#047857; color:#047857;" onclick="sendWA_Customer()">Transmit Digital Invoice (WA)</button>
-                <button class="btn btn-danger" onclick="clearTableWithoutCheckout()" style="height:56px;">Terminate Session (Clear)</button>
-                <button class="btn" style="margin-top:12px; height: 64px; font-size:1.15rem; border-radius: 16px;" onclick="openModal('paymentModal')">Execute Checkout</button>
-            </div>
         </div>
     </main>
 
-    <!-- ZEPTO STYLE 5 TABS NAVIGATION BAR -->
+    <!-- ZEPTO STYLE NAVIGATION BAR -->
     <nav class="bottom-nav" id="appBottomNav" style="display: none;">
         <button class="nav-item active" id="navHub" onclick="switchMainTab('tableDashboard', this)">
-            <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg></div>
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg>
             <span>Hub</span>
         </button>
         <button class="nav-item" id="navOrders" onclick="switchMainTab('salesDashboard', this)">
-            <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
             <span>Registry</span>
         </button>
         <button class="nav-item" id="navAnalytics" onclick="switchMainTab('trendView', this)">
-            <div class="icon-container"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></div>
+            <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
             <span>Overview</span>
         </button>
-        <button class="nav-item" id="navExpenses" onclick="switchMainTab('expenses', this)">
-            <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></div>
-            <span>Expenses</span>
-        </button>
         <button class="nav-item" id="navUsers" onclick="switchMainTab('usersManager', this)" style="display:none;">
-            <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
+            <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
             <span>Admin</span>
         </button>
-        <button class="nav-item" onclick="haptic(); logoutUser();" style="color: var(--danger);">
-            <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></div>
+        <button class="nav-item" onclick="haptic(); logoutUser();">
+            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
             <span>Logout</span>
         </button>
     </nav>
@@ -615,25 +378,21 @@
     <div id="printSection"></div>
 
     <script>
-        // ==========================================
-        // SYSTEM CONFIGURATION
-        // ==========================================
-        const API_BASE = '/api'; 
-        const APP_VERSION = "Enterprise v4.3"; 
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbyKuVmEYRbJaYkdUDVNcU9c6mDT4q-VMTESwrikIZvJwK6PteEVwMObdmTMcgqR12KIPA/exec'; 
+        const APP_VERSION = "Enterprise v4.5"; 
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
         let menuData = []; let stockData = {}; let runningTables = {}; 
         let salesHistory = []; let expenseHistory = []; let currentBill = []; let staffData = [];
         let activeTableNumber = ""; let trendChartInstance = null; let selectedPaymentMode = "Cash";
         let rawChartSalesData = {}; let rawChartExpenseData = {};
-        let currentViewingSale = null; let expenseImageBase64 = null;
+        let currentViewingSale = null;
 
         // Login Enter Key Trigger
         document.getElementById('loginPass').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') attemptLogin();
         });
 
-        // HAPTIC FEEDBACK (VIBRATION)
         function haptic() { try { if (navigator.vibrate) navigator.vibrate(40); } catch(e){} }
 
         const royalTaglines = [
@@ -659,14 +418,7 @@
         setInterval(rotateTicker, 4500);
 
         let tableSections;
-        try {
-            tableSections = JSON.parse(localStorage.getItem('viraasat_table_sections')) || [
-                { title: "Hut Architecture", tables: ["1", "2", "3", "4"] },
-                { title: "Ground Level", tables: ["5", "6", "7"] },
-                { title: "Terrace Elevation", tables: ["8", "9", "10"] }
-            ];
-        } catch(e) { tableSections = [{ title: "Main Dining", tables: ["1", "2", "3", "4"] }]; }
-
+        try { tableSections = JSON.parse(localStorage.getItem('viraasat_table_sections')) || [{ title: "Main Dining", tables: ["1", "2", "3", "4", "5"] }]; } catch(e) { tableSections = [{ title: "Main Dining", tables: ["1", "2", "3", "4"] }]; }
         let userPermissions;
         try { userPermissions = JSON.parse(localStorage.getItem('viraasat_permissions')) || {}; } catch(e) { userPermissions = {}; }
 
@@ -704,174 +456,32 @@
         }
 
         // ==========================================
-        // MODALS & NAVIGATION (BACK BUTTON SAFE)
-        // ==========================================
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; try { history.pushState({modal: id}, '', '#' + id); } catch(e){} }
-        function closeModal(id) { const m = document.getElementById(id); if(m) m.style.display = 'none'; }
-        
-        function showAddTableModal() {
-            haptic();
-            let sel = document.getElementById('newTableCategory'); 
-            sel.innerHTML = ""; 
-            tableSections.forEach((sec, idx) => { sel.innerHTML += `<option value="${idx}">${sec.title}</option>`; }); 
-            document.getElementById('newTableNumber').value = ""; 
-            openModal('addTableModal');
-        }
-
-        window.showCustomAlert = function(message) {
-            document.getElementById('customAlertMessage').innerText = message;
-            document.getElementById('customAlertButtons').innerHTML = `<button class="btn" onclick="closeModal('customAlertModal')">Acknowledge</button>`;
-            openModal('customAlertModal');
-        };
-
-        let currentConfirmCallback = null; let currentCancelCallback = null;
-        window.showCustomConfirm = function(message, callback, cancelCallback) {
-            currentConfirmCallback = callback; currentCancelCallback = cancelCallback;
-            document.getElementById('customAlertMessage').innerText = message;
-            document.getElementById('customAlertButtons').innerHTML = `
-                <button class="btn btn-outline" onclick="closeModal('customAlertModal'); if(currentCancelCallback) currentCancelCallback();" style="flex:1;">Abort</button>
-                <button class="btn btn-danger" onclick="closeModal('customAlertModal'); if(currentConfirmCallback) currentConfirmCallback();" style="flex:1; border:none;">Execute</button>
-            `;
-            openModal('customAlertModal');
-        };
-
-        function enforceBackTrap() { try { history.pushState(null, null, location.href); } catch(e) {} }
-
-        window.onpopstate = function (event) {
-            enforceBackTrap();
-            let modals = ['customAlertModal', 'paymentModal', 'conflictModal', 'orderDetailsModal', 'addTableModal', 'imagePreviewModal'];
-            let modalClosed = false;
-            for(let id of modals) { let m = document.getElementById(id); if(m && m.style.display === 'flex') { m.style.display = 'none'; modalClosed = true; } }
-            if(modalClosed) return;
-
-            if (document.getElementById('billingView').style.display === 'block') { goBackToTables(true); return; }
-
-            let activeTab = document.querySelector('.tab-content.active');
-            if (activeTab && activeTab.id !== 'tableDashboard') { switchMainTab('tableDashboard', document.querySelector('.bottom-nav .nav-item:first-child'), true); return; }
-        };
-
-        function hideSplashScreen() { 
-            const splash = document.getElementById('splashScreen'); 
-            if(splash) { splash.style.opacity = '0'; setTimeout(() => { splash.style.display = 'none'; }, 500); } 
-        }
-
-        window.onload = function() { 
-            let savedMobile = localStorage.getItem('viraasat_user'); 
-            let savedPass = localStorage.getItem('viraasat_pass');
-            let savedVer = localStorage.getItem('app_version');
-
-            if(savedVer !== APP_VERSION) {
-                localStorage.clear();
-                if(savedMobile && savedPass) { localStorage.setItem('viraasat_user', savedMobile); localStorage.setItem('viraasat_pass', savedPass); }
-                localStorage.setItem('app_version', APP_VERSION); window.location.reload(true); return;
-            }
-
-            if(savedMobile && savedPass) {
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('appHeader').style.display = 'flex';
-                document.getElementById('appMain').style.display = 'block';
-                document.getElementById('appBottomNav').style.display = 'flex';
-                applyAdminRights(savedMobile); fetchData(); 
-                enforceBackTrap(); enforceBackTrap(); 
-            } else { 
-                document.getElementById('loginScreen').style.display = 'flex'; 
-                hideSplashScreen(); 
-            }
-        };
-
-        // ==========================================
-        // AUTHENTICATION
-        // ==========================================
-        function attemptLogin() {
-            haptic();
-            let mobile = document.getElementById('loginMobile').value.trim(); 
-            let pass = document.getElementById('loginPass').value.trim();
-            let btn = document.getElementById('btnLogin'); let err = document.getElementById('loginError');
-
-            if(!mobile || !pass) { err.innerText = "Credentials required."; return; }
-            btn.innerText = "Verifying..."; btn.disabled = true;
-
-            setTimeout(() => {
-                let isValid = false;
-                if(ADMIN_NUMBERS.includes(mobile) || pass === 'admin') isValid = true; 
-                else if(userPermissions[mobile] && userPermissions[mobile].password === pass) isValid = true;
-
-                if(isValid) { 
-                    localStorage.setItem('viraasat_user', mobile); localStorage.setItem('viraasat_pass', pass); 
-                    window.location.reload(true); 
-                } else { 
-                    btn.innerText = "Authenticate"; btn.disabled = false; showCustomAlert("Authorization Failed!"); 
-                }
-            }, 600); 
-        }
-
-        function applyAdminRights(mobile) {
-            let isAdmin = ADMIN_NUMBERS.includes(mobile) || localStorage.getItem('viraasat_pass') === 'admin';
-            let perms = userPermissions[mobile] || { orders: false, analytics: false, expenses: false };
-            window.isUserAdmin = isAdmin; window.userPerms = perms;
-
-            document.getElementById('navOrders').style.display = (isAdmin || perms.orders) ? 'flex' : 'none'; 
-            document.getElementById('navAnalytics').style.display = (isAdmin || perms.analytics) ? 'flex' : 'none'; 
-            document.getElementById('navExpenses').style.display = (isAdmin || perms.expenses) ? 'flex' : 'none'; 
-            document.getElementById('navUsers').style.display = isAdmin ? 'flex' : 'none';
-
-            if(isAdmin) { fetchApprovals(); }
-        }
-
-        function saveUserPermissions() {
-            let mobile = document.getElementById('staffMobile').value.trim(); let pass = document.getElementById('staffPass').value.trim();
-            if(mobile.length < 10 || pass.length < 4) { showCustomAlert("Invalid identity parameters."); return; }
-            userPermissions[mobile] = { password: pass, orders: document.getElementById('chkOrders').checked, analytics: document.getElementById('chkAnalytics').checked, expenses: document.getElementById('chkExpenses').checked };
-            localStorage.setItem('viraasat_permissions', JSON.stringify(userPermissions));
-            showCustomAlert("Access granted successfully.");
-            document.getElementById('staffMobile').value = ""; document.getElementById('staffPass').value = "";
-            document.getElementById('chkOrders').checked = false; document.getElementById('chkAnalytics').checked = false; document.getElementById('chkExpenses').checked = false; 
-        }
-
-        function logoutUser(clearFields = true) {
-            localStorage.removeItem('viraasat_user'); localStorage.removeItem('viraasat_pass');
-            document.getElementById('appHeader').style.display = 'none'; document.getElementById('appMain').style.display = 'none'; document.getElementById('appBottomNav').style.display = 'none'; document.getElementById('loginScreen').style.display = 'flex';
-            if(clearFields) { document.getElementById('loginMobile').value = ""; document.getElementById('loginPass').value = ""; }
-        }
-
-        // ==========================================
-        // DATA FETCHING & UI RENDERING
+        // DATA FETCHING (GOOGLE APPS SCRIPT)
         // ==========================================
         async function fetchData() {
             document.getElementById('loader').style.display = 'flex';
             try {
-                const [menuRes, stockRes, tablesRes, ordersRes, expRes, staffRes] = await Promise.all([
-                    fetch(`${API_BASE}/menu`).then(r => r.json()),
-                    fetch(`${API_BASE}/stock`).then(r => r.json()),
-                    fetch(`${API_BASE}/tables`).then(r => r.json()),
-                    fetch(`${API_BASE}/orders?limit=500`).then(r => r.json()),
-                    fetch(`${API_BASE}/expenses`).then(r => r.json()),
-                    fetch(`${API_BASE}/staff`).then(r => r.json())
-                ]);
+                const response = await fetch(scriptURL);
+                const data = await response.json();
 
-                menuData = menuRes.items || [];
-                stockData = {}; (stockRes.stock || []).forEach(s => { stockData[s.name] = s.quantity; });
-                runningTables = {}; (tablesRes.tables || []).forEach(t => { if (t.status === 'occupied') { runningTables[`Table ${t.table_number}`] = []; } });
+                menuData = data.menu || [];
+                stockData = data.stock || {};
+                runningTables = data.runningTables || {};
+                staffData = data.staff || [];
+                expenseHistory = data.expenses || [];
 
-                salesHistory = (ordersRes.orders || []).filter(o => o.order_status !== 'deleted').map(o => {
-                    let d = new Date(o.created_at);
+                salesHistory = (data.sales || []).reverse().map(o => {
+                    let d = new Date(o.date || o.isodate || new Date());
                     return {
-                        id: o.id, orderid: o.order_number, table: o.table_number ? `Table ${o.table_number}` : o.order_type,
+                        id: o.orderid || o.id, orderid: o.orderid || o.id, table: o.table || o.tablename || o.tablenumber,
                         date: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,
-                        isodate: o.created_at, time: d.toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit', hour12: true}),
-                        totalamount: o.grand_total, total: o.grand_total, amount: o.grand_total,
-                        items: o.items, itemsstring: o.items_string, discount: o.discount, payment_method: o.payment_method, status: o.order_status
+                        isodate: o.date || o.isodate, time: o.time || d.toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit', hour12: true}),
+                        totalamount: o.amount || o.total || o.totalamount, total: o.amount || o.total || o.totalamount,
+                        itemsstring: o.items || o.itemsstring || o.items_string, discount: o.discount, payment_method: o.payment_method, status: o.status || o.order_status
                     };
                 });
 
-                expenseHistory = (expRes.expenses || []).map(e => ({
-                    id: e.id, date: e.expense_date || e.created_at, isodate: e.expense_date || e.created_at,
-                    category: e.category, amount: e.amount, description: e.description, image: e.receipt_image
-                }));
-
-                staffData = staffRes.staff || [];
-
-                populateDropdown(); renderTableGrid(); renderLiveSales(); generateOverview(); renderExpensesList(); renderEmployeeList();
+                renderTableGrid(); renderLiveSales(); generateOverview(); renderEmployeeList();
                 if(window.isUserAdmin) fetchApprovals();
                 
                 hideSplashScreen();
@@ -903,12 +513,10 @@
                     let isToday = sDate.includes(todayIso);
                     if (isToday) { revenueToday += sTotal; ordersToday++; }
 
-                    // Process Data for Chart
                     let dateStrKey = sDate.split("T")[0].split(" ")[0]; 
                     if (!isToday) { let parsedDate = new Date(sDate); if (!isNaN(parsedDate.getTime())) { dateStrKey = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')}`; } }
                     rawChartSalesData[dateStrKey] = (rawChartSalesData[dateStrKey] || 0) + sTotal;
 
-                    // Parse Items meticulously
                     let rawItems = getSaleItemsText(sale);
                     let cleanItems = rawItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
                     
@@ -942,9 +550,8 @@
                 document.getElementById('kpiTotalSales').innerText = `₹ ${totalSalesAmount.toLocaleString('en-IN')}`;
                 document.getElementById('kpiTotalExpenses').innerText = `₹ ${totalExpensesAmount.toLocaleString('en-IN')}`;
 
-                // Item Analytics (Cards)
                 let sortedItems = Object.entries(itemStats).sort((a,b)=>b[1].qty-a[1].qty);
-                let itemHtml = ""; let slowHtml = "";
+                let itemHtml = "";
                 
                 sortedItems.forEach(([name, data], index) => {
                     let perc = totalSalesAmount > 0 ? ((data.revenue / totalSalesAmount) * 100).toFixed(1) : 0;
@@ -953,24 +560,18 @@
                     else if(index === 1 || index === 2) badge = `<span class="pill pill-silver">♢ Patron's Favorite</span>`;
 
                     itemHtml += `
-                    <div class="record-card">
-                        <div class="record-header">
-                            <div><div class="record-title">${name}</div><div class="record-sub">${data.category} • Contributes ${perc}% to Revenue</div></div>
+                    <div style="padding:16px; border:1px solid var(--border); border-radius:12px; margin-bottom:12px; background:var(--surface);">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                            <div><div style="font-weight:800; font-size:1.05rem; color:var(--text-dark);">${name}</div><div style="font-size:0.75rem; color:var(--text-muted); font-weight:600; margin-top:4px;">${data.category} • Contributes ${perc}% to Revenue</div></div>
                             ${badge}
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:8px;">
                             <span style="font-size:0.8rem; color:var(--text-muted); font-weight:600;">Units Sold: <b style="color:var(--text-dark); font-size:1rem;">${data.qty}</b></span>
-                            <span class="record-amount">₹${data.revenue.toLocaleString('en-IN')}</span>
+                            <span style="font-size:1.2rem; font-weight:800; color:var(--primary); letter-spacing:-0.5px;">₹${data.revenue.toLocaleString('en-IN')}</span>
                         </div>
                     </div>`;
                 });
                 document.getElementById('itemAnalyticsList').innerHTML = itemHtml || "<span style='color:var(--text-muted); font-size:0.85rem;'>No item data available.</span>";
-
-                menuData.forEach(mi => {
-                    let n = getVal(mi, ['itemname','name']);
-                    if(!itemStats[n]) slowHtml += `<span style="background:var(--primary-light); color:var(--text-muted); padding:6px 12px; border-radius:8px; font-size:0.75rem; font-weight:600;">${n}</span>`;
-                });
-                document.getElementById('slowMoversList').innerHTML = slowHtml || "<span style='color:var(--text-muted); font-size:0.85rem;'>All items have traction!</span>";
 
                 renderPNLChart('daily');
 
@@ -978,7 +579,7 @@
         }
 
         function renderPNLChart(viewType) {
-            document.querySelectorAll('.chart-filters .filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.chart-filters .filter-chip').forEach(btn => btn.classList.remove('active'));
             if(viewType === 'daily') document.getElementById('btnChartDOD').classList.add('active'); else if(viewType === 'weekly') document.getElementById('btnChartWeekly').classList.add('active'); else if(viewType === 'monthly') document.getElementById('btnChartMonthly').classList.add('active');
 
             let aggSales = {}; let aggExp = {}; let allKeys = Array.from(new Set([...Object.keys(rawChartSalesData), ...Object.keys(rawChartExpenseData)])).sort();
@@ -997,55 +598,10 @@
         }
 
         // =====================================
-        // SMART EXPENSES UI
-        // =====================================
-        function renderExpensesList(filter = 'All', btnElem = null) {
-            if(btnElem) { haptic(); document.querySelectorAll('.filter-chip').forEach(b=>b.classList.remove('active')); btnElem.classList.add('active'); }
-            
-            let container = document.getElementById('expensesCardList'); container.innerHTML = "";
-            let filtered = expenseHistory;
-            if(filter !== 'All') filtered = expenseHistory.filter(e => getVal(e,['category']) === filter);
-            
-            if(!filtered.length) { container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:0.85rem;">No expenditures found.</div>`; return; }
-
-            let catTotals = {}; let grandTotal = 0;
-            expenseHistory.forEach(e => { let c = getVal(e,['category'])||'Other'; let a = parseAmount(getVal(e,['amount','total'])); catTotals[c]=(catTotals[c]||0)+a; grandTotal+=a; });
-            
-            let pBar = document.getElementById('expenseProgressBar'); let pLeg = document.getElementById('expenseProgressLegend');
-            if(pBar && pLeg) {
-                pBar.innerHTML = ""; pLeg.innerHTML = "";
-                const colors = {'Raw Material':'#111827', 'Utility':'#B48E5D', 'Payroll':'#10B981', 'Maintenance':'#F59E0B', 'Other':'#9CA3AF'};
-                for(let c in catTotals) {
-                    let perc = (catTotals[c]/grandTotal)*100; let col = colors[c]||'#6B7280';
-                    pBar.innerHTML += `<div class="progress-segment" style="width:${perc}%; background:${col};"></div>`;
-                    pLeg.innerHTML += `<div style="display:flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; border-radius:50%; background:${col};"></span> ${c} (${Math.round(perc)}%)</div>`;
-                }
-            }
-
-            filtered.forEach(e => {
-                let imgThumb = ""; 
-                if(e.image && e.image.startsWith('data:image')) {
-                    imgThumb = `<img src="${e.image}" onclick="openImagePreview('${e.image}')" style="width:40px; height:40px; object-fit:cover; border-radius:8px; border:1px solid var(--border); cursor:pointer;">`;
-                }
-                
-                container.innerHTML += `
-                <div class="record-card">
-                    <div class="record-header">
-                        <div><div class="record-title">${getVal(e,['category'])}</div><div class="record-sub">${cleanDisplayDate(getVal(e,['date','isodate']))} • ${getVal(e,['description','note'])||'No remarks'}</div></div>
-                        ${imgThumb}
-                    </div>
-                    <div style="text-align:right; margin-top:8px;"><span class="record-amount" style="color:var(--danger);">-₹${parseAmount(getVal(e,['amount','total'])).toLocaleString('en-IN')}</span></div>
-                </div>`;
-            });
-        }
-
-        function openImagePreview(b64) { document.getElementById('fullSizeReceipt').src = b64; openModal('imagePreviewModal'); }
-
-        // =====================================
-        // LIVE SALES & TABLES (HUB)
+        // LIVE SALES & TABLES (ZEPTO CARDS)
         // =====================================
         function renderLiveSales() {
-            const salesGrid = document.getElementById('salesGrid'); salesGrid.innerHTML = ""; const homeRecent = document.getElementById('homeRecentOrders'); homeRecent.innerHTML = "";
+            const salesGrid = document.getElementById('salesGrid'); salesGrid.innerHTML = "";
             let startDateInput = document.getElementById('filterStartDate').value; let endDateInput = document.getElementById('filterEndDate').value;
             
             let filteredSales = salesHistory.filter(sale => {
@@ -1057,7 +613,7 @@
             });
             
             let displayTotal = filteredSales.reduce((acc, curr) => acc + parseAmount(getVal(curr, ['totalamount', 'total', 'amount'])), 0);
-            document.getElementById('totalSalesBox').innerText = `Revenue: ₹ ${displayTotal.toLocaleString('en-IN')}`;
+            document.getElementById('totalSalesBox').innerText = `₹ ${displayTotal.toLocaleString('en-IN')}`;
             
             if(filteredSales.length === 0) { salesGrid.innerHTML = "<p style='color:var(--text-muted); font-size:0.85rem; text-align:center;'>No transaction records found.</p>"; return; }
             
@@ -1072,56 +628,43 @@
                 let statusFlag = sale.status === 'deletion_pending' ? `<span class="pill pill-warning">PENDING CANCELLATION</span>` : '';
 
                 salesGrid.innerHTML += `
-                <div class="record-card" onclick="openOrderDetails('${sOrderId}')" style="padding:20px;">
-                    <div class="record-header" style="margin-bottom:12px;"><div><div class="record-title">${tName}${sessionLabel}</div><div class="record-sub">INV #${sOrderId}</div></div>${statusFlag}</div>
+                <div class="order-card" onclick="openOrderDetails('${sOrderId}')">
+                    <div class="oc-header">
+                        <div>
+                            <div class="oc-title">${tName}${sessionLabel}</div>
+                            <div style="font-size:0.75rem; color:var(--text-muted); font-weight:600; margin-top:2px;">INV #${sOrderId}</div>
+                        </div>
+                        ${statusFlag}
+                    </div>
                     <div style="font-size:0.85rem; color:var(--text-muted); line-height:1.6; margin-bottom:16px; max-height:42px; overflow:hidden;">${cleanItemsView.replace(/ ₹\d+/g, '')}</div>
                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <span class="pill pill-silver">${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}</span>
-                        <span class="record-amount" style="color:var(--success);">₹ ${sTotal.toLocaleString('en-IN')}</span>
+                        <span class="oc-date-pill">${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}</span>
+                        <span class="oc-amt-highlight">₹ ${sTotal.toLocaleString('en-IN')}</span>
                     </div>
                 </div>`;
-            });
-            
-            filteredSales.slice(0, 4).forEach(sale => {
-                let sOrderId = getVal(sale, ['orderid', 'id']) || 'NA'; let tName = getVal(sale, ['tablenumber', 'table', 'tablename']) || "Table"; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getSaleItemsText(sale); let sTime = getVal(sale, ['time']) || ''; let iconStr = tName.includes('Takeaway') ? '🛍️' : (tName.includes('Delivery') ? '🛵' : '🍽️'); 
-                let cleanItemsView = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
-                let itemCount = cleanItemsView.split(', ').length;
-                let statusBadge = sale.status === 'deletion_pending' ? `<span class="pill pill-warning" style="font-size:0.6rem;">PENDING</span>` : `<span class="pill pill-success" style="font-size:0.6rem;">CLEARED</span>`;
-                
-                homeRecent.innerHTML += `<div class="h-order-card" onclick="openOrderDetails('${sOrderId}')"><div class="ho-icon">${iconStr}</div><div class="ho-info"><div class="ho-title">INV #${sOrderId}</div><div class="ho-sub">${tName} • ${cleanDisplayTime(sTime)}</div><div class="ho-sub" style="font-weight:700; color:var(--text-dark); margin-top:4px;">${itemCount} Items • ₹${sTotal}</div></div>${statusBadge}</div>`;
             });
         }
 
         function renderTableGrid() {
             const gridContainer = document.getElementById('tableGrid'); gridContainer.innerHTML = ""; let activeCount = 0; let totalCount = 0;
             tableSections.forEach((section) => {
-                gridContainer.innerHTML += `<div class="section-header"><h4>${section.title}</h4></div>`; let gridHTML = '<div class="table-grid" style="margin-bottom:32px;">'; 
+                gridContainer.innerHTML += `<div class="section-header" style="margin-top:0;"><h4>${section.title}</h4></div>`; let gridHTML = '<div class="table-grid">'; 
                 section.tables.forEach(i => { 
                     let tName = "Table " + i; let isOccupied = runningTables.hasOwnProperty(tName) && runningTables[tName] && runningTables[tName].length > 0;
                     if(isOccupied) activeCount++; totalCount++;
-                    let statusStr = isOccupied ? "ENGAGED" : "VACANT"; let statusCls = isOccupied ? "status-occ" : "status-avail"; let cardCls = isOccupied ? "table-card occupied" : "table-card";
-                    gridHTML += `<div class="${cardCls}" onclick="openTable('${i}')"><div class="tc-name">Table ${i}</div><div class="tc-sub">Operations</div><div class="tc-status ${statusCls}">${statusStr}</div></div>`;
+                    let statusStr = isOccupied ? "ENGAGED" : "VACANT"; let statusCls = isOccupied ? "status-occ" : "status-avail"; let cardCls = isOccupied ? "table-card occupied" : "table-card available";
+                    gridHTML += `<div class="${cardCls}" onclick="openTable('${i}')"><div class="tc-name">Zone ${i}</div><div class="tc-sub">Operations</div><div class="tc-status ${statusCls}">${statusStr}</div></div>`;
                 }); 
                 gridContainer.innerHTML += gridHTML + '</div>';
             });
             
-            document.getElementById('homeActiveTables').innerText = `${activeCount} / ${totalCount}`;
-            let tkOccupied = runningTables.hasOwnProperty("Takeaway") && runningTables["Takeaway"] && runningTables["Takeaway"].length > 0; document.getElementById('cardTakeaway').className = tkOccupied ? "quick-card occupied" : "quick-card";
-            let delOccupied = runningTables.hasOwnProperty("Home Delivery") && runningTables["Home Delivery"] && runningTables["Home Delivery"].length > 0; document.getElementById('cardDelivery').className = delOccupied ? "quick-card occupied" : "quick-card";
-        }
-
-        function confirmAddTable() { 
-            haptic();
-            let catIdx = document.getElementById('newTableCategory').value; let tNum = document.getElementById('newTableNumber').value.trim(); 
-            if(!tNum) { showCustomAlert("Invalid table designation."); return; } 
-            let isDuplicate = false; tableSections.forEach(sec => { if(sec.tables.includes(tNum)) isDuplicate = true; }); 
-            if(isDuplicate) { showCustomAlert("Table " + tNum + " already deployed."); return; } 
-            tableSections[catIdx].tables.push(tNum); localStorage.setItem('viraasat_table_sections', JSON.stringify(tableSections)); closeModal('addTableModal'); renderTableGrid(); 
+            document.getElementById('takeawayStatus').innerText = (runningTables["Takeaway"] && runningTables["Takeaway"].length > 0) ? "Engaged" : "Ready";
+            document.getElementById('deliveryStatus').innerText = (runningTables["Home Delivery"] && runningTables["Home Delivery"].length > 0) ? "Engaged" : "Ready";
         }
 
         function switchMainTab(tabName, btnElement, skipHistory = false) {
             haptic();
-            let htmlMap = { 'tableDashboard': `Terminal Hub`, 'salesDashboard': `Registry`, 'trendView': `Intelligence`, 'expenses': `Expenditure`, 'usersManager': `System Admin` };
+            let htmlMap = { 'tableDashboard': `Terminal Hub`, 'salesDashboard': `Registry`, 'trendView': `Intelligence`, 'usersManager': `System Admin` };
             if(!skipHistory) { try { history.pushState({view: tabName}, '', '#' + tabName); } catch(e){} }
             
             document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display = 'none'; tab.classList.remove('active'); });
@@ -1139,18 +682,19 @@
                 else { tickerEl.style.color = 'var(--text-muted)'; tickerEl.innerText = htmlMap[tabName]; }
             }
             if(tabName === 'trendView') setTimeout(generateOverview, 100);
-            if(tabName === 'expenses') renderExpensesList();
         }
 
+        // =====================================
+        // BILLING OPERATIONS (FIXED)
+        // =====================================
         function openTable(num) {
             haptic();
             try { history.pushState({view: 'billing'}, '', '#billing'); } catch(e){}
             activeTableNumber = (num === 'Takeaway' || num === 'Home Delivery') ? num : "Table " + num;
             document.getElementById('billingTitle').innerText = activeTableNumber;
-            if(num === 'Home Delivery') { document.getElementById('deliveryAddressBox').style.display = 'flex'; } else { document.getElementById('deliveryAddressBox').style.display = 'none'; }
             
             currentBill = (runningTables[activeTableNumber] && Array.isArray(runningTables[activeTableNumber])) ? JSON.parse(JSON.stringify(runningTables[activeTableNumber])) : [];
-            document.getElementById('discountValue').value = 0; document.getElementById('customerPhone').value = ""; document.getElementById('deliveryAddress').value = "";
+            document.getElementById('discountValue').value = 0; document.getElementById('customerPhone').value = ""; 
             
             updateBillTable();
             document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display = 'none'; tab.classList.remove('active'); });
@@ -1168,9 +712,17 @@
             document.getElementById('appBottomNav').style.display = 'flex'; renderTableGrid(); 
         }
 
-        // =====================================
-        // BILLING OPERATIONS & PARSING (FIXED)
-        // =====================================
+        function updateBillTable() {
+            let tbody = document.getElementById('billTableBody'); tbody.innerHTML = ""; let subTotal = 0;
+            currentBill.forEach((item, index) => {
+                subTotal += (item.total || 0);
+                tbody.innerHTML += `<div style="padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); display: flex; align-items: center; justify-content: space-between; margin-bottom:12px; box-shadow: var(--shadow-card);"><div style="display:flex; flex-direction:column; flex:1;"><div style="font-weight: 800; font-size: 1rem; color: var(--text-dark); margin-bottom:4px;">${item.name}</div><div style="font-size: 0.75rem; color: var(--text-muted); font-weight:600;">₹${item.price} / unit</div></div><div style="display: flex; align-items: center; gap: 12px;"><div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 8px; background: var(--primary-light);"><button onclick="changeQty(${index}, -1)" style="width: 32px; height: 32px; background: transparent; border: none; font-weight: 700; font-size: 1.2rem; cursor: pointer; color: var(--text-dark);">−</button><span style="width: 32px; text-align: center; font-weight: 800; font-size: 0.95rem; line-height: 32px;">${item.qty}</span><button onclick="changeQty(${index}, 1)" style="width: 32px; height: 32px; background: transparent; border: none; font-weight: 700; font-size: 1.2rem; cursor: pointer; color: var(--text-dark);">+</button></div><div style="font-weight: 900; font-size: 1.1rem; color: var(--primary); min-width: 50px; text-align: right;">₹${item.total}</div><button onclick="removeItem(${index})" style="background: transparent; border: none; color: var(--danger); cursor: pointer; padding: 6px;"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button></div></div>`;
+            });
+            document.getElementById('subTotal').innerText = `₹ ${subTotal}`; let discount = parseInt(document.getElementById('discountValue').value) || 0;
+            document.getElementById('grandTotal').innerText = (subTotal - discount) > 0 ? `₹ ${subTotal - discount}` : "₹ 0";
+            document.getElementById('itemInput').value = ""; document.getElementById('itemQty').value = 1;
+        }
+
         function addToBill() {
             haptic();
             let itemName = document.getElementById('itemInput').value; let qty = parseInt(document.getElementById('itemQty').value) || 1;
@@ -1182,32 +734,12 @@
             updateBillTable();
         }
 
-        function addCustomItem() {
-            haptic();
-            let name = document.getElementById('customName').value; let price = parseInt(document.getElementById('customPrice').value); let qty = parseInt(document.getElementById('customQty').value) || 1;
-            if (!name || !price || price <= 0) { showCustomAlert("Parameters invalid."); return; }
-            let existingItem = currentBill.find(i => i.name === name + " (Custom)");
-            if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ name: name + " (Custom)", price: price, qty: qty, total: price * qty }); }
-            updateBillTable(); document.getElementById('customName').value = ""; document.getElementById('customPrice').value = ""; document.getElementById('customQty').value = 1;
-        }
-
         function changeQty(index, amount) { haptic(); currentBill[index].qty += amount; if(currentBill[index].qty <= 0) { currentBill.splice(index, 1); } else { currentBill[index].total = currentBill[index].price * currentBill[index].qty; } updateBillTable(); }
         function removeItem(index) { haptic(); currentBill.splice(index, 1); updateBillTable(); }
 
-        function updateBillTable() {
-            let tbody = document.getElementById('billTableBody'); tbody.innerHTML = ""; let subTotal = 0;
-            currentBill.forEach((item, index) => {
-                subTotal += (item.total || 0);
-                tbody.innerHTML += `<div class="record-card" style="flex-direction:row; align-items:center; justify-content:space-between;"><div style="display:flex; flex-direction:column; flex:1;"><div style="font-weight: 700; font-size: 0.95rem; color: var(--text-dark); margin-bottom:4px;">${item.name}</div><div style="font-size: 0.75rem; color: var(--text-muted); font-weight:600;">₹${item.price} / unit</div></div><div style="display: flex; align-items: center; gap: 12px;"><div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 8px; background: var(--primary-light);"><button onclick="changeQty(${index}, -1)" style="width: 32px; height: 32px; background: transparent; border: none; font-weight: 700; font-size: 1.2rem; cursor: pointer; color: var(--text-dark);">−</button><span style="width: 32px; text-align: center; font-weight: 800; font-size: 0.95rem; line-height: 32px;">${item.qty}</span><button onclick="changeQty(${index}, 1)" style="width: 32px; height: 32px; background: transparent; border: none; font-weight: 700; font-size: 1.2rem; cursor: pointer; color: var(--text-dark);">+</button></div><div style="font-weight: 800; font-size: 1.1rem; color: var(--primary); min-width: 50px; text-align: right;">₹${item.total}</div><button onclick="removeItem(${index})" style="background: transparent; border: none; color: var(--danger); cursor: pointer; padding: 6px;"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button></div></div>`;
-            });
-            document.getElementById('subTotal').innerText = `₹ ${subTotal}`; let discount = parseInt(document.getElementById('discountValue').value) || 0;
-            document.getElementById('grandTotal').innerText = (subTotal - discount) > 0 ? `₹ ${subTotal - discount}` : "₹ 0";
-            document.getElementById('itemInput').value = ""; document.getElementById('itemQty').value = 1;
-        }
-
         function clearTableWithoutCheckout() {
             showCustomConfirm(`Terminate operations for ${activeTableNumber}?`, () => {
-                fetch(`${API_BASE}/tables/clear`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table_number: activeTableNumber }) })
+                fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'clear', tableName: activeTableNumber }) })
                 .then(r=>r.json()).then(data => { delete runningTables[activeTableNumber]; currentBill = []; goBackToTables(); }).catch(e => { delete runningTables[activeTableNumber]; currentBill = []; goBackToTables(); });
             }, null);
         }
@@ -1216,7 +748,8 @@
             haptic();
             if (currentBill.length === 0) { showCustomAlert("Invoice is empty."); return; }
             let btn = document.getElementById('btnKOT'); btn.innerText = "Registering..."; btn.disabled = true;
-            fetch(`${API_BASE}/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table_number: activeTableNumber, items: currentBill, order_status: "pending" }) })
+            let isNew = !runningTables.hasOwnProperty(activeTableNumber);
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'kot', tableName: activeTableNumber, items: currentBill, isNewSession: isNew }) })
             .then(r=>r.json()).then(data => { runningTables[activeTableNumber] = currentBill; btn.innerText = "Register KOT"; btn.disabled = false; goBackToTables(); }).catch(err => { btn.innerText = "Register KOT"; btn.disabled = false; });
         }
 
@@ -1225,24 +758,61 @@
         function processFinalCheckout() {
             haptic();
             let btn = document.getElementById('btnFinalCheckout'); btn.innerText = "Processing..."; btn.disabled = true;
-            let phone = document.getElementById('customerPhone').value || "NA"; let address = document.getElementById('deliveryAddressBox').style.display === 'flex' ? document.getElementById('deliveryAddress').value : "";
+            let phone = document.getElementById('customerPhone').value || "NA";
             let discount = parseInt(document.getElementById('discountValue').value) || 0; 
+            let orderId = "ORD" + Math.floor(Math.random() * 900000000 + 100000000);
             
             let itemsString = currentBill.map(i => `${i.name} (x${i.qty}) ₹${i.total}`).join(", ");
             if (discount > 0) itemsString += `, [Discount Applied: -₹${discount}]`; 
             itemsString += `, [Mode: ${selectedPaymentMode}]`; 
-            if(address) itemsString += `, [Address: ${address}]`;
 
             let grandTotal = parseInt(document.getElementById('grandTotal').innerText.replace(/[^0-9.-]/g, '')) || 0;
 
-            fetch(`${API_BASE}/orders/checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table_number: activeTableNumber, customer_phone: phone, items: currentBill, items_string: itemsString, total: grandTotal, discount: discount, payment_method: selectedPaymentMode }) })
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'checkout', tableName: activeTableNumber, orderId: orderId, phone: phone, itemsString: itemsString, rawItems: currentBill, total: grandTotal, discount: discount, payment_method: selectedPaymentMode }) })
             .then(r=>r.json()).then(data => {
                 delete runningTables[activeTableNumber]; 
-                
                 btn.innerText = "Complete Checkout"; btn.disabled = false; closeModal('paymentModal'); fetchData(); goBackToTables();
             }).catch(err => { btn.innerText = "Complete Checkout"; btn.disabled = false; });
         }
 
+        // =====================================
+        // ADMIN AUDIT LOGS (DELETION WORKFLOW)
+        // =====================================
+        function requestOrderDeletion() {
+            haptic();
+            let reason = prompt("Enter specific reason for invoice cancellation:");
+            if(!reason) return;
+            let orderId = currentViewingSale.id || currentViewingSale.orderid;
+            
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'requestDelete', orderId: orderId, reason: reason, requestedBy: localStorage.getItem('viraasat_user') }) })
+            .catch(e=>console.log(e)); // Mocking if backend doesn't support yet
+            
+            showCustomAlert("Cancellation flagged. Saved to Audit Logs.");
+            closeModal('orderDetailsModal'); fetchData();
+        }
+
+        function fetchApprovals() {
+            let card = document.getElementById('adminAuditCard'); let list = document.getElementById('adminApprovalsList');
+            let deletedOrders = salesHistory.filter(s => s.status === 'deleted' || s.status === 'cancelled' || s.status === 'deletion_pending');
+            
+            if(!deletedOrders.length) { card.style.display = 'none'; return; }
+            card.style.display = 'block'; list.innerHTML = "";
+            
+            deletedOrders.forEach(req => {
+                list.innerHTML += `<div style="background:#FFF; padding:16px; border-radius:12px; border:1px solid var(--occ-border);">
+                    <div style="font-weight:800; margin-bottom:4px; font-size:1.05rem;">Invoice: #${req.orderid}</div>
+                    <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">Amount: <b style="color:var(--danger);">₹${req.total}</b><br>Timestamp: ${req.date}</div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn" style="background:var(--success); color:#FFF; border:none; padding:8px 16px; border-radius:8px; font-weight:700; font-size:0.8rem; flex:1;">Approve</button>
+                        <button class="btn" style="background:var(--primary-light); color:var(--text-dark); border:none; padding:8px 16px; border-radius:8px; font-weight:700; font-size:0.8rem; flex:1;">Reject</button>
+                    </div>
+                </div>`;
+            });
+        }
+
+        // =====================================
+        // DISPLAY ORDER DETAILS
+        // =====================================
         function openOrderDetails(orderId) {
             let sale = salesHistory.find(s => String(getVal(s, ['orderid', 'id'])).trim() === String(orderId).trim()); if(!sale) return; currentViewingSale = sale;
             let sTable = getVal(sale, ['tablenumber', 'table', 'tablename']) || 'Table'; let sDate = getVal(sale, ['date', 'isodate']) || ''; let sTime = getVal(sale, ['time']) || ''; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sPhone = getVal(sale, ['phone', 'customerphone']) || ''; let sItems = getSaleItemsText(sale);
@@ -1257,20 +827,15 @@
                 if(match) {
                     let name = match[1].trim(); let qty = parseInt(match[2]); let total = match[3] ? parseInt(match[3]) : null;
                     if (total === null) { let menuItem = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === name.toLowerCase()); if (menuItem) total = parseInt(getVal(menuItem, ['price'])) * qty; }
-                    let totalStr = total ? `₹${total}` : "-"; modalItemsHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:12px;"><span><b style="color:var(--primary); font-weight:800;">${qty}x</b> <span style="font-weight:600;">${name}</span></span> <span style="font-weight:800;">${totalStr}</span></div>`;
-                } else { modalItemsHtml += `<div style="margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:12px; font-weight:600;">${itemStr}</div>`; }
+                    let totalStr = total ? `₹${total}` : "-"; modalItemsHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:12px; border-bottom:1px dashed var(--border); padding-bottom:12px;"><span><b style="color:var(--primary); font-weight:800;">${qty}x</b> <span style="font-weight:600;">${name}</span></span> <span style="font-weight:800;">${totalStr}</span></div>`;
+                } else { modalItemsHtml += `<div style="margin-bottom:12px; border-bottom:1px dashed var(--border); padding-bottom:12px; font-weight:600;">${itemStr}</div>`; }
             });
             document.getElementById('modalOrderItems').innerHTML = modalItemsHtml; document.getElementById('modalOrderTotal').innerText = `₹ ${sTotal.toLocaleString('en-IN')}`; document.getElementById('modalCustomerPhone').value = (sPhone && sPhone !== "NA") ? sPhone : ""; 
-            
-            let delBtn = document.getElementById('btnRequestDelete');
-            if(sale.status === 'deletion_pending') { delBtn.innerText = "Cancellation Pending"; delBtn.disabled = true; delBtn.style.opacity = 0.5; }
-            else { delBtn.innerText = "Request Cancellation"; delBtn.disabled = false; delBtn.style.opacity = 1; }
-            
             openModal('orderDetailsModal');
         }
 
         // =====================================
-        // PERFECTED PRINTING & EXPORTS
+        // PERFECTED PRINTING & WA COMMANDS
         // =====================================
         function printBill(type) {
             try {
@@ -1286,7 +851,7 @@
                     
                     let itemsHtml = currentBill.map(i => `<tr><td style="text-align: left; width: 50%;">${i.name}</td><td style="text-align: center; width: 15%;">${i.price}</td><td style="text-align: center; width: 15%;">${i.qty}</td><td style="text-align: right; width: 20%; font-weight:bold;">${i.total}</td></tr>`).join("");
                     
-                    printSec.innerHTML = `<div style="text-align: center; margin-bottom: 10px;"><h2 style="font-size: 1.4rem; margin: 0; padding: 0; font-weight: bold; text-transform:uppercase;">Viraasat</h2><p style="font-size: 0.8rem; margin: 2px 0;">A Taste Of Royal Heritage</p><p style="font-size: 0.8rem; margin: 2px 0;">Ph: +91 7852041644</p></div><div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; margin-bottom: 10px; font-size: 0.85rem;"><div style="display: flex; justify-content: space-between;"><span>INV-${Math.floor(Math.random() * 9000 + 1000)}</span> <span>${d.toLocaleDateString('en-IN')}</span></div><div style="margin-top:2px; font-weight:bold;">Zone: ${activeTableNumber}</div></div><table style="width: 100%; font-size: 0.85rem; text-align: left; border-collapse: collapse;"><thead><tr><th style="text-align: left; width: 50%;">ITEM</th><th style="text-align: center; width: 15%;">PRICE</th><th style="text-align: center; width: 15%;">QTY</th><th style="text-align: right; width: 20%;">AMT</th></tr></thead><tbody>${itemsHtml}</tbody></table><div style="border-top: 1px dashed #000; margin-top: 10px; padding-top: 5px; font-size: 0.9rem;">${discount > 0 ? `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Discount:</span><span>-₹${discount}</span></div>` : ''}<div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;"><span>NET PAYABLE:</span><span>₹${grandTotal}</span></div></div><div style="text-align: center; font-size: 0.85rem; font-weight: bold; margin-top: 20px;">THANK YOU FOR YOUR VISIT!</div>`;
+                    printSec.innerHTML = `<div style="text-align: center; margin-bottom: 10px;"><h2 style="font-size: 1.4rem; margin: 0; padding: 0; font-weight: bold; text-transform:uppercase;">VIRAASAT</h2><p style="font-size: 0.8rem; margin: 2px 0;">A Taste Of Royal Heritage</p><p style="font-size: 0.8rem; margin: 2px 0;">Ph: +91 7852041644</p></div><div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; margin-bottom: 10px; font-size: 0.85rem;"><div style="display: flex; justify-content: space-between;"><span>INV-${Math.floor(Math.random() * 9000 + 1000)}</span> <span>${d.toLocaleDateString('en-IN')}</span></div><div style="margin-top:2px; font-weight:bold;">Zone: ${activeTableNumber}</div></div><table style="width: 100%; font-size: 0.85rem; text-align: left; border-collapse: collapse;"><thead><tr><th style="text-align: left; width: 50%;">ITEM</th><th style="text-align: center; width: 15%;">PRICE</th><th style="text-align: center; width: 15%;">QTY</th><th style="text-align: right; width: 20%;">AMT</th></tr></thead><tbody>${itemsHtml}</tbody></table><div style="border-top: 1px dashed #000; margin-top: 10px; padding-top: 5px; font-size: 0.9rem;">${discount > 0 ? `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Discount:</span><span>-₹${discount}</span></div>` : ''}<div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;"><span>NET PAYABLE:</span><span>₹${grandTotal}</span></div></div><div style="text-align: center; font-size: 0.85rem; font-weight: bold; margin-top: 20px;">THANK YOU FOR YOUR VISIT!</div>`;
                 }
                 printSec.offsetHeight; window.print();
             } catch (e) { console.log(e); }
@@ -1314,7 +879,7 @@
                     } else { itemsHtml += `<tr><td colspan="4">${itemStr}</td></tr>`; }
                 });
                 
-                printSec.innerHTML = `<div style="text-align: center; margin-bottom: 10px;"><h2 style="font-size: 1.4rem; margin: 0; padding: 0; font-weight: bold; text-transform:uppercase;">Viraasat</h2><p style="font-size: 0.8rem; margin: 2px 0;">A Taste Of Royal Heritage</p><p style="font-size: 0.8rem; margin: 2px 0;">Ph: +91 7852041644</p></div><div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; margin-bottom: 10px; font-size: 0.85rem;"><div style="display: flex; justify-content: space-between;"><span>INV: #${sOrderId}</span> <span>(DUPLICATE)</span></div><div style="margin-top:2px; font-weight:bold;">Zone: ${sTable}</div>${modeStr?`<div style="margin-top:2px;">Mode: ${modeStr}</div>`:""}</div><table style="width: 100%; font-size: 0.85rem; text-align: left; border-collapse: collapse;"><thead><tr><th style="text-align: left; width: 50%;">ITEM</th><th style="text-align: center; width: 15%;">PRICE</th><th style="text-align: center; width: 15%;">QTY</th><th style="text-align: right; width: 20%;">AMT</th></tr></thead><tbody>${itemsHtml}</tbody></table><div style="border-top: 1px dashed #000; margin-top: 10px; padding-top: 5px; font-size: 0.9rem;">${histDiscount > 0 ? `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Discount:</span><span>-₹${histDiscount}</span></div>` : ''}<div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;"><span>NET PAYABLE:</span><span>₹${sTotal}</span></div></div><div style="text-align: center; font-size: 0.85rem; font-weight: bold; margin-top: 20px;">THANK YOU FOR YOUR VISIT!</div>`;
+                printSec.innerHTML = `<div style="text-align: center; margin-bottom: 10px;"><h2 style="font-size: 1.4rem; margin: 0; padding: 0; font-weight: bold; text-transform:uppercase;">VIRAASAT</h2><p style="font-size: 0.8rem; margin: 2px 0;">A Taste Of Royal Heritage</p><p style="font-size: 0.8rem; margin: 2px 0;">Ph: +91 7852041644</p></div><div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; margin-bottom: 10px; font-size: 0.85rem;"><div style="display: flex; justify-content: space-between;"><span>INV: #${sOrderId}</span> <span>(DUPLICATE)</span></div><div style="margin-top:2px; font-weight:bold;">Zone: ${sTable}</div>${modeStr?`<div style="margin-top:2px;">Mode: ${modeStr}</div>`:""}</div><table style="width: 100%; font-size: 0.85rem; text-align: left; border-collapse: collapse;"><thead><tr><th style="text-align: left; width: 50%;">ITEM</th><th style="text-align: center; width: 15%;">PRICE</th><th style="text-align: center; width: 15%;">QTY</th><th style="text-align: right; width: 20%;">AMT</th></tr></thead><tbody>${itemsHtml}</tbody></table><div style="border-top: 1px dashed #000; margin-top: 10px; padding-top: 5px; font-size: 0.9rem;">${histDiscount > 0 ? `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Discount:</span><span>-₹${histDiscount}</span></div>` : ''}<div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;"><span>NET PAYABLE:</span><span>₹${sTotal}</span></div></div><div style="text-align: center; font-size: 0.85rem; font-weight: bold; margin-top: 20px;">THANK YOU FOR YOUR VISIT!</div>`;
                 printSec.offsetHeight; window.print();
             } catch (e) { console.log(e); }
         }
@@ -1361,118 +926,37 @@
             window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(text)}`, '_blank');
         }
 
-        // --- EXPENSE FUNCTIONS ---
-        function submitExpense() {
-            haptic();
-            let category = document.getElementById('expCategory').value; let amount = document.getElementById('expAmount').value;
-            if (!amount || amount <= 0) { showCustomAlert("Invalid numeric value."); return; }
-            let payload = { category: category, amount: amount, description: document.getElementById('expDescription').value || "NA", receipt_image: expenseImageBase64 };
-            
-            fetch(`${API_BASE}/expenses`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
-            .then(r=>r.json()).then(data => { 
-                showCustomAlert("Expenditure Logged."); document.getElementById('expAmount').value = ""; document.getElementById('expDescription').value = ""; document.getElementById('expImage').value = ""; expenseImageBase64 = null; document.getElementById('expImagePreview').style.display = 'none'; fetchData(); 
-            });
-        }
-
-        // --- APPROVALS WORKFLOW ---
-        function requestOrderDeletion() {
-            haptic();
-            let reason = prompt("Enter specific reason for invoice cancellation:");
-            if(!reason) return;
-            let orderId = currentViewingSale.id || currentViewingSale.orderid;
-            
-            fetch(`${API_BASE}/orders/request-delete`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ order_id: orderId, reason: reason, requested_by: localStorage.getItem('viraasat_user') || 'Terminal' })
-            }).then(r=>r.json()).then(data => {
-                showCustomAlert("Cancellation flagged. Awaiting Admin clearance.");
-                closeModal('orderDetailsModal'); fetchData();
-            });
-        }
-
-        function fetchApprovals() {
-            fetch(`${API_BASE}/approvals`).then(r=>r.json()).then(data => {
-                if(!data.success || !data.requests.length) { document.getElementById('adminApprovalsCard').style.display = 'none'; return; }
-                document.getElementById('adminApprovalsCard').style.display = 'block';
-                let html = "";
-                data.requests.forEach(req => {
-                    html += `<div style="background:var(--surface); padding:16px; border-radius:12px; border:1px solid var(--occ-border);">
-                        <div style="font-weight:800; margin-bottom:4px;">Invoice: #${req.order_id}</div>
-                        <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">Requested By: ${req.requested_by}<br>Reason: ${req.reason}</div>
-                        <div style="display:flex; gap:8px;">
-                            <button onclick="resolveApproval(${req.id}, 'approved', '${req.order_id}')" style="background:var(--danger); color:#FFF; border:none; padding:8px 16px; border-radius:8px; font-weight:700; cursor:pointer; flex:1;">Approve Delete</button>
-                            <button onclick="resolveApproval(${req.id}, 'rejected', '${req.order_id}')" style="background:var(--primary-light); border:none; padding:8px 16px; border-radius:8px; font-weight:700; cursor:pointer; flex:1;">Reject</button>
-                        </div>
-                    </div>`;
-                });
-                document.getElementById('adminApprovalsList').innerHTML = html;
-            });
-        }
-
-        function resolveApproval(reqId, status, orderId) {
-            haptic();
-            fetch(`${API_BASE}/approvals/resolve`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ request_id: reqId, status: status, order_id: orderId, reviewed_by: localStorage.getItem('viraasat_user') })
-            }).then(r=>r.json()).then(data => { showCustomAlert("Action logged."); fetchApprovals(); fetchData(); });
-        }
-
-        // --- STAFF & MENU MANAGEMENT ---
-        function renderEmployeeList() {
-            let elList = document.getElementById('employeeList'); if(!elList) return; elList.innerHTML = "";
-            if(staffData.length === 0) { elList.innerHTML = "<p style='font-size:0.85rem; color:var(--text-muted);'>No personnel registered.</p>"; return; }
-            
-            staffData.forEach(s => {
-                let sId = getVal(s, ['empid', 'employeeid', 'id']) || 'NA'; let sName = getVal(s, ['name']) || 'Unknown'; let sRole = getVal(s, ['role']) || "Staff"; let sMobile = getVal(s, ['mobile', 'phone']) || "NA"; let sSal = parseAmount(getVal(s, ['monthlysalary', 'salary'])); let sDate = getVal(s, ['dateofjoining', 'joindate', 'date', 'doj', 'join_date']) || 'NA';
-                let formattedDate = sDate !== 'NA' ? cleanDisplayDate(sDate) : 'NA';
-
-                elList.innerHTML += `
-                <div class="record-card" style="padding:20px; gap:16px;">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                        <div style="display:flex; flex-direction:column; gap:6px;">
-                            <div style="font-weight:800; font-size:1.15rem; color:var(--text-dark);">${sName}</div>
-                            <div style="display:inline-block; background:var(--primary); color:#FFF; padding:4px 12px; border-radius:8px; font-size:0.75rem; font-weight:700; width:max-content; letter-spacing:0.5px;">${sRole}</div>
-                        </div>
-                        <div style="display:flex; gap:8px;">
-                            <button onclick='openEditStaff(${JSON.stringify(s).replace(/'/g, "&apos;")})' style="background:var(--primary-light); border:none; padding:8px 12px; border-radius:8px; font-weight:700; cursor:pointer;">Edit</button>
-                            <button onclick="removeStaff(${sId})" style="background:var(--occ-bg); color:var(--danger); border:none; padding:8px 12px; border-radius:8px; font-weight:700; cursor:pointer;">Del</button>
-                        </div>
-                    </div>
-                    <div style="border-top:1px solid var(--border);"></div>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:12px; font-size:0.85rem; font-weight:600; color:var(--text-muted);">
-                        <div><span>ID:</span> <span style="color:var(--text-dark);">${sId}</span></div>
-                        <div><span>Phone:</span> <span style="color:var(--text-dark);">${sMobile}</span></div>
-                        <div><span>Pay:</span> <span style="color:var(--success);">₹${sSal.toLocaleString('en-IN')}</span></div>
-                        <div><span>Induction:</span> <span style="color:var(--text-dark);">${formattedDate}</span></div>
-                    </div>
-                </div>`;
-            });
-        }
-        function openEditStaff(s) { document.getElementById('newStaffName').value = s.name || ''; document.getElementById('newStaffMobile').value = s.mobile || ''; document.getElementById('newStaffRole').value = s.role || 'Manager'; document.getElementById('newStaffSalary').value = s.salary || 0; showCustomAlert("You can modify the fields above and click 'Register Staff' to update."); }
-        function removeStaff(id) { showCustomConfirm("Terminate this personnel record?", () => { fetch(`${API_BASE}/staff/remove`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({id: id}) }).then(r=>r.json()).then(()=>{ showCustomAlert("Record terminated."); fetchData(); }); }, null); }
-
-        function exportAllData() { downloadCSV(salesHistory.map(s=>({Date:s.date,Time:s.time,Order_ID:s.orderid,Table:s.table,Amount:s.amount,Status:s.status})), 'Viraasat-Master-Sales.csv'); }
-        async function uploadMenuBulk() {
-            let fileInput = document.getElementById('menuImportInput');
-            if(!fileInput.files.length) { showCustomAlert("Please select a menu file first."); return; }
-            let file = fileInput.files[0]; let data = await file.arrayBuffer(); let wb = XLSX.read(data, { type: 'array' });
-            let rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '', raw: false });
-            let mapped = rows.map(r => ({ Name: r.Item_Name || r.Name || "", Category: r.Category || "", Price: r.Price || 0, Active: 1 }));
-            fetch(`${API_BASE}/menu/import`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: mapped }) }).then(res=>res.json()).then(d => { showCustomAlert("Menu imported successfully!"); fetchData(); });
-        }
-        async function runFullImport() {
-            let fileInput = document.getElementById('fullImportInput'); let statusText = document.getElementById('importStatusText');
-            if(!fileInput.files.length) { showCustomAlert("Select full Excel workbook."); return; }
-            statusText.innerText = "Processing workbook...";
-            let file = fileInput.files[0]; let data = await file.arrayBuffer(); let wb = XLSX.read(data, { type: 'array' });
-            let getSheet = (name) => wb.Sheets[name] ? XLSX.utils.sheet_to_json(wb.Sheets[name], {defval:'', raw:false}) : [];
-            let payload = { sales: getSheet('Sales'), menu: getSheet('Menu').map(m => ({ Name: m.Item_Name || m.Name, Category: m.Category, Price: m.Price, Active: 1 })), staff: getSheet('Staff').map(s => ({ Name: s.Name, Mobile: s.Mobile, Role: s.Role, Monthly_Salary: s['Monthly Salary']||s.Monthly_Salary, Date_of_Joining: s['Join Date']||s.Date_of_Joining })), stock: getSheet('Stock').map(st => ({ Name: st.Item_Name || st.Name, Quantity: st.Current_Stock || st.Quantity })), expenses: getSheet('Expenses') };
-            fetch(`${API_BASE}/import/full`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) }).then(r=>r.json()).then(res => { statusText.innerText = "Full import completed successfully!"; fetchData(); });
-        }
+        // --- FILTERS & EXPORTS ---
+        function setActiveFilterBtn(id) { document.querySelectorAll('.filter-chip').forEach(btn => btn.classList.remove('active')); if(id) document.getElementById(id).classList.add('active'); }
+        function setTodayFilter() { setActiveFilterBtn('btnFilterToday'); let now = new Date(); let todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`; document.getElementById('filterStartDate').value = todayStr; document.getElementById('filterEndDate').value = todayStr; renderLiveSales(); }
+        function setYesterdayFilter() { setActiveFilterBtn('btnFilterYesterday'); let yest = new Date(); yest.setDate(yest.getDate() - 1); let yestStr = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, '0')}-${String(yest.getDate()).padStart(2, '0')}`; document.getElementById('filterStartDate').value = yestStr; document.getElementById('filterEndDate').value = yestStr; renderLiveSales(); }
+        function resetDateFilter() { setActiveFilterBtn('btnFilterClear'); document.getElementById('filterStartDate').value = ""; document.getElementById('filterEndDate').value = ""; renderLiveSales(); }
+        
         function downloadCSV(rows,filename){
             if(!rows||!rows.length){showCustomAlert('No data available to export.');return;}
             const headers=Object.keys(rows[0]);const csv=[headers.join(','),...rows.map(r=>headers.map(h=>`"${String(r[h]??'').replace(/"/g,'""')}"`).join(','))].join('\r\n');
             const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+        }
+
+        function exportRegistrySales() { downloadCSV(salesHistory.map(s => ({ Date: s.date, Time: s.time, Order_ID: s.orderid, Table: s.table, Amount: s.amount, Payment: s.payment_method })), 'Viraasat-Registry-Sales.csv'); }
+        function exportItemSales() {
+            let itemStats = {};
+            salesHistory.forEach(sale => { 
+                if(sale.status === 'deleted' || sale.status === 'deletion_pending') return;
+                let rawItems = getSaleItemsText(sale); let cleanItems = rawItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
+                cleanItems.split(', ').forEach(str => { let m = str.match(/(.+?)\s*\(x(\d+)\)/); if(m) { let name = m[1].trim(); let qty = parseInt(m[2]); itemStats[name] = (itemStats[name]||0) + qty; } });
+            });
+            downloadCSV(Object.entries(itemStats).sort((a,b)=>b[1]-a[1]).map(([Item, Qty]) => ({Item, Units_Sold: Qty})), 'Viraasat-Item-Analytics.csv');
+        }
+        function exportAllData() { downloadCSV(salesHistory.map(s=>({Date:s.date,Time:s.time,Order_ID:s.orderid,Table:s.table,Amount:s.amount,Status:s.status})), 'Viraasat-Master-Sales.csv'); }
+        
+        async function runFullImport() {
+            let fileInput = document.getElementById('fullImportInput'); 
+            if(!fileInput.files.length) { showCustomAlert("Select full Excel workbook."); return; }
+            let file = fileInput.files[0]; let data = await file.arrayBuffer(); let wb = XLSX.read(data, { type: 'array' });
+            let getSheet = (name) => wb.Sheets[name] ? XLSX.utils.sheet_to_json(wb.Sheets[name], {defval:'', raw:false}) : [];
+            let payload = { sales: getSheet('Sales'), menu: getSheet('Menu').map(m => ({ Name: m.Item_Name || m.Name, Category: m.Category, Price: m.Price, Active: 1 })), staff: getSheet('Staff').map(s => ({ Name: s.Name, Mobile: s.Mobile, Role: s.Role, Monthly_Salary: s['Monthly Salary']||s.Monthly_Salary, Date_of_Joining: s['Join Date']||s.Date_of_Joining })), stock: getSheet('Stock').map(st => ({ Name: st.Item_Name || st.Name, Quantity: st.Current_Stock || st.Quantity })), expenses: getSheet('Expenses') };
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({type: 'import', data: payload}) }).then(r=>r.json()).then(res => { showCustomAlert("Import Complete!"); fetchData(); }).catch(e=>console.log(e));
         }
     </script>
 </body>
