@@ -1040,47 +1040,76 @@ function formatDate(value){
 
 async function loadData(){
 
-    document.getElementById("loader").style.display="flex";
+    document.getElementById("loader").style.display = "flex";
 
-    try{
+    try {
 
-        /*
-        FUTURE VERSION:
+        // -----------------------------------------
+        // 1. Get menu from Cloudflare D1
+        // -----------------------------------------
+        const menuResponse = await fetch("/api/menu");
 
-        const response = await fetch("/api/dashboard");
-        const data = await response.json();
+        if (!menuResponse.ok) {
+            throw new Error("Menu API failed: HTTP " + menuResponse.status);
+        }
 
-        menuData = data.menu || [];
-        salesHistory = data.sales || [];
-        expenseHistory = data.expenses || [];
-        staffData = data.staff || [];
-        stockData = data.stock || {};
-        runningTables = data.runningTables || {};
-        */
+        const menuResult = await menuResponse.json();
 
-        const data = getDemoData();
+        if (!menuResult.success) {
+            throw new Error(menuResult.error || "Menu API returned an error");
+        }
 
-        menuData = data.menu || [];
-        salesHistory = data.sales || [];
-        expenseHistory = data.expenses || [];
-        staffData = data.staff || [];
-        stockData = data.stock || {};
-        runningTables = data.runningTables || {};
+        // -----------------------------------------
+        // 2. Convert D1 menu format to POS format
+        // -----------------------------------------
+        menuData = (menuResult.items || []).map(item => ({
+            id: item.id,
+            name: item.name,
+            category: item.category,
+            price: Number(item.price) || 0,
+            gst_percent: Number(item.gst_percent) || 0,
+            is_available: Boolean(item.is_available)
+        }));
 
+        // -----------------------------------------
+        // 3. Temporary demo data for dashboard
+        //    Sales / Expenses / Staff / Stock
+        //    will be connected to D1 later.
+        // -----------------------------------------
+        const demo = getDemoData();
+
+        salesHistory = demo.sales || [];
+        expenseHistory = demo.expenses || [];
+        staffData = demo.staff || [];
+        stockData = demo.stock || {};
+        runningTables = demo.runningTables || {};
+
+        // -----------------------------------------
+        // 4. Console verification
+        // -----------------------------------------
+        console.log("Viraasat POS - D1 connection successful");
+        console.log("Menu items loaded from D1:", menuData.length);
+
+        // -----------------------------------------
+        // 5. Render dashboard
+        // -----------------------------------------
         renderEverything();
 
-    }catch(error){
+    } catch (error) {
 
-        console.error(error);
+        console.error("Dashboard loading error:", error);
 
-        alert("Dashboard loading error.");
+        alert(
+            "D1 connection / menu loading failed.\n\n" +
+            error.message
+        );
+
+    } finally {
+
+        document.getElementById("loader").style.display = "none";
 
     }
-
-    document.getElementById("loader").style.display="none";
-
 }
-
 
 /* -----------------------------
    MASTER RENDER
