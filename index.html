@@ -652,9 +652,11 @@
     <div id="printSection"></div>
 
     <script>
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbyKuVmEYRbJaYkdUDVNcU9c6mDT4q-VMTESwrikIZvJwK6PteEVwMObdmTMcgqR12KIPA/exec'; 
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbyKuVmEYRbJaYkdUDVNcU9c6mDT4q-VMTESwrikIZvJwK6PteEVwMObdmTMcgqR12KIPA/exec';
+        // Cloudflare Worker + D1 API. Dashboard data is now read from D1.
+        const D1_API_BASE = '/api'; 
         
-const APP_VERSION = "New 2.0"; 
+const APP_VERSION = "D1-Mobile-3.0"; 
         
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
@@ -770,24 +772,8 @@ const APP_VERSION = "New 2.0";
             document.getElementById('customAlertModal').style.display = 'flex';
         };
 
-        /* ============================================================
-           MOBILE BACK BUTTON / APP NAVIGATION
-           - Dashboard back never exits the POS.
-           - Billing back returns to Tables.
-           - Other tabs back return to Dashboard.
-           - Open modals close first.
-        ============================================================ */
         function enforceBackTrap() {
-            try {
-                history.pushState({ viraasat: true, view: 'tableDashboard', trap: true }, '', '#home');
-            } catch(e) {}
-        }
-
-        function resetDashboardHistoryTrap() {
-            try {
-                history.replaceState({ viraasat: true, view: 'tableDashboard' }, '', '#home');
-                history.pushState({ viraasat: true, view: 'tableDashboard', trap: true }, '', '#home');
-            } catch(e) {}
+            try { history.pushState(null, null, location.href); } catch(e) {}
         }
 
         window.onload = function() { 
@@ -812,8 +798,8 @@ const APP_VERSION = "New 2.0";
                 document.getElementById('appMain').style.display = 'block';
                 document.getElementById('appBottomNav').style.display = 'flex';
                 applyAdminRights(savedMobile); 
-                fetchData();
-                resetDashboardHistoryTrap();
+                fetchData(); 
+                enforceBackTrap(); enforceBackTrap(); 
             } else { 
                 document.getElementById('loginScreen').style.display = 'flex'; 
                 hideSplashScreen(); 
@@ -821,9 +807,10 @@ const APP_VERSION = "New 2.0";
         };
 
         window.onpopstate = function () {
+            enforceBackTrap();
+
             let modals = ['customAlertModal', 'paymentModal', 'conflictModal', 'orderDetailsModal', 'addTableModal', 'salaryActionModal'];
             let modalClosed = false;
-
             for(let id of modals) { 
                 let m = document.getElementById(id); 
                 if(m && m.style.display === 'flex') { 
@@ -831,28 +818,18 @@ const APP_VERSION = "New 2.0";
                     modalClosed = true; 
                 } 
             }
+            if(modalClosed) return;
 
-            if(modalClosed) {
-                enforceBackTrap();
-                return;
-            }
-
-            const billing = document.getElementById('billingView');
-            if (billing && billing.style.display === 'block') { 
-                goBackToTables(true);
-                enforceBackTrap();
+            if (document.getElementById('billingView').style.display === 'block') { 
+                goBackToTables(true); 
                 return; 
             }
 
             let activeTab = document.querySelector('.tab-content.active');
             if (activeTab && activeTab.id !== 'tableDashboard') { 
                 switchMainTab('tableDashboard', document.querySelector('.bottom-nav .nav-item:first-child'), true); 
-                enforceBackTrap();
                 return; 
             }
-
-            /* Already on Dashboard: consume the physical/browser Back press. */
-            enforceBackTrap();
         };
 
         function hideSplashScreen() { 
@@ -1062,16 +1039,141 @@ const APP_VERSION = "New 2.0";
             window.open(`https://wa.me/91${sPhone}?text=${encodeURIComponent(slipText)}`, '_blank');
         }
 
-        function fetchData() {
-            document.getElementById('loader').style.display = 'flex';
-            fetch(scriptURL).then(response => response.json()).then(data => {
-                hideSplashScreen(); 
-                try {
-                    menuData = data.menu || []; runningTables = data.runningTables || {}; stockData = data.stock || {}; salesHistory = (data.sales || []).reverse(); expenseHistory = data.expenses || []; staffData = data.staff || []; 
-                    populateDropdown(); populateStaffDropdown(); renderEmployeeList(); renderTableGrid(); renderStockDashboard(); checkStockDisplay(); renderLiveSales(); generateTrends(); 
-                } catch(err) { console.error("Render Error:", err); }
-                document.getElementById('loader').style.display = 'none';
-            }).catch(error => { document.getElementById('loader').innerText = "Sync Error. Check your connection."; hideSplashScreen(); });
+        async function d1Get(path) {
+            const response = await fetch(`${D1_API_BASE}${path}`, {
+                method: 'GET',
+                headers: { 'Accept': 'application/json' },
+                cache: 'no-store'
+            });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || data.success === false) {
+                throw new Error(data.error || `D1 API error (${response.status})`);
+            }
+            return data;
+        }
+
+        async function fetchData() {
+            const loader = document.getElementById('loader');
+            loader.style.display = 'flex';
+            loader.innerHTML = '<div class="spinner"></div> <span>Syncing D1...</span>';
+
+            try {
+                // Dashboard + menu + tables + orders + expenses are now loaded from Cloudflare D1.
+                const [dashboard, menu, tables, orders, expenses] = await Promise.all([
+                    d1Get('/dashboard'),
+                    d1Get('/menu'),
+                    d1Get('/tables'),
+                    d1Get('/orders?limit=200'),
+                    d1Get('/expenses?limit=500')
+                ]);
+
+                menuData = menu.items || [];
+                expenseHistory = expenses.expenses || [];
+                staffData = staffData || [];
+
+                // Convert D1 orders into the field names used by the existing mobile UI.
+                salesHistory = (orders.orders || []).map(order => ({
+                    id: order.id,
+                    orderid: order.order_number || order.id,
+                    tablenumber: order.table_number ? `Table ${order.table_number}` : (order.order_type || 'Order'),
+                    table: order.table_number ? `Table ${order.table_number}` : (order.order_type || 'Order'),
+                    order_type: order.order_type,
+                    customerphone: order.customer_phone || '',
+                    phone: order.customer_phone || '',
+                    date: order.created_at || '',
+                    isodate: order.created_at || '',
+                    time: order.created_at || '',
+                    totalamount: Number(order.grand_total) || 0,
+                    total: Number(order.grand_total) || 0,
+                    amount: Number(order.grand_total) || 0,
+                    payment_method: order.payment_method || '',
+                    payment_status: order.payment_status || '',
+                    order_status: order.order_status || '',
+                    items: ''
+                }));
+
+                // D1 is the source of truth for restaurant tables.
+                const d1Tables = tables.tables || [];
+                tableSections = [
+                    { title: "Hut Seating", tables: [] },
+                    { title: "Ground Seating", tables: [] },
+                    { title: "Terrace Seating", tables: [] }
+                ];
+
+                const areaMap = {
+                    'Hut Seating': 0,
+                    'Ground Seating': 1,
+                    'Terrace Seating': 2
+                };
+
+                runningTables = {};
+
+                d1Tables.forEach(t => {
+                    const number = String(t.table_number);
+                    const area = String(t.seating_area || '').trim();
+                    const idx = areaMap[area] !== undefined ? areaMap[area] : 1;
+
+                    if (!tableSections[idx].tables.includes(number)) {
+                        tableSections[idx].tables.push(number);
+                    }
+
+                    // Keep a marker for occupied tables so the existing color coding works.
+                    if (String(t.status).toLowerCase() === 'occupied') {
+                        runningTables[`Table ${number}`] = [{ __d1Occupied: true, orderId: t.current_order_id }];
+                    } else {
+                        runningTables[`Table ${number}`] = [];
+                    }
+                });
+
+                // Fallback only if the D1 table list is empty.
+                if (d1Tables.length === 0) {
+                    tableSections = [
+                        { title: "Hut Seating", tables: ["1", "2", "3", "4"] },
+                        { title: "Ground Seating", tables: ["5", "6", "7"] },
+                        { title: "Terrace Seating", tables: ["8", "9", "10"] }
+                    ];
+                }
+
+                // Dashboard summary comes directly from the Worker/D1 calculation.
+                const summary = dashboard.summary || {};
+                const tableSummary = dashboard.tables || {};
+
+                document.getElementById('homeTodaySale').innerText =
+                    `₹${Math.round(Number(summary.today_sales) || 0).toLocaleString('en-IN')}`;
+                document.getElementById('homeAvgOrder').innerText =
+                    `₹${Math.round(Number(summary.average_order) || 0).toLocaleString('en-IN')}`;
+                document.getElementById('homeOverallSale').innerText =
+                    `₹${Math.round(Number(summary.overall_sales) || 0).toLocaleString('en-IN')}`;
+                document.getElementById('homeActiveTables').innerText =
+                    `${Number(tableSummary.occupied) || 0} / ${Number(tableSummary.total) || d1Tables.length}`;
+
+                populateDropdown();
+                populateStaffDropdown();
+                renderEmployeeList();
+                renderTableGrid();
+                renderStockDashboard();
+                checkStockDisplay();
+                renderLiveSales();
+                generateTrends();
+
+                hideSplashScreen();
+                console.log('Viraasat POS - D1 dashboard connected');
+                console.log('D1 menu items:', menuData.length);
+                console.log('D1 tables:', d1Tables.length);
+                console.log('D1 orders:', salesHistory.length);
+                console.log('D1 expenses:', expenseHistory.length);
+
+            } catch (error) {
+                console.error('D1 Sync Error:', error);
+                loader.innerHTML = `<span style="color:var(--danger);">D1 Sync Error: ${error.message}</span>`;
+                hideSplashScreen();
+                return;
+            } finally {
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    loader.innerHTML = '<div class="spinner"></div> <span>Syncing...</span>';
+                }, 300);
+            }
         }
 
         function generateTrends() {
@@ -1204,21 +1306,65 @@ const APP_VERSION = "New 2.0";
         }
 
         function renderTableGrid() {
-            const gridContainer = document.getElementById('tableGrid'); gridContainer.innerHTML = ""; let activeCount = 0; let totalCount = 0;
+            const gridContainer = document.getElementById('tableGrid');
+            if (!gridContainer) return;
+
+            gridContainer.innerHTML = "";
+            let activeCount = 0;
+            let totalCount = 0;
+
             tableSections.forEach((section) => {
-                gridContainer.innerHTML += `<div class="section-header"><h4>${section.title}</h4></div>`; let gridHTML = '<div class="table-grid" style="margin-bottom:24px;">'; 
-                section.tables.forEach(i => { 
-                    let tName = "Table " + i; let isOccupied = runningTables.hasOwnProperty(tName) && runningTables[tName] && runningTables[tName].length > 0;
-                    if(isOccupied) activeCount++; totalCount++;
-                    let statusStr = isOccupied ? "OCCUPIED" : "AVAILABLE"; let statusCls = isOccupied ? "status-occ" : "status-avail"; let cardCls = isOccupied ? "table-card occupied" : "table-card";
-                    gridHTML += `<div class="${cardCls}" onclick="openTable('${i}')" style="width:100%; min-width:auto; padding:20px 10px;"><div class="tc-name">Table ${i}</div><div class="tc-status ${statusCls}">${statusStr}</div><div class="tc-sub">Dining Area</div></div>`;
-                }); 
+                if (!section.tables || section.tables.length === 0) return;
+
+                gridContainer.innerHTML +=
+                    `<div class="section-header"><h4>${section.title}</h4></div>`;
+
+                let gridHTML =
+                    '<div class="table-grid" style="margin-bottom:24px;">';
+
+                section.tables.forEach(i => {
+                    const tName = "Table " + i;
+                    const tableState = runningTables[tName];
+                    const isOccupied =
+                        Array.isArray(tableState) &&
+                        tableState.length > 0;
+
+                    if (isOccupied) activeCount++;
+                    totalCount++;
+
+                    const statusStr = isOccupied ? "OCCUPIED" : "AVAILABLE";
+                    const statusCls = isOccupied ? "status-occ" : "status-avail";
+                    const cardCls = isOccupied ? "table-card occupied" : "table-card";
+
+                    gridHTML += `
+                        <div class="${cardCls}"
+                             onclick="openTable('${i}')"
+                             style="width:100%; min-width:auto; padding:20px 10px;">
+                            <div class="tc-name">Table ${i}</div>
+                            <div class="tc-status ${statusCls}">${statusStr}</div>
+                            <div class="tc-sub">${section.title}</div>
+                        </div>`;
+                });
+
                 gridContainer.innerHTML += gridHTML + '</div>';
             });
-            
-            document.getElementById('homeActiveTables').innerText = `${activeCount} / ${totalCount}`;
-            let tkOccupied = runningTables.hasOwnProperty("Takeaway") && runningTables["Takeaway"] && runningTables["Takeaway"].length > 0; document.getElementById('cardTakeaway').className = tkOccupied ? "quick-card occupied" : "quick-card";
-            let delOccupied = runningTables.hasOwnProperty("Home Delivery") && runningTables["Home Delivery"] && runningTables["Home Delivery"].length > 0; document.getElementById('cardDelivery').className = delOccupied ? "quick-card occupied" : "quick-card";
+
+            document.getElementById('homeActiveTables').innerText =
+                `${activeCount} / ${totalCount}`;
+
+            const tkOccupied =
+                Array.isArray(runningTables["Takeaway"]) &&
+                runningTables["Takeaway"].length > 0;
+
+            const delOccupied =
+                Array.isArray(runningTables["Home Delivery"]) &&
+                runningTables["Home Delivery"].length > 0;
+
+            document.getElementById('cardTakeaway').className =
+                tkOccupied ? "quick-card occupied" : "quick-card";
+
+            document.getElementById('cardDelivery').className =
+                delOccupied ? "quick-card occupied" : "quick-card";
         }
 
         function showAddTableModal() { 
