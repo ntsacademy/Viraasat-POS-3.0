@@ -4,17 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <title>Viraasat ERP & POS</title>
+    <title>Viraasat Premium POS</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#FFFFFF">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="apple-touch-icon" href="icon.png">
-    <link rel="icon" type="image/png" href="icon.png">
     
-    <!-- Tira Inspired Clean Typography (Inter & Playfair Display) -->
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Premium Fonts: Inter for clean UI (Zepto/Tira style) & Playfair Display for Royal Headings -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 
@@ -22,11 +20,11 @@
         :root {
             --bg-color: #FBF9F5;       
             --surface: #FFFFFF;        
-            --surface-alt: #F4EFEA;    
-            --border: #E8E4DC;         
+            --border: #E5E7EB;         
             
             --primary: #111827;        
             --primary-light: #F3F4F6;  
+            --accent-gold: #A67C52;
             --text-dark: #111827;      
             --text-muted: #6B7280;     
             
@@ -37,17 +35,17 @@
             --occ-border: #FDA4AF;
             --occ-gradient: linear-gradient(135deg, #F43F5E 0%, #E11D48 100%);
             
-            --shadow-soft: 0 4px 20px rgba(0,0,0,0.03); 
+            --shadow-card: 0 4px 24px rgba(17, 24, 39, 0.04); 
             --border-radius: 16px;      
         }
 
-        html { font-size: 16px; touch-action: manipulation; background-color: #FFFFFF; overscroll-behavior-y: contain; } 
+        html { font-size: 16px; touch-action: manipulation; background-color: var(--bg-color); overscroll-behavior-y: contain; } 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
         input, textarea, select { user-select: auto; -webkit-user-select: auto; font-family: 'Inter', sans-serif; }
         ::-webkit-scrollbar { display: none; }
 
         body { 
-            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+            font-family: 'Inter', system-ui, sans-serif; 
             background-color: var(--bg-color); color: var(--text-dark); 
             display: flex; flex-direction: column; height: 100dvh; 
             overflow: hidden; overscroll-behavior-y: contain; 
@@ -55,167 +53,154 @@
             max-width: 600px; margin: 0 auto; position: relative;
         } 
 
-        .top-app-bar { padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 50; background: var(--surface); border-bottom: 1px solid var(--border); }
-        .brand-container { display: flex; align-items: center; gap: 10px; }
-        .brand-logo { width: 38px; height: 38px; object-fit: contain; border-radius: 8px; }
-        .brand-text { display: flex; flex-direction: column; }
-        .brand-name { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 800; color: var(--text-dark); letter-spacing: 0.5px; line-height: 1.1; }
-        .page-subtitle { font-size: 0.75rem; font-weight: 600; color: #A67C52; margin-top: 2px; font-style: italic; }
+        /* CSS Graphic Logo Styling */
+        .logo-graphic { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 800; letter-spacing: 2px; color: var(--primary); position: relative; display: inline-block; line-height: 1; }
+        .logo-graphic::after { content: '™'; font-size: 0.6rem; position: absolute; top: 0; right: -12px; color: var(--accent-gold); }
+        .logo-accent { display: block; width: 40px; height: 3px; background: var(--accent-gold); margin: 6px 0 0 2px; border-radius: 2px; }
+        .splash-logo { font-size: 3rem; text-align: center; margin-bottom: 8px;}
+        .splash-logo .logo-accent { margin: 12px auto 0; width: 60px; }
+
+        .top-app-bar { padding: 16px 20px; display: flex; justify-content: space-between; align-items: flex-end; z-index: 50; background: var(--surface); box-shadow: 0 1px 10px rgba(0,0,0,0.02); }
+        .brand-container { display: flex; flex-direction: column; }
+        .page-subtitle { font-family: 'Playfair Display', serif; font-size: 0.8rem; font-weight: 600; color: var(--accent-gold); margin-top: 6px; font-style: italic; letter-spacing: 0.5px;}
         
-        .icon-btn { background: var(--surface); border: 1px solid var(--border); width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-dark); box-shadow: var(--shadow-soft); transition: 0.1s;}
-        .icon-btn:active { transform: scale(0.95); }
+        .icon-btn { background: var(--primary-light); border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-dark); transition: 0.1s;}
+        .icon-btn:active { transform: scale(0.92); background: #E5E7EB; }
 
         main { flex: 1; padding: 0 0 calc(90px + env(safe-area-inset-bottom)) 0; overflow-y: auto; -webkit-overflow-scrolling: touch; position: relative; }
-        .tab-content { display: none; animation: fadeIn 0.2s ease; padding: 0 20px; }
+        .tab-content { display: none; animation: fadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1); padding: 0 20px; }
         .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         
-        .greeting-sec { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; margin-top: 12px; }
-        .greeting-sec h2 { font-size: 1.3rem; font-weight: 800; color: var(--text-dark); margin-bottom: 2px; letter-spacing: -0.3px; }
-        .greeting-sec p { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
-        .date-badge { background: var(--surface); border: 1px solid var(--border); padding: 8px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; color: var(--text-dark); display: flex; align-items: center; gap: 6px; box-shadow: var(--shadow-soft); }
+        .greeting-sec { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px; margin-top: 20px; }
+        .greeting-sec h2 { font-family: 'Inter', sans-serif; font-size: 1.4rem; font-weight: 800; color: var(--text-dark); margin-bottom: 4px; letter-spacing: -0.5px;}
+        .greeting-sec p { font-size: 0.85rem; color: var(--text-muted); font-weight: 500; }
+        .date-badge { background: var(--surface); border: 1px solid var(--border); padding: 8px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; color: var(--text-dark); display: flex; align-items: center; box-shadow: var(--shadow-card); }
 
-        .quick-action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-        .quick-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.1s;}
-        .quick-card:active { transform: scale(0.98); }
-        .quick-card.occupied { background: var(--occ-bg) !important; border-color: var(--occ-border) !important; }
-        .qc-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--primary-light); display: flex; align-items: center; justify-content: center; color: var(--text-dark); flex-shrink: 0; font-size: 1.1rem; }
-        .qc-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-        .qc-info h4 { font-size: 0.95rem; font-weight: 700; color: var(--text-dark); }
+        .quick-action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
+        .quick-card { background: var(--surface); border-radius: var(--border-radius); padding: 18px; display: flex; align-items: center; gap: 14px; box-shadow: var(--shadow-card); cursor: pointer; transition: 0.1s; border: 1px solid transparent;}
+        .quick-card:active { transform: scale(0.97); }
+        .quick-card.occupied { background: var(--occ-bg); border-color: var(--occ-border); }
+        .qc-icon { width: 44px; height: 44px; border-radius: 12px; background: var(--primary-light); display: flex; align-items: center; justify-content: center; color: var(--text-dark); flex-shrink: 0; font-size: 1.2rem; }
+        .qc-info { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .qc-info h4 { font-size: 0.95rem; font-weight: 800; color: var(--text-dark); }
         .status-dot { font-size: 0.7rem; font-weight: 700; color: var(--success); display: flex; align-items: center; gap: 4px; }
-        .status-dot.occ { color: #E11D48; }
+        .status-dot.occ { color: var(--danger); }
 
-        .section-header { display: flex; justify-content: space-between; align-items: center; margin: 24px 0 12px 0; }
-        .section-header h4 { font-weight: 700; font-size: 0.82rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
-        .section-header span { font-size: 0.8rem; font-weight: 600; color: var(--text-dark); cursor: pointer; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin: 28px 0 16px 0; }
+        .section-header h4 { font-weight: 800; font-size: 0.9rem; color: var(--text-dark); text-transform: uppercase; letter-spacing: 0.5px; }
+        .section-header span { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); cursor: pointer; }
 
-        .table-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
-        .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 20px 12px; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.15s; }
+        .table-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 24px; }
+        .table-card { background: var(--surface); border-radius: var(--border-radius); padding: 22px 14px; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: var(--shadow-card); cursor: pointer; transition: 0.15s; border: 1px solid var(--surface);}
         .table-card:active { transform: scale(0.96); }
-        .table-card.occupied { background: var(--occ-gradient) !important; color: #FFF !important; border: none !important; box-shadow: 0 6px 16px rgba(225, 29, 72, 0.25); }
-        .tc-name { font-size: 1rem; font-weight: 800; color: inherit; margin-bottom: 4px; }
-        .tc-sub { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; margin-bottom: 8px;}
-        .table-card.occupied .tc-sub { color: rgba(255,255,255,0.8); }
-        
-        .tc-status { font-size: 0.65rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; letter-spacing: 0.5px; text-transform: uppercase; }
-        .status-avail { color: #10B981; background: #E6F4EA; border: 1px solid #C6E7D2; }
-        .status-occ { background: rgba(255,255,255,0.2); color: #FFF !important; border: none !important; }
+        .table-card.occupied { background: var(--occ-gradient) !important; color: #FFF !important; box-shadow: 0 8px 20px rgba(225, 29, 72, 0.25); border: none; }
+        .tc-name { font-size: 1.1rem; font-weight: 800; color: inherit; margin-bottom: 6px; letter-spacing: -0.3px;}
+        .tc-sub { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; margin-bottom: 12px;}
+        .table-card.occupied .tc-sub { color: rgba(255,255,255,0.85); }
+        .tc-status { font-size: 0.65rem; font-weight: 800; padding: 6px 14px; border-radius: 20px; letter-spacing: 0.5px; text-transform: uppercase; }
+        .status-avail { background: var(--primary-light); color: var(--text-dark); }
+        .table-card.occupied .tc-status { background: rgba(255,255,255,0.2); color: #FFF; }
 
-        .home-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-        .hkpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 18px; box-shadow: var(--shadow-soft); display: flex; flex-direction: column; }
-        .hkpi-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--text-muted); font-size: 0.78rem; font-weight: 600; }
-        .hkpi-val { font-size: 1.4rem; font-weight: 800; color: var(--text-dark); margin-bottom: 4px; letter-spacing: -0.5px; }
-        .hkpi-sub { font-size: 0.72rem; font-weight: 600; color: var(--success); }
+        .home-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 28px; }
+        .hkpi-card { background: var(--surface); border-radius: var(--border-radius); padding: 20px; box-shadow: var(--shadow-card); display: flex; flex-direction: column; }
+        .hkpi-top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--text-muted); font-size: 0.8rem; font-weight: 600; }
+        .hkpi-val { font-size: 1.45rem; font-weight: 800; color: var(--text-dark); margin-bottom: 6px; letter-spacing: -0.5px;}
+        .hkpi-sub { font-size: 0.75rem; font-weight: 600; color: var(--success); }
 
-        .h-order-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.1s; }
-        .h-order-card:active { transform: scale(0.98); }
-        .ho-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--primary-light); display: flex; align-items: center; justify-content: center; color: var(--text-dark); flex-shrink: 0; }
-        .ho-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-        .ho-title { font-size: 0.92rem; font-weight: 700; color: var(--text-dark); }
-        .ho-sub { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
-        .ho-badge { background: #E6F4EA; color: #10B981; font-size: 0.65rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; }
-
-        /* Tira-Inspired Bottom Navigation Bar */
-        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; padding: 8px 4px calc(8px + env(safe-area-inset-bottom)) 4px; border-top: 1px solid var(--border); z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.03); border-radius: 20px 20px 0 0; }
-        .nav-item { background: transparent; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-family: inherit; font-size: 0.6rem; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; padding: 6px 0; }
-        .nav-item svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: 0.2s; }
+        /* Zepto Style Navigation Bar */
+        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; padding: 10px 8px calc(10px + env(safe-area-inset-bottom)) 8px; border-top: 1px solid var(--border); z-index: 1000; }
+        .nav-item { background: transparent; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: inherit; font-size: 0.65rem; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; padding: 6px 0; }
+        .nav-item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: 0.2s; }
         .nav-item.active { color: var(--text-dark); font-weight: 800; }
-        .nav-item.active .icon-container { background: var(--primary-light); width: 50px; height: 28px; border-radius: 14px; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-        .nav-item.active svg { stroke: var(--text-dark); stroke-width: 2.2; }
+        .nav-item.active .icon-container { background: var(--primary-light); width: 56px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+        .nav-item.active svg { stroke: var(--text-dark); stroke-width: 2.5; }
 
-        .card { background: var(--surface); border-radius: var(--border-radius); padding: 20px; border: 1px solid var(--border); margin-bottom: 16px; box-shadow: var(--shadow-soft); }
-        .form-group { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
-        .input-box { width: 100%; display: flex; flex-direction: column; gap: 6px;}
-        label { font-weight: 600; color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px;}
-        select, input { width: 100%; height: 50px; padding: 0 16px; border: 1px solid var(--border); border-radius: 12px; font-size: 0.95rem; font-family: inherit; background-color: var(--primary-light); color: var(--text-dark); outline: none; font-weight: 500;}
-        select:focus, input:focus { border-color: var(--text-dark); background: #FFF; box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.05); }
+        .card { background: var(--surface); border-radius: var(--border-radius); padding: 24px; border: 1px solid transparent; margin-bottom: 16px; box-shadow: var(--shadow-card); }
+        .form-group { display: flex; flex-direction: column; gap: 16px; margin-bottom: 24px; }
+        .input-box { width: 100%; display: flex; flex-direction: column; gap: 8px;}
+        label { font-weight: 700; color: var(--text-dark); font-size: 0.8rem; letter-spacing: 0.3px;}
+        select, input { width: 100%; height: 52px; padding: 0 16px; border: 1px solid var(--border); border-radius: 12px; font-size: 0.95rem; background-color: var(--primary-light); color: var(--text-dark); outline: none; font-weight: 500; transition: 0.2s;}
+        select:focus, input:focus { border-color: var(--primary); background: #FFF; box-shadow: 0 0 0 3px rgba(17, 24, 39, 0.05); }
         .input-row { display: flex; gap: 12px; align-items: flex-end; width: 100%; }
         .input-row .input-box { flex: 1; }
 
-        .btn { font-family: inherit; background-color: var(--text-dark); color: #FFF; border: none; height: 50px; padding: 0 20px; cursor: pointer; font-size: 0.95rem; border-radius: 12px; font-weight: 700; transition: 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
+        .btn { font-family: inherit; background-color: var(--text-dark); color: #FFF; border: none; height: 52px; padding: 0 24px; cursor: pointer; font-size: 0.95rem; border-radius: 12px; font-weight: 700; transition: 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; letter-spacing: 0.3px;}
         .btn:active { transform: scale(0.97); }
-        .btn-outline { background: var(--surface); border: 1px solid var(--border); color: var(--text-dark); }
-        .btn-danger { background: var(--danger); color: #FFF; border: none; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-dark); }
+        .btn-outline:active { background: var(--primary-light); }
+        .btn-danger { background: var(--occ-bg); color: var(--danger); border: none; }
 
-        .cart-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
-        .cart-summary { background: var(--primary-light); border-radius: 14px; padding: 20px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 12px; border: 1px solid var(--border); }
-        .summary-row { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 0.95rem; color: var(--text-muted); }
-        .discount-input { width: 80px; padding: 6px 10px; text-align: right; border-radius: 8px; border: 1px solid var(--border); font-weight: 700; outline: none; background: #FFF; }
-        .summary-row.grand-total { border-top: 1px solid var(--border); padding-top: 14px; font-weight: 800; font-size: 1.3rem; margin-top: 4px; color: var(--text-dark);}
-
-        .pay-btn { padding: 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); font-weight: 700; font-size: 0.95rem; color: var(--text-muted); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: 0.1s;}
-        .pay-btn.selected { border-color: var(--primary); background: var(--primary); color: #FFF; box-shadow: 0 4px 12px rgba(17, 24, 39, 0.2); }
-
-        .stock-tag { padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; background: var(--surface); color: var(--text-dark); display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border); margin-right: 8px; margin-bottom: 8px;}
-        .stock-tag span { background: var(--primary-light); padding: 2px 6px; border-radius: 4px; font-weight: 700; }
-        .stock-tag.low { border-color: var(--danger); color: var(--danger); }
-        .stock-tag.low span { background: #FEE2E2; color: var(--danger); }
-
-        .filter-btn { height: 38px; padding: 0 16px; font-size: 0.85rem; transition: 0.2s; border-radius: 19px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dark); font-weight: 600;}
-        .filter-btn.active { background: var(--text-dark); color: #FFF; border-color: var(--text-dark); }
-
-        .sales-grid { display: flex; flex-direction: column; gap: 12px; }
-        .sales-card { background: var(--surface); border-radius: var(--border-radius); padding: 18px; border: 1px solid var(--border); cursor: pointer; transition: 0.1s;}
+        /* Advanced Card UI */
+        .record-card { padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); margin-bottom: 12px; cursor: pointer; transition: 0.1s; display: flex; flex-direction: column; gap: 10px;}
+        .record-card:active { transform: scale(0.98); background: var(--primary-light); }
+        .record-header { display: flex; justify-content: space-between; align-items: flex-start; }
+        .record-title { font-weight: 800; font-size: 1.05rem; color: var(--text-dark); }
+        .record-sub { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-top: 4px; }
+        .record-amount { font-size: 1.2rem; font-weight: 800; color: var(--primary); letter-spacing: -0.5px;}
         
-        .trend-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-        .trend-kpi-card { padding: 18px; border-radius: var(--border-radius); border: 1px solid var(--border); background: var(--surface); display: flex; flex-direction: column; box-shadow: var(--shadow-soft);}
-        .trend-kpi-card.full-width { grid-column: span 2; }
-        .kpi-title { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 4px;}
-        .kpi-value { font-size: 1.4rem; font-weight: 800; color: var(--text-dark); }
-        
-        .chart-wrapper { position: relative; height: 260px; min-height: 260px; width: 100%; margin-top: 16px; display: block; }
-        .chart-filters { display: flex; gap: 8px; margin-bottom: 12px; justify-content: center; }
+        .pill { display: inline-flex; align-items: center; justify-content: center; padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; }
+        .pill-gold { background: #FEF3C7; color: #B45309; }
+        .pill-silver { background: #F3F4F6; color: #4B5563; }
+        .pill-danger { background: #FEE2E2; color: #BE123C; }
+        .pill-success { background: #D1FAE5; color: #047857; }
 
-        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:10000; align-items:flex-end; justify-content:center; backdrop-filter: blur(2px);}
-        .bottom-sheet { background:var(--surface); padding:24px; border-radius: 24px 24px 0 0; width:100%; max-width: 600px; animation: sheetUp 0.2s cubic-bezier(0.16, 1, 0.3, 1); max-height: 90dvh; overflow-y: auto; padding-bottom: calc(24px + env(safe-area-inset-bottom)); box-shadow: 0 -10px 30px rgba(0,0,0,0.08);}
+        /* Swipeable Filters */
+        .swipe-filters { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 16px; scroll-behavior: smooth; }
+        .swipe-filters::-webkit-scrollbar { display: none; }
+        .filter-chip { flex: 0 0 auto; height: 38px; padding: 0 20px; font-size: 0.85rem; border-radius: 19px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dark); font-weight: 600; display: flex; align-items: center; transition: 0.2s;}
+        .filter-chip.active { background: var(--primary); color: #FFF; border-color: var(--primary); }
+
+        /* Progress Bar */
+        .progress-container { width: 100%; height: 8px; background: var(--primary-light); border-radius: 4px; overflow: hidden; display: flex; margin-top: 12px; }
+        .progress-segment { height: 100%; transition: width 0.4s ease; }
+
+        /* Modals */
+        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(17, 24, 39, 0.6); z-index:10000; align-items:flex-end; justify-content:center; backdrop-filter: blur(4px);}
+        .bottom-sheet { background:var(--surface); padding:28px 24px; border-radius: 24px 24px 0 0; width:100%; max-width: 600px; animation: sheetUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); max-height: 90dvh; overflow-y: auto; padding-bottom: calc(28px + env(safe-area-inset-bottom)); box-shadow: 0 -10px 40px rgba(0,0,0,0.1);}
         @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .sheet-handle { width: 40px; height: 4px; background: #E5E7EB; border-radius: 2px; margin: 0 auto 20px auto; }
+        .sheet-handle { width: 40px; height: 5px; background: #E5E7EB; border-radius: 3px; margin: 0 auto 24px auto; }
         
         #loader { text-align: center; color: var(--text-muted); font-weight: 600; font-size: 0.9rem; margin: 40px 0; display: none; align-items: center; justify-content: center; gap: 10px;}
-        .spinner { width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--text-dark); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        .spinner { width: 22px; height: 22px; border: 3px solid var(--border); border-top-color: var(--text-dark); border-radius: 50%; animation: spin 0.8s linear infinite; }
 
-        #splashScreen { position: fixed; inset: 0; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.4s; }
-        .splash-logo { font-family: 'Playfair Display', serif; font-size: 2.8rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.5px; }
-        .splash-subtitle { font-size: 0.75rem; font-weight: 600; color: #A67C52; letter-spacing: 1.5px; margin-top: 6px; margin-bottom: 40px; text-transform: uppercase; font-style: italic;}
+        #splashScreen { position: fixed; inset: 0; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
         @media screen { #printSection { display: none !important; } }
         @media print {
-            body { background-color: white; margin: 0; padding: 0; display: block; height: auto; overflow: visible; max-width: none; box-shadow: none;}
+            body { background-color: white; margin: 0; padding: 0; display: block; height: auto; overflow: visible; max-width: none; box-shadow: none; font-family: 'Inter', sans-serif;}
             .top-app-bar, .bottom-nav, main, #loginScreen, #splashScreen, .modal-overlay { display: none !important; }
-            #printSection { display: block !important; position: absolute; left: 0; top: 0; width: 80mm; font-family: 'Courier New', Courier, monospace; color: #000; margin: 0; padding: 2mm; }
+            #printSection { display: block !important; position: absolute; left: 0; top: 0; width: 80mm; color: #000; margin: 0; padding: 2mm; }
             #printSection h2, #printSection h3, #printSection p, #printSection div { margin: 0; padding: 0; }
             #printSection table { width: 100%; border-collapse: collapse; margin-top: 5px; margin-bottom: 5px; table-layout: fixed; }
-            #printSection th, #printSection td { padding: 2px 0; font-size: 12px; color: #000; vertical-align: top; border-bottom: none !important; word-wrap: break-word; }
-            #printSection th { border-bottom: 1px dashed #000 !important; border-top: 1px dashed #000 !important; padding: 4px 0; font-weight: bold; }
+            #printSection th, #printSection td { padding: 4px 0; font-size: 12px; color: #000; vertical-align: top; border-bottom: none !important; word-wrap: break-word; }
+            #printSection th { border-bottom: 1px dashed #000 !important; border-top: 1px dashed #000 !important; font-weight: bold; }
         }
     </style>
 </head>
 <body>
 
+    <!-- SPLASH SCREEN -->
     <div id="splashScreen">
-        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
-            <img src="icon.png" alt="Viraasat Logo" style="width: 85px; height: auto; margin-bottom: 12px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.08));">
-            <div class="splash-logo" style="margin-bottom: 0;">VIRAASAT</div>
-        </div>
-        <div class="splash-subtitle" style="margin-top: 0;">A Taste Of Royal Heritage</div>
+        <div class="logo-graphic splash-logo">VIRAASAT<div class="logo-accent"></div></div>
+        <div class="page-subtitle" style="margin-bottom: 40px;">A Taste Of Royal Heritage</div>
         <div class="spinner"></div>
     </div>
 
     <!-- LOGIN SCREEN -->
-    <div id="loginScreen" style="display: none; position: absolute; inset: 0; background: var(--bg-color); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
-        <div style="width: 100%; max-width: 400px; background: var(--surface); padding: 40px 24px; border-radius: 20px; border: 1px solid var(--border); box-shadow: var(--shadow-soft);">
-            <div style="text-align: center; margin-bottom: 30px;">
-                <img src="icon.png" alt="Viraasat Logo" style="width: 65px; height: auto; margin-bottom: 12px;">
-                <h1 style="font-family: 'Playfair Display', serif; color: var(--text-dark); font-size: 2.2rem; font-weight: 800;">VIRAASAT</h1>
-                <p style="color: var(--text-muted); font-weight: 600; font-size: 0.75rem; margin-top: 4px; text-transform: uppercase; letter-spacing: 1.5px;">Authorized Access Only</p>
+    <div id="loginScreen" style="display: none; position: absolute; inset: 0; background: var(--bg-color); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 24px;">
+        <div style="width: 100%; max-width: 400px; background: var(--surface); padding: 48px 32px; border-radius: 24px; box-shadow: var(--shadow-card);">
+            <div style="text-align: center; margin-bottom: 40px;">
+                <div class="logo-graphic" style="font-size: 2.2rem;">VIRAASAT<div class="logo-accent" style="margin: 8px auto 0;"></div></div>
+                <p style="color: var(--text-muted); font-weight: 700; font-size: 0.75rem; margin-top: 16px; text-transform: uppercase; letter-spacing: 1.5px;">Authorized Terminal</p>
             </div>
             <div class="form-group">
-                <div class="input-box"><label>Mobile Number</label><input type="tel" id="loginMobile" placeholder="Enter registered number" inputmode="numeric"></div>
-                <div class="input-box"><label>Password</label><input type="password" id="loginPass" placeholder="Enter password"></div>
+                <div class="input-box"><label>Mobile Identity</label><input type="tel" id="loginMobile" placeholder="10-digit number" inputmode="numeric"></div>
+                <div class="input-box"><label>Secure PIN</label><input type="password" id="loginPass" placeholder="Enter PIN"></div>
             </div>
-            <button class="btn" onclick="attemptLogin()" id="btnLogin">Secure Login</button>
-            <div id="loginError" style="color: var(--danger); text-align: center; font-size: 0.85rem; margin-top: 16px; font-weight: 600; min-height: 20px;"></div>
+            <button class="btn" onclick="attemptLogin()" id="btnLogin" style="margin-top: 8px;">Authenticate</button>
+            <div id="loginError" style="color: var(--danger); text-align: center; font-size: 0.85rem; margin-top: 20px; font-weight: 600; min-height: 20px;"></div>
         </div>
     </div>
 
@@ -223,12 +208,12 @@
     <div id="addTableModal" class="modal-overlay">
         <div class="bottom-sheet">
             <div class="sheet-handle"></div>
-            <h3 style="font-size:1.2rem; font-weight: 700; margin-bottom:16px;">Add New Table</h3>
+            <h3 style="font-size:1.3rem; font-weight: 800; margin-bottom:24px;">Deploy New Table</h3>
             <div class="form-group">
-                <div class="input-box"><label>Select Seating Area</label><select id="newTableCategory"></select></div>
-                <div class="input-box"><label>Table Number</label><input type="number" id="newTableNumber" placeholder="e.g. 11" inputmode="numeric"></div>
+                <div class="input-box"><label>Assign Zone</label><select id="newTableCategory"></select></div>
+                <div class="input-box"><label>Table Identifier</label><input type="number" id="newTableNumber" placeholder="e.g. 11" inputmode="numeric"></div>
             </div>
-            <div class="input-row">
+            <div class="input-row" style="margin-top: 12px;">
                 <button class="btn btn-outline" onclick="closeModal('addTableModal')">Cancel</button>
                 <button class="btn" onclick="confirmAddTable()">Save Table</button>
             </div>
@@ -239,14 +224,20 @@
     <div id="paymentModal" class="modal-overlay">
         <div class="bottom-sheet">
             <div class="sheet-handle"></div>
-            <h3 style="font-size:1.2rem; font-weight: 700; margin-bottom:16px; text-align:center;">Select Payment Mode</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 24px;">
-                <button class="pay-btn selected" id="payCash" onclick="selectPaymentMode('Cash')"><span style="font-size:1.2rem;">💵</span> Cash</button>
-                <button class="pay-btn" id="payUPI" onclick="selectPaymentMode('UPI')"><span style="font-size:1.2rem;">📱</span> UPI</button>
-                <button class="pay-btn" id="payCard" onclick="selectPaymentMode('Card')"><span style="font-size:1.2rem;">💳</span> Card</button>
+            <h3 style="font-size:1.3rem; font-weight: 800; margin-bottom:24px; text-align:center;">Settle Transaction</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 32px;">
+                <div class="record-card" id="payCash" onclick="selectPaymentMode('Cash')" style="align-items:center; border: 2px solid var(--border);">
+                    <span style="font-size:1.4rem;">💵</span><span style="font-weight:700; font-size:0.9rem;">Cash</span>
+                </div>
+                <div class="record-card" id="payUPI" onclick="selectPaymentMode('UPI')" style="align-items:center; border: 2px solid var(--border);">
+                    <span style="font-size:1.4rem;">📱</span><span style="font-weight:700; font-size:0.9rem;">UPI</span>
+                </div>
+                <div class="record-card" id="payCard" onclick="selectPaymentMode('Card')" style="align-items:center; border: 2px solid var(--border);">
+                    <span style="font-size:1.4rem;">💳</span><span style="font-weight:700; font-size:0.9rem;">Card</span>
+                </div>
             </div>
-            <button class="btn" style="height:56px; font-size:1.05rem;" id="btnFinalCheckout" onclick="processFinalCheckout()">✔ Confirm Checkout</button>
-            <button class="btn-outline" onclick="closeModal('paymentModal')" style="width:100%; height:48px; margin-top:12px; border-radius:12px; font-weight:600;">Cancel</button>
+            <button class="btn" style="height:60px; font-size:1.1rem;" id="btnFinalCheckout" onclick="processFinalCheckout()">Complete Checkout</button>
+            <button class="btn btn-outline" onclick="closeModal('paymentModal')" style="margin-top:16px;">Cancel</button>
         </div>
     </div>
 
@@ -254,31 +245,41 @@
     <div id="orderDetailsModal" class="modal-overlay">
         <div class="bottom-sheet">
             <div class="sheet-handle"></div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                <h3 style="font-size:1.2rem; font-weight: 700;">Order Details</h3>
-                <button onclick="closeModal('orderDetailsModal')" style="background:transparent; border:none; font-size:1.2rem; cursor:pointer; color:var(--text-muted);">✕</button>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="font-size:1.3rem; font-weight: 800;">Order Details</h3>
+                <button onclick="closeModal('orderDetailsModal')" style="background:transparent; border:none; font-size:1.5rem; cursor:pointer; color:var(--text-muted);">&times;</button>
             </div>
-            <div id="modalOrderMeta" style="background:#FAFAFA; padding:12px; border-radius:10px; font-size:0.85rem; color:var(--text-dark); margin-bottom:16px; line-height: 1.6; border: 1px solid var(--border);"></div>
-            <div style="margin-bottom:16px; max-height: 30vh; overflow-y:auto; font-size:0.9rem; line-height:1.6;" id="modalOrderItems"></div>
-            <div style="display:flex; justify-content:space-between; align-items:center; border-top: 1px dashed var(--border); padding-top: 12px; margin-bottom:20px;">
-                <span style="font-weight:600; font-size:1rem; color:var(--text-dark);">Total</span>
-                <span style="font-weight:700; font-size:1.4rem; color:var(--text-dark);" id="modalOrderTotal"></span>
+            <div id="modalOrderMeta" style="background:var(--primary-light); padding:16px; border-radius:12px; font-size:0.85rem; color:var(--text-dark); margin-bottom:20px; line-height: 1.6;"></div>
+            
+            <div style="margin-bottom:24px; max-height: 35vh; overflow-y:auto; font-size:0.9rem; line-height:1.6;" id="modalOrderItems"></div>
+            
+            <div style="display:flex; justify-content:space-between; align-items:center; border-top: 1px solid var(--border); padding-top: 16px; margin-bottom:24px;">
+                <span style="font-weight:700; font-size:1.1rem; color:var(--text-muted);">Net Payable</span>
+                <span style="font-weight:800; font-size:1.6rem; color:var(--text-dark);" id="modalOrderTotal"></span>
             </div>
-            <div class="form-group" style="margin-bottom: 16px;">
-                <div class="input-box"><label>Customer Phone (Optional)</label><input type="tel" id="modalCustomerPhone" placeholder="10 digits required" inputmode="numeric"></div>
+            <div class="form-group" style="margin-bottom: 24px;">
+                <div class="input-box"><label>Client Contact (Optional)</label><input type="tel" id="modalCustomerPhone" placeholder="10 digits required" inputmode="numeric"></div>
             </div>
-            <div class="input-row" style="margin-bottom:12px;">
+            <div class="input-row" style="margin-bottom:16px;">
                 <button class="btn btn-outline" onclick="printHistoricalBill()">Print Receipt</button>
                 <button class="btn" style="background:#10B981; border:none;" onclick="sendWA_HistoricalBill()">WhatsApp</button>
             </div>
-            <button class="btn btn-danger" onclick="requestOrderDeletion()">Request Deletion (Admin Approval)</button>
+            <button class="btn btn-danger" style="width:100%;" onclick="requestOrderDeletion()">Request Deletion</button>
+        </div>
+    </div>
+
+    <!-- IMAGE PREVIEW MODAL -->
+    <div id="imagePreviewModal" class="modal-overlay" style="z-index: 100000; align-items: center;">
+        <div class="bottom-sheet" style="max-width: 90%; border-radius: 20px; padding: 16px; text-align: center; margin: 0 auto; transform: none; background: transparent; box-shadow: none;">
+            <img id="fullSizeReceipt" src="" style="max-width: 100%; max-height: 70vh; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <button class="btn" style="margin-top: 20px; background: #FFF; color: var(--primary);" onclick="closeModal('imagePreviewModal')">Close Preview</button>
         </div>
     </div>
 
     <!-- CUSTOM SECURE ALERT MODAL -->
     <div id="customAlertModal" class="modal-overlay" style="z-index: 100000; align-items: center;">
-        <div class="bottom-sheet" style="max-width: 320px; border-radius: 20px; padding: 24px; text-align: center; margin: 0 20px; transform: none; animation: fadeIn 0.2s ease-out; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
-            <h3 id="customAlertMessage" style="font-size:1rem; font-weight:600; margin-bottom: 24px; color: var(--text-dark); line-height: 1.5;">Message</h3>
+        <div class="bottom-sheet" style="max-width: 320px; border-radius: 24px; padding: 32px 24px; text-align: center; margin: 0 20px; transform: none; animation: fadeIn 0.2s ease-out;">
+            <h3 id="customAlertMessage" style="font-size:1.05rem; font-weight:600; margin-bottom: 28px; color: var(--text-dark); line-height: 1.5;">Message</h3>
             <div class="input-row" id="customAlertButtons" style="gap: 12px; justify-content: center;"></div>
         </div>
     </div>
@@ -286,26 +287,25 @@
     <!-- TOP BAR -->
     <header class="top-app-bar" id="appHeader" style="display: none;">
         <div class="brand-container">
-            <img src="icon.png" alt="Logo" class="brand-logo">
             <div class="brand-text">
-                <div class="brand-name">VIRAASAT</div>
+                <div class="logo-graphic" style="font-size: 1.2rem;">VIRAASAT<div class="logo-accent" style="width: 20px; margin-top: 4px;"></div></div>
                 <div class="page-subtitle" id="pageMainTitle">A Taste Of Royal Heritage</div>
             </div>
         </div>
-        <button class="icon-btn" onclick="fetchData()" title="Refresh Data">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path></svg>
+        <button class="icon-btn" onclick="haptic(); fetchData();" title="Refresh Data">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path></svg>
         </button>
     </header>
 
     <main id="appMain" style="display: none;">
         <div id="loader"><div class="spinner"></div> <span>Syncing...</span></div>
 
-        <!-- TAB 1: TABLES (HUB) -->
-        <div id="tableDashboard" class="tab-content active" style="padding-top: 10px;">
+        <!-- TAB 1: HUB (TABLES) -->
+        <div id="tableDashboard" class="tab-content active">
             <div class="greeting-sec">
                 <div>
-                    <h2 id="greetText">Good Evening 👋</h2>
-                    <p>Here's what's happening today.</p>
+                    <h2 id="greetText">Welcome Back.</h2>
+                    <p>Current operational status.</p>
                 </div>
                 <div class="date-badge" id="currentDateStr">Today</div>
             </div>
@@ -331,327 +331,235 @@
 
             <div class="home-kpi-grid" id="homeKpiGrid">
                 <div class="hkpi-card">
-                    <div class="hkpi-top">Today's Sale</div>
+                    <div class="hkpi-top">Today's Revenue</div>
                     <div class="hkpi-val" id="homeTodaySale">₹0</div>
-                    <div class="hkpi-sub">Today</div>
+                    <div class="hkpi-sub">Gross Net</div>
                 </div>
                 <div class="hkpi-card">
-                    <div class="hkpi-top">Avg. Order Value</div>
+                    <div class="hkpi-top">Average Value</div>
                     <div class="hkpi-val" id="homeAvgOrder">₹0</div>
-                    <div class="hkpi-sub">Today</div>
-                </div>
-                <div class="hkpi-card">
-                    <div class="hkpi-top">Overall Sale</div>
-                    <div class="hkpi-val" id="homeOverallSale">₹0</div>
-                    <div class="hkpi-sub">Lifetime</div>
-                </div>
-                <div class="hkpi-card">
-                    <div class="hkpi-top">Active Tables</div>
-                    <div class="hkpi-val" id="homeActiveTables">0 / 0</div>
-                    <div class="hkpi-sub">Live Status</div>
+                    <div class="hkpi-sub">Per Invoice</div>
                 </div>
             </div>
 
-            <div class="section-header"><h4>Recent Orders</h4> <span id="btnViewAllOrders" onclick="switchMainTab('salesDashboard', document.getElementById('navOrders'))">View All ›</span></div>
+            <div class="section-header"><h4>Recent Transactions</h4> <span onclick="switchMainTab('salesDashboard', document.getElementById('navOrders'))">Registry ›</span></div>
             <div id="homeRecentOrders"></div>
 
-            <button class="btn btn-outline" onclick="openModal('addTableModal')" style="margin: 20px 0; font-weight:600; height: 52px;">+ Add New Table</button>
-            
-            <div class="section-header"><h4>Stock Alert</h4></div>
-            <div id="dashboardStockList" class="stock-list-container" style="margin-bottom:0; display: flex; flex-wrap: wrap;"></div>
+            <button class="btn btn-outline" onclick="openModal('addTableModal')" style="margin: 24px 0; height: 56px;">+ Deploy New Table</button>
         </div>
 
-        <!-- TAB 2: LIVE SALE -->
-        <div id="salesDashboard" class="tab-content" style="padding-top: 10px;">
-            <div class="card" style="padding: 16px; margin-bottom: 16px;">
-                <div class="input-row" style="margin-bottom: 12px;">
-                    <div class="input-box"><label>From</label><input type="date" id="filterStartDate" onchange="renderLiveSales()"></div>
-                    <div class="input-box"><label>To</label><input type="date" id="filterEndDate" onchange="renderLiveSales()"></div>
+        <!-- TAB 2: REGISTRY (LIVE SALES) -->
+        <div id="salesDashboard" class="tab-content">
+            <div class="card" style="padding: 24px; margin-top: 16px;">
+                <div class="input-row" style="margin-bottom: 16px;">
+                    <div class="input-box"><label>Start Date</label><input type="date" id="filterStartDate" onchange="renderLiveSales()"></div>
+                    <div class="input-box"><label>End Date</label><input type="date" id="filterEndDate" onchange="renderLiveSales()"></div>
                 </div>
-                <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-bottom: 12px;">
-                    <button id="btnFilterToday" class="filter-btn" onclick="setTodayFilter()">Today</button>
-                    <button id="btnFilterYesterday" class="filter-btn" onclick="setYesterdayFilter()">Yesterday</button>
-                    <button id="btnFilterClear" class="filter-btn" style="border-color: var(--danger); color: var(--danger);" onclick="resetDateFilter()">Clear</button>
+                <div class="swipe-filters">
+                    <button id="btnFilterToday" class="filter-chip" onclick="setTodayFilter()">Today</button>
+                    <button id="btnFilterYesterday" class="filter-chip" onclick="setYesterdayFilter()">Yesterday</button>
+                    <button id="btnFilterClear" class="filter-chip" style="color: var(--danger); border-color: var(--occ-border);" onclick="resetDateFilter()">Clear</button>
                 </div>
-                <div style="display:flex; gap:8px;">
-                    <div style="flex:1; background:#FAFAFA; border:1px solid var(--border); padding:12px; border-radius:10px; font-weight:700; font-size:1rem; text-align:center; color:var(--text-dark);" id="totalSalesBox">Total Sales: ₹ 0</div>
-                    <button class="btn" style="width: auto; padding: 0 16px;" onclick="exportRegistrySales()">Export Excel</button>
+                <div style="display:flex; gap:12px;">
+                    <div style="flex:1; background:var(--primary); border-radius:12px; font-weight:800; font-size:1.1rem; text-align:center; color:#FFF; display:flex; align-items:center; justify-content:center;" id="totalSalesBox">Revenue: ₹ 0</div>
+                    <button class="btn btn-outline" style="width: auto; padding: 0 16px;" onclick="exportRegistrySales()">Export</button>
                 </div>
             </div>
-            <div class="section-header"><h4>All Orders</h4></div>
+            <div class="section-header"><h4>Transaction Directory</h4></div>
             <div id="salesGrid" class="sales-grid"></div>
         </div>
 
-        <!-- TAB 3: P&L (WITH ITEM SALES RANKING) -->
-        <div id="trendView" class="tab-content" style="padding-top: 10px;">
-            <div class="trend-kpi-grid">
-                <div class="trend-kpi-card full-width" style="background:var(--occ-bg); border-color:var(--occ-border);">
-                    <div class="kpi-title" style="color: #D03B3B;">Net Profit (All Time)</div>
-                    <div class="kpi-value" id="kpiNetProfit">₹ 0</div>
+        <!-- TAB 3: OVERVIEW (TOP SELLERS & INSIGHTS) -->
+        <div id="trendView" class="tab-content">
+            <div class="greeting-sec"><h2 style="margin-top: 16px;">Insights Overview</h2><p>Item intelligence & metrics.</p></div>
+            
+            <div class="card">
+                <div class="section-header" style="margin-top:0;"><h4>Category Distribution</h4></div>
+                <div style="display:flex; justify-content:center; align-items:center; height: 200px; margin-bottom: 16px;">
+                    <canvas id="categoryDonut"></canvas>
                 </div>
-                <div class="trend-kpi-card"><div class="kpi-title">Total Sales</div><div class="kpi-value" id="kpiTotalSales" style="color:var(--success);">₹ 0</div></div>
-                <div class="trend-kpi-card"><div class="kpi-title">Total Expense</div><div class="kpi-value" id="kpiTotalExpenses" style="color:var(--danger);">₹ 0</div></div>
-                <div class="trend-kpi-card"><div class="kpi-title">Staff Paid</div><div class="kpi-value" id="kpiTotalSalary">₹ 0</div></div>
-                <div class="trend-kpi-card"><div class="kpi-title">Active Staff</div><div class="kpi-value" id="kpiTotalStaff">0</div></div>
             </div>
 
-            <!-- ITEM-WISE SALES INSIGHTS (MOST SOLD ITEMS) -->
+            <!-- SMART ITEM WISE SALES RANKING -->
             <div class="card">
                 <div class="section-header" style="margin-top:0;">
-                    <h4>🔥 Top Selling Items (Item-wise Sales)</h4> 
-                    <span onclick="exportItemSales()">Export Excel ›</span>
+                    <h4>Top Performing Items</h4> 
+                    <span onclick="exportItemSales()">Export ›</span>
                 </div>
-                <div id="itemAnalyticsList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
-            </div>
-
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Profit Trend</h4></div>
-                <div class="chart-filters">
-                    <button class="filter-btn active" id="btnChartDOD" onclick="renderPNLChart('daily')">Daily</button>
-                    <button class="filter-btn" id="btnChartWeekly" onclick="renderPNLChart('weekly')">Weekly</button>
-                    <button class="filter-btn" id="btnChartMonthly" onclick="renderPNLChart('monthly')">Monthly</button>
-                </div>
-                <div class="chart-wrapper"><canvas id="trendChart"></canvas></div>
-            </div>
-
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Staff Expense Breakdown</h4></div>
-                <div id="staffExpenseList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px;">Ranked by units sold based on current timeframe.</p>
+                <div id="itemAnalyticsList" style="display:flex; flex-direction:column; gap:12px;"></div>
             </div>
             
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Other Expenses</h4></div>
-                <div id="expenseBreakdownList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
+            <!-- SLOW MOVERS -->
+            <div class="card" style="border-color: var(--border); background: var(--bg-color);">
+                <div class="section-header" style="margin-top:0;"><h4>Zero Traction Items</h4></div>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px;">Items not sold in the current period.</p>
+                <div id="slowMoversList" style="display:flex; flex-wrap: wrap; gap:8px;"></div>
             </div>
         </div>
 
-        <!-- TAB 4: EXPENSES -->
-        <div id="expenses" class="tab-content" style="padding-top: 10px;">
+        <!-- TAB 4: EXPENDITURE (EXPENSES) -->
+        <div id="expenses" class="tab-content">
+            <div class="greeting-sec"><h2 style="margin-top: 16px;">Expenditure Log</h2><p>Track all operational costs.</p></div>
             <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Log Expense</h4></div>
                 <div class="form-group">
-                    <div class="input-box"><label>Category</label><select id="expCategory"><option>Raw Material</option><option>Electricity</option><option>Maintenance</option><option>Other</option></select></div>
-                    <div class="input-box"><label>Amount (₹)</label><input type="number" id="expAmount" placeholder="0" inputmode="numeric"></div>
-                    <div class="input-box"><label>Note (Optional)</label><input type="text" id="expDescription" placeholder="Add details"></div>
-                    <div class="input-box">
-                        <label>Receipt Image (Optional)</label>
-                        <input type="file" id="expImage" accept="image/*" style="padding:10px; background:#FFF;" onchange="handleExpenseImage(event)">
-                        <div id="expImagePreview" style="font-size:0.75rem; color:var(--success); display:none; margin-top:4px;">✓ Image attached</div>
+                    <div class="input-box"><label>Classification</label><select id="expCategory"><option>Raw Material</option><option>Utility</option><option>Payroll</option><option>Maintenance</option><option>Other</option></select></div>
+                    <div class="input-box"><label>Amount Disbursed (₹)</label><input type="number" id="expAmount" placeholder="0.00" inputmode="numeric"></div>
+                    <div class="input-box"><label>Vendor / Details</label><input type="text" id="expDescription" placeholder="Specific details"></div>
+                    <div class="input-box" style="margin-top: 8px;">
+                        <label>Attach Receipt (Optional)</label>
+                        <input type="file" id="expImage" accept="image/*" style="padding: 12px; background: #FFF; border: 1px dashed var(--text-muted); cursor: pointer;" onchange="handleExpenseImage(event)">
+                        <div id="expImagePreview" style="margin-top: 8px; font-size: 0.75rem; font-weight: 700; color: var(--success); display: none;">✓ Image attached securely.</div>
                     </div>
                 </div>
-                <button class="btn" onclick="submitExpense()">Save Expense</button>
+                <button class="btn" onclick="submitExpense()">Commit Entry</button>
             </div>
 
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Expenses Log Table</h4> <span onclick="exportExpensesTable()">Export Excel ›</span></div>
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;" id="expensesTable">
-                        <thead>
-                            <tr style="background: var(--surface-alt); text-align: left;">
-                                <th style="padding: 8px; border: 1px solid var(--border);">Date</th>
-                                <th style="padding: 8px; border: 1px solid var(--border);">Category</th>
-                                <th style="padding: 8px; border: 1px solid var(--border);">Description</th>
-                                <th style="padding: 8px; border: 1px solid var(--border); text-align: right;">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody id="expensesTableBody"></tbody>
-                    </table>
-                </div>
+            <div class="section-header" style="margin-bottom:16px;"><h4>Expense Ledger</h4> <span onclick="exportExpensesTable()">Export ›</span></div>
+            
+            <!-- Expense Summary Progress Bar -->
+            <div style="background: var(--surface); padding: 16px; border-radius: var(--border-radius); box-shadow: var(--shadow-card); margin-bottom: 20px;">
+                <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-dark); margin-bottom: 8px;">Category Breakdown</div>
+                <div class="progress-container" id="expenseProgressBar"></div>
+                <div id="expenseProgressLegend" style="display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; font-size:0.7rem; font-weight:600;"></div>
             </div>
+
+            <!-- Swipeable Filters for Expenses -->
+            <div class="swipe-filters" id="expenseFilters">
+                <button class="filter-chip active" onclick="renderExpensesList('All', this)">All</button>
+                <button class="filter-chip" onclick="renderExpensesList('Raw Material', this)">Raw Material</button>
+                <button class="filter-chip" onclick="renderExpensesList('Utility', this)">Utility</button>
+                <button class="filter-chip" onclick="renderExpensesList('Payroll', this)">Payroll</button>
+                <button class="filter-chip" onclick="renderExpensesList('Maintenance', this)">Maintenance</button>
+                <button class="filter-chip" onclick="renderExpensesList('Other', this)">Other</button>
+            </div>
+
+            <div id="expensesCardList" style="display: flex; flex-direction: column; gap: 12px; padding-bottom: 24px;"></div>
         </div>
 
-        <!-- TAB 5: ADMIN -->
-        <div id="usersManager" class="tab-content" style="padding-top: 10px;">
-            
+        <!-- TAB 5: SYSTEM ADMIN -->
+        <div id="usersManager" class="tab-content">
+            <div class="greeting-sec" style="margin-top: 16px; margin-bottom: 24px;">
+                <h2 style="font-size: 1.6rem;">Admin Console</h2>
+            </div>
+
             <!-- ADMIN APPROVALS SECTION -->
             <div class="card" id="adminApprovalsCard" style="display:none; border-color:var(--danger); background:var(--occ-bg);">
                 <div class="section-header" style="margin-top:0;"><h4>⚠️ Pending Deletion Requests</h4></div>
-                <div id="adminApprovalsList" style="display:flex; flex-direction:column; gap:10px;"></div>
+                <div id="adminApprovalsList" style="display:flex; flex-direction:column; gap:12px;"></div>
             </div>
 
-            <!-- SEPARATE MENU IMPORT SECTION -->
             <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Bulk Menu Import / Rate Update</h4></div>
-                <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">Upload menu sheet to update prices or add items.</p>
+                <div class="section-header" style="margin-top:0;"><h4>Bulk Menu Registry</h4></div>
+                <p style="font-size:0.8rem; color:var(--text-muted); margin-bottom:16px;">Upload a menu sheet to update prices or append items.</p>
                 <div class="form-group" style="margin-bottom:0;">
-                    <input type="file" id="menuImportInput" accept=".xlsx,.xls,.csv" style="padding:10px; border:1px dashed var(--border); background:#FFF;">
-                    <button class="btn" style="margin-top:10px;" onclick="uploadMenuBulk()">Upload Menu File</button>
+                    <input type="file" id="menuImportInput" accept=".xlsx,.xls,.csv" style="padding:12px; border:1px dashed var(--border); background:#FFF; cursor:pointer;">
+                    <button class="btn" style="margin-top:12px;" onclick="uploadMenuBulk()">Synchronize Menu</button>
                 </div>
             </div>
 
             <!-- FULL DATABASE IMPORT -->
             <div class="card" style="border-color:#10B981;">
-                <div class="section-header" style="margin-top:0;"><h4>Full Database Import</h4></div>
+                <div class="section-header" style="margin-top:0;"><h4>System Restoration</h4></div>
                 <div class="form-group" style="margin-bottom:0;">
-                    <input type="file" id="fullImportInput" accept=".xlsx,.xls,.csv" style="padding:10px; border:1px dashed var(--border); background:#FFF;">
-                    <button class="btn" style="margin-top:10px; background:#10B981;" onclick="runFullImport()">Upload Full Workbook (.xlsx)</button>
-                    <div id="importStatusText" style="margin-top:8px; font-size:0.8rem; font-weight:600;"></div>
+                    <input type="file" id="fullImportInput" accept=".xlsx,.xls,.csv" style="padding:12px; border:1px dashed var(--border); background:#FFF; cursor:pointer;">
+                    <button class="btn" style="margin-top:12px; background:#10B981;" onclick="runFullImport()">Execute Master Import</button>
+                    <div id="importStatusText" style="margin-top:10px; font-size:0.8rem; font-weight:700;"></div>
                 </div>
             </div>
 
-            <div class="card" style="border-color:#10B981;">
-                <div class="section-header" style="margin-top:0;"><h4>Staff Payroll & Advance</h4></div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <div class="input-box">
-                        <label>Select Staff</label>
-                        <select id="payStaffSelect" onchange="calculateStaffBalance()"><option value="">Select Employee</option></select>
-                    </div>
-                    <div id="staffBalanceInfo" style="margin-top:8px; font-size:0.85rem; color:var(--text-dark); line-height: 1.5; background: #F4EFEA; padding: 10px; border-radius: 10px;"></div>
-                    <div class="input-row" style="margin-top:12px;">
-                        <div class="input-box"><label>Amount (₹)</label><input type="number" id="payStaffAmount" placeholder="Amount"></div>
-                        <div class="input-box"><label>Type</label><select id="payStaffType"><option>Advance</option><option>Salary Clearance</option></select></div>
-                    </div>
-                    <button class="btn" style="margin-top:16px; background:#10B981;" onclick="submitStaffPayout()">Pay & Record</button>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Onboard New Staff & Edit Records</h4></div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <div class="input-row">
-                        <div class="input-box"><label>Full Name</label><input type="text" id="newStaffName" placeholder="Name"></div>
-                        <div class="input-box"><label>Mobile</label><input type="tel" id="newStaffMobile" placeholder="10 Digits" inputmode="numeric"></div>
-                    </div>
-                    <div class="input-row" style="margin-top:12px;">
-                        <div class="input-box"><label>Role</label>
-                            <select id="newStaffRole">
-                                <option>Manager</option><option>Chef</option><option>Cashier</option><option>Waiter</option><option>Cleaner</option><option>Helper</option>
-                            </select>
-                        </div>
-                        <div class="input-box"><label>Monthly Salary (₹)</label><input type="number" id="newStaffSalary" placeholder="e.g. 15000" inputmode="numeric"></div>
-                    </div>
-                    <div class="input-box" style="margin-top:12px;">
-                        <label>Date of Joining (Optional)</label>
-                        <input type="date" id="newStaffDate">
-                    </div>
-                    <button class="btn" style="margin-top:16px;" onclick="addStaffUI()">Register Staff</button>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Quick Stock Update</h4></div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <div class="input-box">
-                        <label>Select Item</label>
-                        <input list="menuItemsList" id="adminStockItem" placeholder="Type item name...">
-                    </div>
-                    <div class="input-row" style="margin-top:12px;">
-                        <div class="input-box"><label>New Quantity</label><input type="number" id="adminStockQty" placeholder="e.g. 50" inputmode="numeric"></div>
-                        <button class="btn" style="flex:1;" onclick="updateStockAdmin()">Update</button>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Add New Menu Item</h4></div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <div class="input-box"><label>Category</label>
-                        <select id="newMenuCategory">
-                            <option>Starters</option><option>Main Course</option><option>Breads</option><option>Desserts</option><option>Beverages</option><option>Add-ons</option>
-                        </select>
-                    </div>
-                    <div class="input-row" style="margin-top:12px;">
-                        <div class="input-box"><label>Item Name</label><input type="text" id="newMenuName" placeholder="e.g. Paneer Tikka"></div>
-                        <div class="input-box"><label>Price (₹)</label><input type="number" id="newMenuPrice" placeholder="250" inputmode="numeric"></div>
-                    </div>
-                    <button class="btn" style="margin-top:16px;" onclick="addMenuItemUI()">Save to Menu</button>
-                </div>
-            </div>
-
-            <div class="section-header" style="margin-top:24px;"><h4>Active Staff Directory (Editable)</h4></div>
-            <div id="employeeList" style="display:flex; flex-direction:column; gap:12px;"></div>
-
-            <div class="section-header" style="margin-top:24px;"><h4>Registered POS App Users</h4></div>
-            <div id="staffList" style="display:flex; flex-direction:column; gap:10px; margin-bottom: 24px;"></div>
+            <!-- Active Personnel -->
+            <div class="section-header" style="margin-top:32px;"><h4>Personnel Directory</h4></div>
+            <div id="employeeList" style="display:flex; flex-direction:column; gap:16px; margin-bottom:32px;"></div>
         </div>
 
         <!-- BILLING VIEW -->
-        <div id="billingView" class="tab-content" style="padding-top: 10px;">
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+        <div id="billingView" class="tab-content">
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px; margin-top: 16px;">
                 <button class="icon-btn" onclick="goBackToTables(false)">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                    <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
                 </button>
-                <h2 id="billingTitle" style="font-size: 1.2rem; font-weight: 700; color: var(--text-dark);">Billing</h2>
+                <h2 id="billingTitle" style="font-size: 1.4rem; font-weight: 800; color: var(--text-dark); letter-spacing: -0.5px;">Billing Terminal</h2>
             </div>
             
-            <div class="card" style="padding: 16px;">
-                <div class="form-group" style="margin-bottom: 12px;">
+            <div class="card" style="padding: 24px;">
+                <div class="form-group" style="margin-bottom: 16px;">
                     <div class="input-box">
-                        <label>Search Menu Item</label>
-                        <input list="menuItemsList" id="itemInput" placeholder="Type to search..." oninput="checkStockDisplay()" onchange="checkStockDisplay()">
+                        <label>Lookup Catalog</label>
+                        <input list="menuItemsList" id="itemInput" placeholder="Search registry..." oninput="checkStockDisplay()" onchange="checkStockDisplay()">
                         <datalist id="menuItemsList"></datalist>
-                        <div id="stockStatus" style="display:none; margin-top: 8px;"></div>
+                        <div id="stockStatus" style="display:none; margin-top: 10px;"></div>
                     </div>
                 </div>
                 <div class="input-row">
-                    <div class="input-box" style="flex:0.4;"><label>Qty</label><input type="number" id="itemQty" value="1" min="1" inputmode="numeric" style="text-align: center;"></div>
-                    <button class="btn" style="flex:1;" onclick="addToBill()">Add to Bag</button>
+                    <div class="input-box" style="flex:0.35;"><label>Units</label><input type="number" id="itemQty" value="1" min="1" inputmode="numeric" style="text-align: center; font-weight: 700;"></div>
+                    <button class="btn" style="flex:1;" onclick="addToBill()">Append to Invoice</button>
                 </div>
             </div>
 
-            <details style="background:var(--surface); border-radius:12px; margin-bottom:24px; border:1px solid var(--border);">
-                <summary style="padding:16px; font-weight:500; font-size: 0.95rem; color:var(--text-dark); outline:none; cursor:pointer; list-style: none; display: flex; align-items: center; gap: 8px;">
-                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Add Custom Item
+            <details style="background:var(--surface); border-radius:16px; margin-bottom:24px; border:1px solid var(--border); overflow: hidden;">
+                <summary style="padding:20px; font-weight:700; font-size: 0.95rem; color:var(--text-dark); outline:none; cursor:pointer; list-style: none; display: flex; align-items: center; gap: 12px; background: var(--bg-color);">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Inject Custom Entry
                 </summary>
-                <div style="padding:0 16px 16px 16px;">
+                <div style="padding:20px; border-top: 1px solid var(--border);">
                     <div class="form-group" style="margin-bottom:0;">
-                        <input type="text" id="customName" placeholder="Item Name" style="margin-bottom: 12px;">
-                        <div class="input-row" style="margin-bottom: 12px;">
-                            <input type="number" id="customPrice" placeholder="Price (₹)" inputmode="numeric">
-                            <input type="number" id="customQty" value="1" min="1" inputmode="numeric" style="flex:0.4; text-align: center;">
+                        <input type="text" id="customName" placeholder="Specific Item Identifier" style="margin-bottom: 12px;">
+                        <div class="input-row" style="margin-bottom: 16px;">
+                            <input type="number" id="customPrice" placeholder="Value (₹)" inputmode="numeric">
+                            <input type="number" id="customQty" value="1" min="1" inputmode="numeric" style="flex:0.35; text-align: center;">
                         </div>
-                        <button class="btn btn-outline" onclick="addCustomItem()">Add Custom</button>
+                        <button class="btn btn-outline" onclick="addCustomItem()">Inject Entry</button>
                     </div>
                 </div>
             </details>
 
-            <div class="section-header" style="margin-top:0;"><h4>Cart Items</h4></div>
+            <div class="section-header" style="margin-top:0;"><h4>Invoice Line Items</h4></div>
             <div id="billTableBody" class="cart-list"></div>
 
             <div class="cart-summary">
-                <div class="summary-row"><span>Subtotal</span><span id="subTotal">₹ 0</span></div>
+                <div class="summary-row"><span>Subtotal Calculation</span><span id="subTotal" style="color: var(--text-dark);">₹ 0</span></div>
                 <div class="summary-row">
-                    <span>Discount (₹)</span><input type="number" id="discountValue" class="discount-input" value="0" min="0" oninput="updateBillTable()">
+                    <span>Applicable Deduction (₹)</span><input type="number" id="discountValue" class="discount-input" value="0" min="0" oninput="updateBillTable()">
                 </div>
-                <div class="summary-row grand-total"><span>Total</span><span id="grandTotal" style="color:var(--text-dark);">₹ 0</span></div>
+                <div class="summary-row grand-total"><span>Net Payable</span><span id="grandTotal">₹ 0</span></div>
             </div>
 
-            <div class="card" style="padding: 16px;">
-                <div class="input-box" style="margin-bottom: 16px;">
-                    <label>Customer Phone (Strict verification)</label><input type="tel" id="customerPhone" placeholder="10 digits required" inputmode="numeric">
+            <div class="card" style="padding: 24px;">
+                <div class="input-box" style="margin-bottom: 20px;">
+                    <label>Client Identification (Optional)</label><input type="tel" id="customerPhone" placeholder="10 digit contact" inputmode="numeric">
                 </div>
                 <div class="input-box" id="deliveryAddressBox" style="display:none;">
-                    <label>Delivery Address / Notes</label><input type="text" id="deliveryAddress" placeholder="Enter full address or rider info">
+                    <label>Logistics Routing</label><input type="text" id="deliveryAddress" placeholder="Enter routing parameters">
                 </div>
             </div>
 
             <div class="action-grid">
-                <button class="btn btn-outline" id="btnKOT" onclick="saveKOT()">Save KOT</button>
-                <button class="btn btn-outline" onclick="printBill('kot')">Print KOT</button>
+                <button class="btn btn-outline" id="btnKOT" onclick="saveKOT()">Register KOT</button>
+                <button class="btn btn-outline" onclick="printBill('kot')">Generate KOT Slip</button>
             </div>
             
-            <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:30px; margin-top: 20px;">
-                <button class="btn btn-outline" onclick="printBill('final')">Print Final Bill</button>
-                <button class="btn btn-outline" style="border-color:#10B981; color:#10B981;" onclick="sendWA_Customer()">WhatsApp Bill</button>
-                <button class="btn btn-danger-action" onclick="clearTableWithoutCheckout()" style="background:var(--surface); border:1px solid var(--border); color:var(--text-dark); height:50px; border-radius:10px; font-weight:600; font-size:0.95rem;">Clear Table (Cancel)</button>
-                <button class="btn" style="margin-top:8px; height: 60px; font-size:1.1rem;" onclick="openPaymentModal()">Checkout</button>
+            <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:40px; margin-top: 24px;">
+                <button class="btn btn-outline" onclick="printBill('final')">Generate Final Invoice</button>
+                <button class="btn btn-outline" style="border-color:#047857; color:#047857;" onclick="sendWA_Customer()">Transmit Digital Invoice (WA)</button>
+                <button class="btn btn-danger" onclick="clearTableWithoutCheckout()" style="height:56px;">Terminate Session (Clear)</button>
+                <button class="btn" style="margin-top:12px; height: 64px; font-size:1.15rem; border-radius: 16px;" onclick="openModal('paymentModal')">Execute Checkout</button>
             </div>
         </div>
     </main>
 
-    <!-- 5 TABS NAVIGATION BAR -->
+    <!-- ZEPTO STYLE 5 TABS NAVIGATION BAR -->
     <nav class="bottom-nav" id="appBottomNav" style="display: none;">
         <button class="nav-item active" id="navHub" onclick="switchMainTab('tableDashboard', this)">
-            <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></div>
-            <span>Tables</span>
+            <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg></div>
+            <span>Hub</span>
         </button>
         <button class="nav-item" id="navOrders" onclick="switchMainTab('salesDashboard', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
-            <span>Live sale</span>
+            <span>Registry</span>
         </button>
         <button class="nav-item" id="navAnalytics" onclick="switchMainTab('trendView', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></div>
-            <span>P&L</span>
+            <span>Overview</span>
         </button>
         <button class="nav-item" id="navExpenses" onclick="switchMainTab('expenses', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></div>
@@ -661,7 +569,7 @@
             <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
             <span>Admin</span>
         </button>
-        <button class="nav-item" onclick="logoutUser()" style="color: var(--danger);">
+        <button class="nav-item" onclick="haptic(); logoutUser();" style="color: var(--danger);">
             <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></div>
             <span>Logout</span>
         </button>
@@ -671,7 +579,7 @@
 
     <script>
         const API_BASE = '/api'; 
-        const APP_VERSION = "Viraasat-3.1-Tira"; 
+        const APP_VERSION = "Viraasat-4.0-Premium"; 
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
         let menuData = []; 
@@ -682,17 +590,23 @@
         let currentBill = []; 
         let staffData = [];
         let activeTableNumber = ""; 
-        let trendChartInstance = null; 
+        let trendChartInstance = null;
+        let donutChartInstance = null; 
         let selectedPaymentMode = "Cash";
         let rawChartSalesData = {}; 
         let rawChartExpenseData = {};
         let currentViewingSale = null;
 
+        // HAPTIC FEEDBACK (VIBRATION)
+        function haptic() {
+            try { if (navigator.vibrate) navigator.vibrate(40); } catch(e){}
+        }
+
         const royalTaglines = [
             "A Taste Of Royal Heritage",
-            "Mewar Ki Shaan, Swaad Mein Jaan",
-            "Authentic Rajputana Spices",
-            "Viraasat POS Terminal"
+            "The Rajputana Grandeur",
+            "Heritage Culinary Experience",
+            "A Culinary Tribute to Mewar"
         ];
         let tickerIndex = 0;
 
@@ -708,17 +622,17 @@
                 tickerEl.style.opacity = 1;
             }, 500); 
         }
-        setInterval(rotateTicker, 4000);
+        setInterval(rotateTicker, 4500);
 
         let tableSections;
         try {
             tableSections = JSON.parse(localStorage.getItem('viraasat_table_sections')) || [
-                { title: "Hut Seating", tables: ["1", "2", "3", "4"] },
-                { title: "Ground Seating", tables: ["5", "6", "7"] },
-                { title: "Terrace Seating", tables: ["8", "9", "10"] }
+                { title: "Hut Architecture", tables: ["1", "2", "3", "4"] },
+                { title: "Ground Level", tables: ["5", "6", "7"] },
+                { title: "Terrace Elevation", tables: ["8", "9", "10"] }
             ];
         } catch(e) {
-            tableSections = [{ title: "Main Seating", tables: ["1", "2", "3", "4"] }];
+            tableSections = [{ title: "Main Dining", tables: ["1", "2", "3", "4"] }];
         }
 
         let userPermissions;
@@ -746,12 +660,12 @@
             return isNaN(parsed) ? 0 : Math.round(parsed);
         }
 
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; try { history.pushState({modal: id}, '', '#' + id); } catch(e){} }
-        function closeModal(id) { const m = document.getElementById(id); if(m) m.style.display = 'none'; }
+        function openModal(id) { haptic(); document.getElementById(id).style.display = 'flex'; try { history.pushState({modal: id}, '', '#' + id); } catch(e){} }
+        function closeModal(id) { haptic(); const m = document.getElementById(id); if(m) m.style.display = 'none'; }
 
         window.showCustomAlert = function(message) {
             document.getElementById('customAlertMessage').innerText = message;
-            document.getElementById('customAlertButtons').innerHTML = `<button class="btn" onclick="closeModal('customAlertModal')">OK</button>`;
+            document.getElementById('customAlertButtons').innerHTML = `<button class="btn" onclick="closeModal('customAlertModal')">Acknowledge</button>`;
             openModal('customAlertModal');
         };
 
@@ -760,8 +674,8 @@
             currentConfirmCallback = callback; currentCancelCallback = cancelCallback;
             document.getElementById('customAlertMessage').innerText = message;
             document.getElementById('customAlertButtons').innerHTML = `
-                <button class="btn btn-outline" onclick="closeModal('customAlertModal'); if(currentCancelCallback) currentCancelCallback();" style="flex:1;">Cancel</button>
-                <button class="btn btn-danger" onclick="closeModal('customAlertModal'); if(currentConfirmCallback) currentConfirmCallback();" style="flex:1;">Confirm</button>
+                <button class="btn btn-outline" onclick="closeModal('customAlertModal'); if(currentCancelCallback) currentCancelCallback();" style="flex:1;">Abort</button>
+                <button class="btn btn-danger" onclick="closeModal('customAlertModal'); if(currentConfirmCallback) currentConfirmCallback();" style="flex:1;">Execute</button>
             `;
             openModal('customAlertModal');
         };
@@ -788,13 +702,14 @@
                 enforceBackTrap(); enforceBackTrap(); 
             } else { 
                 document.getElementById('loginScreen').style.display = 'flex'; 
-                hideSplashScreen(); 
+                document.getElementById('splashScreen').style.opacity = '0';
+                setTimeout(()=>document.getElementById('splashScreen').style.display = 'none', 500);
             }
         };
 
         window.onpopstate = function () {
             enforceBackTrap();
-            let modals = ['customAlertModal', 'paymentModal', 'conflictModal', 'orderDetailsModal', 'addTableModal', 'salaryActionModal'];
+            let modals = ['customAlertModal', 'paymentModal', 'conflictModal', 'orderDetailsModal', 'addTableModal', 'imagePreviewModal'];
             let modalClosed = false;
             for(let id of modals) { let m = document.getElementById(id); if(m && m.style.display === 'flex') { m.style.display = 'none'; modalClosed = true; } }
             if(modalClosed) return;
@@ -803,17 +718,13 @@
             if (activeTab && activeTab.id !== 'tableDashboard') { switchMainTab('tableDashboard', document.getElementById('navHub'), true); return; }
         };
 
-        function hideSplashScreen() { 
-            const splash = document.getElementById('splashScreen'); 
-            if(splash) { splash.style.opacity = '0'; setTimeout(() => { splash.style.display = 'none'; }, 300); } 
-        }
-
         function attemptLogin() {
+            haptic();
             let mobile = document.getElementById('loginMobile').value.trim(); 
             let pass = document.getElementById('loginPass').value.trim();
             let btn = document.getElementById('btnLogin'); let err = document.getElementById('loginError');
 
-            if(!mobile || !pass) { err.innerText = "Enter Number and Password."; return; }
+            if(!mobile || !pass) { err.innerText = "Credentials required."; return; }
             btn.innerText = "Verifying..."; btn.disabled = true;
 
             setTimeout(() => {
@@ -825,9 +736,9 @@
                     localStorage.setItem('viraasat_user', mobile); localStorage.setItem('viraasat_pass', pass); 
                     window.location.reload(true); 
                 } else { 
-                    btn.innerText = "Secure Login"; btn.disabled = false; showCustomAlert("Invalid Credentials!"); 
+                    btn.innerText = "Authenticate"; btn.disabled = false; showCustomAlert("Authorization Failed!"); 
                 }
-            }, 500); 
+            }, 600); 
         }
 
         function applyAdminRights(mobile) {
@@ -835,165 +746,17 @@
             let perms = userPermissions[mobile] || { orders: false, analytics: false, expenses: false };
             window.isUserAdmin = isAdmin; window.userPerms = perms;
 
-            let hr = new Date().getHours(); let tod = hr < 12 ? 'Morning' : (hr < 17 ? 'Afternoon' : 'Evening'); 
-            document.getElementById('greetText').innerText = `Good ${tod} 👋`;
-
             document.getElementById('navOrders').style.display = (isAdmin || perms.orders) ? 'flex' : 'none'; 
-            document.getElementById('btnViewAllOrders').style.display = (isAdmin || perms.orders) ? 'inline' : 'none';
             document.getElementById('navAnalytics').style.display = (isAdmin || perms.analytics) ? 'flex' : 'none'; 
             document.getElementById('navExpenses').style.display = (isAdmin || perms.expenses) ? 'flex' : 'none'; 
             document.getElementById('navUsers').style.display = isAdmin ? 'flex' : 'none';
 
-            if(isAdmin) { renderStaffList(); fetchApprovals(); }
+            if(isAdmin) { renderEmployeeList(); fetchApprovals(); }
         }
 
-        function saveUserPermissions() {
-            let mobile = document.getElementById('staffMobile').value.trim(); let pass = document.getElementById('staffPass').value.trim();
-            if(mobile.length < 10 || pass.length < 4) { showCustomAlert("Enter valid 10 digit number and minimum 4 char password"); return; }
-            userPermissions[mobile] = { password: pass, orders: document.getElementById('chkOrders').checked, analytics: document.getElementById('chkAnalytics').checked, expenses: document.getElementById('chkExpenses').checked };
-            localStorage.setItem('viraasat_permissions', JSON.stringify(userPermissions));
-            renderStaffList(); showCustomAlert("User Registered successfully!");
-            document.getElementById('staffMobile').value = ""; document.getElementById('staffPass').value = "";
-            document.getElementById('chkOrders').checked = false; document.getElementById('chkAnalytics').checked = false; document.getElementById('chkExpenses').checked = false; 
-        }
-
-        function removeUser(mobile) {
-            showCustomConfirm("Remove user " + mobile + "?", () => {
-                delete userPermissions[mobile]; localStorage.setItem('viraasat_permissions', JSON.stringify(userPermissions));
-                renderStaffList(); 
-            }, null);
-        }
-
-        function renderStaffList() {
-             let list = document.getElementById('staffList'); list.innerHTML = ""; let count = 0;
-             for(let mobile in userPermissions) {
-                 count++; let p = userPermissions[mobile];
-                 list.innerHTML += `<div class="card" style="margin-bottom:0; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--border); padding:16px;"><div><div style="font-weight:700; font-size:1rem; color:var(--text-dark);">${mobile}</div><div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Orders: ${p.orders?'✅':'❌'} | Analytics: ${p.analytics?'✅':'❌'} | Expenses: ${p.expenses?'✅':'❌'}</div></div><button class="delete-btn" style="color:var(--danger); border:1px solid var(--danger); padding:6px 12px; border-radius:6px; background:transparent;" onclick="removeUser('${mobile}')">Revoke</button></div>`;
-             }
-             if (count === 0) list.innerHTML = "<p style='color:var(--text-muted); font-size:0.85rem;'>No extra POS users registered.</p>";
-        }
-
-        function renderEmployeeList() {
-            let elList = document.getElementById('employeeList'); if(!elList) return; elList.innerHTML = "";
-            if(staffData.length === 0) { elList.innerHTML = "<p style='font-size:0.85rem; color:var(--text-muted);'>No staff onboarded yet.</p>"; return; }
-            staffData.forEach(s => {
-                let sId = getVal(s, ['empid', 'employeeid', 'id']) || 'N/A';
-                let sName = getVal(s, ['name']) || 'Unknown';
-                let sRole = getVal(s, ['role']) || "Staff";
-                let sMobile = getVal(s, ['mobile', 'phone']) || "N/A";
-                let sSal = parseAmount(getVal(s, ['monthlysalary', 'salary']));
-                let sDate = getVal(s, ['dateofjoining', 'joindate', 'date', 'doj', 'join_date']) || 'N/A';
-                let formattedDate = sDate !== 'N/A' ? cleanDisplayDate(sDate) : 'N/A';
-
-                elList.innerHTML += `
-                <div class="card" style="padding:16px; margin-bottom:0; display:flex; flex-direction:column; gap:12px;">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                        <div style="display:flex; flex-direction:column; gap:6px;">
-                            <div style="font-weight:800; font-size:1.1rem; color:var(--text-dark);">${sName}</div>
-                            <div style="display:inline-block; background:#FFEAD6; color:#D97706; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:700; width:max-content;">${sRole}</div>
-                        </div>
-                        <div style="display:flex; gap:6px;">
-                            <button onclick='openEditStaff(${JSON.stringify(s).replace(/'/g, "&apos;")})' style="background:var(--primary-light); border:none; padding:6px 10px; border-radius:6px; font-weight:700; cursor:pointer;">Edit</button>
-                            <button onclick="removeStaff(${sId})" style="background:#FEE2E2; color:var(--danger); border:none; padding:6px 10px; border-radius:6px; font-weight:700; cursor:pointer;">Del</button>
-                        </div>
-                    </div>
-                    <div style="border-top:1px dashed var(--border); margin:4px 0;"></div>
-                    <div style="display:flex; flex-direction:column; gap:8px; font-size:0.85rem; font-weight:600; color:var(--text-muted);">
-                        <div style="display:flex; align-items:center; gap:6px;">📱 <span>Mobile: <span style="color:var(--text-dark);">${sMobile}</span></span></div>
-                        <div style="display:flex; align-items:center; gap:6px;">💰 <span>Monthly Salary: <span style="color:var(--success);">₹${sSal.toLocaleString('en-IN')}</span></span></div>
-                        <div style="display:flex; align-items:center; gap:6px;">🗓️ <span>Date of Joining: <span style="color:var(--text-dark);">${formattedDate}</span></span></div>
-                    </div>
-                </div>`;
-            });
-        }
-
-        function openEditStaff(s) {
-            document.getElementById('newStaffName').value = s.name || '';
-            document.getElementById('newStaffMobile').value = s.mobile || '';
-            document.getElementById('newStaffRole').value = s.role || 'Manager';
-            document.getElementById('newStaffSalary').value = s.salary || 0;
-            showCustomAlert("Modify fields above and click 'Register Staff' to update.");
-        }
-
-        function removeStaff(id) {
-            showCustomConfirm("Delete this staff member?", () => {
-                fetch(`${API_BASE}/staff/remove`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({id: id}) }).then(r=>r.json()).then(()=>{ showCustomAlert("Staff deleted."); fetchData(); });
-            }, null);
-        }
-
-        function updateStockAdmin() {
-            let item = document.getElementById('adminStockItem').value.trim(); let qty = parseInt(document.getElementById('adminStockQty').value);
-            if(!item || isNaN(qty)) { showCustomAlert("Please enter valid item and quantity."); return; }
-            stockData[item] = qty; renderStockDashboard(); checkStockDisplay(); showCustomAlert("Stock updated to " + qty + " for " + item);
-            document.getElementById('adminStockItem').value = ""; document.getElementById('adminStockQty').value = "";
-            fetch(`${API_BASE}/stock`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: item, quantity: qty }) }).catch(e => console.log("Stock update sync failed"));
-        }
-
-        function addMenuItemUI() {
-            let cat = document.getElementById('newMenuCategory').value; let name = document.getElementById('newMenuName').value.trim(); let price = parseInt(document.getElementById('newMenuPrice').value);
-            if(!name || isNaN(price) || price <= 0) { showCustomAlert("Please enter valid item name and price."); return; }
-            let existing = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === name.toLowerCase());
-            if(existing) { showCustomAlert("Item already exists!"); return; }
-            let newItem = { name: name, price: price, category: cat }; menuData.push(newItem); populateDropdown(); 
-            fetch(`${API_BASE}/menu`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: cat, name: name, price: price }) }).catch(e => console.log("Menu addition failed"));
-            showCustomAlert(name + " added successfully!"); document.getElementById('newMenuName').value = ""; document.getElementById('newMenuPrice').value = "";
-        }
-
-        function logoutUser(clearFields = true) {
-            localStorage.removeItem('viraasat_user'); localStorage.removeItem('viraasat_pass');
-            document.getElementById('appHeader').style.display = 'none'; document.getElementById('appMain').style.display = 'none'; document.getElementById('appBottomNav').style.display = 'none'; document.getElementById('loginScreen').style.display = 'flex';
-            if(clearFields) { document.getElementById('loginMobile').value = ""; document.getElementById('loginPass').value = ""; }
-        }
-
-        function populateStaffDropdown() {
-            let sel = document.getElementById('payStaffSelect'); sel.innerHTML = "<option value=''>Select Employee</option>";
-            staffData.forEach(s => {
-                let sId = getVal(s, ['empid', 'employeeid', 'id']); let sName = getVal(s, ['name']);
-                if(sId && sName) { sel.innerHTML += `<option value="${sId}">${sName} (${sId})</option>`; }
-            });
-        }
-
-        function addStaffUI() {
-            let name = document.getElementById('newStaffName').value.trim(); let mobile = document.getElementById('newStaffMobile').value.trim(); let role = document.getElementById('newStaffRole').value; let salary = parseInt(document.getElementById('newStaffSalary').value); let joinDate = document.getElementById('newStaffDate').value; 
-            if(!name || mobile.length < 10 || isNaN(salary)) { showCustomAlert("Please fill all details correctly."); return; }
-            fetch(`${API_BASE}/staff`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name, mobile: mobile, role: role, salary: salary, join_date: joinDate }) })
-            .then(res => res.json()).then(data => {
-                showCustomAlert(`${name} registered successfully!`);
-                document.getElementById('newStaffName').value = ""; document.getElementById('newStaffMobile').value = ""; document.getElementById('newStaffSalary').value = ""; document.getElementById('newStaffDate').value = ""; fetchData(); 
-            });
-        }
-
-        function calculateStaffBalance() {
-            let empId = document.getElementById('payStaffSelect').value; let infoDiv = document.getElementById('staffBalanceInfo');
-            if(!empId) { infoDiv.innerHTML = ''; return; }
-            let staff = staffData.find(s => getVal(s, ['empid', 'employeeid', 'id']) == empId); 
-            let monthlySal = parseAmount(getVal(staff, ['monthlysalary', 'salary'])); let d = new Date(); let currentMonthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; let advTaken = 0;
-
-            expenseHistory.forEach(exp => {
-                let eCat = getVal(exp, ['category']); let eDesc = getVal(exp, ['description', 'note']) || ''; let eDate = getVal(exp, ['date', 'isodate', 'expense_date', 'created_at']) || '';
-                let eMonthStr = ""; let parsedDate = new Date(eDate);
-                if(!isNaN(parsedDate.getTime())) { eMonthStr = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}`; } else { eMonthStr = eDate.substring(0, 7); }
-                if(eCat === 'Staff Salary' && eDesc.includes(`[${empId}]`) && eMonthStr === currentMonthStr) { advTaken += parseAmount(getVal(exp, ['amount'])); }
-            });
-            let balance = monthlySal - advTaken;
-            infoDiv.innerHTML = `<b>Base Salary:</b> ₹${monthlySal}<br><b>Taken This Month:</b> <span style="color:var(--danger)">-₹${advTaken}</span><br><b style="font-size:1.1rem; color:var(--success)">Pending Balance: ₹${balance}</b>`;
-        }
-
-        function submitStaffPayout() {
-            let empId = document.getElementById('payStaffSelect').value; let amount = document.getElementById('payStaffAmount').value; let type = document.getElementById('payStaffType').value;
-            if(!empId || !amount || amount <= 0) { showCustomAlert("Please select staff and enter valid amount."); return; }
-            let staff = staffData.find(s => getVal(s, ['empid', 'employeeid', 'id']) == empId); let sName = getVal(staff, ['name']); let sPhone = getVal(staff, ['mobile']); let desc = `[${empId}] ${sName} - ${type}`; 
-            let d = new Date(); let fDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-            expenseHistory.push({ date: fDate, isodate: fDate, category: 'Staff Salary', amount: parseInt(amount), description: desc });
-            
-            fetch(`${API_BASE}/expenses`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: 'Staff Salary', amount: amount, description: desc }) })
-            .then(res => res.json()).then(data => {
-                generateTrends(); calculateStaffBalance(); document.getElementById('payStaffAmount').value = "";
-                showCustomAlert("Payout Recorded & Logged in Expenses!");
-                fetchData();
-            });
-        }
-
+        // =====================================
+        // DATA FETCHING & UI RENDERING
+        // =====================================
         async function fetchData() {
             document.getElementById('loader').style.display = 'flex';
             try {
@@ -1028,122 +791,160 @@
 
                 staffData = staffRes.staff || [];
 
-                populateDropdown(); populateStaffDropdown(); renderEmployeeList(); renderTableGrid(); renderStockDashboard(); checkStockDisplay(); renderLiveSales(); generateTrends(); renderExpensesTable();
+                populateDropdown(); populateStaffDropdown(); renderEmployeeList(); renderTableGrid(); checkStockDisplay(); renderLiveSales(); generateOverview(); renderExpensesList();
                 if(window.isUserAdmin) fetchApprovals();
-                hideSplashScreen();
-            } catch(err) { console.error("Fetch Error:", err); document.getElementById('loader').innerText = "Sync Error. Check connection."; hideSplashScreen(); }
+                
+                document.getElementById('splashScreen').style.opacity = '0';
+                setTimeout(()=>document.getElementById('splashScreen').style.display = 'none', 500);
+            } catch(err) { 
+                console.error("Fetch Error:", err); 
+            }
             document.getElementById('loader').style.display = 'none';
         }
 
-        function generateTrends() {
+        // =====================================
+        // SMART OVERVIEW & ANALYTICS
+        // =====================================
+        function generateOverview() {
             try {
-                let totalSalesAmount = 0; let totalExpensesAmount = 0; let totalSalaryPaid = 0;
-                let d = new Date(); let todayIso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; let todayGb = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-                let revenueToday = 0; let ordersToday = 0; let expenseCategories = {}; let staffExpenseMap = {};
-                let itemStats = {};
-                rawChartSalesData = {}; rawChartExpenseData = {};
+                let totalSalesAmount = 0; let totalExpensesAmount = 0;
+                let revenueToday = 0; let ordersToday = 0; 
+                let itemStats = {}; let catStats = {};
+                let d = new Date(); let todayIso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
+                // Process Sales
                 salesHistory.forEach(sale => { 
                     if(sale.status === 'deleted' || sale.status === 'deletion_pending') return;
-                    let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sDate = String(getVal(sale, ['date', 'isodate']) || '').trim();
+                    let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); 
+                    let sDate = String(getVal(sale, ['date', 'isodate']) || '').trim();
                     totalSalesAmount += sTotal; 
                     
+                    let isToday = sDate.includes(todayIso);
+                    if (isToday) { revenueToday += sTotal; ordersToday++; }
+
+                    // Parse Items carefully
                     let rawItems = getVal(sale, ['items', 'itemsstring']) || '';
                     let cleanItems = rawItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
+                    
                     cleanItems.split(', ').forEach(str => {
-                        let m = str.match(/(.+?)\s*\(x(\d+)\)/);
-                        if(m) { let name = m[1].trim(); let qty = parseInt(m[2]); itemStats[name] = (itemStats[name]||0) + qty; }
+                        let m = str.match(/(.+?)\s*\(x(\d+)\)(?:\s*₹(\d+))?/);
+                        if(m) { 
+                            let name = m[1].trim(); let qty = parseInt(m[2]); let rev = m[3] ? parseInt(m[3]) : 0;
+                            if(rev === 0) { let mi = menuData.find(x=>getVal(x,['itemname','name']).toLowerCase()===name.toLowerCase()); if(mi) rev = parseAmount(getVal(mi,['price']))*qty; }
+                            
+                            if(!itemStats[name]) itemStats[name] = {qty:0, revenue:0, category: 'Uncategorized'};
+                            itemStats[name].qty += qty; itemStats[name].revenue += rev;
+
+                            // Find Category
+                            let mi = menuData.find(x=>getVal(x,['itemname','name']).toLowerCase()===name.toLowerCase());
+                            if(mi) {
+                                let cName = getVal(mi,['category']) || 'Other';
+                                itemStats[name].category = cName;
+                                catStats[cName] = (catStats[cName]||0) + rev;
+                            } else { catStats['Custom'] = (catStats['Custom']||0) + rev; }
+                        }
                     });
-
-                    if(sDate) {
-                        let isToday = false; let dateStrKey = sDate.split("T")[0].split(" ")[0]; 
-                        if (sDate.startsWith(todayIso) || sDate.includes(todayIso) || sDate.includes(todayGb)) { isToday = true; } else { let parsedDate = new Date(sDate); if (!isNaN(parsedDate.getTime())) { if (parsedDate.getDate() === d.getDate() && parsedDate.getMonth() === d.getMonth() && parsedDate.getFullYear() === d.getFullYear()) { isToday = true; } dateStrKey = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')}`; } }
-                        rawChartSalesData[dateStrKey] = (rawChartSalesData[dateStrKey] || 0) + sTotal; if (isToday) { revenueToday += sTotal; ordersToday++; }
-                    }
                 });
                 
-                expenseHistory.forEach(exp => { 
-                    let sAmount = parseAmount(getVal(exp, ['amount', 'total'])); let sDate = getVal(exp, ['date', 'isodate', 'expense_date', 'created_at']) || ''; let eCat = getVal(exp, ['category']) || 'Other'; let eDesc = getVal(exp, ['description', 'note']) || '';
-                    if(sDate) { 
-                        let dateStrKey = sDate.split("T")[0].split(" ")[0]; let parsedDate = new Date(sDate);
-                        if (!isNaN(parsedDate.getTime())) { dateStrKey = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')}`; }
-                        rawChartExpenseData[dateStrKey] = (rawChartExpenseData[dateStrKey] || 0) + sAmount; totalExpensesAmount += sAmount; 
-                        if(eCat === 'Staff Salary') { totalSalaryPaid += sAmount; let match = eDesc.match(/\[(.*?)\] (.*?) -/); let staffName = match ? match[2] : eDesc; staffExpenseMap[staffName] = (staffExpenseMap[staffName] || 0) + sAmount; } else { expenseCategories[eCat] = (expenseCategories[eCat] || 0) + sAmount; }
-                    }
-                });
+                expenseHistory.forEach(exp => { totalExpensesAmount += parseAmount(getVal(exp, ['amount', 'total'])); });
                 
-                let netProfit = totalSalesAmount - totalExpensesAmount;
-                document.getElementById('kpiTotalSales').innerText = `₹ ${totalSalesAmount.toLocaleString('en-IN')}`; document.getElementById('kpiTotalExpenses').innerText = `₹ ${totalExpensesAmount.toLocaleString('en-IN')}`; document.getElementById('kpiNetProfit').innerText = `₹ ${netProfit.toLocaleString('en-IN')}`; document.getElementById('kpiTotalSalary').innerText = `₹ ${totalSalaryPaid.toLocaleString('en-IN')}`; document.getElementById('kpiTotalStaff').innerText = staffData.length;
-                
-                let breakdownHtml = ""; for(let cat in expenseCategories) { breakdownHtml += `<div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:6px;"><span>${cat}</span> <span style="font-weight:600; color:var(--danger);">- ₹${expenseCategories[cat].toLocaleString('en-IN')}</span></div>`; }
-                document.getElementById('expenseBreakdownList').innerHTML = breakdownHtml || "<span style='color:var(--text-muted);'>No other expenses logged.</span>";
+                // Top KPIs
+                document.getElementById('homeTodaySale').innerText = `₹${revenueToday.toLocaleString('en-IN')}`; 
+                document.getElementById('homeAvgOrder').innerText = `₹${ordersToday > 0 ? Math.floor(revenueToday / ordersToday) : 0}`; 
+                document.getElementById('homeOverallSale').innerText = `₹${totalSalesAmount.toLocaleString('en-IN')}`; 
 
-                let staffHtml = ""; for(let sName in staffExpenseMap) { staffHtml += `<div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:6px;"><span>👤 ${sName}</span> <span style="font-weight:600; color:var(--danger);">- ₹${staffExpenseMap[sName].toLocaleString('en-IN')}</span></div>`; }
-                document.getElementById('staffExpenseList').innerHTML = staffHtml || "<span style='color:var(--text-muted);'>No staff payments recorded.</span>";
-
-                // Item Sales Ranking Render in P&L
-                let sortedItems = Object.entries(itemStats).sort((a,b)=>b[1]-a[1]).slice(0, 10);
-                let itemHtml = "";
-                sortedItems.forEach(([name, qty]) => {
-                    itemHtml += `<div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:6px;"><span style="font-weight:600;">${name}</span> <span style="font-weight:800; color:var(--success);">${qty} units</span></div>`;
-                });
-                document.getElementById('itemAnalyticsList').innerHTML = itemHtml || "<span style='color:var(--text-muted);'>No item sales recorded.</span>";
-
-                let avgToday = ordersToday > 0 ? Math.floor(revenueToday / ordersToday) : 0;
-                let hasSalesAccess = true; if (typeof window.isUserAdmin !== 'undefined') { hasSalesAccess = window.isUserAdmin || (window.userPerms && window.userPerms.orders); }
-
-                if (hasSalesAccess) {
-                    document.getElementById('homeTodaySale').innerText = `₹${revenueToday.toLocaleString('en-IN')}`; document.getElementById('homeAvgOrder').innerText = `₹${avgToday.toLocaleString('en-IN')}`; document.getElementById('homeOverallSale').innerText = `₹${totalSalesAmount.toLocaleString('en-IN')}`; 
-                } else {
-                    document.getElementById('homeTodaySale').innerText = "No Access"; document.getElementById('homeAvgOrder').innerText = "No Access"; document.getElementById('homeOverallSale').innerText = "No Access"; 
+                // Donut Chart
+                const dCtx = document.getElementById('categoryDonut');
+                if(dCtx) {
+                    if(donutChartInstance) donutChartInstance.destroy();
+                    let lbls = Object.keys(catStats); let vals = Object.values(catStats);
+                    donutChartInstance = new Chart(dCtx.getContext('2d'), { type: 'doughnut', data: { labels: lbls, datasets: [{ data: vals, backgroundColor: ['#111827', '#A67C52', '#D1FAE5', '#FEE2E2', '#F3F4F6', '#9CA3AF'], borderWidth: 0 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right', labels: {font: {family:'Inter', size:10}, boxWidth: 10} } } } });
                 }
-                renderPNLChart('daily');
-            } catch(e) { console.error("Trends Error", e); }
+
+                // Item Analytics (Cards)
+                let sortedItems = Object.entries(itemStats).sort((a,b)=>b[1].qty-a[1].qty);
+                let itemHtml = ""; let slowHtml = "";
+                
+                sortedItems.forEach(([name, data], index) => {
+                    let perc = totalSalesAmount > 0 ? ((data.revenue / totalSalesAmount) * 100).toFixed(1) : 0;
+                    let badge = "";
+                    if(index === 0) badge = `<span class="pill pill-gold">✦ Signature Choice</span>`;
+                    else if(index === 1 || index === 2) badge = `<span class="pill pill-silver">♢ Patron's Favorite</span>`;
+
+                    itemHtml += `
+                    <div class="record-card">
+                        <div class="record-header">
+                            <div><div class="record-title">${name}</div><div class="record-sub">${data.category} • Contributes ${perc}% to Revenue</div></div>
+                            ${badge}
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:8px;">
+                            <span style="font-size:0.8rem; color:var(--text-muted); font-weight:600;">Units Sold: <b style="color:var(--text-dark); font-size:1rem;">${data.qty}</b></span>
+                            <span class="record-amount">₹${data.revenue.toLocaleString('en-IN')}</span>
+                        </div>
+                    </div>`;
+                });
+                document.getElementById('itemAnalyticsList').innerHTML = itemHtml || "<span style='color:var(--text-muted); font-size:0.85rem;'>No item data available.</span>";
+
+                // Slow Movers
+                menuData.forEach(mi => {
+                    let n = getVal(mi, ['itemname','name']);
+                    if(!itemStats[n]) slowHtml += `<span style="background:var(--primary-light); color:var(--text-muted); padding:6px 12px; border-radius:8px; font-size:0.75rem; font-weight:600;">${n}</span>`;
+                });
+                document.getElementById('slowMoversList').innerHTML = slowHtml || "<span style='color:var(--text-muted); font-size:0.85rem;'>All items have traction!</span>";
+
+            } catch(e) { console.error("Overview Error", e); }
         }
 
-        function renderPNLChart(viewType) {
-            document.querySelectorAll('.chart-filters .filter-btn').forEach(btn => btn.classList.remove('active'));
-            if(viewType === 'daily') document.getElementById('btnChartDOD').classList.add('active'); else if(viewType === 'weekly') document.getElementById('btnChartWeekly').classList.add('active'); else if(viewType === 'monthly') document.getElementById('btnChartMonthly').classList.add('active');
+        // =====================================
+        // SMART EXPENSES UI
+        // =====================================
+        function renderExpensesList(filter = 'All', btnElem = null) {
+            if(btnElem) { haptic(); document.querySelectorAll('.filter-chip').forEach(b=>b.classList.remove('active')); btnElem.classList.add('active'); }
+            
+            let container = document.getElementById('expensesCardList'); container.innerHTML = "";
+            let filtered = expenseHistory;
+            if(filter !== 'All') filtered = expenseHistory.filter(e => getVal(e,['category']) === filter);
+            
+            if(!filtered.length) { container.innerHTML = `<div style="text-align:center; padding:20px; color:var(--text-muted); font-size:0.85rem;">No expenditures found.</div>`; return; }
 
-            let aggSales = {}; let aggExp = {}; let allKeys = Array.from(new Set([...Object.keys(rawChartSalesData), ...Object.keys(rawChartExpenseData)])).sort();
-            allKeys.forEach(key => {
-                let dParts = key.split('-'); if(dParts.length !== 3) return; let dObj = new Date(dParts[0], dParts[1]-1, dParts[2]); let newKey = key;
-                if(viewType === 'monthly') { newKey = `${dParts[0]}-${dObj.toLocaleString('default', { month: 'short' })}`; } else if (viewType === 'weekly') { var start = new Date(dObj.getFullYear(), 0, 1); var days = Math.floor((dObj - start) / (24 * 60 * 60 * 1000)); var weekNumber = Math.ceil(days / 7); newKey = `${dParts[0]} - Wk ${weekNumber}`; }
-                aggSales[newKey] = (aggSales[newKey] || 0) + (rawChartSalesData[key] || 0); aggExp[newKey] = (aggExp[newKey] || 0) + (rawChartExpenseData[key] || 0);
+            // Progress Bar Calc
+            let catTotals = {}; let grandTotal = 0;
+            expenseHistory.forEach(e => { let c = getVal(e,['category'])||'Other'; let a = parseAmount(getVal(e,['amount','total'])); catTotals[c]=(catTotals[c]||0)+a; grandTotal+=a; });
+            
+            let pBar = document.getElementById('expenseProgressBar'); let pLeg = document.getElementById('expenseProgressLegend');
+            if(pBar && pLeg) {
+                pBar.innerHTML = ""; pLeg.innerHTML = "";
+                const colors = {'Raw Material':'#111827', 'Utility':'#A67C52', 'Payroll':'#10B981', 'Maintenance':'#F59E0B', 'Other':'#9CA3AF'};
+                for(let c in catTotals) {
+                    let perc = (catTotals[c]/grandTotal)*100; let col = colors[c]||'#6B7280';
+                    pBar.innerHTML += `<div class="progress-segment" style="width:${perc}%; background:${col};"></div>`;
+                    pLeg.innerHTML += `<div style="display:flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; border-radius:50%; background:${col};"></span> ${c} (${Math.round(perc)}%)</div>`;
+                }
+            }
+
+            // Cards
+            filtered.forEach(e => {
+                let imgThumb = ""; 
+                if(e.image && e.image.startsWith('data:image')) {
+                    imgThumb = `<img src="${e.image}" onclick="openImagePreview('${e.image}')" style="width:40px; height:40px; object-fit:cover; border-radius:8px; border:1px solid var(--border); cursor:pointer;">`;
+                }
+                
+                container.innerHTML += `
+                <div class="record-card">
+                    <div class="record-header">
+                        <div><div class="record-title">${getVal(e,['category'])}</div><div class="record-sub">${cleanDisplayDate(getVal(e,['date','isodate']))} • ${getVal(e,['description','note'])||'No remarks'}</div></div>
+                        ${imgThumb}
+                    </div>
+                    <div style="text-align:right; margin-top:8px;"><span class="record-amount" style="color:var(--danger);">-₹${parseAmount(getVal(e,['amount','total'])).toLocaleString('en-IN')}</span></div>
+                </div>`;
             });
-
-            let finalLabels = Array.from(new Set([...Object.keys(aggSales), ...Object.keys(aggExp)])).sort();
-            let finalSales = []; let finalExp = [];
-            finalLabels.forEach(lbl => { finalSales.push(aggSales[lbl] || 0); finalExp.push(aggExp[lbl] || 0); });
-
-            const canvas = document.getElementById('trendChart'); if(!canvas) return; const ctx = canvas.getContext('2d'); if(typeof Chart === 'undefined') return; if(trendChartInstance) trendChartInstance.destroy();
-            trendChartInstance = new Chart(ctx, { type: 'line', data: { labels: finalLabels, datasets: [ { label: 'Sales (₹)', data: finalSales, borderColor: '#07CDAE', backgroundColor: 'rgba(7, 205, 174, 0.15)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#07CDAE', pointRadius: 4 }, { label: 'Expenses (₹)', data: finalExp, borderColor: '#FE7096', backgroundColor: 'rgba(254, 112, 150, 0.15)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#FE7096', pointRadius: 4 } ] }, options: { responsive: true, maintainAspectRatio: false } });
         }
 
-        function populateDropdown() { 
-            const datalist = document.getElementById('menuItemsList'); datalist.innerHTML = ""; 
-            menuData.forEach(item => { let itemName = getVal(item, ['itemname', 'name']); if(itemName) { let option = document.createElement('option'); option.value = itemName; datalist.appendChild(option); } }); 
-        }
+        function openImagePreview(b64) { document.getElementById('fullSizeReceipt').src = b64; openModal('imagePreviewModal'); }
 
-        function renderStockDashboard() { 
-            let stockDiv = document.getElementById('dashboardStockList'); if(!stockDiv) return; stockDiv.innerHTML = ""; let keys = Object.keys(stockData); 
-            if(keys.length === 0) { stockDiv.innerHTML = "<p style='color:var(--text-muted); font-size:0.85rem;'>No stock tracked.</p>"; return; } 
-            keys.forEach(key => { let qty = parseInt(stockData[key]); let tagClass = qty <= 5 ? 'stock-tag low' : 'stock-tag'; stockDiv.innerHTML += `<div class="${tagClass}">${key}: <span>${qty}</span></div>`; }); 
-        }
-
-        function checkStockDisplay() { 
-            let itemName = document.getElementById('itemInput').value; let statusDiv = document.getElementById('stockStatus'); let foundStockKey = Object.keys(stockData).find(key => key.trim().toLowerCase() === itemName.trim().toLowerCase()); 
-            if(foundStockKey !== undefined) { let currentQty = parseInt(stockData[foundStockKey]); statusDiv.style.color = ""; statusDiv.style.backgroundColor = ""; statusDiv.style.border = ""; statusDiv.className = currentQty > 5 ? "stock-tag" : "stock-tag low"; statusDiv.innerHTML = currentQty > 5 ? `Available: <span>${currentQty}</span>` : `Low Stock: <span>${currentQty}</span>`; statusDiv.style.display = "inline-flex"; statusDiv.style.marginTop = "8px"; } else { statusDiv.style.display = "none"; statusDiv.innerHTML = ""; } 
-        }
-
-        function cleanDisplayDate(dStr) { 
-            if (!dStr) return ""; try { let d = new Date(dStr); if (isNaN(d.getTime())) return dStr.split(" ")[0]; return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); } catch(e) { return dStr; } 
-        }
-
-        function cleanDisplayTime(tStr) { 
-            if (!tStr) return ""; try { let d = new Date(tStr); if (!isNaN(d.getTime())) return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); return tStr; } catch(e) { return tStr; } 
-        }
-
+        // =====================================
+        // LIVE SALES & TABLES (HUB)
+        // =====================================
         function renderLiveSales() {
             const salesGrid = document.getElementById('salesGrid'); salesGrid.innerHTML = ""; const homeRecent = document.getElementById('homeRecentOrders'); homeRecent.innerHTML = "";
             let startDateInput = document.getElementById('filterStartDate').value; let endDateInput = document.getElementById('filterEndDate').value;
@@ -1157,42 +958,47 @@
             });
             
             let displayTotal = filteredSales.reduce((acc, curr) => acc + parseAmount(getVal(curr, ['totalamount', 'total', 'amount'])), 0);
-            document.getElementById('totalSalesBox').innerText = `Total Sales: ₹ ${displayTotal.toLocaleString('en-IN')}`;
+            document.getElementById('totalSalesBox').innerText = `Revenue: ₹ ${displayTotal.toLocaleString('en-IN')}`;
             
-            if(filteredSales.length === 0) { salesGrid.innerHTML = "<p style='color:var(--text-muted); font-size:0.9rem; text-align:center;'>No orders found.</p>"; return; }
-            
-            let tableCounts = {};
-            [...filteredSales].reverse().forEach(sale => { let tName = getVal(sale, ['tablenumber', 'table', 'tablename']) || "Table"; tableCounts[tName] = (tableCounts[tName] || 0) + 1; sale.sessionIndex = tableCounts[tName]; });
+            if(filteredSales.length === 0) { salesGrid.innerHTML = "<p style='color:var(--text-muted); font-size:0.85rem; text-align:center;'>No transaction records found.</p>"; return; }
             
             filteredSales.forEach(sale => {
-                let sOrderId = getVal(sale, ['orderid', 'id']) || 'N/A'; let tName = getVal(sale, ['tablenumber', 'table', 'tablename']) || "Table"; let sessionLabel = sale.sessionIndex > 1 ? ` (S${sale.sessionIndex})` : "";
+                let sOrderId = getVal(sale, ['orderid', 'id']) || 'NA'; let tName = getVal(sale, ['tablenumber', 'table', 'tablename']) || "Table";
                 let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getVal(sale, ['items', 'itemsstring']) || ''; let sDate = getVal(sale, ['date', 'isodate']) || ''; let sTime = getVal(sale, ['time']) || '';
                 
                 let cleanItemsView = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
-                let statusFlag = sale.status === 'deletion_pending' ? `<span style="background:#FEF3C7; color:#B45309; font-size:0.65rem; padding:2px 6px; border-radius:4px; font-weight:700;">APPROVAL PENDING</span>` : '';
+                let statusFlag = sale.status === 'deletion_pending' ? `<span class="pill pill-warning">PENDING CANCELLATION</span>` : '';
 
-                salesGrid.innerHTML += `<div class="card" style="padding:16px; margin-bottom:12px; cursor:pointer;" onclick="openOrderDetails('${sOrderId}')"><div style="display:flex; justify-content:space-between; margin-bottom:8px;"><div><h4 style="margin-bottom:2px; font-weight:700; color:var(--text-dark);">${tName}${sessionLabel}</h4><span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">#${sOrderId}</span></div>${statusFlag}</div><div style="font-size:0.85rem; color:var(--text-muted); line-height:1.5; margin-bottom:12px; max-height:42px; overflow:hidden;">${cleanItemsView.replace(/ ₹\d+/g, '')}</div><div style="display:flex; justify-content:space-between; align-items:center;"><span style="background:#F4EFEA; color:var(--text-dark); padding:6px 10px; border-radius:6px; font-weight:600; font-size:0.78rem; border:1px solid var(--border); white-space:nowrap;">${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}</span><span style="color: #E65100; font-size: 1.2rem; font-weight: 800; background: #FFEDD5; padding: 6px 12px; border-radius: 8px; white-space: nowrap; border: 1px solid #FDE68A;">₹ ${sTotal}</span></div></div>`;
+                salesGrid.innerHTML += `
+                <div class="record-card" onclick="openOrderDetails('${sOrderId}')" style="padding:20px;">
+                    <div class="record-header" style="margin-bottom:12px;"><div><div class="record-title">${tName}</div><div class="record-sub">INV #${sOrderId}</div></div>${statusFlag}</div>
+                    <div style="font-size:0.85rem; color:var(--text-muted); line-height:1.6; margin-bottom:16px; max-height:42px; overflow:hidden;">${cleanItemsView.replace(/ ₹\d+/g, '')}</div>
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span class="pill pill-silver">${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}</span>
+                        <span class="record-amount" style="color:var(--success);">₹ ${sTotal.toLocaleString('en-IN')}</span>
+                    </div>
+                </div>`;
             });
             
-            filteredSales.slice(0, 3).forEach(sale => {
-                let sOrderId = getVal(sale, ['orderid', 'id']) || 'N/A'; let tName = getVal(sale, ['tablenumber', 'table', 'tablename']) || "Table"; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getVal(sale, ['items', 'itemsstring']) || ''; let sTime = getVal(sale, ['time']) || ''; let iconStr = tName.includes('Takeaway') ? '🛍️' : (tName.includes('Delivery') ? '🛵' : '🍽️'); 
-                
+            filteredSales.slice(0, 4).forEach(sale => {
+                let sOrderId = getVal(sale, ['orderid', 'id']) || 'NA'; let tName = getVal(sale, ['tablenumber', 'table', 'tablename']) || "Table"; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getVal(sale, ['items', 'itemsstring']) || ''; let sTime = getVal(sale, ['time']) || ''; let iconStr = tName.includes('Takeaway') ? '🛍️' : (tName.includes('Delivery') ? '🛵' : '🍽️'); 
                 let cleanItemsView = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
                 let itemCount = cleanItemsView.split(', ').length;
+                let statusBadge = sale.status === 'deletion_pending' ? `<span class="pill pill-warning" style="font-size:0.6rem;">PENDING</span>` : `<span class="pill pill-success" style="font-size:0.6rem;">CLEARED</span>`;
                 
-                homeRecent.innerHTML += `<div class="h-order-card" onclick="openOrderDetails('${sOrderId}')"><div class="ho-icon">${iconStr}</div><div class="ho-info"><div class="ho-title">Order #${sOrderId}</div><div class="ho-sub">${tName} • ${cleanDisplayTime(sTime)}</div><div class="ho-sub" style="font-weight:600; color:var(--text-dark); margin-top:2px;">${itemCount} Items • ₹${sTotal}</div></div><div class="ho-badge">COMPLETED</div></div>`;
+                homeRecent.innerHTML += `<div class="h-order-card" onclick="openOrderDetails('${sOrderId}')"><div class="ho-icon">${iconStr}</div><div class="ho-info"><div class="ho-title">INV #${sOrderId}</div><div class="ho-sub">${tName} • ${cleanDisplayTime(sTime)}</div><div class="ho-sub" style="font-weight:700; color:var(--text-dark); margin-top:2px;">${itemCount} Items • ₹${sTotal}</div></div>${statusBadge}</div>`;
             });
         }
 
         function renderTableGrid() {
             const gridContainer = document.getElementById('tableGrid'); gridContainer.innerHTML = ""; let activeCount = 0; let totalCount = 0;
             tableSections.forEach((section) => {
-                gridContainer.innerHTML += `<div class="section-header"><h4>${section.title}</h4></div>`; let gridHTML = '<div class="table-grid" style="margin-bottom:24px;">'; 
+                gridContainer.innerHTML += `<div class="section-header"><h4>${section.title}</h4></div>`; let gridHTML = '<div class="table-grid" style="margin-bottom:32px;">'; 
                 section.tables.forEach(i => { 
                     let tName = "Table " + i; let isOccupied = runningTables.hasOwnProperty(tName) && runningTables[tName] && runningTables[tName].length > 0;
                     if(isOccupied) activeCount++; totalCount++;
-                    let statusStr = isOccupied ? "OCCUPIED" : "AVAILABLE"; let statusCls = isOccupied ? "status-occ" : "status-avail"; let cardCls = isOccupied ? "table-card occupied" : "table-card";
-                    gridHTML += `<div class="${cardCls}" onclick="openTable('${i}')" style="width:100%; min-width:auto; padding:20px 10px;"><div class="tc-name">Table ${i}</div><div class="tc-status ${statusCls}">${statusStr}</div><div class="tc-sub">Dining Area</div></div>`;
+                    let statusStr = isOccupied ? "ENGAGED" : "VACANT"; let statusCls = isOccupied ? "status-occ" : "status-avail"; let cardCls = isOccupied ? "table-card occupied" : "table-card";
+                    gridHTML += `<div class="${cardCls}" onclick="openTable('${i}')"><div class="tc-name">Zone ${i}</div><div class="tc-sub">Operations</div><div class="tc-status ${statusCls}">${statusStr}</div></div>`;
                 }); 
                 gridContainer.innerHTML += gridHTML + '</div>';
             });
@@ -1204,14 +1010,15 @@
 
         function confirmAddTable() { 
             let catIdx = document.getElementById('newTableCategory').value; let tNum = document.getElementById('newTableNumber').value.trim(); 
-            if(!tNum) { showCustomAlert("Please enter a table number."); return; } 
+            if(!tNum) { showCustomAlert("Invalid table designation."); return; } 
             let isDuplicate = false; tableSections.forEach(sec => { if(sec.tables.includes(tNum)) isDuplicate = true; }); 
-            if(isDuplicate) { showCustomAlert("Table " + tNum + " already exists!"); return; } 
+            if(isDuplicate) { showCustomAlert("Zone " + tNum + " already deployed."); return; } 
             tableSections[catIdx].tables.push(tNum); localStorage.setItem('viraasat_table_sections', JSON.stringify(tableSections)); closeModal('addTableModal'); renderTableGrid(); 
         }
 
         function switchMainTab(tabName, btnElement, skipHistory = false) {
-            let htmlMap = { 'tableDashboard': `Premium POS`, 'salesDashboard': `Live sale`, 'trendView': `P&L Dashboard`, 'expenses': `Expenses`, 'usersManager': `Admin` };
+            haptic();
+            let htmlMap = { 'tableDashboard': `Terminal Hub`, 'salesDashboard': `Registry`, 'trendView': `Intelligence`, 'expenses': `Expenditure`, 'usersManager': `System Admin` };
             if(!skipHistory) { try { history.pushState({view: tabName}, '', '#' + tabName); } catch(e){} }
             
             document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display = 'none'; tab.classList.remove('active'); });
@@ -1223,10 +1030,17 @@
             document.getElementById(tabName).style.display = 'block'; setTimeout(() => document.getElementById(tabName).classList.add('active'), 10);
             document.getElementById('appBottomNav').style.display = 'flex';
             
-            if(tabName === 'trendView') setTimeout(generateTrends, 100);
+            let tickerEl = document.getElementById('pageMainTitle');
+            if(tickerEl) {
+                if(tabName === 'tableDashboard') { tickerEl.style.color = 'var(--accent-gold)'; tickerEl.innerText = royalTaglines[tickerIndex]; } 
+                else { tickerEl.style.color = 'var(--text-muted)'; tickerEl.innerText = htmlMap[tabName]; }
+            }
+            if(tabName === 'trendView') setTimeout(generateOverview, 100);
+            if(tabName === 'expenses') renderExpensesList();
         }
 
         function openTable(num) {
+            haptic();
             try { history.pushState({view: 'billing'}, '', '#billing'); } catch(e){}
             activeTableNumber = (num === 'Takeaway' || num === 'Home Delivery') ? num : "Table " + num;
             document.getElementById('billingTitle').innerText = activeTableNumber;
@@ -1243,6 +1057,7 @@
         }
 
         function goBackToTables(skipHistory = false) {
+            haptic();
             if(!skipHistory) { try { history.pushState({view: 'tableDashboard'}, '', '#home'); } catch(e){} }
             document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display = 'none'; tab.classList.remove('active'); });
             document.getElementById('appHeader').style.display = 'flex';
@@ -1250,306 +1065,151 @@
             document.getElementById('appBottomNav').style.display = 'flex'; renderTableGrid(); 
         }
 
+        // =====================================
+        // BILLING OPERATIONS (FIXED)
+        // =====================================
         function addToBill() {
+            haptic();
             let itemName = document.getElementById('itemInput').value; let qty = parseInt(document.getElementById('itemQty').value) || 1;
-            if (!itemName) { showCustomAlert("Please select an item!"); return; }
+            if (!itemName) { showCustomAlert("Please select an item from registry."); return; }
             let selectedItem = menuData.find(i => getVal(i, ['itemname', 'name']).trim().toLowerCase() === itemName.trim().toLowerCase());
-            if (!selectedItem) { showCustomAlert("Item not in menu. Use Custom Item box."); return; }
+            if (!selectedItem) { showCustomAlert("Item absent from registry. Use Custom Entry."); return; }
             let itemPrice = parseInt(getVal(selectedItem, ['price'])); let existingItem = currentBill.find(i => i.name === getVal(selectedItem, ['itemname', 'name']));
             if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ name: getVal(selectedItem, ['itemname', 'name']), price: itemPrice, qty: qty, total: itemPrice * qty }); }
             updateBillTable();
         }
 
         function addCustomItem() {
+            haptic();
             let name = document.getElementById('customName').value; let price = parseInt(document.getElementById('customPrice').value); let qty = parseInt(document.getElementById('customQty').value) || 1;
-            if (!name || !price || price <= 0) { showCustomAlert("Enter valid custom item."); return; }
+            if (!name || !price || price <= 0) { showCustomAlert("Parameters invalid."); return; }
             let existingItem = currentBill.find(i => i.name === name + " (Custom)");
             if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ name: name + " (Custom)", price: price, qty: qty, total: price * qty }); }
             updateBillTable(); document.getElementById('customName').value = ""; document.getElementById('customPrice').value = ""; document.getElementById('customQty').value = 1;
         }
 
-        function changeQty(index, amount) { currentBill[index].qty += amount; if(currentBill[index].qty <= 0) { currentBill.splice(index, 1); } else { currentBill[index].total = currentBill[index].price * currentBill[index].qty; } updateBillTable(); }
+        function changeQty(index, amount) { haptic(); currentBill[index].qty += amount; if(currentBill[index].qty <= 0) { currentBill.splice(index, 1); } else { currentBill[index].total = currentBill[index].price * currentBill[index].qty; } updateBillTable(); }
+        function removeItem(index) { haptic(); currentBill.splice(index, 1); updateBillTable(); }
 
         function updateBillTable() {
             let tbody = document.getElementById('billTableBody'); tbody.innerHTML = ""; let subTotal = 0;
             currentBill.forEach((item, index) => {
                 subTotal += (item.total || 0);
-                tbody.innerHTML += `<div class="cart-card" style="padding: 10px 12px; gap: 4px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); display: flex; align-items: center; justify-content: space-between;"><div style="display:flex; flex-direction:column; flex:1;"><div style="font-weight: 600; font-size: 0.9rem; color: var(--text-dark);">${item.name}</div><div style="font-size: 0.8rem; color: var(--text-muted);">₹${item.price}</div></div><div style="display: flex; align-items: center; gap: 10px;"><div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-color);"><button onclick="changeQty(${index}, -1)" style="width: 28px; height: 28px; background: transparent; border: none; font-weight: 600; font-size: 1.2rem; cursor: pointer; color: var(--text-dark);">−</button><span style="width: 28px; text-align: center; font-weight: 600; font-size: 0.9rem; border-left: 1px solid var(--border); border-right: 1px solid var(--border); line-height: 28px;">${item.qty}</span><button onclick="changeQty(${index}, 1)" style="width: 28px; height: 28px; background: transparent; border: none; font-weight: 600; font-size: 1.2rem; cursor: pointer; color: var(--text-dark);">+</button></div><div style="font-weight: 700; font-size: 0.95rem; color: var(--text-dark); min-width: 45px; text-align: right;">₹${item.total}</div><button onclick="removeItem(${index})" style="background: transparent; border: none; color: var(--danger); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button></div></div>`;
+                tbody.innerHTML += `<div class="record-card" style="flex-direction:row; align-items:center; justify-content:space-between;"><div style="display:flex; flex-direction:column; flex:1;"><div style="font-weight: 700; font-size: 0.95rem; color: var(--text-dark); margin-bottom:4px;">${item.name}</div><div style="font-size: 0.75rem; color: var(--text-muted); font-weight:600;">₹${item.price} / unit</div></div><div style="display: flex; align-items: center; gap: 12px;"><div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 8px; background: var(--primary-light);"><button onclick="changeQty(${index}, -1)" style="width: 32px; height: 32px; background: transparent; border: none; font-weight: 700; font-size: 1.2rem; cursor: pointer; color: var(--text-dark);">−</button><span style="width: 32px; text-align: center; font-weight: 800; font-size: 0.95rem; line-height: 32px;">${item.qty}</span><button onclick="changeQty(${index}, 1)" style="width: 32px; height: 32px; background: transparent; border: none; font-weight: 700; font-size: 1.2rem; cursor: pointer; color: var(--text-dark);">+</button></div><div style="font-weight: 800; font-size: 1.1rem; color: var(--primary); min-width: 50px; text-align: right;">₹${item.total}</div><button onclick="removeItem(${index})" style="background: transparent; border: none; color: var(--danger); cursor: pointer; padding: 6px;"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button></div></div>`;
             });
             document.getElementById('subTotal').innerText = `₹ ${subTotal}`; let discount = parseInt(document.getElementById('discountValue').value) || 0;
             document.getElementById('grandTotal').innerText = (subTotal - discount) > 0 ? `₹ ${subTotal - discount}` : "₹ 0";
             document.getElementById('itemInput').value = ""; document.getElementById('itemQty').value = 1; document.getElementById('stockStatus').style.display = "none";
         }
 
-        function removeItem(index) { currentBill.splice(index, 1); updateBillTable(); }
-
         function clearTableWithoutCheckout() {
-            showCustomConfirm(`Are you sure you want to clear ${activeTableNumber}?`, () => {
-                fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'clear', tableName: activeTableNumber }) })
-                .then(res => res.json()).then(data => { delete runningTables[activeTableNumber]; currentBill = []; goBackToTables(); }).catch(e => { delete runningTables[activeTableNumber]; currentBill = []; goBackToTables(); });
+            showCustomConfirm(`Terminate operations for ${activeTableNumber}?`, () => {
+                fetch(`${API_BASE}/tables/clear`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table_number: activeTableNumber }) })
+                .then(r=>r.json()).then(data => { delete runningTables[activeTableNumber]; currentBill = []; goBackToTables(); }).catch(e => { delete runningTables[activeTableNumber]; currentBill = []; goBackToTables(); });
             }, null);
         }
 
         function saveKOT() {
-            if (currentBill.length === 0) { showCustomAlert("Cart is empty!"); return; }
-            let btn = document.getElementById('btnKOT'); btn.innerText = "Saving..."; btn.disabled = true;
-            let isNew = !runningTables.hasOwnProperty(activeTableNumber);
-            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'kot', tableName: activeTableNumber, items: currentBill, isNewSession: isNew }) })
-            .then(res => res.json()).then(data => {
-                runningTables[activeTableNumber] = currentBill; btn.innerText = "Save KOT"; btn.disabled = false; goBackToTables();
-            }).catch(err => { btn.innerText = "Save KOT"; btn.disabled = false; });
+            haptic();
+            if (currentBill.length === 0) { showCustomAlert("Invoice is empty."); return; }
+            let btn = document.getElementById('btnKOT'); btn.innerText = "Registering..."; btn.disabled = true;
+            fetch(`${API_BASE}/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table_number: activeTableNumber, items: currentBill, order_status: "pending" }) })
+            .then(r=>r.json()).then(data => { runningTables[activeTableNumber] = currentBill; btn.innerText = "Register KOT"; btn.disabled = false; goBackToTables(); }).catch(err => { btn.innerText = "Register KOT"; btn.disabled = false; });
         }
 
-        function openPaymentModal() { if (currentBill.length === 0) return; openModal('paymentModal'); }
-        function selectPaymentMode(mode) { selectedPaymentMode = mode; document.querySelectorAll('.pay-btn').forEach(btn => btn.classList.remove('selected')); document.getElementById('pay' + mode).classList.add('selected'); }
+        function selectPaymentMode(mode) { haptic(); selectedPaymentMode = mode; document.querySelectorAll('.pay-btn, .record-card').forEach(btn => btn.classList.remove('selected', 'active')); document.getElementById('pay' + mode).classList.add('selected'); document.getElementById('pay' + mode).style.borderColor = 'var(--primary)'; }
 
         function processFinalCheckout() {
+            haptic();
             let btn = document.getElementById('btnFinalCheckout'); btn.innerText = "Processing..."; btn.disabled = true;
             let phone = document.getElementById('customerPhone').value || "NA"; let address = document.getElementById('deliveryAddressBox').style.display === 'flex' ? document.getElementById('deliveryAddress').value : "";
-            let orderId = "ORD" + Math.floor(Math.random() * 900000000 + 100000000); let discount = parseInt(document.getElementById('discountValue').value) || 0; 
+            let discount = parseInt(document.getElementById('discountValue').value) || 0; 
             
             let itemsString = currentBill.map(i => `${i.name} (x${i.qty}) ₹${i.total}`).join(", ");
             if (discount > 0) itemsString += `, [Discount Applied: -₹${discount}]`; 
             itemsString += `, [Mode: ${selectedPaymentMode}]`; 
             if(address) itemsString += `, [Address: ${address}]`;
 
-            let grandTotal = parseInt(document.getElementById('grandTotal').innerText.replace(/[^0-9]/g, '')) || 0;
+            let grandTotal = parseInt(document.getElementById('grandTotal').innerText.replace(/[^0-9.-]/g, '')) || 0;
 
-            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'checkout', tableName: activeTableNumber, orderId: orderId, phone: phone, itemsString: itemsString, rawItems: currentBill, total: grandTotal, discount: discount }) })
-            .then(res => res.json()).then(data => {
+            fetch(`${API_BASE}/orders/checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table_number: activeTableNumber, customer_phone: phone, items: currentBill, items_string: itemsString, total: grandTotal, discount: discount, payment_method: selectedPaymentMode }) })
+            .then(r=>r.json()).then(data => {
                 delete runningTables[activeTableNumber]; 
                 currentBill.forEach(item => { let foundKey = Object.keys(stockData).find(key => key.trim().toLowerCase() === item.name.trim().toLowerCase()); if(foundKey) stockData[foundKey] -= item.qty; });
-                let now = new Date(); let fDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-                salesHistory.unshift({ date: fDate, isodate: fDate, time: now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), orderid: orderId, items: itemsString, total: grandTotal, table: activeTableNumber });
                 
-                btn.innerText = "Confirm Checkout"; btn.disabled = false; closeModal('paymentModal'); generateTrends(); goBackToTables();
-            }).catch(err => { btn.innerText = "Confirm Checkout"; btn.disabled = false; });
+                btn.innerText = "Complete Transaction"; btn.disabled = false; closeModal('paymentModal'); fetchData(); goBackToTables();
+            }).catch(err => { btn.innerText = "Complete Transaction"; btn.disabled = false; });
         }
-
-        // --- EXPENSES LOGIC ---
-        let expenseImageBase64 = null;
-        function handleExpenseImage(event) {
-            const file = event.target.files[0];
-            if(!file) { expenseImageBase64 = null; document.getElementById('expImagePreview').style.display = 'none'; return; }
-            const reader = new FileReader();
-            reader.onload = (e) => { expenseImageBase64 = e.target.result; document.getElementById('expImagePreview').style.display = 'block'; };
-            reader.readAsDataURL(file);
-        }
-
-        function submitExpense() {
-            let category = document.getElementById('expCategory').value; let amount = document.getElementById('expAmount').value;
-            if (!amount || amount <= 0) { showCustomAlert("Enter valid amount."); return; }
-            let now = new Date(); let fDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-            
-            fetch(`${API_BASE}/expenses`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: category, amount: amount, description: document.getElementById('expDescription').value || "NA", receipt_image: expenseImageBase64 }) })
-            .then(res => res.json()).then(data => { 
-                showCustomAlert("Expense Saved!"); document.getElementById('expAmount').value = ""; document.getElementById('expDescription').value = ""; document.getElementById('expImage').value = ""; expenseImageBase64 = null; document.getElementById('expImagePreview').style.display = 'none'; 
-                fetchData(); 
-            });
-        }
-
-        function renderExpensesTable() {
-            let tbody = document.getElementById('expensesTableBody'); if(!tbody) return; tbody.innerHTML = "";
-            if(!expenseHistory.length) { tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:12px; color:var(--text-muted);">No expenses recorded.</td></tr>`; return; }
-            expenseHistory.forEach(e => {
-                tbody.innerHTML += `<tr><td style="padding:8px; border:1px solid var(--border);">${cleanDisplayDate(getVal(e,['date','isodate']))}</td><td style="padding:8px; border:1px solid var(--border);">${getVal(e,['category'])}</td><td style="padding:8px; border:1px solid var(--border);">${getVal(e,['description','note'])||'—'}</td><td style="padding:8px; border:1px solid var(--border); text-align:right; font-weight:700;">₹${parseAmount(getVal(e,['amount','total']))}</td></tr>`;
-            });
-        }
-
-        function exportExpensesTable() {
-            downloadCSV(expenseHistory.map(e => ({ Date: cleanDisplayDate(getVal(e,['date','isodate'])), Category: getVal(e,['category']), Description: getVal(e,['description','note'])||'—', Amount: parseAmount(getVal(e,['amount','total'])) })), 'Viraasat-Expenses-Report.csv');
-        }
-
-        // --- DELETION APPROVAL WORKFLOW ---
-        function requestOrderDeletion() {
-            let reason = prompt("Enter reason for order cancellation/deletion:");
-            if(!reason) return;
-            let orderId = currentViewingSale.orderid || currentViewingSale.id;
-            fetch(`${API_BASE}/orders/request-delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_id: orderId, reason: reason, requested_by: localStorage.getItem('viraasat_user') }) })
-            .then(res=>res.json()).then(data => { showCustomAlert("Deletion request sent to Admin approval tab."); closeModal('orderDetailsModal'); fetchData(); });
-        }
-
-        function fetchApprovals() {
-            fetch(`${API_BASE}/approvals`).then(res=>res.json()).then(data => {
-                let card = document.getElementById('adminApprovalsCard'); let list = document.getElementById('adminApprovalsList');
-                if(!data.success || !data.requests || !data.requests.length) { card.style.display = 'none'; return; }
-                card.style.display = 'block'; list.innerHTML = "";
-                data.requests.forEach(req => {
-                    list.innerHTML += `<div style="background:#FFF; padding:12px; border-radius:8px; border:1px solid var(--occ-border);"><b>Order ID:</b> ${req.order_id}<br><b>Reason:</b> ${req.reason}<br><b>Requested By:</b> ${req.requested_by}<div style="display:flex; gap:8px; margin-top:8px;"><button class="btn" style="background:var(--success); height:36px; font-size:0.8rem;" onclick="resolveApproval(${req.id}, 'approved', '${req.order_id}')">Approve</button><button class="btn" style="background:var(--danger); height:36px; font-size:0.8rem;" onclick="resolveApproval(${req.id}, 'rejected', '${req.order_id}')">Reject</button></div></div>`;
-                });
-            }).catch(e=>console.log(e));
-        }
-
-        function resolveApproval(reqId, status, orderId) {
-            fetch(`${API_BASE}/approvals/resolve`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ request_id: reqId, status: status, order_id: orderId, reviewed_by: localStorage.getItem('viraasat_user') }) })
-            .then(res=>res.json()).then(data => { showCustomAlert("Request " + status); fetchApprovals(); fetchData(); });
-        }
-
-        function setActiveFilterBtn(id) { document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active')); if(id) document.getElementById(id).classList.add('active'); }
-        function setTodayFilter() { setActiveFilterBtn('btnFilterToday'); let now = new Date(); let todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`; document.getElementById('filterStartDate').value = todayStr; document.getElementById('filterEndDate').value = todayStr; renderLiveSales(); }
-        function setYesterdayFilter() { setActiveFilterBtn('btnFilterYesterday'); let yest = new Date(); yest.setDate(yest.getDate() - 1); let yestStr = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, '0')}-${String(yest.getDate()).padStart(2, '0')}`; document.getElementById('filterStartDate').value = yestStr; document.getElementById('filterEndDate').value = yestStr; renderLiveSales(); }
-        function resetDateFilter() { setActiveFilterBtn('btnFilterClear'); document.getElementById('filterStartDate').value = ""; document.getElementById('filterEndDate').value = ""; renderLiveSales(); }
 
         function openOrderDetails(orderId) {
             let sale = salesHistory.find(s => String(getVal(s, ['orderid', 'id'])).trim() === String(orderId).trim()); if(!sale) return; currentViewingSale = sale;
             let sTable = getVal(sale, ['tablenumber', 'table', 'tablename']) || 'Table'; let sDate = getVal(sale, ['date', 'isodate']) || ''; let sTime = getVal(sale, ['time']) || ''; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sPhone = getVal(sale, ['phone', 'customerphone']) || ''; let sItems = getVal(sale, ['items', 'itemsstring']) || '';
-            document.getElementById('modalOrderMeta').innerHTML = `<b>Table:</b> ${sTable}<br><b>ID:</b> #${orderId}<br><b>Time:</b> ${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}`;
+            document.getElementById('modalOrderMeta').innerHTML = `<b>Zone:</b> ${sTable}<br><b>INV ID:</b> #${orderId}<br><b>Timestamp:</b> ${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}`;
             let modalItemsHtml = "";
 
             let cleanItems = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
 
             cleanItems.split(', ').forEach(itemStr => {
-                itemStr = itemStr.trim();
-                if(!itemStr) return;
-                
+                itemStr = itemStr.trim(); if(!itemStr) return;
                 let match = itemStr.match(/(.+?)\s*\(x(\d+)\)(?:\s*₹(\d+))?/);
                 if(match) {
                     let name = match[1].trim(); let qty = parseInt(match[2]); let total = match[3] ? parseInt(match[3]) : null;
                     if (total === null) { let menuItem = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === name.toLowerCase()); if (menuItem) total = parseInt(getVal(menuItem, ['price'])) * qty; }
-                    let totalStr = total ? `₹${total}` : "-"; modalItemsHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid var(--border); padding-bottom:8px;"><span><b style="color:var(--text-dark);">${qty}x</b> ${name}</span> <span style="font-weight:600;">${totalStr}</span></div>`;
-                } else { 
-                    modalItemsHtml += `<div style="margin-bottom:8px; border-bottom:1px solid var(--border); padding-bottom:8px;">${itemStr}</div>`; 
-                }
+                    let totalStr = total ? `₹${total}` : "-"; modalItemsHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:12px;"><span><b style="color:var(--primary); font-weight:800;">${qty}x</b> <span style="font-weight:600;">${name}</span></span> <span style="font-weight:800;">${totalStr}</span></div>`;
+                } else { modalItemsHtml += `<div style="margin-bottom:12px; border-bottom:1px solid var(--border); padding-bottom:12px; font-weight:600;">${itemStr}</div>`; }
             });
-            document.getElementById('modalOrderItems').innerHTML = modalItemsHtml; document.getElementById('modalOrderTotal').innerText = `₹ ${sTotal}`; document.getElementById('modalCustomerPhone').value = (sPhone && sPhone !== "NA") ? sPhone : ""; openModal('orderDetailsModal');
+            document.getElementById('modalOrderItems').innerHTML = modalItemsHtml; document.getElementById('modalOrderTotal').innerText = `₹ ${sTotal.toLocaleString('en-IN')}`; document.getElementById('modalCustomerPhone').value = (sPhone && sPhone !== "NA") ? sPhone : ""; 
+            openModal('orderDetailsModal');
         }
 
-        // --- DIRECT PRINT / WHATSAPP COMMANDS (FIXED ITEM PARSING) ---
+        // =====================================
+        // PERFECTED PRINTING & EXPORTS
+        // =====================================
         function printBill(type) {
             try {
-                if (currentBill.length === 0) { showCustomAlert("Cart is empty! Nothing to print."); return; }
+                if (currentBill.length === 0) { showCustomAlert("Invoice is empty."); return; }
                 let printSec = document.getElementById('printSection'); let d = new Date(); let dStr = d.toLocaleDateString('en-IN') + ' ' + d.toLocaleTimeString('en-IN');
                 
                 if(type === 'kot') {
                     let itemsHtml = currentBill.map(i => `<div style="font-size:1.1rem; font-weight:bold; margin-bottom:5px; border-bottom:1px dashed #ccc; padding-bottom:5px;">[ ${i.qty} ] x ${i.name}</div>`).join("");
-                    printSec.innerHTML = `<div style="text-align:center; margin-bottom:10px;"><h2 style="margin:0; font-size:1.5rem;">K.O.T</h2><h3 style="margin:5px 0;">Table: ${activeTableNumber}</h3><p style="margin:0; font-size:0.8rem;">Date: ${dStr}</p></div><div style="border-top:2px dashed #000; padding-top:10px;">${itemsHtml}</div>`;
+                    printSec.innerHTML = `<div style="text-align:center; margin-bottom:10px;"><h2 style="margin:0; font-size:1.5rem;">K.O.T</h2><h3 style="margin:5px 0;">Zone: ${activeTableNumber}</h3><p style="margin:0; font-size:0.8rem;">Date: ${dStr}</p></div><div style="border-top:2px dashed #000; padding-top:10px;">${itemsHtml}</div>`;
                 } else {
                     let discountEl = document.getElementById('discountValue'); let discount = discountEl ? (parseInt(discountEl.value) || 0) : 0; 
-                    let grandTotalEl = document.getElementById('grandTotal'); let grandTotal = grandTotalEl ? (parseInt(grandTotalEl.innerText.replace(/[^0-9]/g, '')) || 0) : 0;
-                    let addBox = document.getElementById('deliveryAddressBox'); let addInput = document.getElementById('deliveryAddress'); let addStr = (addBox && addBox.style.display === 'flex' && addInput) ? addInput.value : "";
+                    let grandTotalEl = document.getElementById('grandTotal'); let grandTotal = grandTotalEl ? (parseInt(grandTotalEl.innerText.replace(/[^0-9.-]/g, '')) || 0) : 0;
                     
                     let itemsHtml = currentBill.map(i => `<tr><td style="text-align: left; width: 50%;">${i.name}</td><td style="text-align: center; width: 15%;">${i.price}</td><td style="text-align: center; width: 15%;">${i.qty}</td><td style="text-align: right; width: 20%; font-weight:bold;">${i.total}</td></tr>`).join("");
                     
-                    printSec.innerHTML = `<div style="text-align: center; margin-bottom: 10px;"><h2 style="font-size: 1.2rem; margin: 0; padding: 0; font-weight: bold;">VIRAASAT UDAIPUR</h2><p style="font-size: 0.8rem; margin: 2px 0;">A Taste Of Royal Mewar</p><p style="font-size: 0.8rem; margin: 2px 0;">Contact: +91 7852041644</p><p style="font-size: 0.8rem; margin: 2px 0;">Udaipur, Rajasthan</p></div><div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; margin-bottom: 10px; font-size: 0.85rem;"><div style="display: flex; justify-content: space-between;"><span>Invoice No: INV-${Math.floor(Math.random() * 9000 + 1000)}</span> <span>${d.toLocaleDateString('en-IN')}</span></div><div style="margin-top:2px;">Table: ${activeTableNumber}</div>${addStr?`<div style="margin-top:2px;">Address: ${addStr}</div>`:""}</div><table style="width: 100%; font-size: 0.85rem; text-align: left; border-collapse: collapse;"><thead><tr><th style="text-align: left; width: 50%;">ITEM</th><th style="text-align: center; width: 15%;">PRICE</th><th style="text-align: center; width: 15%;">QTY</th><th style="text-align: right; width: 20%;">AMT</th></tr></thead><tbody>${itemsHtml}</tbody></table><div style="border-top: 1px dashed #000; margin-top: 10px; padding-top: 5px; font-size: 0.9rem;">${discount > 0 ? `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Discount:</span><span>-₹${discount}</span></div>` : ''}<div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;"><span>TOTAL (FOOD):</span><span>₹${grandTotal}</span></div></div><div style="text-align: center; font-size: 0.85rem; font-weight: bold; margin-top: 20px;">THANK YOU FOR DINING WITH US!</div>`;
+                    printSec.innerHTML = `<div style="text-align: center; margin-bottom: 10px;"><h2 style="font-size: 1.4rem; margin: 0; padding: 0; font-weight: bold; text-transform:uppercase;">VIRAASAT</h2><p style="font-size: 0.8rem; margin: 2px 0;">A Taste Of Royal Heritage</p><p style="font-size: 0.8rem; margin: 2px 0;">Ph: +91 7852041644</p></div><div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; margin-bottom: 10px; font-size: 0.85rem;"><div style="display: flex; justify-content: space-between;"><span>INV-${Math.floor(Math.random() * 9000 + 1000)}</span> <span>${d.toLocaleDateString('en-IN')}</span></div><div style="margin-top:2px; font-weight:bold;">Zone: ${activeTableNumber}</div></div><table style="width: 100%; font-size: 0.85rem; text-align: left; border-collapse: collapse;"><thead><tr><th style="text-align: left; width: 50%;">ITEM</th><th style="text-align: center; width: 15%;">PRICE</th><th style="text-align: center; width: 15%;">QTY</th><th style="text-align: right; width: 20%;">AMT</th></tr></thead><tbody>${itemsHtml}</tbody></table><div style="border-top: 1px dashed #000; margin-top: 10px; padding-top: 5px; font-size: 0.9rem;">${discount > 0 ? `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Discount:</span><span>-₹${discount}</span></div>` : ''}<div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;"><span>NET PAYABLE:</span><span>₹${grandTotal}</span></div></div><div style="text-align: center; font-size: 0.85rem; font-weight: bold; margin-top: 20px;">THANK YOU FOR YOUR VISIT!</div>`;
                 }
-                
                 printSec.offsetHeight; window.print();
             } catch (e) { console.log(e); }
         }
 
         function printHistoricalBill() {
             try {
-                let sale = currentViewingSale;
-                if(!sale) return;
-                let sOrderId = getVal(sale, ['orderid', 'id']) || 'N/A'; let sTable = getVal(sale, ['tablenumber', 'table', 'tablename']) || 'Table'; let sDate = getVal(sale, ['date', 'isodate']) || ''; let sTime = getVal(sale, ['time']) || ''; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getVal(sale, ['items', 'itemsstring']) || '';
+                let sale = currentViewingSale; if(!sale) return;
+                let sOrderId = getVal(sale, ['orderid', 'id']); let sTable = getVal(sale, ['tablenumber', 'table', 'tablename']) || 'Table'; let sDate = getVal(sale, ['date', 'isodate']) || ''; let sTime = getVal(sale, ['time']) || ''; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getVal(sale, ['items', 'itemsstring']) || '';
                 
-                let printSec = document.getElementById('printSection'); 
-                let dStr = `${cleanDisplayDate(sDate)} ${cleanDisplayTime(sTime)}`; 
-                let itemsHtml = ""; let histDiscount = 0; let modeStr = ""; let addStr = "";
+                let printSec = document.getElementById('printSection'); let dStr = `${cleanDisplayDate(sDate)} ${cleanDisplayTime(sTime)}`; 
+                let itemsHtml = ""; let histDiscount = 0; let modeStr = ""; 
                 
                 let dMatch = sItems.match(/\[Discount Applied:\s*-?₹?(\d+)\]/); if(dMatch) histDiscount = parseInt(dMatch[1]);
                 let mMatch = sItems.match(/\[Mode:\s*(.+?)\]/); if(mMatch) modeStr = mMatch[1];
-                let aMatch = sItems.match(/\[Address:\s*(.+?)\]/); if(aMatch) addStr = aMatch[1];
-
                 let cleanItems = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
 
                 cleanItems.split(', ').forEach(itemStr => {
-                    itemStr = itemStr.trim();
-                    if(!itemStr) return;
+                    itemStr = itemStr.trim(); if(!itemStr) return;
                     let match = itemStr.match(/(.+?)\s*\(x(\d+)\)(?:\s*₹(\d+))?/);
                     if(match) {
                         let name = match[1].trim(); let qty = parseInt(match[2]); let totalVal = match[3] ? parseInt(match[3]) : null; let priceVal = null;
                         if (totalVal === null) { let menuItem = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === name.toLowerCase()); if (menuItem) { priceVal = parseInt(getVal(menuItem, ['price'])); totalVal = priceVal * qty; } } else { priceVal = totalVal / qty; }
-                        itemsHtml += `<tr><td style="text-align: left; width: 50%;">${name}</td><td style="text-align: center; width: 15%;">${priceVal?priceVal:"-"}</td><td style="text-align: center; width: 15%;">${qty}</td><td style="text-align: right; width: 20%; font-weight:bold;">${totalVal?totalVal:"-"}</td></tr>`;
+                        itemsHtml += `<tr><td style="text-align: left; width: 50%;">${name}</td><td style="text-align: center; width: 15%;">${priceVal?priceVal:"-"}</td><td style="text-align: center; width: 15%;">${qty}</td><td style="text-align: right; font-weight:bold; width: 20%;">${totalVal?totalVal:"-"}</td></tr>`;
                     } else { itemsHtml += `<tr><td colspan="4">${itemStr}</td></tr>`; }
                 });
                 
-                printSec.innerHTML = `<div style="text-align: center; margin-bottom: 10px;"><h2 style="font-size: 1.2rem; margin: 0; padding: 0; font-weight: bold;">VIRAASAT UDAIPUR</h2><p style="font-size: 0.8rem; margin: 2px 0;">A Taste Of Royal Mewar</p><p style="font-size: 0.8rem; margin: 2px 0;">Contact: +91 7852041644</p><p style="font-size: 0.8rem; margin: 2px 0;">Udaipur, Rajasthan</p></div><div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; margin-bottom: 10px; font-size: 0.85rem;"><div style="display: flex; justify-content: space-between;"><span>Invoice No: #${sOrderId}</span> <span>(DUPLICATE)</span></div><div style="margin-top:2px;">Table: ${sTable}</div>${modeStr?`<div style="margin-top:2px;">Payment Mode: ${modeStr}</div>`:""}${addStr?`<div style="margin-top:2px;">Address: ${addStr}</div>`:""}</div><table style="width: 100%; font-size: 0.85rem; text-align: left; border-collapse: collapse;"><thead><tr><th style="text-align: left; width: 50%;">ITEM</th><th style="text-align: center; width: 15%;">PRICE</th><th style="text-align: center; width: 15%;">QTY</th><th style="text-align: right; width: 20%;">AMT</th></tr></thead><tbody>${itemsHtml}</tbody></table><div style="border-top: 1px dashed #000; margin-top: 10px; padding-top: 5px; font-size: 0.9rem;">${histDiscount > 0 ? `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Discount:</span><span>-₹${histDiscount}</span></div>` : ''}<div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;"><span>TOTAL (FOOD):</span><span>₹${sTotal}</span></div></div><div style="border-bottom: 1px dashed #000; margin-bottom: 10px; padding-bottom: 5px;"></div><div style="text-align: center; font-size: 0.85rem; font-weight: bold; margin-top: 10px;">THANK YOU FOR DINING WITH US!</div><div style="text-align: center; font-size: 0.75rem; margin-top: 5px;">Print Date: ${dStr}</div>`;
-                
+                printSec.innerHTML = `<div style="text-align: center; margin-bottom: 10px;"><h2 style="font-size: 1.4rem; margin: 0; padding: 0; font-weight: bold; text-transform:uppercase;">VIRAASAT</h2><p style="font-size: 0.8rem; margin: 2px 0;">A Taste Of Royal Heritage</p><p style="font-size: 0.8rem; margin: 2px 0;">Ph: +91 7852041644</p></div><div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; margin-bottom: 10px; font-size: 0.85rem;"><div style="display: flex; justify-content: space-between;"><span>INV: #${sOrderId}</span> <span>(DUPLICATE)</span></div><div style="margin-top:2px; font-weight:bold;">Zone: ${sTable}</div>${modeStr?`<div style="margin-top:2px;">Mode: ${modeStr}</div>`:""}</div><table style="width: 100%; font-size: 0.85rem; text-align: left; border-collapse: collapse;"><thead><tr><th style="text-align: left; width: 50%;">ITEM</th><th style="text-align: center; width: 15%;">PRICE</th><th style="text-align: center; width: 15%;">QTY</th><th style="text-align: right; width: 20%;">AMT</th></tr></thead><tbody>${itemsHtml}</tbody></table><div style="border-top: 1px dashed #000; margin-top: 10px; padding-top: 5px; font-size: 0.9rem;">${histDiscount > 0 ? `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Discount:</span><span>-₹${histDiscount}</span></div>` : ''}<div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;"><span>NET PAYABLE:</span><span>₹${sTotal}</span></div></div><div style="text-align: center; font-size: 0.85rem; font-weight: bold; margin-top: 20px;">THANK YOU FOR YOUR VISIT!</div>`;
                 printSec.offsetHeight; window.print();
             } catch (e) { console.log(e); }
-        }
-
-        function sendWA_Customer() {
-            if (currentBill.length === 0) { showCustomAlert("Cart is empty! Please add items first."); return; }
-            let phone = document.getElementById('customerPhone').value.trim();
-            if (!phone || phone.length < 10) { showCustomAlert("Please enter a valid 10-digit customer phone number."); return; }
-            
-            let discount = parseInt(document.getElementById('discountValue').value) || 0; 
-            let grandTotal = parseInt(document.getElementById('grandTotal').innerText.replace(/[^0-9]/g, '')) || 0;
-            let d = new Date(); let dateStr = d.toLocaleDateString('en-IN'); let timeStr = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-            let invoiceNo = "INV-" + Math.floor(Math.random() * 9000 + 1000);
-            
-            let text = `*VIRAASAT UDAIPUR*\n_A Taste Of Royal Mewar_\n\n*Invoice No:* ${invoiceNo}\n*Table:* ${activeTableNumber}\n*Date:* ${dateStr} • ${timeStr}\n----------------------------------------\n*ITEMS*\n`;
-            currentBill.forEach(item => { text += `▪ ${item.name} (x${item.qty})  ~  *₹${item.total}*\n`; });
-            text += `----------------------------------------\n`;
-            if (discount > 0) { text += `*Discount:*  -₹${discount}\n`; }
-            text += `*TOTAL AMOUNT:  ₹${grandTotal}*\n----------------------------------------\n\nThank you for dining with us! 🙏\n\n⭐ *We would love to hear your feedback:*\nhttps://g.page/r/CSJLAggbIn1JEBM/review`;
-            
-            let waLink = `https://wa.me/91${phone}?text=${encodeURIComponent(text)}`; 
-            window.open(waLink, '_blank');
-        }
-
-        function sendWA_HistoricalBill() {
-            let sale = currentViewingSale;
-            if(!sale) return;
-            let phone = document.getElementById('modalCustomerPhone').value.trim();
-            if (!phone || phone.length < 10) { showCustomAlert("Please enter a valid 10-digit customer phone number."); return; }
-            
-            let sOrderId = getVal(sale, ['orderid', 'id']) || 'N/A'; let sTable = getVal(sale, ['tablenumber', 'table', 'tablename']) || 'Table'; let sDate = getVal(sale, ['date', 'isodate']) || ''; let sTime = getVal(sale, ['time']) || ''; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getVal(sale, ['items', 'itemsstring']) || ''; let histDiscount = 0; 
-            let text = `*VIRAASAT UDAIPUR*\n_A Taste Of Royal Mewar_\n\n*Invoice No:* ${sOrderId}\n*Table:* ${sTable}\n*Date:* ${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}\n----------------------------------------\n*ITEMS*\n`;
-            
-            let dMatch = sItems.match(/\[Discount Applied:\s*-?₹?(\d+)\]/); if(dMatch) histDiscount = parseInt(dMatch[1]);
-            let cleanItems = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
-
-            cleanItems.split(', ').forEach(itemStr => {
-                itemStr = itemStr.trim();
-                if(!itemStr) return;
-                let match = itemStr.match(/(.+?)\s*\(x(\d+)\)(?:\s*₹(\d+))?/);
-                if(match) {
-                    let name = match[1].trim(); let qty = parseInt(match[2]); let totalVal = match[3] ? parseInt(match[3]) : null; 
-                    if (totalVal === null) { let menuItem = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === name.toLowerCase()); if (menuItem) { totalVal = parseInt(getVal(menuItem, ['price'])) * qty; } } 
-                    text += `▪ ${name} (x${qty})  ~  *₹${totalVal || '-' }*\n`;
-                } else if (itemStr.trim()) { text += `▪ ${itemStr.trim()}\n`; }
-            });
-            text += `----------------------------------------\n`;
-            if (histDiscount > 0) { text += `*Discount:*  -₹${histDiscount}\n`; }
-            text += `*TOTAL AMOUNT:  ₹${sTotal}*\n----------------------------------------\n\nThank you for dining with us! 🙏\n\n⭐ *We would love to hear your feedback:*\nhttps://g.page/r/CSJLAggbIn1JEBM/review`;
-            
-            let waLink = `https://wa.me/91${phone}?text=${encodeURIComponent(text)}`; 
-            window.open(waLink, '_blank');
-        }
-
-        // --- EXPORTS & IMPORTS ---
-        function exportRegistrySales() {
-            downloadCSV(salesHistory.map(s => ({ Date: s.date, Time: s.time, Order_ID: s.orderid, Table: s.table, Amount: s.amount, Payment: s.payment_method })), 'Viraasat-Registry-Sales.csv');
-        }
-
-        async function uploadMenuBulk() {
-            let fileInput = document.getElementById('menuImportInput');
-            if(!fileInput.files.length) { showCustomAlert("Please select a menu file first."); return; }
-            let file = fileInput.files[0]; let data = await file.arrayBuffer(); let wb = XLSX.read(data, { type: 'array' });
-            let rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: '', raw: false });
-            let mapped = rows.map(r => ({ Name: r.Item_Name || r.Name || "", Category: r.Category || "", Price: r.Price || 0, Active: 1 }));
-            fetch(`${API_BASE}/menu/import`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: mapped }) })
-            .then(res=>res.json()).then(d => { showCustomAlert("Menu imported/updated successfully!"); fetchData(); });
-        }
-
-        async function runFullImport() {
-            let fileInput = document.getElementById('fullImportInput'); let statusText = document.getElementById('importStatusText');
-            if(!fileInput.files.length) { showCustomAlert("Select full Excel workbook."); return; }
-            statusText.innerText = "Processing workbook...";
-            let file = fileInput.files[0]; let data = await file.arrayBuffer(); let wb = XLSX.read(data, { type: 'array' });
-            let getSheet = (name) => wb.Sheets[name] ? XLSX.utils.sheet_to_json(wb.Sheets[name], {defval:'', raw:false}) : [];
-            let payload = {
-                sales: getSheet('Sales'),
-                menu: getSheet('Menu').map(m => ({ Name: m.Item_Name || m.Name, Category: m.Category, Price: m.Price, Active: 1 })),
-                staff: getSheet('Staff').map(s => ({ Name: s.Name, Mobile: s.Mobile, Role: s.Role, Monthly_Salary: s['Monthly Salary']||s.Monthly_Salary, Date_of_Joining: s['Join Date']||s.Date_of_Joining })),
-                stock: getSheet('Stock').map(st => ({ Name: st.Item_Name || st.Name, Quantity: st.Current_Stock || st.Quantity })),
-                expenses: getSheet('Expenses')
-            };
-            fetch(`${API_BASE}/import/full`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) })
-            .then(r=>r.json()).then(res => { statusText.innerText = "Full import completed successfully!"; fetchData(); });
         }
 
         function downloadCSV(rows,filename){
@@ -1557,6 +1217,18 @@
             const headers=Object.keys(rows[0]);const csv=[headers.join(','),...rows.map(r=>headers.map(h=>`"${String(r[h]??'').replace(/"/g,'""')}"`).join(','))].join('\r\n');
             const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
         }
+
+        function exportRegistrySales() { downloadCSV(salesHistory.map(s => ({ Date: s.date, Time: s.time, Order_ID: s.orderid, Table: s.table, Amount: s.amount, Payment: s.payment_method })), 'Viraasat-Registry-Sales.csv'); }
+        function exportItemSales() {
+            let itemStats = {};
+            salesHistory.forEach(sale => { 
+                if(sale.status === 'deleted' || sale.status === 'deletion_pending') return;
+                let rawItems = getVal(sale, ['items', 'itemsstring']) || ''; let cleanItems = rawItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
+                cleanItems.split(', ').forEach(str => { let m = str.match(/(.+?)\s*\(x(\d+)\)/); if(m) { let name = m[1].trim(); let qty = parseInt(m[2]); itemStats[name] = (itemStats[name]||0) + qty; } });
+            });
+            downloadCSV(Object.entries(itemStats).sort((a,b)=>b[1]-a[1]).map(([Item, Qty]) => ({Item, Units_Sold: Qty})), 'Viraasat-Item-Analytics.csv');
+        }
+
     </script>
 </body>
 </html>
