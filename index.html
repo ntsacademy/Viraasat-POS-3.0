@@ -1088,6 +1088,16 @@
         // ==========================================
         // DATA FETCHING & UI RENDERING
         // ==========================================
+        function populateStaffDropdown() {
+            let sel = document.getElementById('payStaffSelect');
+            if (!sel) return;
+            sel.innerHTML = "<option value=''>Select Identity</option>";
+            staffData.forEach(s => {
+                let sId = getVal(s, ['empid', 'employeeid', 'id']); 
+                let sName = getVal(s, ['name']);
+                if(sId && sName) { sel.innerHTML += `<option value="${sId}">${sName} (${sId})</option>`; }
+            });
+        }
         async function fetchData() {
             document.getElementById('loader').style.display = 'flex';
             document.getElementById('loaderText').innerText = "Syncing secure data...";
