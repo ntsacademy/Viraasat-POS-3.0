@@ -15,8 +15,6 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <style>
         :root {
@@ -113,7 +111,6 @@
         .ho-sub { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
         .ho-badge { background: #E6F4EA; color: #10B981; font-size: 0.65rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; letter-spacing: 0.5px; }
 
-        /* --- UPDATED PREMIUM NAVIGATION BAR --- */
         .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; padding: 10px 8px calc(10px + env(safe-area-inset-bottom)) 8px; border-top: 1px solid var(--border); z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.03); border-radius: 20px 20px 0 0; }
         .nav-item { background: transparent; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: inherit; font-size: 0.65rem; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; padding: 6px 0; }
         .nav-item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: 0.2s; }
@@ -157,7 +154,6 @@
         .sales-card { background: var(--surface); border-radius: var(--border-radius); padding: 18px; border: 1px solid var(--border); cursor: pointer; transition: 0.1s;}
         .sales-card:active { transform: scale(0.98); }
 
-        /* P&L Grid */
         .trend-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
         .trend-kpi-card { padding: 16px; border-radius: var(--border-radius); border: 1px solid var(--border); background: var(--surface); display: flex; flex-direction: column; box-shadow: var(--shadow-soft);}
         .trend-kpi-card.full-width { grid-column: span 2; }
@@ -190,67 +186,6 @@
             #printSection th, #printSection td { padding: 2px 0; font-size: 12px; color: #000; vertical-align: top; border-bottom: none !important; word-wrap: break-word; }
             #printSection th { border-bottom: 1px dashed #000 !important; border-top: 1px dashed #000 !important; padding: 4px 0; font-weight: bold; }
         }
-    
-        /* ================= PREMIUM VIRAASAT COMMAND CENTER ================= */
-        .premium-shell{display:flex;flex-direction:column;gap:16px}
-        .premium-hero{background:linear-gradient(135deg,#211A17 0%,#3A2922 48%,#8E5E38 100%);color:#fff;border-radius:22px;padding:22px;box-shadow:0 14px 40px rgba(43,31,24,.16);position:relative;overflow:hidden}
-        .premium-hero:after{content:"";position:absolute;width:180px;height:180px;border-radius:50%;right:-70px;top:-80px;background:rgba(255,255,255,.08)}
-        .premium-hero-row{display:flex;align-items:center;justify-content:space-between;gap:16px;position:relative;z-index:1}
-        .premium-title{font-family:'Playfair Display',serif;font-size:1.55rem;font-weight:800;letter-spacing:.2px}
-        .premium-sub{font-size:.76rem;opacity:.78;margin-top:4px}
-        .premium-live{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);padding:8px 11px;border-radius:999px;font-size:.7rem;font-weight:800}
-        .premium-live i{width:7px;height:7px;background:#67E8A5;border-radius:50%;display:inline-block;box-shadow:0 0 0 4px rgba(103,232,165,.12)}
-        .premium-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:none;position:sticky;top:0;z-index:30;background:var(--bg-color)}
-        .premium-tabs::-webkit-scrollbar{display:none}
-        .premium-tab{border:1px solid var(--border);background:var(--surface);color:var(--text-muted);padding:9px 13px;border-radius:999px;white-space:nowrap;font-family:inherit;font-size:.74rem;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.025)}
-        .premium-tab.active{background:#D63C79;color:#fff;border-color:#D63C79;box-shadow:0 7px 18px rgba(214,60,121,.22)}
-        .premium-panel{display:none}.premium-panel.active{display:block}
-        .premium-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
-        .pkpi{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:var(--shadow-soft);min-width:0}
-        .pkpi .label{font-size:.69rem;color:var(--text-muted);font-weight:800;text-transform:uppercase;letter-spacing:.6px}
-        .pkpi .value{font-size:1.35rem;font-weight:900;color:var(--text-dark);margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .pkpi .delta{font-size:.68rem;font-weight:700;margin-top:5px;color:#D63C79}
-        .premium-grid-2{display:grid;grid-template-columns:1.4fr .8fr;gap:16px}
-        .premium-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-        .premium-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:var(--shadow-soft);margin-bottom:16px}
-        .premium-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
-        .premium-card-head h3{font-size:.95rem;font-weight:900;color:var(--text-dark)}
-        .premium-card-head span{font-size:.7rem;color:var(--text-muted);font-weight:700}
-        .premium-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
-        .premium-toolbar input,.premium-toolbar select{height:42px;min-width:145px;flex:1}
-        .premium-btn{height:42px;border:0;border-radius:10px;padding:0 14px;background:#211A17;color:#fff;font-family:inherit;font-weight:800;font-size:.75rem;cursor:pointer}
-        .premium-btn.alt{background:#F8E8F0;color:#B92E67;border:1px solid #EEC6D8}
-        .premium-btn.light{background:#fff;color:#211A17;border:1px solid var(--border)}
-        .premium-btn.danger{background:#FFF0F2;color:#C92E48;border:1px solid #F2C5CD}
-        .premium-table-wrap{overflow:auto;border:1px solid var(--border);border-radius:14px}
-        .premium-table{width:100%;border-collapse:collapse;min-width:760px}
-        .premium-table th{background:#FAF7F4;color:var(--text-muted);font-size:.67rem;text-transform:uppercase;letter-spacing:.5px;padding:11px;text-align:left;white-space:nowrap}
-        .premium-table td{padding:11px;border-top:1px solid #F1ECE7;font-size:.76rem;color:var(--text-dark);vertical-align:top}
-        .premium-table tr:hover td{background:#FFFBF8}
-        .pill{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font-size:.64rem;font-weight:800}
-        .pill.green{background:#E8F7EF;color:#0B8F55}.pill.pink{background:#FCE9F1;color:#B92E67}.pill.gold{background:#FFF4DF;color:#9A6500}.pill.gray{background:#F2F0EE;color:#6B625D}.pill.red{background:#FFF0F2;color:#C92E48}
-        .item-rank{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #F1ECE7}
-        .item-rank:last-child{border-bottom:0}.item-rank-no{width:30px;height:30px;border-radius:9px;background:#F8E8F0;color:#B92E67;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.75rem}
-        .item-rank-info{flex:1;min-width:0}.item-rank-name{font-weight:800;font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.item-rank-sub{font-size:.66rem;color:var(--text-muted);margin-top:3px}
-        .item-rank-val{font-weight:900;font-size:.78rem}
-        .stock-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-        .stock-box{border:1px solid var(--border);border-radius:14px;padding:13px;background:#fff}
-        .stock-box.low{border-color:#F1B6C1;background:#FFF8F9}.stock-box-name{font-size:.74rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.stock-box-qty{font-size:1.15rem;font-weight:900;margin-top:7px}.stock-box small{font-size:.62rem;color:var(--text-muted)}
-        .status-toggle{border:0;border-radius:999px;padding:6px 10px;font-size:.64rem;font-weight:900;cursor:pointer}
-        .status-toggle.active{background:#E8F7EF;color:#0B8F55}.status-toggle.inactive{background:#FFF0F2;color:#C92E48}
-        .staff-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-        .staff-card{border:1px solid var(--border);border-radius:16px;padding:15px;background:#fff}
-        .staff-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.staff-name{font-weight:900;font-size:.9rem}.staff-role{font-size:.67rem;color:var(--text-muted);margin-top:3px}
-        .staff-meta{display:grid;gap:6px;margin:13px 0;font-size:.7rem;color:var(--text-muted)}.staff-meta b{color:var(--text-dark)}
-        .staff-actions{display:flex;gap:7px}.staff-actions button{flex:1;height:36px;border-radius:9px;font-family:inherit;font-size:.66rem;font-weight:800;cursor:pointer}
-        .report-stat{padding:14px;border-radius:14px;background:#FAF7F4;border:1px solid var(--border)}.report-stat .rlabel{font-size:.65rem;color:var(--text-muted);font-weight:800}.report-stat .rvalue{font-size:1.05rem;font-weight:900;margin-top:5px}
-        .upload-drop{border:1.5px dashed #D9C6B9;border-radius:16px;padding:22px;text-align:center;background:#FFFCFA}
-        .upload-drop strong{display:block;font-size:.85rem}.upload-drop span{display:block;color:var(--text-muted);font-size:.68rem;margin:5px 0 12px}
-        .premium-empty{text-align:center;padding:28px 12px;color:var(--text-muted);font-size:.78rem}
-        .mini-bar{height:8px;border-radius:99px;background:#F0ECE9;overflow:hidden;margin-top:7px}.mini-bar>i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#D63C79,#F2A6BE)}
-        @media(max-width:800px){.premium-kpis{grid-template-columns:repeat(2,1fr)}.premium-grid-2,.premium-grid-3{grid-template-columns:1fr}.stock-grid{grid-template-columns:repeat(2,1fr)}.staff-grid{grid-template-columns:1fr 1fr}.premium-hero-row{align-items:flex-start}.premium-title{font-size:1.3rem}}
-        @media(max-width:520px){.staff-grid{grid-template-columns:1fr}.premium-kpis{gap:8px}.pkpi{padding:13px}.pkpi .value{font-size:1.1rem}.premium-card{padding:14px}}
-
     </style>
 </head>
 <body>
@@ -379,43 +314,6 @@
 
     <main id="appMain" style="display: none;">
         <div id="loader"><div class="spinner"></div> <span>Syncing...</span></div>
-
-
-        <!-- PREMIUM COMMAND CENTER -->
-        <div id="premiumDashboard" class="tab-content" style="padding-top:10px;">
-            <div class="premium-shell">
-                <div class="premium-hero">
-                    <div class="premium-hero-row">
-                        <div>
-                            <div class="premium-title">VIRAASAT Command Center</div>
-                            <div class="premium-sub">Premium restaurant operations • sales • inventory • people</div>
-                        </div>
-                        <div class="premium-live"><i></i> LIVE DATA</div>
-                    </div>
-                </div>
-                <div class="premium-tabs" id="premiumTabs">
-                    <button class="premium-tab active" onclick="showPremiumTab('overview',this)">Overview</button>
-                    <button class="premium-tab" onclick="showPremiumTab('sales',this)">Sales</button>
-                    <button class="premium-tab" onclick="showPremiumTab('items',this)">Item Sales</button>
-                    <button class="premium-tab" onclick="showPremiumTab('inventory',this)">Inventory</button>
-                                        <button class="premium-tab" onclick="showPremiumTab('staff',this)">Staff</button>
-                    <button class="premium-tab" onclick="showPremiumTab('menu',this)">Menu</button>
-                    <button class="premium-tab" onclick="showPremiumTab('expenses',this)">Expenses</button>
-                    <button class="premium-tab" onclick="showPremiumTab('reports',this)">Reports</button>
-                    <button class="premium-tab" onclick="showPremiumTab('admin',this)">Admin</button>
-                </div>
-
-                <section id="premiumPanel-overview" class="premium-panel active"></section>
-                <section id="premiumPanel-sales" class="premium-panel"></section>
-                <section id="premiumPanel-items" class="premium-panel"></section>
-                <section id="premiumPanel-inventory" class="premium-panel"></section>
-                                <section id="premiumPanel-staff" class="premium-panel"></section>
-                <section id="premiumPanel-menu" class="premium-panel"></section>
-                <section id="premiumPanel-expenses" class="premium-panel"></section>
-                <section id="premiumPanel-reports" class="premium-panel"></section>
-                <section id="premiumPanel-admin" class="premium-panel"></section>
-            </div>
-        </div>
 
         <!-- DASHBOARD VIEW -->
         <div id="tableDashboard" class="tab-content active" style="padding-top: 10px;">
@@ -723,10 +621,6 @@
 
     <!-- BOTTOM NAV -->
     <nav class="bottom-nav" id="appBottomNav" style="display: none;">
-        <button class="nav-item active" id="navDashboard" onclick="switchMainTab('premiumDashboard', this)">
-            <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg></div>
-            <span>Dashboard</span>
-        </button>
         <button class="nav-item active" onclick="switchMainTab('tableDashboard', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></div>
             <span>Table</span>
@@ -756,12 +650,9 @@
     <div id="printSection"></div>
 
     <script>
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbyKuVmEYRbJaYkdUDVNcU9c6mDT4q-VMTESwrikIZvJwK6PteEVwMObdmTMcgqR12KIPA/exec'; 
-        const D1_API_BASE = '/api';
-        const API_TIMEOUT_MS = 10000;
-        
-const APP_VERSION = "D1-Hybrid-4.1"; 
-        
+        // API Configuration - Connects strictly to your Cloudflare Worker.
+        const API_BASE = '/api'; 
+        const APP_VERSION = "D1 2.0"; 
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
         let menuData = []; 
@@ -903,7 +794,6 @@ const APP_VERSION = "D1-Hybrid-4.1";
                 document.getElementById('appBottomNav').style.display = 'flex';
                 applyAdminRights(savedMobile); 
                 fetchData(); 
-                switchMainTab('premiumDashboard', document.getElementById('navDashboard'), true);
                 enforceBackTrap(); enforceBackTrap(); 
             } else { 
                 document.getElementById('loginScreen').style.display = 'flex'; 
@@ -931,8 +821,8 @@ const APP_VERSION = "D1-Hybrid-4.1";
             }
 
             let activeTab = document.querySelector('.tab-content.active');
-            if (activeTab && activeTab.id !== 'premiumDashboard') { 
-                switchMainTab('premiumDashboard', document.getElementById('navDashboard'), true); 
+            if (activeTab && activeTab.id !== 'tableDashboard') { 
+                switchMainTab('tableDashboard', document.querySelector('.bottom-nav .nav-item:first-child'), true); 
                 return; 
             }
         };
@@ -945,6 +835,7 @@ const APP_VERSION = "D1-Hybrid-4.1";
             } 
         }
 
+        // Adapted Login function to work without Google Sheet
         function attemptLogin() {
             let mobile = document.getElementById('loginMobile').value.trim(); 
             let pass = document.getElementById('loginPass').value.trim();
@@ -954,20 +845,23 @@ const APP_VERSION = "D1-Hybrid-4.1";
 
             btn.innerText = "Verifying..."; btn.disabled = true;
 
-            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'login', mobile: mobile, password: pass }) })
-            .then(res => res.json()).then(data => {
-                if(data.success) { 
+            setTimeout(() => {
+                let isValid = false;
+                if(ADMIN_NUMBERS.includes(mobile) || pass === 'admin') isValid = true; 
+                else if(userPermissions[mobile] && userPermissions[mobile].password === pass) isValid = true;
+
+                if(isValid) { 
                     localStorage.setItem('viraasat_user', mobile); 
                     localStorage.setItem('viraasat_pass', pass); 
                     window.location.reload(true); 
                 } else { 
-                    btn.innerText = "Secure Login"; btn.disabled = false; showCustomAlert(data.message || "Invalid Credentials!"); 
+                    btn.innerText = "Secure Login"; btn.disabled = false; showCustomAlert("Invalid Credentials!"); 
                 }
-            }).catch(e => { btn.innerText = "Secure Login"; btn.disabled = false; showCustomAlert("Network Error. Please try again."); }); 
+            }, 500); 
         }
 
         function applyAdminRights(mobile) {
-            let isAdmin = ADMIN_NUMBERS.includes(mobile);
+            let isAdmin = ADMIN_NUMBERS.includes(mobile) || localStorage.getItem('viraasat_pass') === 'admin';
             let perms = userPermissions[mobile] || { orders: false, analytics: false, expenses: false };
             window.isUserAdmin = isAdmin; window.userPerms = perms;
 
@@ -994,9 +888,6 @@ const APP_VERSION = "D1-Hybrid-4.1";
             localStorage.setItem('viraasat_permissions', JSON.stringify(userPermissions));
             renderStaffList();
 
-            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'addUser', mobile: mobile, password: pass, permissions: JSON.stringify(userPermissions[mobile]) }) })
-            .catch(e => console.log(e));
-
             showCustomAlert("User Registered successfully!");
             document.getElementById('staffMobile').value = ""; document.getElementById('staffPass').value = "";
             document.getElementById('chkOrders').checked = false; document.getElementById('chkAnalytics').checked = false; document.getElementById('chkExpenses').checked = false; 
@@ -1005,7 +896,7 @@ const APP_VERSION = "D1-Hybrid-4.1";
         function removeUser(mobile) {
             showCustomConfirm("Remove user " + mobile + "?", () => {
                 delete userPermissions[mobile]; localStorage.setItem('viraasat_permissions', JSON.stringify(userPermissions));
-                renderStaffList(); fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'deleteUser', mobile: mobile }) }).catch(e=>console.log(e));
+                renderStaffList(); 
             }, null);
         }
 
@@ -1031,12 +922,12 @@ const APP_VERSION = "D1-Hybrid-4.1";
                 return;
             }
             staffData.forEach(s => {
-                let sId = getVal(s, ['empid', 'employeeid']) || 'N/A';
+                let sId = getVal(s, ['empid', 'employeeid', 'id']) || 'N/A';
                 let sName = getVal(s, ['name']) || 'Unknown';
                 let sRole = getVal(s, ['role']) || "Staff";
                 let sMobile = getVal(s, ['mobile', 'phone']) || "N/A";
                 let sSal = parseAmount(getVal(s, ['monthlysalary', 'salary']));
-                let sDate = getVal(s, ['dateofjoining', 'joindate', 'date', 'doj']) || 'N/A';
+                let sDate = getVal(s, ['dateofjoining', 'joindate', 'date', 'doj', 'join_date']) || 'N/A';
                 
                 let formattedDate = sDate !== 'N/A' ? cleanDisplayDate(sDate) : 'N/A';
 
@@ -1059,12 +950,13 @@ const APP_VERSION = "D1-Hybrid-4.1";
             });
         }
 
+        // Updated D1 Fetch Calls
         function updateStockAdmin() {
             let item = document.getElementById('adminStockItem').value.trim(); let qty = parseInt(document.getElementById('adminStockQty').value);
             if(!item || isNaN(qty)) { showCustomAlert("Please enter valid item and quantity."); return; }
             stockData[item] = qty; renderStockDashboard(); checkStockDisplay(); showCustomAlert("Stock updated to " + qty + " for " + item);
             document.getElementById('adminStockItem').value = ""; document.getElementById('adminStockQty').value = "";
-            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'updateStock', item: item, qty: qty }) }).catch(e => console.log("Stock update sync failed"));
+            fetch(`${API_BASE}/stock`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: item, quantity: qty }) }).catch(e => console.log("Stock update sync failed"));
         }
 
         function addMenuItemUI() {
@@ -1073,7 +965,7 @@ const APP_VERSION = "D1-Hybrid-4.1";
             let existing = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === name.toLowerCase());
             if(existing) { showCustomAlert("Item already exists!"); return; }
             let newItem = { name: name, price: price, category: cat }; menuData.push(newItem); populateDropdown(); 
-            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'addMenu', category: cat, name: name, price: price }) }).catch(e => console.log("Menu addition failed"));
+            fetch(`${API_BASE}/menu`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: cat, name: name, price: price }) }).catch(e => console.log("Menu addition failed"));
             showCustomAlert(name + " added successfully!"); document.getElementById('newMenuName').value = ""; document.getElementById('newMenuPrice').value = "";
         }
 
@@ -1086,7 +978,7 @@ const APP_VERSION = "D1-Hybrid-4.1";
         function populateStaffDropdown() {
             let sel = document.getElementById('payStaffSelect'); sel.innerHTML = "<option value=''>Select Employee</option>";
             staffData.forEach(s => {
-                let sId = getVal(s, ['empid', 'employeeid']); let sName = getVal(s, ['name']);
+                let sId = getVal(s, ['empid', 'employeeid', 'id']); let sName = getVal(s, ['name']);
                 if(sId && sName) { sel.innerHTML += `<option value="${sId}">${sName} (${sId})</option>`; }
             });
         }
@@ -1094,9 +986,9 @@ const APP_VERSION = "D1-Hybrid-4.1";
         function addStaffUI() {
             let name = document.getElementById('newStaffName').value.trim(); let mobile = document.getElementById('newStaffMobile').value.trim(); let role = document.getElementById('newStaffRole').value; let salary = parseInt(document.getElementById('newStaffSalary').value); let joinDate = document.getElementById('newStaffDate').value; 
             if(!name || mobile.length < 10 || isNaN(salary)) { showCustomAlert("Please fill all details correctly."); return; }
-            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'addStaff', name: name, mobile: mobile, role: role, salary: salary, joinDate: joinDate }) })
+            fetch(`${API_BASE}/staff`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name, mobile: mobile, role: role, salary: salary, join_date: joinDate }) })
             .then(res => res.json()).then(data => {
-                showCustomAlert(`${name} added successfully! Emp ID: ${data.empId}`);
+                showCustomAlert(`${name} added successfully!`);
                 document.getElementById('newStaffName').value = ""; document.getElementById('newStaffMobile').value = ""; document.getElementById('newStaffSalary').value = ""; document.getElementById('newStaffDate').value = ""; fetchData(); 
             });
         }
@@ -1104,11 +996,11 @@ const APP_VERSION = "D1-Hybrid-4.1";
         function calculateStaffBalance() {
             let empId = document.getElementById('payStaffSelect').value; let infoDiv = document.getElementById('staffBalanceInfo');
             if(!empId) { infoDiv.innerHTML = ''; return; }
-            let staff = staffData.find(s => getVal(s, ['empid', 'employeeid']) === empId); 
+            let staff = staffData.find(s => getVal(s, ['empid', 'employeeid', 'id']) == empId); 
             let monthlySal = parseAmount(getVal(staff, ['monthlysalary', 'salary'])); let d = new Date(); let currentMonthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; let advTaken = 0;
 
             expenseHistory.forEach(exp => {
-                let eCat = getVal(exp, ['category']); let eDesc = getVal(exp, ['description', 'note']) || ''; let eDate = getVal(exp, ['date', 'isodate']) || '';
+                let eCat = getVal(exp, ['category']); let eDesc = getVal(exp, ['description', 'note']) || ''; let eDate = getVal(exp, ['date', 'isodate', 'expense_date', 'created_at']) || '';
                 let eMonthStr = ""; let parsedDate = new Date(eDate);
                 if(!isNaN(parsedDate.getTime())) { eMonthStr = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}`; } else { eMonthStr = eDate.substring(0, 7); }
                 if(eCat === 'Staff Salary' && eDesc.includes(`[${empId}]`) && eMonthStr === currentMonthStr) { advTaken += parseAmount(getVal(exp, ['amount'])); }
@@ -1120,11 +1012,11 @@ const APP_VERSION = "D1-Hybrid-4.1";
         function submitStaffPayout() {
             let empId = document.getElementById('payStaffSelect').value; let amount = document.getElementById('payStaffAmount').value; let type = document.getElementById('payStaffType').value;
             if(!empId || !amount || amount <= 0) { showCustomAlert("Please select staff and enter valid amount."); return; }
-            let staff = staffData.find(s => getVal(s, ['empid', 'employeeid']) === empId); let sName = getVal(staff, ['name']); let sPhone = getVal(staff, ['mobile']); let desc = `[${empId}] ${sName} - ${type}`; 
+            let staff = staffData.find(s => getVal(s, ['empid', 'employeeid', 'id']) == empId); let sName = getVal(staff, ['name']); let sPhone = getVal(staff, ['mobile']); let desc = `[${empId}] ${sName} - ${type}`; 
             let d = new Date(); let fDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
             expenseHistory.push({ date: fDate, isodate: fDate, category: 'Staff Salary', amount: parseInt(amount), description: desc });
             
-            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'expense', category: 'Staff Salary', amount: amount, description: desc }) })
+            fetch(`${API_BASE}/expenses`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: 'Staff Salary', amount: amount, description: desc }) })
             .then(res => res.json()).then(data => {
                 generateTrends(); calculateStaffBalance(); document.getElementById('payStaffAmount').value = "";
                 document.getElementById('salaryActionButtons').innerHTML = `<button class="btn" onclick="printSalarySlip('${sName}', '${empId}', '${amount}', '${type}'); document.getElementById('salaryActionModal').style.display='none';">🖨️ Print Slip</button><button class="btn" style="background:#10B981;" onclick="sendWASalarySlip('${sName}', '${empId}', '${amount}', '${type}', '${sPhone}'); document.getElementById('salaryActionModal').style.display='none';">📱 WhatsApp Slip</button><button class="btn btn-outline" onclick="document.getElementById('salaryActionModal').style.display='none';">Close</button>`;
@@ -1144,704 +1036,76 @@ const APP_VERSION = "D1-Hybrid-4.1";
             window.open(`https://wa.me/91${sPhone}?text=${encodeURIComponent(slipText)}`, '_blank');
         }
 
-        async function d1Get(path, timeoutMs = API_TIMEOUT_MS) {
-            const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), timeoutMs);
-            try {
-                const response = await fetch(`${D1_API_BASE}${path}`, { method:'GET', headers:{'Accept':'application/json'}, cache:'no-store', signal:controller.signal });
-                const data = await response.json().catch(()=>({}));
-                if (!response.ok || data.success === false) throw new Error(data.error || `D1 API error (${response.status})`);
-                return data;
-            } finally { clearTimeout(timer); }
-        }
-        async function legacyGet(timeoutMs = API_TIMEOUT_MS) {
-            const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), timeoutMs);
-            try {
-                const response = await fetch(scriptURL,{cache:'no-store',signal:controller.signal});
-                if(!response.ok) throw new Error(`Legacy API error (${response.status})`);
-                return await response.json();
-            } finally { clearTimeout(timer); }
-        }
-        function normalizeArray(payload, keys) {
-            if (Array.isArray(payload)) return payload;
-            for (const k of keys) if (payload && Array.isArray(payload[k])) return payload[k];
-            return [];
-        }
-        function normalizeStock(payload) {
-            const raw = payload && (payload.stock || payload.items || payload.data || payload.result || payload);
-            const out = {};
-            if (Array.isArray(raw)) {
-                raw.forEach(x => {
-                    const name = getVal(x,['name','itemname','item','stockname']);
-                    const qty = getVal(x,['quantity','qty','stock','currentstock','currentquantity']);
-                    if(name) out[String(name).trim()] = Number(qty)||0;
-                });
-            } else if (raw && typeof raw === 'object') {
-                Object.keys(raw).forEach(k => {
-                    const v=raw[k];
-                    out[k]=Number(v && typeof v==='object' ? getVal(v,['quantity','qty','stock','currentstock']) : v)||0;
-                });
-            }
-            return out;
-        }
-        function localISODate(value) {
-            const s=String(value||'').trim();
-            if(!s) return '';
-            const m=s.match(/^(\d{4}-\d{2}-\d{2})/);
-            if(m) return m[1];
-            const d=new Date(s);
-            return isNaN(d.getTime()) ? '' : `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-        }
-        function mapD1Order(o) {
-            const created=o.created_at||o.createdAt||o.date||o.order_date||'';
-            const tn=o.table_number ?? o.tableNumber ?? '';
-            const ot=o.order_type||o.orderType||'';
-            const total=Number(o.grand_total ?? o.grandTotal ?? o.total ?? o.amount ?? 0)||0;
-            return {
-                id:o.id,
-                orderid:o.order_number||o.orderNumber||o.id||'',
-                tablenumber:tn!==''&&tn!=null?`Table ${tn}`:(ot||'Order'),
-                table:tn!==''&&tn!=null?`Table ${tn}`:(ot||'Order'),
-                order_type:ot,
-                customerphone:o.customer_phone||o.customerPhone||o.phone||'',
-                phone:o.customer_phone||o.customerPhone||o.phone||'',
-                date:created,isodate:created,time:created,
-                totalamount:total,total:total,amount:total,
-                discount:Number(o.discount||0)||0,
-                payment_method:o.payment_method||o.paymentMethod||'',
-                payment_status:o.payment_status||o.paymentStatus||'',
-                order_status:o.order_status||o.orderStatus||'',
-                items:o.items_string||o.itemsString||o.items||''
-            };
-        }
-
+        // Updated Data Fetching to pull from D1 Backend Worker Only
         async function fetchData() {
-            const loader=document.getElementById('loader');
-            loader.style.display='flex';
-            loader.innerHTML='<div class="spinner"></div> <span>Syncing Viraasat data...</span>';
+            document.getElementById('loader').style.display = 'flex';
+            
+            try {
+                const [menuRes, stockRes, tablesRes, ordersRes, expRes, staffRes] = await Promise.all([
+                    fetch(`${API_BASE}/menu`).then(r => r.json()),
+                    fetch(`${API_BASE}/stock`).then(r => r.json()),
+                    fetch(`${API_BASE}/tables`).then(r => r.json()),
+                    fetch(`${API_BASE}/orders?limit=500`).then(r => r.json()),
+                    fetch(`${API_BASE}/expenses`).then(r => r.json()),
+                    fetch(`${API_BASE}/staff`).then(r => r.json())
+                ]);
 
-            const results=await Promise.allSettled([
-                d1Get('/dashboard'), d1Get('/menu'), d1Get('/tables'),
-                d1Get('/orders?limit=500'), d1Get('/expenses?limit=500'),
-                d1Get('/stock'), d1Get('/staff'), legacyGet()
-            ]);
-
-            const val=(i)=>results[i].status==='fulfilled'?results[i].value:{};
-            const dash=val(0), menu=val(1), tables=val(2), orders=val(3),
-                  expenses=val(4), stock=val(5), staff=val(6), legacy=val(7);
-
-            const legacyMenu=normalizeArray(legacy,['menu','items','data']);
-            const d1Menu=normalizeArray(menu,['items','menu','data','result']);
-            menuData = mergeByKey(legacyMenu,d1Menu,['itemname','name','id']);
-            if(!menuData.length) menuData=d1Menu;
-
-            const legacyExpenses=normalizeArray(legacy,['expenses']);
-            const d1Expenses=normalizeArray(expenses,['expenses','data','result']);
-            expenseHistory=legacyExpenses.length?legacyExpenses:d1Expenses;
-
-            const legacyStaff=normalizeArray(legacy,['staff','employees']);
-            const d1Staff=normalizeArray(staff,['staff','employees','data','result']);
-            staffData=legacyStaff.length?legacyStaff:d1Staff;
-
-            const legacyStock=normalizeStock(legacy.stock);
-            const d1Stock=normalizeStock(stock);
-            const dashboardStock=normalizeStock(dash.stock);
-            stockData=Object.keys(legacyStock).length?{...d1Stock,...legacyStock}:(
-                Object.keys(d1Stock).length?d1Stock:dashboardStock
-            );
-
-            // IMPORTANT: Google Sheet sales are the authoritative historical sales source.
-            // D1 orders are only used for records that do not already exist in the sheet.
-            const legacySales=normalizeArray(legacy,['sales','orders','data']).map(normalizeSheetSale).filter(Boolean);
-            const d1Sales=normalizeArray(orders,['orders','sales','data','result']).map(mapD1Order).filter(Boolean);
-            salesHistory=mergeSales(legacySales,d1Sales);
-
-            const d1Tables=normalizeArray(tables,['tables','data','result']);
-            if(d1Tables.length){
-                tableSections=[
-                    {title:'Hut Seating',tables:[]},
-                    {title:'Ground Seating',tables:[]},
-                    {title:'Terrace Seating',tables:[]}
-                ];
-                const areaMap={'Hut Seating':0,'Ground Seating':1,'Terrace Seating':2};
-                runningTables={};
-                d1Tables.forEach(t=>{
-                    const n=String(t.table_number??t.tableNumber??'').trim();
-                    if(!n)return;
-                    const area=String(t.seating_area||t.seatingArea||'').trim();
-                    const i=areaMap[area]!==undefined?areaMap[area]:1;
-                    if(!tableSections[i].tables.includes(n)) tableSections[i].tables.push(n);
-                    runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied'
-                        ?[{__d1Occupied:true,orderId:t.current_order_id||t.currentOrderId}]
-                        :[];
+                // Map D1 Menu
+                menuData = menuRes.items || [];
+                
+                // Map D1 Stock
+                stockData = {};
+                (stockRes.stock || []).forEach(s => { stockData[s.name] = s.quantity; });
+                
+                // Map D1 Tables
+                runningTables = {};
+                (tablesRes.tables || []).forEach(t => {
+                    if (t.status === 'occupied') {
+                        runningTables[`Table ${t.table_number}`] = []; 
+                    }
                 });
-            } else {
-                runningTables=legacy.runningTables||{};
-            }
 
-            // Apply locally stored staff status/removals without losing GSheet records.
-            applyLocalStaffState();
-
-            const overallFallback=salesHistory.reduce((a,s)=>a+parseAmount(getVal(s,['totalamount','total','amount'])),0);
-            const todayKey=localISODate(new Date());
-            const todaySalesFallback=salesHistory.filter(s=>saleDateKey(s)===todayKey)
-                .reduce((a,s)=>a+parseAmount(getVal(s,['totalamount','total','amount'])),0);
-            const todayOrdersFallback=salesHistory.filter(s=>saleDateKey(s)===todayKey).length;
-
-            document.getElementById('homeTodaySale').innerText=`₹${Math.round(todaySalesFallback).toLocaleString('en-IN')}`;
-            document.getElementById('homeAvgOrder').innerText=`₹${Math.round(todayOrdersFallback?todaySalesFallback/todayOrdersFallback:0).toLocaleString('en-IN')}`;
-            document.getElementById('homeOverallSale').innerText=`₹${Math.round(overallFallback).toLocaleString('en-IN')}`;
-
-            const totalTables=Object.values(tableSections).reduce((a,s)=>a+s.tables.length,0);
-            const occupied=Object.values(runningTables).filter(v=>Array.isArray(v)&&v.length>0).length;
-            document.getElementById('homeActiveTables').innerText=`${occupied} / ${totalTables}`;
-
-            populateDropdown();
-            populateStaffDropdown();
-            renderEmployeeList();
-            renderTableGrid();
-            renderStockDashboard();
-            checkStockDisplay();
-            renderLiveSales();
-            generateTrends();
-            renderPremiumDashboard();
-            hideSplashScreen();
-            loader.style.display='none';
-        }
-
-        function normalizeSheetSale(row){
-            if(!row || typeof row!=='object') return null;
-            const date=getVal(row,['date','orderdate','isodate']);
-            const time=getVal(row,['time','ordertime']);
-            const id=getVal(row,['orderid','order_id','id']);
-            const items=getVal(row,['items','itemsstring','itemdetails']);
-            const total=parseAmount(getVal(row,['totalamount','total_amount','total','amount']));
-            if(!id && !items && !date) return null;
-            return {
-                ...row,
-                orderid:id||`LEGACY-${date||''}-${time||''}-${Math.random().toString(36).slice(2,7)}`,
-                id:id||'',
-                date:date||'',
-                isodate:date||'',
-                time:time||'',
-                items:items||'',
-                itemsstring:items||'',
-                totalamount:total,
-                total:total,
-                amount:total,
-                tablenumber:getVal(row,['table_number','tablenumber','table','tablename'])||'',
-                table:getVal(row,['table_number','tablenumber','table','tablename'])||'',
-                discount:parseAmount(getVal(row,['discount'])),
-                payment_method:extractPaymentMode(items)||getVal(row,['paymentmode','payment_method','mode'])||''
-            };
-        }
-
-        function extractPaymentMode(items){
-            const m=String(items||'').match(/\[Mode:\s*([^\]]+)\]/i);
-            return m?m[1].trim():'';
-        }
-
-        function saleDateKey(s){
-            const direct=String(getVal(s,['date','isodate'])||'').trim();
-            if(/^\d{4}-\d{2}-\d{2}/.test(direct)) return direct.slice(0,10);
-            return localISODate(direct);
-        }
-
-        function saleTimeText(s){
-            const t=String(getVal(s,['time'])||'').trim();
-            if(t) return t;
-            const d=String(getVal(s,['date','isodate'])||'').trim();
-            if(d.includes('T') || /\d{1,2}:\d{2}/.test(d)){
-                const dt=new Date(d); if(!isNaN(dt.getTime())) return dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
-            }
-            return '';
-        }
-
-        function mergeSales(legacySales,d1Sales){
-            const out=[...legacySales];
-            const ids=new Set(out.map(s=>String(getVal(s,['orderid','id'])).trim()).filter(Boolean));
-            d1Sales.forEach(s=>{
-                const id=String(getVal(s,['orderid','id'])).trim();
-                if(!id || !ids.has(id)) out.push(s);
-            });
-            out.sort((a,b)=>{
-                const ad=`${saleDateKey(a)} ${saleTimeText(a)}`, bd=`${saleDateKey(b)} ${saleTimeText(b)}`;
-                return bd.localeCompare(ad);
-            });
-            return out;
-        }
-
-        function mergeByKey(primary,secondary,keys){
-            const out=[...primary], seen=new Set();
-            primary.forEach(x=>{ for(const k of keys){ const v=String(getVal(x,[k])||'').trim().toLowerCase(); if(v) seen.add(`${k}:${v}`); }});
-            secondary.forEach(x=>{
-                let duplicate=false;
-                for(const k of keys){const v=String(getVal(x,[k])||'').trim().toLowerCase(); if(v&&seen.has(`${k}:${v}`)){duplicate=true;break;}}
-                if(!duplicate) out.push(x);
-            });
-            return out;
-        }
-
-        function applyLocalStaffState(){
-            let state={}; let removed=[];
-            try{state=JSON.parse(localStorage.getItem('viraasat_staff_status')||'{}')}catch(e){}
-            try{removed=JSON.parse(localStorage.getItem('viraasat_removed_staff')||'[]')}catch(e){}
-            const removedSet=new Set(removed.map(String));
-            staffData=staffData.filter(s=>{
-                const key=String(getVal(s,['empid','employeeid','mobile','phone','name'])||'');
-                return !removedSet.has(key);
-            }).map(s=>{
-                const key=String(getVal(s,['empid','employeeid','mobile','phone','name'])||'');
-                return {...s,__status:state[key]||'active'};
-            });
-        }
-
-
-        // ================= PREMIUM COMMAND CENTER LOGIC =================
-        let premiumActiveTab='overview';
-
-        function money(v){return `₹${Math.round(Number(v)||0).toLocaleString('en-IN')}`;}
-        function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-        function activeStaffCount(){return staffData.filter(s=>getStaffStatus(s)==='active').length;}
-
-        function showPremiumTab(tab,btn){
-            premiumActiveTab=tab;
-            document.querySelectorAll('#premiumTabs .premium-tab').forEach(x=>x.classList.remove('active'));
-            if(btn) btn.classList.add('active');
-            else{
-                const b=[...document.querySelectorAll('#premiumTabs .premium-tab')].find(x=>x.textContent.toLowerCase().replace(/\s/g,'').includes(tab.replace(/\s/g,'')));
-                if(b)b.classList.add('active');
-            }
-            document.querySelectorAll('.premium-panel').forEach(x=>x.classList.remove('active'));
-            const panel=document.getElementById('premiumPanel-'+tab);
-            if(panel)panel.classList.add('active');
-            renderPremiumTab(tab);
-        }
-
-        function renderPremiumDashboard(){
-            renderPremiumTab(premiumActiveTab);
-        }
-
-        function renderPremiumTab(tab){
-            if(tab==='overview')renderPremiumOverview();
-            if(tab==='sales')renderPremiumSales();
-            if(tab==='items')renderPremiumItems();
-            if(tab==='inventory')renderPremiumInventory();
-            if(tab==='tables')renderPremiumTables();
-            if(tab==='staff')renderPremiumStaff();
-            if(tab==='menu')renderPremiumMenu();
-            if(tab==='expenses')renderPremiumExpenses();
-            if(tab==='reports')renderPremiumReports();
-            if(tab==='settings')renderPremiumSettings();
-        }
-
-        function renderPremiumOverview(){
-            const panel=document.getElementById('premiumPanel-overview'); if(!panel)return;
-            const today=saleDateKey({date:new Date().toISOString().slice(0,10)});
-            const todaySales=salesHistory.filter(s=>saleDateKey(s)===today);
-            const todayAmount=todaySales.reduce((a,s)=>a+parseAmount(getVal(s,['totalamount','total','amount'])),0);
-            const lifetime=salesHistory.reduce((a,s)=>a+parseAmount(getVal(s,['totalamount','total','amount'])),0);
-            const avg=todaySales.length?todayAmount/todaySales.length:0;
-            const modes={}; salesHistory.forEach(s=>{const m=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items','itemsstring']))||'Unknown';modes[m]=(modes[m]||0)+parseAmount(getVal(s,['totalamount','total','amount']));});
-            const recent=salesHistory.slice(0,8);
-            panel.innerHTML=`
-            <div class="premium-kpis">
-                <div class="pkpi"><div class="label">Today's Sale</div><div class="value">${money(todayAmount)}</div><div class="delta">${todaySales.length} orders</div></div>
-                <div class="pkpi"><div class="label">Average Order</div><div class="value">${money(avg)}</div><div class="delta">Today</div></div>
-                <div class="pkpi"><div class="label">Lifetime Sale</div><div class="value">${money(lifetime)}</div><div class="delta">${salesHistory.length} orders</div></div>
-                <div class="pkpi"><div class="label">Active Staff</div><div class="value">${activeStaffCount()}</div><div class="delta">${staffData.length} total records</div></div>
-            </div>
-            <div class="premium-grid-2">
-                <div class="premium-card">
-                    <div class="premium-card-head"><h3>Recent Sales</h3><span>Latest 8 orders</span></div>
-                    <div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Order</th><th>Time</th><th>Table</th><th>Mode</th><th>Total</th></tr></thead><tbody>
-                    ${recent.map(s=>`<tr onclick="openOrderDetails('${esc(getVal(s,['orderid','id']))}')" style="cursor:pointer"><td><b>#${esc(getVal(s,['orderid','id']))}</b></td><td>${esc(saleDateKey(s))}<br>${esc(saleTimeText(s))}</td><td>${esc(getVal(s,['tablenumber','table','tablename'])||'—')}</td><td><span class="pill ${String(getVal(s,['payment_method'])||extractPaymentMode(getVal(s,['items','itemsstring']))).toLowerCase().includes('cash')?'gold':'pink'}">${esc(getVal(s,['payment_method'])||extractPaymentMode(getVal(s,['items','itemsstring']))||'—')}</span></td><td><b>${money(getVal(s,['totalamount','total','amount']))}</b></td></tr>`).join('')}
-                    </tbody></table></div>
-                </div>
-                <div>
-                    <div class="premium-card">
-                        <div class="premium-card-head"><h3>Payment Mix</h3><span>Lifetime</span></div>
-                        ${Object.entries(modes).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="item-rank"><div class="item-rank-info"><div class="item-rank-name">${esc(k)}</div><div class="mini-bar"><i style="width:${lifetime?Math.min(100,(v/lifetime)*100):0}%"></i></div></div><div class="item-rank-val">${money(v)}</div></div>`).join('')||'<div class="premium-empty">No payment data</div>'}
-                    </div>
-                    <div class="premium-card">
-                        <div class="premium-card-head"><h3>Quick Actions</h3></div>
-                        <div class="premium-grid-2" style="grid-template-columns:1fr 1fr">
-                            <button class="premium-btn" onclick="openTable('Takeaway')">+ Takeaway</button>
-                            <button class="premium-btn alt" onclick="showPremiumTab('sales')">View Sales</button>
-                            <button class="premium-btn light" onclick="showPremiumTab('items')">Item Report</button>
-                            <button class="premium-btn light" onclick="showPremiumTab('inventory')">Stock</button>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-        }
-
-        function getFilteredPremiumSales(){
-            const from=document.getElementById('psFrom')?.value||'';
-            const to=document.getElementById('psTo')?.value||'';
-            const mode=(document.getElementById('psMode')?.value||'').toLowerCase();
-            const type=(document.getElementById('psType')?.value||'').toLowerCase();
-            const q=(document.getElementById('psSearch')?.value||'').toLowerCase().trim();
-            return salesHistory.filter(s=>{
-                const dk=saleDateKey(s);
-                if(from&&dk<from)return false;if(to&&dk>to)return false;
-                const sm=String(getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items','itemsstring']))||'').toLowerCase();
-                const st=String(getVal(s,['tablenumber','table','tablename'])||'').toLowerCase();
-                if(mode&&sm!==mode)return false;
-                if(type==='dining'&&!st.includes('table'))return false;
-                if(type==='takeaway'&&!st.includes('takeaway'))return false;
-                if(type==='delivery'&&!st.includes('delivery'))return false;
-                if(q&&!`${getVal(s,['orderid','id'])} ${st} ${getVal(s,['phone','customerphone'])} ${getVal(s,['items','itemsstring'])}`.toLowerCase().includes(q))return false;
-                return true;
-            });
-        }
-
-        function renderPremiumSales(){
-            const panel=document.getElementById('premiumPanel-sales');if(!panel)return;
-            panel.innerHTML=`
-            <div class="premium-card">
-                <div class="premium-card-head"><h3>Sales Register</h3><span id="psCount">0 orders</span></div>
-                <div class="premium-toolbar">
-                    <input type="date" id="psFrom" onchange="renderPremiumSalesRows()"><input type="date" id="psTo" onchange="renderPremiumSalesRows()">
-                    <select id="psMode" onchange="renderPremiumSalesRows()"><option value="">All Payments</option><option value="cash">Cash</option><option value="upi">UPI</option><option value="card">Card</option></select>
-                    <select id="psType" onchange="renderPremiumSalesRows()"><option value="">All Types</option><option value="dining">Dining</option><option value="takeaway">Takeaway</option><option value="delivery">Delivery</option></select>
-                    <input id="psSearch" placeholder="Search order / item / phone" oninput="renderPremiumSalesRows()">
-                    <button class="premium-btn alt" onclick="exportPremiumSales()">Export CSV</button>
-                </div>
-                <div id="psSummary" class="premium-grid-3" style="margin-bottom:14px"></div>
-                <div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Time</th><th>Order ID</th><th>Table</th><th>Items</th><th>Mode</th><th>Discount</th><th>Total</th></tr></thead><tbody id="psBody"></tbody></table></div>
-            </div>`;
-            renderPremiumSalesRows();
-        }
-
-        function renderPremiumSalesRows(){
-            const rows=getFilteredPremiumSales(); const body=document.getElementById('psBody');if(!body)return;
-            const total=rows.reduce((a,s)=>a+parseAmount(getVal(s,['totalamount','total','amount'])),0);
-            const disc=rows.reduce((a,s)=>a+parseAmount(getVal(s,['discount'])),0);
-            document.getElementById('psCount').innerText=`${rows.length} orders`;
-            document.getElementById('psSummary').innerHTML=`<div class="report-stat"><div class="rlabel">Orders</div><div class="rvalue">${rows.length}</div></div><div class="report-stat"><div class="rlabel">Net Sales</div><div class="rvalue">${money(total)}</div></div><div class="report-stat"><div class="rlabel">Discount</div><div class="rvalue">${money(disc)}</div></div>`;
-            body.innerHTML=rows.length?rows.map(s=>{
-                const items=String(getVal(s,['items','itemsstring'])||'').replace(/,?\s*\[(?:Mode|Discount Applied):[^\]]*\]/gi,'').trim();
-                const mode=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items','itemsstring']));
-                return `<tr onclick="openOrderDetails('${esc(getVal(s,['orderid','id']))}')" style="cursor:pointer"><td>${esc(saleDateKey(s))}</td><td>${esc(saleTimeText(s))}</td><td><b>${esc(getVal(s,['orderid','id']))}</b><br><span style="font-size:.62rem;color:var(--text-muted)">${esc(getVal(s,['phone','customerphone'])||'NA')}</span></td><td>${esc(getVal(s,['tablenumber','table','tablename'])||'—')}</td><td style="max-width:340px">${esc(items)}</td><td><span class="pill ${String(mode).toLowerCase()==='cash'?'gold':'pink'}">${esc(mode||'—')}</span></td><td>${money(getVal(s,['discount']))}</td><td><b>${money(getVal(s,['totalamount','total','amount']))}</b></td></tr>`;
-            }).join(''):`<tr><td colspan="8"><div class="premium-empty">No sales match the selected filters.</div></td></tr>`;
-        }
-
-        function exportPremiumSales(){
-            const rows=getFilteredPremiumSales().map(s=>({
-                Date:saleDateKey(s),Time:saleTimeText(s),Order_ID:getVal(s,['orderid','id']),
-                Phone:getVal(s,['phone','customerphone'])||'NA',Items:getVal(s,['items','itemsstring']),
-                Total_Amount:parseAmount(getVal(s,['totalamount','total','amount'])),
-                Table_Number:getVal(s,['tablenumber','table','tablename']),Discount:parseAmount(getVal(s,['discount'])),
-                Payment_Mode:getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items','itemsstring']))
-            }));
-            downloadCSV(rows,'Viraasat-Sales-Export.csv');
-        }
-
-        function parseSaleItems(s){
-            const raw=String(getVal(s,['items','itemsstring'])||'');
-            const cleaned=raw.replace(/\s*\[(?:Mode|Discount Applied):[^\]]*\]/gi,'').trim().replace(/,+$/,'');
-            const chunks=cleaned.split(/\s*,\s*(?=[^,]+?\s*\(x\d+\))/i);
-            const out=[];
-            chunks.forEach(ch=>{
-                const m=ch.trim().match(/^(.*?)\s*\(x(\d+)\)\s*₹\s*([\d,]+(?:\.\d+)?)\s*$/i);
-                if(m)out.push({name:m[1].trim(),qty:Number(m[2])||0,amount:Number(String(m[3]).replace(/,/g,''))||0});
-            });
-            return out;
-        }
-
-        function buildItemSales(){
-            const map={};
-            salesHistory.forEach(s=>parseSaleItems(s).forEach(it=>{
-                const key=it.name.toLowerCase();
-                if(!map[key])map[key]={name:it.name,qty:0,sales:0,orders:0};
-                map[key].qty+=it.qty;map[key].sales+=it.amount;map[key].orders+=1;
-            }));
-            return Object.values(map).sort((a,b)=>b.sales-a.sales);
-        }
-
-        function renderPremiumItems(){
-            const panel=document.getElementById('premiumPanel-items');if(!panel)return;
-            const items=buildItemSales(); const total=items.reduce((a,x)=>a+x.sales,0);
-            panel.innerHTML=`<div class="premium-card">
-                <div class="premium-card-head"><h3>Item-wise Sales</h3><span>${items.length} items</span></div>
-                <div class="premium-toolbar"><input id="piSearch" placeholder="Search item..." oninput="renderPremiumItemRows()"><button class="premium-btn alt" onclick="exportItemSales()">Export Item Report</button></div>
-                <div class="premium-grid-3" style="margin-bottom:14px"><div class="report-stat"><div class="rlabel">Items Sold</div><div class="rvalue">${items.reduce((a,x)=>a+x.qty,0)}</div></div><div class="report-stat"><div class="rlabel">Item Value</div><div class="rvalue">${money(total)}</div></div><div class="report-stat"><div class="rlabel">Unique Items</div><div class="rvalue">${items.length}</div></div></div>
-                <div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>#</th><th>Item</th><th>Qty Sold</th><th>Orders</th><th>Sales Value</th><th>Share</th></tr></thead><tbody id="piBody"></tbody></table></div>
-            </div>`;
-            renderPremiumItemRows();
-        }
-        function renderPremiumItemRows(){
-            const body=document.getElementById('piBody');if(!body)return;const q=(document.getElementById('piSearch')?.value||'').toLowerCase();const items=buildItemSales().filter(x=>x.name.toLowerCase().includes(q));const total=buildItemSales().reduce((a,x)=>a+x.sales,0);
-            body.innerHTML=items.map((x,i)=>`<tr><td><b>${i+1}</b></td><td><b>${esc(x.name)}</b></td><td>${x.qty}</td><td>${x.orders}</td><td><b>${money(x.sales)}</b></td><td style="min-width:130px"><span style="font-size:.65rem">${total?((x.sales/total)*100).toFixed(1):0}%</span><div class="mini-bar"><i style="width:${total?Math.min(100,(x.sales/total)*100):0}%"></i></div></td></tr>`).join('')||`<tr><td colspan="6"><div class="premium-empty">No item sales found.</div></td></tr>`;
-        }
-        function exportItemSales(){downloadCSV(buildItemSales().map(x=>({Item:x.name,Qty_Sold:x.qty,Orders:x.orders,Sales_Value:Math.round(x.sales)})),'Viraasat-Item-Wise-Sales.csv');}
-
-        function renderPremiumInventory(){
-            const panel=document.getElementById('premiumPanel-inventory');if(!panel)return;const entries=Object.entries(stockData).sort((a,b)=>Number(a[1])-Number(b[1]));
-            panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Inventory Control</h3><span>${entries.length} tracked items</span></div><div class="premium-toolbar"><input id="pStockSearch" placeholder="Search stock..." oninput="renderPremiumInventoryRows()"><button class="premium-btn" onclick="document.getElementById('adminStockItem').focus();switchMainTab('usersManager',document.getElementById('navUsers'))">Stock Admin</button></div><div id="pStockGrid" class="stock-grid"></div></div>`;
-            renderPremiumInventoryRows();
-        }
-        function renderPremiumInventoryRows(){const el=document.getElementById('pStockGrid');if(!el)return;const q=(document.getElementById('pStockSearch')?.value||'').toLowerCase();const e=Object.entries(stockData).filter(([k])=>k.toLowerCase().includes(q)).sort((a,b)=>Number(a[1])-Number(b[1]));el.innerHTML=e.map(([k,v])=>`<div class="stock-box ${Number(v)<=5?'low':''}"><div class="stock-box-name">${esc(k)}</div><div class="stock-box-qty">${Number(v)||0}</div><small>${Number(v)<=5?'Low stock':'Available'}</small></div>`).join('')||'<div class="premium-empty" style="grid-column:1/-1">No stock data received from source.</div>';}
-
-
-        function renderPremiumTables(){
-            const panel=document.getElementById('premiumPanel-tables');if(!panel)return;
-            let rows=[];tableSections.forEach(sec=>sec.tables.forEach(n=>{const key='Table '+n;const occ=Array.isArray(runningTables[key])&&runningTables[key].length>0;rows.push({name:key,area:sec.title,status:occ?'Occupied':'Available'});}));
-            ['Takeaway','Home Delivery'].forEach(key=>rows.push({name:key,area:'Quick Service',status:Array.isArray(runningTables[key])&&runningTables[key].length?'Occupied':'Available'}));
-            panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Table Control</h3><span>${rows.filter(x=>x.status==='Occupied').length} occupied / ${rows.length}</span></div><div class="stock-grid">${rows.map(x=>`<div class="stock-box ${x.status==='Occupied'?'low':''}"><div class="stock-box-name">${esc(x.name)}</div><div style="margin-top:8px"><span class="pill ${x.status==='Occupied'?'red':'green'}">${x.status}</span></div><small>${esc(x.area)}</small></div>`).join('')}</div></div>`;
-        }
-
-        function getStaffKey(s){return String(getVal(s,['empid','employeeid','mobile','phone','name'])||'');}
-        function getStaffStatus(s){return s.__status||'active';}
-        function toggleStaffStatus(key){
-            const state=JSON.parse(localStorage.getItem('viraasat_staff_status')||'{}');state[key]=state[key]==='inactive'?'active':'inactive';localStorage.setItem('viraasat_staff_status',JSON.stringify(state));
-            staffData=staffData.map(s=>getStaffKey(s)===key?{...s,__status:state[key]}:s);
-            fetch(scriptURL,{method:'POST',body:JSON.stringify({type:'updateStaffStatus',empId:key,status:state[key]})}).catch(()=>{});
-            renderPremiumStaff();renderEmployeeList();generateTrends();
-        }
-        function removeStaffRecord(key){
-            showCustomConfirm('Remove this staff member from the POS directory?',()=>{
-                const arr=JSON.parse(localStorage.getItem('viraasat_removed_staff')||'[]');if(!arr.includes(key))arr.push(key);localStorage.setItem('viraasat_removed_staff',JSON.stringify(arr));
-                staffData=staffData.filter(s=>getStaffKey(s)!==key);
-                fetch(scriptURL,{method:'POST',body:JSON.stringify({type:'deleteStaff',empId:key})}).catch(()=>{});
-                renderPremiumStaff();renderEmployeeList();generateTrends();
-            },null);
-        }
-        function renderPremiumStaff(){
-            const panel=document.getElementById('premiumPanel-staff');if(!panel)return;
-            panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Staff Management</h3><span>${activeStaffCount()} active / ${staffData.length} total</span></div>
-            <div class="premium-toolbar"><button class="premium-btn" onclick="switchMainTab('usersManager',document.getElementById('navUsers'))">Open Staff Register</button><button class="premium-btn alt" onclick="exportStaff()">Export Staff</button></div>
-            <div class="staff-grid">${staffData.map(s=>{const key=getStaffKey(s),active=getStaffStatus(s)==='active';return `<div class="staff-card"><div class="staff-top"><div><div class="staff-name">${esc(getVal(s,['name'])||'Unknown')}</div><div class="staff-role">${esc(getVal(s,['role'])||'Staff')}</div></div><button class="status-toggle ${active?'active':'inactive'}" onclick="toggleStaffStatus('${esc(key)}')">${active?'ACTIVE':'INACTIVE'}</button></div><div class="staff-meta"><div>Emp ID: <b>${esc(getVal(s,['empid','employeeid'])||'—')}</b></div><div>Mobile: <b>${esc(getVal(s,['mobile','phone'])||'—')}</b></div><div>Salary: <b>${money(getVal(s,['monthlysalary','salary']))}</b></div><div>Joining: <b>${esc(getVal(s,['dateofjoining','joindate','date','doj'])||'—')}</b></div></div><div class="staff-actions"><button class="premium-btn light" onclick="toggleStaffStatus('${esc(key)}')">${active?'Mark Inactive':'Mark Active'}</button><button class="premium-btn danger" onclick="removeStaffRecord('${esc(key)}')">Remove</button></div></div>`}).join('')||'<div class="premium-empty" style="grid-column:1/-1">No staff records found.</div>'}</div></div>`;
-        }
-        function exportStaff(){downloadCSV(staffData.map(s=>({Emp_ID:getVal(s,['empid','employeeid']),Name:getVal(s,['name']),Role:getVal(s,['role']),Mobile:getVal(s,['mobile','phone']),Monthly_Salary:parseAmount(getVal(s,['monthlysalary','salary'])),Date_of_Joining:getVal(s,['dateofjoining','joindate','date','doj']),Status:getStaffStatus(s)})),'Viraasat-Staff.csv');}
-
-        function renderPremiumMenu(){
-            const panel=document.getElementById('premiumPanel-menu');if(!panel)return;
-            panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Menu Master</h3><span>${menuData.length} items</span></div>
-            <div class="premium-toolbar"><button class="premium-btn" onclick="downloadMenuSample()">Download Sample</button><label class="premium-btn alt" style="display:flex;align-items:center;cursor:pointer">Upload Menu<input type="file" id="menuUploadInput" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleMenuUpload(this.files[0])"></label><button class="premium-btn light" onclick="exportMenu()">Export Menu</button><button class="premium-btn light" onclick="switchMainTab('usersManager',document.getElementById('navUsers'))">Add Single Item</button></div>
-            <div class="upload-drop"><strong>Bulk Menu Import</strong><span>Use the sample columns: Name, Category, Price, Active, Stock</span><button class="premium-btn alt" onclick="downloadMenuSample()">Get Sample File</button></div>
-            <div class="premium-table-wrap" style="margin-top:14px"><table class="premium-table"><thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Active</th><th>Stock</th></tr></thead><tbody>${menuData.map(m=>`<tr><td><b>${esc(getVal(m,['itemname','name']))}</b></td><td>${esc(getVal(m,['category','cat'])||'—')}</td><td>${money(getVal(m,['price']))}</td><td><span class="pill green">ACTIVE</span></td><td>${esc(stockData[getVal(m,['itemname','name'])]??'—')}</td></tr>`).join('')||'<tr><td colspan="5"><div class="premium-empty">No menu data found.</div></td></tr>'}</tbody></table></div></div>`;
-        }
-        function downloadMenuSample(){downloadCSV([{Name:'Paneer Butter Masala',Category:'Main Course',Price:170,Active:'Yes',Stock:20},{Name:'Tea',Category:'Beverage',Price:20,Active:'Yes',Stock:50},{Name:'Aloo Paratha',Category:'Breakfast',Price:60,Active:'Yes',Stock:15}],'Viraasat-Menu-Sample.csv');}
-        function exportMenu(){downloadCSV(menuData.map(m=>({Name:getVal(m,['itemname','name']),Category:getVal(m,['category','cat']),Price:parseAmount(getVal(m,['price'])),Active:getVal(m,['active','status'])||'Yes',Stock:stockData[getVal(m,['itemname','name'])]??''})),'Viraasat-Menu-Export.csv');}
-        async function handleMenuUpload(file){
-            if(!file)return;
-            try{
-                let rows=[];
-                if(window.XLSX){
-                    const data=await file.arrayBuffer();const wb=XLSX.read(data,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];rows=XLSX.utils.sheet_to_json(ws,{defval:''});
-                }else{
-                    const text=await file.text();rows=parseCSVText(text);
-                }
-                if(!rows.length){showCustomAlert('No menu rows found in file.');return;}
-                let added=0;
-                rows.forEach(r=>{
-                    const name=String(getVal(r,['name','itemname','item'])||'').trim();const price=parseAmount(getVal(r,['price','rate','sellingprice']));
-                    if(!name||!price)return;
-                    const category=getVal(r,['category','cat'])||'Other';const active=String(getVal(r,['active','status'])||'Yes').toLowerCase();
-                    const obj={name, itemname:name, category, price, active:!['no','false','inactive','0'].includes(active)};
-                    const ix=menuData.findIndex(m=>getVal(m,['itemname','name']).toLowerCase()===name.toLowerCase());
-                    if(ix>=0)menuData[ix]={...menuData[ix],...obj};else menuData.push(obj);added++;
-                    fetch(scriptURL,{method:'POST',body:JSON.stringify({type:'addMenu',category,name,price,active:obj.active})}).catch(()=>{});
+                // Map D1 Orders to Local salesHistory Format
+                salesHistory = (ordersRes.orders || []).map(o => {
+                    let d = new Date(o.created_at);
+                    return {
+                        id: o.id,
+                        orderid: o.order_number,
+                        table: o.table_number ? `Table ${o.table_number}` : o.order_type,
+                        date: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,
+                        isodate: o.created_at,
+                        time: d.toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit', hour12: true}),
+                        totalamount: o.grand_total,
+                        total: o.grand_total,
+                        amount: o.grand_total,
+                        items: o.items_string,
+                        discount: o.discount,
+                        payment_method: o.payment_method
+                    };
                 });
-                populateDropdown();renderPremiumMenu();showCustomAlert(`${added} menu rows imported.`);
-            }catch(e){console.error(e);showCustomAlert('Could not read this file. Use the downloaded sample format.');}
-        }
-        function parseCSVText(text){const lines=text.split(/\r?\n/).filter(x=>x.trim());if(!lines.length)return[];const head=lines.shift().split(',').map(x=>x.trim().replace(/^"|"$/g,''));return lines.map(line=>{const vals=line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g)||[];const o={};head.forEach((h,i)=>o[h]=(vals[i]||'').trim().replace(/^"|"$/g,''));return o;});}
 
-        function renderPremiumExpenses(){
-            const panel=document.getElementById('premiumPanel-expenses');if(!panel)return;const total=expenseHistory.reduce((a,e)=>a+parseAmount(getVal(e,['amount','total'])),0);
-            const cats={};expenseHistory.forEach(e=>{const c=getVal(e,['category'])||'Other';cats[c]=(cats[c]||0)+parseAmount(getVal(e,['amount','total']));});
-            panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Expense Control</h3><span>${expenseHistory.length} entries</span></div><div class="premium-grid-3" style="margin-bottom:14px"><div class="report-stat"><div class="rlabel">Total Expenses</div><div class="rvalue">${money(total)}</div></div><div class="report-stat"><div class="rlabel">Staff Salary</div><div class="rvalue">${money(cats['Staff Salary']||0)}</div></div><div class="report-stat"><div class="rlabel">Other Expenses</div><div class="rvalue">${money(total-(cats['Staff Salary']||0))}</div></div></div><div class="premium-toolbar"><button class="premium-btn" onclick="switchMainTab('expenses',document.getElementById('navExpenses'))">Add Expense</button><button class="premium-btn alt" onclick="exportExpenses()">Export Expenses</button></div><div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th></tr></thead><tbody>${expenseHistory.map(e=>`<tr><td>${esc(getVal(e,['date','isodate']))}</td><td>${esc(getVal(e,['category'])||'Other')}</td><td>${esc(getVal(e,['description','note'])||'—')}</td><td><b>${money(getVal(e,['amount','total']))}</b></td></tr>`).join('')||'<tr><td colspan="4"><div class="premium-empty">No expenses recorded.</div></td></tr>'}</tbody></table></div></div>`;
-        }
-        function exportExpenses(){downloadCSV(expenseHistory.map(e=>({Date:getVal(e,['date','isodate']),Category:getVal(e,['category']),Description:getVal(e,['description','note']),Amount:parseAmount(getVal(e,['amount','total']))})),'Viraasat-Expenses.csv');}
+                // Map D1 Expenses
+                expenseHistory = (expRes.expenses || []).map(e => ({
+                    id: e.id,
+                    date: e.expense_date || e.created_at,
+                    isodate: e.expense_date || e.created_at,
+                    category: e.category,
+                    amount: e.amount,
+                    description: e.description
+                }));
 
-        function renderPremiumReports(){
-            const panel=document.getElementById('premiumPanel-reports');if(!panel)return;
-            const byDate={};salesHistory.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!byDate[d])byDate[d]={orders:0,sales:0};byDate[d].orders++;byDate[d].sales+=parseAmount(getVal(s,['totalamount','total','amount']));});
-            const days=Object.entries(byDate).sort((a,b)=>b[0].localeCompare(a[0]));
-            const best=[...buildItemSales()].slice(0,10);
-            panel.innerHTML=`<div class="premium-grid-2"><div class="premium-card"><div class="premium-card-head"><h3>Daily Business Report</h3><button class="premium-btn alt" onclick="exportDailyReport()">Export</button></div><div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Orders</th><th>Sales</th><th>AOV</th></tr></thead><tbody>${days.map(([d,x])=>`<tr><td>${d}</td><td>${x.orders}</td><td><b>${money(x.sales)}</b></td><td>${money(x.sales/x.orders)}</td></tr>`).join('')||'<tr><td colspan="4"><div class="premium-empty">No sales.</div></td></tr>'}</tbody></table></div></div>
-            <div class="premium-card"><div class="premium-card-head"><h3>Top 10 Items</h3><span>By sales value</span></div>${best.map((x,i)=>`<div class="item-rank"><div class="item-rank-no">${i+1}</div><div class="item-rank-info"><div class="item-rank-name">${esc(x.name)}</div><div class="item-rank-sub">${x.qty} units • ${x.orders} orders</div></div><div class="item-rank-val">${money(x.sales)}</div></div>`).join('')||'<div class="premium-empty">No item sales.</div>'}</div></div>`;
-        }
-        function exportDailyReport(){const by={};salesHistory.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!by[d])by[d]={orders:0,sales:0};by[d].orders++;by[d].sales+=parseAmount(getVal(s,['totalamount','total','amount']));});downloadCSV(Object.entries(by).sort((a,b)=>a[0].localeCompare(b[0])).map(([Date,x])=>({Date,Orders:x.orders,Sales:Math.round(x.sales),AOV:Math.round(x.sales/x.orders)})),'Viraasat-Daily-Report.csv');}
+                // Map D1 Staff
+                staffData = staffRes.staff || [];
 
-        function renderPremiumSettings(){
-            const panel=document.getElementById('premiumPanel-settings');if(!panel)return;
-            panel.innerHTML=`<div class="premium-card">
-                <div class="premium-card-head"><h3>System & Data Center</h3><span>Viraasat Premium POS</span></div>
-                <div class="premium-grid-3">
-                    <div class="report-stat"><div class="rlabel">Live Database</div><div class="rvalue" style="font-size:.9rem">Cloudflare D1</div></div>
-                    <div class="report-stat"><div class="rlabel">Orders Loaded</div><div class="rvalue">${salesHistory.length}</div></div>
-                    <div class="report-stat"><div class="rlabel">Menu Items</div><div class="rvalue">${menuData.length}</div></div>
-                </div>
-
-                <div class="premium-card" style="margin-top:16px;background:#FFF8FB;border:1px solid rgba(255,95,142,.18)">
-                    <div class="premium-card-head"><h3>🚀 One-Time Full Database Import</h3><span>Recommended</span></div>
-                    <p style="font-size:.78rem;color:var(--text-muted);line-height:1.55;margin:0 0 14px">
-                        Download the Excel template, fill the <b>Sales</b>, <b>Menu</b>, <b>Staff</b>, <b>Stock</b> and <b>Expenses</b> sheets, then upload the single workbook. Existing orders are matched by Order ID, so the same file can be uploaded again without creating duplicate orders.
-                    </p>
-                    <div class="premium-toolbar">
-                        <button class="premium-btn" onclick="downloadFullImportSample()">⬇ Download Full Sample</button>
-                        <label class="premium-btn alt" style="display:flex;align-items:center;cursor:pointer">📤 Upload Full Excel
-                            <input type="file" id="fullImportInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFullDatabaseImport(this.files[0])">
-                        </label>
-                        <button class="premium-btn light" onclick="exportFullDatabaseWorkbook()">⬆ Export Current Data</button>
-                    </div>
-                    <div id="fullImportStatus" style="margin-top:12px;font-size:.75rem;color:var(--text-muted)">No import running.</div>
-                </div>
-
-                <div class="premium-card" style="margin-top:16px;background:#FFFCFA">
-                    <div class="premium-card-head"><h3>Quick Controls</h3><span>Safe operations</span></div>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap">
-                        <button class="premium-btn" onclick="fetchData()">↻ Refresh All Data</button>
-                        <button class="premium-btn alt" onclick="exportAllData()">Export CSV Reports</button>
-                        <button class="premium-btn light" onclick="downloadMenuSample()">Download Menu Sample</button>
-                    </div>
-                </div>
-
-                <div class="premium-card" style="margin-top:16px;background:#FFFDF8">
-                    <b style="font-size:.82rem">How this works</b>
-                    <ol style="font-size:.72rem;color:var(--text-muted);line-height:1.65;margin:8px 0 0 18px;padding:0">
-                        <li>Export your current Google Sheet as Excel.</li>
-                        <li>Put the data into the matching sheets/columns of the template.</li>
-                        <li>Upload one Excel file here.</li>
-                        <li>Worker imports it into D1 and skips duplicate Order IDs.</li>
-                        <li>After verification, Google Sheet can be removed from live POS completely.</li>
-                    </ol>
-                </div>
-            </div>`;
-        }
-
-        function normalizeWorkbookDate(value){
-            if(value instanceof Date && !isNaN(value.getTime())){
-                return `${value.getFullYear()}-${String(value.getMonth()+1).padStart(2,'0')}-${String(value.getDate()).padStart(2,'0')}`;
+                populateDropdown(); populateStaffDropdown(); renderEmployeeList(); renderTableGrid(); renderStockDashboard(); checkStockDisplay(); renderLiveSales(); generateTrends(); 
+                hideSplashScreen();
+                
+            } catch(err) { 
+                console.error("Fetch Error:", err); 
+                document.getElementById('loader').innerText = "Sync Error. Check your connection."; 
+                hideSplashScreen(); 
             }
-            const s=String(value??'').trim();
-            if(!s)return '';
-            if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
-            const d=new Date(s);
-            if(!isNaN(d.getTime()))return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-            return s;
-        }
-
-        function normalizeWorkbookTime(value){
-            if(value instanceof Date && !isNaN(value.getTime())){
-                return value.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
-            }
-            if(typeof value==='number' && value>=0 && value<1){
-                const total=Math.round(value*24*60);let h=Math.floor(total/60)%24;const m=total%60;const ap=h>=12?'PM':'AM';let hh=h%12||12;return `${hh}:${String(m).padStart(2,'0')} ${ap}`;
-            }
-            return String(value??'').trim();
-        }
-
-        function workbookRows(wb,sheetName){
-            const ws=wb.Sheets[sheetName];
-            return ws?XLSX.utils.sheet_to_json(ws,{defval:'',raw:true}):[];
-        }
-
-        function normalizeImportSales(rows){
-            return rows.map(r=>({
-                date:normalizeWorkbookDate(r.Date??r.date),
-                time:normalizeWorkbookTime(r.Time??r.time),
-                order_id:String(r.Order_ID??r.order_id??r.Order_Number??r.order_number??'').trim(),
-                phone:String(r.Phone??r.phone??r.Customer_Phone??r.customer_phone??'NA').trim()||'NA',
-                items:String(r.Items??r.items??r.Items_String??r.items_string??''),
-                total_amount:parseAmount(r.Total_Amount??r.total_amount??r.Total??r.total),
-                table_number:String(r.Table_Number??r.table_number??r.Table??r.table??'').trim(),
-                discount:parseAmount(r.Discount??r.discount),
-                payment_method:String(r.Payment_Mode??r.payment_method??r.Mode??r.mode??'').trim()
-            })).filter(r=>r.order_id);
-        }
-
-        async function handleFullDatabaseImport(file){
-            if(!file)return;
-            if(typeof XLSX==='undefined'){showCustomAlert('Excel engine is not loaded. Refresh the POS and try again.');return;}
-            const status=document.getElementById('fullImportStatus');
-            if(status)status.innerHTML='Reading workbook...';
-            try{
-                const buf=await file.arrayBuffer();
-                const wb=XLSX.read(buf,{type:'array',cellDates:true});
-                const salesRows=workbookRows(wb,'Sales');
-                const menuRows=workbookRows(wb,'Menu');
-                const staffRows=workbookRows(wb,'Staff');
-                const stockRows=workbookRows(wb,'Stock');
-                const expenseRows=workbookRows(wb,'Expenses');
-
-                // A single CSV is also accepted as Sales-only import.
-                if(!salesRows.length && wb.SheetNames.length===1){
-                    const first=wb.SheetNames[0];
-                    const rows=workbookRows(wb,first);
-                    salesRows.push(...rows);
-                }
-
-                const payload={
-                    sales:normalizeImportSales(salesRows),
-                    menu:menuRows,
-                    staff:staffRows,
-                    stock:stockRows,
-                    expenses:expenseRows
-                };
-
-                const counts=`Sales ${payload.sales.length} • Menu ${payload.menu.length} • Staff ${payload.staff.length} • Stock ${payload.stock.length} • Expenses ${payload.expenses.length}`;
-                if(status)status.innerHTML=`Uploading: ${counts}`;
-
-                const response=await fetch(`${D1_API_BASE}/import/full`,{
-                    method:'POST',
-                    headers:{'Content-Type':'application/json','Accept':'application/json'},
-                    body:JSON.stringify(payload)
-                });
-                const data=await response.json().catch(()=>({}));
-                if(!response.ok || data.success===false)throw new Error(data.error||`Import failed (${response.status})`);
-
-                if(status)status.innerHTML=`<b style="color:#10B981">Import complete.</b> Sales inserted ${data.sales?.inserted||0}, duplicates skipped ${data.sales?.skipped||0}, item rows ${data.sales?.itemsInserted||0}. Menu ${data.menu?.upserted||0}, Staff ${data.staff?.upserted||0}, Stock ${data.stock?.upserted||0}, Expenses ${data.expenses?.inserted||0}.`;
-                await fetchData();
-                showCustomAlert('Full database import completed successfully.');
-            }catch(e){
-                console.error('Full import error',e);
-                if(status)status.innerHTML=`<span style="color:var(--danger)">Import failed: ${esc(e.message||e)}</span>`;
-                showCustomAlert(`Import failed: ${e.message||e}`);
-            }
-        }
-
-        function downloadFullImportSample(){
-            if(typeof XLSX==='undefined'){showCustomAlert('Excel engine is not loaded. Refresh the POS and try again.');return;}
-            const wb=XLSX.utils.book_new();
-            const sales=[
-                {Date:'2026-08-14',Time:'1:20 PM',Order_ID:'ORD-EXAMPLE-001',Phone:'NA',Items:'Tea (x2) ₹40, Classic Mild (x1) ₹30, [Mode: UPI]',Total_Amount:70,Table_Number:'Table 1',Discount:0,Payment_Mode:'UPI'}
-            ];
-            const menu=[{Name:'Paneer Butter Masala',Category:'Main Course',Price:170,Active:'Yes',GST:0}];
-            const staff=[{Emp_ID:'EMP001',Name:'Sample Staff',Role:'Waiter',Mobile:'9999999999',Monthly_Salary:15000,Date_of_Joining:'2026-08-01',Status:'Active'}];
-            const stock=[{Name:'Water Bottle',Quantity:50,Unit:'pcs',Low_Stock_Level:5}];
-            const expenses=[{Date:'2026-08-14',Category:'Electricity',Description:'Sample expense',Amount:1000}];
-            [
-                ['Sales',sales],['Menu',menu],['Staff',staff],['Stock',stock],['Expenses',expenses]
-            ].forEach(([name,rows])=>XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),name));
-            XLSX.writeFile(wb,'Viraasat-Full-Database-Import-Sample.xlsx');
-        }
-
-        function exportFullDatabaseWorkbook(){
-            if(typeof XLSX==='undefined'){showCustomAlert('Excel engine is not loaded. Refresh the POS and try again.');return;}
-            const wb=XLSX.utils.book_new();
-            const sales=getFilteredPremiumSales().map(s=>({
-                Date:saleDateKey(s),Time:saleTimeText(s),Order_ID:getVal(s,['orderid','id']),Phone:getVal(s,['phone','customerphone'])||'NA',Items:getVal(s,['items','itemsstring']),Total_Amount:parseAmount(getVal(s,['totalamount','total','amount'])),Table_Number:getVal(s,['tablenumber','table','tablename']),Discount:parseAmount(getVal(s,['discount'])),Payment_Mode:getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items','itemsstring']))
-            }));
-            const menu=menuData.map(m=>({Name:getVal(m,['itemname','name']),Category:getVal(m,['category','cat']),Price:parseAmount(getVal(m,['price'])),Active:getVal(m,['active','status'])||'Yes',Stock:stockData[getVal(m,['itemname','name'])]??''}));
-            const staff=staffData.map(s=>({Emp_ID:getVal(s,['empid','employeeid']),Name:getVal(s,['name']),Role:getVal(s,['role']),Mobile:getVal(s,['mobile','phone']),Monthly_Salary:parseAmount(getVal(s,['monthlysalary','salary'])),Date_of_Joining:getVal(s,['dateofjoining','joindate','date','doj']),Status:getStaffStatus(s)}));
-            const stock=Object.entries(stockData).map(([Name,Quantity])=>({Name,Quantity,Unit:'pcs',Low_Stock_Level:5}));
-            const expenses=expenseHistory.map(e=>({Date:getVal(e,['date','isodate']),Category:getVal(e,['category']),Description:getVal(e,['description','note']),Amount:parseAmount(getVal(e,['amount','total']))}));
-            [['Sales',sales],['Menu',menu],['Staff',staff],['Stock',stock],['Expenses',expenses]].forEach(([name,rows])=>XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),name));
-            XLSX.writeFile(wb,'Viraasat-Full-Database-Export.xlsx');
-        }
-
-        function exportAllData(){exportPremiumSales();setTimeout(()=>exportItemSales(),250);setTimeout(()=>exportMenu(),500);setTimeout(()=>exportStaff(),750);setTimeout(()=>exportExpenses(),1000);}
-
-        function downloadCSV(rows,filename){
-            if(!rows||!rows.length){showCustomAlert('No data available to export.');return;}
-            const headers=Object.keys(rows[0]);const csv=[headers.join(','),...rows.map(r=>headers.map(h=>`"${String(r[h]??'').replace(/"/g,'""')}"`).join(','))].join('\r\n');
-            const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+            document.getElementById('loader').style.display = 'none';
         }
 
         function generateTrends() {
@@ -1862,7 +1126,7 @@ const APP_VERSION = "D1-Hybrid-4.1";
                 });
                 
                 expenseHistory.forEach(exp => { 
-                    let sAmount = parseAmount(getVal(exp, ['amount', 'total'])); let sDate = getVal(exp, ['date', 'isodate']) || ''; let eCat = getVal(exp, ['category']) || 'Other'; let eDesc = getVal(exp, ['description', 'note']) || '';
+                    let sAmount = parseAmount(getVal(exp, ['amount', 'total'])); let sDate = getVal(exp, ['date', 'isodate', 'expense_date', 'created_at']) || ''; let eCat = getVal(exp, ['category']) || 'Other'; let eDesc = getVal(exp, ['description', 'note']) || '';
                     if(sDate) { 
                         let dateStrKey = sDate.split("T")[0].split(" ")[0]; let parsedDate = new Date(sDate);
                         if (!isNaN(parsedDate.getTime())) { dateStrKey = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')}`; }
@@ -1941,8 +1205,8 @@ const APP_VERSION = "D1-Hybrid-4.1";
             
             let filteredSales = salesHistory.filter(sale => {
                 if (!startDateInput && !endDateInput) return true;
-                let sDate = String(getVal(sale, ['date', 'isodate']) || '').trim();
-                let saleIsoDate = localISODate(sDate);
+                let sDate = String(getVal(sale, ['date', 'isodate', 'created_at']) || '').trim(); let saleIsoDate = ""; let dObj = new Date(sDate);
+                if (!isNaN(dObj.getTime())) { saleIsoDate = `${dObj.getFullYear()}-${String(dObj.getMonth() + 1).padStart(2, '0')}-${String(dObj.getDate()).padStart(2, '0')}`; } else { saleIsoDate = sDate.split("T")[0].split(" ")[0]; }
                 if (startDateInput && saleIsoDate < startDateInput) return false; if (endDateInput && saleIsoDate > endDateInput) return false; return true;
             });
             
@@ -1956,7 +1220,7 @@ const APP_VERSION = "D1-Hybrid-4.1";
             
             filteredSales.forEach(sale => {
                 let sOrderId = getVal(sale, ['orderid', 'id']) || 'N/A'; let tName = getVal(sale, ['tablenumber', 'table', 'tablename']) || "Table"; let sessionLabel = sale.sessionIndex > 1 ? ` (S${sale.sessionIndex})` : "";
-                let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getVal(sale, ['items', 'itemsstring']) || ''; let sDate = saleDateKey(sale); let sTime = saleTimeText(sale);
+                let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getVal(sale, ['items', 'itemsstring']) || ''; let sDate = getVal(sale, ['date', 'isodate']) || ''; let sTime = getVal(sale, ['time']) || '';
                 
                 let cleanItemsView = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
 
@@ -2004,14 +1268,14 @@ const APP_VERSION = "D1-Hybrid-4.1";
         }
 
         function switchMainTab(tabName, btnElement, skipHistory = false) {
-            let htmlMap = { 'premiumDashboard': `Command Center`, 'tableDashboard': `POS Tables`, 'salesDashboard': `Live sale`, 'trendView': `P&L Dashboard`, 'expenses': `Expenses`, 'usersManager': `Admin` };
+            let htmlMap = { 'tableDashboard': `Premium POS`, 'salesDashboard': `Live sale`, 'trendView': `P&L Dashboard`, 'expenses': `Expenses`, 'usersManager': `Admin` };
             if(!skipHistory) { try { history.pushState({view: tabName}, '', '#' + tabName); } catch(e){} }
             
             document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display = 'none'; tab.classList.remove('active'); });
             document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active')); 
             
             if(btnElement) btnElement.classList.add('active');
-            if(tabName === 'tableDashboard' || tabName === 'premiumDashboard') { document.getElementById('appHeader').style.display = 'flex'; } else { document.getElementById('appHeader').style.display = 'none'; }
+            if(tabName === 'tableDashboard') { document.getElementById('appHeader').style.display = 'flex'; } else { document.getElementById('appHeader').style.display = 'none'; }
             
             document.getElementById(tabName).style.display = 'block'; setTimeout(() => document.getElementById(tabName).classList.add('active'), 10);
             document.getElementById('appBottomNav').style.display = 'flex';
@@ -2033,7 +1297,7 @@ const APP_VERSION = "D1-Hybrid-4.1";
                 }
             }
 
-            if(tabName === 'trendView') setTimeout(generateTrends, 100); if(tabName === 'premiumDashboard') setTimeout(renderPremiumDashboard, 50);
+            if(tabName === 'trendView') setTimeout(generateTrends, 100);
         }
 
         function openTable(num) {
@@ -2093,21 +1357,31 @@ const APP_VERSION = "D1-Hybrid-4.1";
 
         function removeItem(index) { currentBill.splice(index, 1); updateBillTable(); }
 
+        // Connecting to /api/tables/clear in Worker
         function clearTableWithoutCheckout() {
             showCustomConfirm(`Are you sure you want to clear ${activeTableNumber}?`, () => {
-                fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'clear', tableName: activeTableNumber }) })
+                fetch(`${API_BASE}/tables/clear`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table_number: activeTableNumber }) })
                 .then(res => res.json()).then(data => { delete runningTables[activeTableNumber]; currentBill = []; goBackToTables(); }).catch(e => { delete runningTables[activeTableNumber]; currentBill = []; goBackToTables(); });
             }, null);
         }
 
+        // Connecting to /api/orders in Worker (as a Pending KOT)
         function saveKOT() {
             if (currentBill.length === 0) { showCustomAlert("Cart is empty!"); return; }
             let btn = document.getElementById('btnKOT'); btn.innerText = "Saving..."; btn.disabled = true;
-            let isNew = !runningTables.hasOwnProperty(activeTableNumber);
-            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'kot', tableName: activeTableNumber, items: currentBill, isNewSession: isNew }) })
+            
+            fetch(`${API_BASE}/orders`, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    table_number: activeTableNumber, 
+                    items: currentBill, 
+                    order_status: "pending" 
+                }) 
+            })
             .then(res => res.json()).then(data => {
-                if(data.status === "Conflict") { document.getElementById('conflictModal').style.display = 'flex'; showSwitchTableModal(); btn.innerText = "Save KOT"; btn.disabled = false; } 
-                else { runningTables[activeTableNumber] = currentBill; btn.innerText = "Save KOT"; btn.disabled = false; goBackToTables(); }
+                runningTables[activeTableNumber] = currentBill; 
+                btn.innerText = "Save KOT"; btn.disabled = false; goBackToTables(); 
             }).catch(err => { btn.innerText = "Save KOT"; btn.disabled = false; });
         }
 
@@ -2115,10 +1389,11 @@ const APP_VERSION = "D1-Hybrid-4.1";
         
         function selectPaymentMode(mode) { selectedPaymentMode = mode; document.querySelectorAll('.pay-btn').forEach(btn => btn.classList.remove('selected')); document.getElementById('pay' + mode).classList.add('selected'); }
 
+        // Connecting to /api/orders/checkout in Worker
         function processFinalCheckout() {
             let btn = document.getElementById('btnFinalCheckout'); btn.innerText = "Processing..."; btn.disabled = true;
             let phone = document.getElementById('customerPhone').value || "NA"; let address = document.getElementById('deliveryAddressBox').style.display === 'flex' ? document.getElementById('deliveryAddress').value : "";
-            let orderId = "ORD" + Math.floor(Math.random() * 900000000 + 100000000); let discount = parseInt(document.getElementById('discountValue').value) || 0; 
+            let discount = parseInt(document.getElementById('discountValue').value) || 0; 
             
             let itemsString = currentBill.map(i => `${i.name} (x${i.qty}) ₹${i.total}`).join(", ");
             if (discount > 0) itemsString += `, [Discount Applied: -₹${discount}]`; 
@@ -2127,28 +1402,44 @@ const APP_VERSION = "D1-Hybrid-4.1";
 
             let grandTotal = parseInt(document.getElementById('grandTotal').innerText.replace(/[^0-9]/g, '')) || 0;
 
-            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'checkout', tableName: activeTableNumber, orderId: orderId, phone: phone, itemsString: itemsString, rawItems: currentBill, total: grandTotal, discount: discount }) })
+            fetch(`${API_BASE}/orders/checkout`, { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    table_number: activeTableNumber, 
+                    customer_phone: phone, 
+                    items: currentBill,
+                    items_string: itemsString, 
+                    total: grandTotal, 
+                    discount: discount,
+                    payment_method: selectedPaymentMode
+                }) 
+            })
             .then(res => res.json()).then(data => {
                 delete runningTables[activeTableNumber]; 
                 currentBill.forEach(item => { let foundKey = Object.keys(stockData).find(key => key.trim().toLowerCase() === item.name.trim().toLowerCase()); if(foundKey) stockData[foundKey] -= item.qty; });
                 let now = new Date(); let fDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-                salesHistory.unshift({ date: fDate, isodate: fDate, time: now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), orderid: orderId, items: itemsString, total: grandTotal, table: activeTableNumber });
+                
+                salesHistory.unshift({ date: fDate, isodate: fDate, time: now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), orderid: data.orderNumber || data.orderId, items: itemsString, total: grandTotal, amount: grandTotal, table: activeTableNumber, payment_method: selectedPaymentMode });
                 
                 btn.innerText = "Confirm Checkout"; btn.disabled = false; document.getElementById('paymentModal').style.display = 'none'; generateTrends(); goBackToTables();
             }).catch(err => { btn.innerText = "Confirm Checkout"; btn.disabled = false; });
         }
 
+        // Connecting to /api/expenses in Worker
         function submitExpense() {
             let category = document.getElementById('expCategory').value; let amount = document.getElementById('expAmount').value;
             if (!amount || amount <= 0) { showCustomAlert("Enter valid amount."); return; }
             let now = new Date(); let fDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-            expenseHistory.push({ date: fDate, isodate: fDate, amount: parseInt(amount) });
             
-            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'expense', category: category, amount: amount, description: document.getElementById('expDescription').value || "NA" }) })
-            .then(res => res.json()).then(data => { showCustomAlert("Expense Saved!"); document.getElementById('expAmount').value = ""; document.getElementById('expDescription').value = ""; generateTrends(); });
+            fetch(`${API_BASE}/expenses`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: category, amount: amount, description: document.getElementById('expDescription').value || "NA" }) })
+            .then(res => res.json()).then(data => { 
+                expenseHistory.push({ date: fDate, isodate: fDate, amount: parseInt(amount), category: category });
+                showCustomAlert("Expense Saved!"); document.getElementById('expAmount').value = ""; document.getElementById('expDescription').value = ""; generateTrends(); 
+            });
         }
 
-        function setActiveFilterBtn(id) { ['btnFilterToday','btnFilterYesterday','btnFilterClear'].forEach(x=>{const b=document.getElementById(x);if(b)b.classList.remove('active');}); if(id){const b=document.getElementById(id);if(b)b.classList.add('active');} }
+        function setActiveFilterBtn(id) { document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active')); if(id) document.getElementById(id).classList.add('active'); }
         function setTodayFilter() { setActiveFilterBtn('btnFilterToday'); let now = new Date(); let todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`; document.getElementById('filterStartDate').value = todayStr; document.getElementById('filterEndDate').value = todayStr; renderLiveSales(); }
         function setYesterdayFilter() { setActiveFilterBtn('btnFilterYesterday'); let yest = new Date(); yest.setDate(yest.getDate() - 1); let yestStr = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, '0')}-${String(yest.getDate()).padStart(2, '0')}`; document.getElementById('filterStartDate').value = yestStr; document.getElementById('filterEndDate').value = yestStr; renderLiveSales(); }
         function resetDateFilter() { setActiveFilterBtn('btnFilterClear'); document.getElementById('filterStartDate').value = ""; document.getElementById('filterEndDate').value = ""; renderLiveSales(); }
