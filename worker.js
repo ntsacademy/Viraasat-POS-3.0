@@ -191,7 +191,8 @@ async function getOrders(db, limit = 200) {
       ${pick("order_type", "'Takeaway' AS order_type")},
       ${pick("subtotal", "0 AS subtotal")},
       ${pick("discount", "0 AS discount")},
-      ${pick("grand_total",
+      ${pick(
+        "grand_total",
         cols.includes("total")
           ? "total AS grand_total"
           : "0 AS grand_total"
@@ -460,13 +461,27 @@ async function createOrder(db, body) {
   add("discount", discount);
   add("grand_total", grandTotal);
   add("total", grandTotal);
+
   add(
     "payment_method",
-    clean(body.payment_method || body.paymentMethod) || "Cash"
+    clean(
+      body.payment_method ||
+      body.paymentMethod
+    ) || "Cash"
   );
-  add("payment_status", body.payment_status || "paid");
-  add("order_status", body.order_status || "completed");
+
+  add(
+    "payment_status",
+    body.payment_status || "paid"
+  );
+
+  add(
+    "order_status",
+    body.order_status || "completed"
+  );
+
   add("items", JSON.stringify(items));
+
   add(
     "items_string",
     items
@@ -476,6 +491,7 @@ async function createOrder(db, body) {
       )
       .join(", ")
   );
+
   add("created_at", new Date().toISOString());
   add("updated_at", new Date().toISOString());
 
@@ -501,7 +517,10 @@ async function createOrder(db, body) {
     result.lastInsertRowid ||
     null;
 
-  // Save order items
+  // ----------------------------------------------------------
+  // SAVE ORDER ITEMS
+  // ----------------------------------------------------------
+
   if (
     orderId &&
     await tableExists(db, "order_items")
@@ -521,15 +540,62 @@ async function createOrder(db, body) {
       }
 
       addItem("order_id", orderId);
+
       addItem(
         "menu_item_id",
         item.id || item.menu_item_id || null
       );
-      addItem("name", clean(item.name));
-      addItem("quantity", num(item.qty,1));
-      addItem("qty", num(item.qty,1));
-      addItem("price", num(item.price));
-      addItem("unit_price", num(item.price));
+
+      // IMPORTANT:
+      // Your D1 order_items table uses item_name.
+      // Support both item_name and name safely.
+      if (itemCols.includes("item_name")) {
+        addItem(
+          "item_name",
+          clean(item.name)
+        );
+      } else if (itemCols.includes("name")) {
+        addItem(
+          "name",
+          clean(item.name)
+        );
+      }
+
+      addItem(
+        "quantity",
+        num(item.qty, 1)
+      );
+
+      if (itemCols.includes("qty")) {
+        addItem(
+          "qty",
+          num(item.qty, 1)
+        );
+      }
+
+      if (itemCols.includes("price")) {
+        addItem(
+          "price",
+          num(item.price)
+        );
+      }
+
+      if (itemCols.includes("unit_price")) {
+        addItem(
+          "unit_price",
+          num(item.price)
+        );
+      }
+
+      addItem(
+        "gst_percent",
+        num(
+          item.gst_percent ??
+          item.gst ??
+          0
+        )
+      );
+
       addItem(
         "total",
         num(
@@ -541,7 +607,9 @@ async function createOrder(db, body) {
       const itemFields =
         Object.keys(itemValues);
 
-      if (!itemFields.length) continue;
+      if (!itemFields.length) {
+        continue;
+      }
 
       await db.prepare(`
         INSERT INTO order_items
@@ -674,7 +742,6 @@ export default {
       // ------------------------------------------------------
 
       if (path === "/") {
-
         return new Response(
           "Viraasat POS API is running",
           {
@@ -794,12 +861,14 @@ export default {
 
         return json({
           success: true,
-          id: result.meta?.last_row_id || null
+          id:
+            result.meta?.last_row_id ||
+            null
         });
       }
 
       // ------------------------------------------------------
-      // TABLES
+      // TABLES GET
       // ------------------------------------------------------
 
       if (
