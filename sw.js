@@ -1,41 +1,47 @@
-const CACHE_NAME = "viraasat-pos-3.0-v1";
+const CACHE_NAME = "viraasat-pos-dynamic-v2";
 
-const APP_FILES = [
-    "./",
-    "./index.html",
-    "./style.css",
-    "./app.js",
-    "./manifest.json"
-];
-
-// Install
+// Install: Skip waiting to force immediate update
 self.addEventListener("install", event => {
-    event.waitUntil(
-        caches.open(CACHE_NAME)
-            .then(cache => cache.addAll(APP_FILES))
-            .then(() => self.skipWaiting())
-    );
+    self.skipWaiting();
 });
 
-// Activate
+// Activate: Clean up old caches
 self.addEventListener("activate", event => {
     event.waitUntil(
-        caches.keys().then(cacheNames =>
-            Promise.all(
-                cacheNames
-                    .filter(name => name !== CACHE_NAME)
-                    .map(name => caches.delete(name))
-            )
-        ).then(() => self.clients.claim())
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cache => {
+                    if (cache !== CACHE_NAME) {
+                        return caches.delete(cache);
+                    }
+                })
+            );
+        })
     );
+    self.clients.claim();
 });
 
-// Fetch
+// Fetch: Network First, Fallback to Cache
 self.addEventListener("fetch", event => {
+    // Only cache GET requests
+    if (event.request.method !== "GET") return;
+
+    // Do not cache API calls
+    if (event.request.url.includes("/api/")) return;
+
     event.respondWith(
-        caches.match(event.request)
-            .then(cachedResponse => {
-                return cachedResponse || fetch(event.request);
+        fetch(event.request)
+            .then(networkResponse => {
+                // Save the newest version to cache
+                const responseClone = networkResponse.clone();
+                caches.open(CACHE_NAME).then(cache => {
+                    cache.put(event.request, responseClone);
+                });
+                return networkResponse;
+            })
+            .catch(() => {
+                // If offline, serve from cache
+                return caches.match(event.request);
             })
     );
 });
