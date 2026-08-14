@@ -1,11 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
   <title>Viraasat POS - Menu Import</title>
 
   <style>
+
     body {
       font-family: Arial, sans-serif;
       background: #f7f5f2;
@@ -95,7 +103,8 @@
       font-size: 14px;
     }
 
-    th, td {
+    th,
+    td {
       border: 1px solid #ddd;
       padding: 10px;
       text-align: left;
@@ -113,8 +122,27 @@
       margin-top: 15px;
       font-weight: bold;
     }
+
+    .warning {
+      background: #fff3cd;
+      color: #856404;
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 15px;
+    }
+
+    .import-summary {
+      margin-top: 15px;
+      padding: 15px;
+      background: #f5f5f5;
+      border-radius: 8px;
+      line-height: 1.7;
+    }
+
   </style>
+
 </head>
+
 
 <body>
 
@@ -126,12 +154,13 @@
     Excel / CSV se menu items ko Viraasat POS database me import karein.
   </div>
 
+
   <div class="upload-box">
 
     <h3>📁 Menu File Select Karein</h3>
 
     <p>
-      Excel file ko CSV format me save karke upload karein.
+      Excel file ko CSV UTF-8 format me save karke upload karein.
     </p>
 
     <input
@@ -148,57 +177,272 @@
 
   </div>
 
-  <div id="status" class="status"></div>
 
-  <div id="previewSection" class="hidden">
+  <div
+    id="status"
+    class="status"
+  ></div>
+
+
+  <div
+    id="previewSection"
+    class="hidden"
+  >
 
     <h3>Menu Preview</h3>
 
-    <div id="count" class="count"></div>
+    <div
+      id="count"
+      class="count"
+    ></div>
+
+
+    <div
+      id="warning"
+      class="warning hidden"
+    ></div>
+
 
     <table id="previewTable">
+
       <thead>
+
         <tr>
+
           <th>Name</th>
+
           <th>Category</th>
+
           <th>Price</th>
+
           <th>GST %</th>
+
           <th>Available</th>
+
         </tr>
+
       </thead>
 
+
       <tbody></tbody>
+
     </table>
+
 
     <br>
 
-    <button id="importBtn" onclick="importMenu()">
+
+    <button
+      id="importBtn"
+      onclick="importMenu()"
+    >
       🚀 Import All Menu Items
     </button>
+
+
+    <div
+      id="importSummary"
+      class="import-summary hidden"
+    ></div>
 
   </div>
 
 </div>
 
+
 <script>
 
 let menuItems = [];
 
+
+
+/* =========================================================
+   STATUS MESSAGE
+========================================================= */
+
 function showStatus(message, type) {
 
-  const status = document.getElementById("status");
+  const status =
+    document.getElementById("status");
 
   status.innerText = message;
-  status.className = "status " + type;
+
+  status.className =
+    "status " + type;
+
   status.style.display = "block";
 }
 
 
+
+/* =========================================================
+   CSV PARSER
+   Handles commas inside quotes correctly.
+========================================================= */
+
+function parseCSVLine(line) {
+
+  const result = [];
+
+  let current = "";
+
+  let insideQuotes = false;
+
+
+  for (
+    let i = 0;
+    i < line.length;
+    i++
+  ) {
+
+    const char = line[i];
+
+
+    if (char === '"') {
+
+      if (
+        insideQuotes &&
+        line[i + 1] === '"'
+      ) {
+
+        current += '"';
+
+        i++;
+
+      } else {
+
+        insideQuotes =
+          !insideQuotes;
+
+      }
+
+    }
+
+    else if (
+      char === "," &&
+      !insideQuotes
+    ) {
+
+      result.push(
+        current.trim()
+      );
+
+      current = "";
+
+    }
+
+    else {
+
+      current += char;
+
+    }
+
+  }
+
+
+  result.push(
+    current.trim()
+  );
+
+
+  return result;
+}
+
+
+
+/* =========================================================
+   CLEAN VALUE
+========================================================= */
+
+function cleanValue(value) {
+
+  if (
+    value === null ||
+    value === undefined
+  ) {
+
+    return "";
+
+  }
+
+
+  return String(value)
+
+    .replace(/^\uFEFF/, "")
+
+    .trim()
+
+    .replace(/^"|"$/g, "")
+
+    .trim();
+
+}
+
+
+
+/* =========================================================
+   NUMBER CLEANER
+========================================================= */
+
+function cleanNumber(value) {
+
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+
+    return 0;
+
+  }
+
+
+  let text =
+    String(value);
+
+
+  text =
+    text
+      .replace(/₹/g, "")
+      .replace(/,/g, "")
+      .replace(/%/g, "")
+      .trim();
+
+
+  const number =
+    Number(text);
+
+
+  if (
+    Number.isFinite(number)
+  ) {
+
+    return number;
+
+  }
+
+
+  return 0;
+
+}
+
+
+
+/* =========================================================
+   READ FILE
+========================================================= */
+
 function readFile() {
 
-  const fileInput = document.getElementById("fileInput");
+  const fileInput =
+    document.getElementById(
+      "fileInput"
+    );
 
-  if (!fileInput.files.length) {
+
+  if (
+    !fileInput.files.length
+  ) {
 
     showStatus(
       "Please pehle CSV file select karein.",
@@ -206,148 +450,457 @@ function readFile() {
     );
 
     return;
+
   }
 
-  const file = fileInput.files[0];
 
-  const reader = new FileReader();
+  const file =
+    fileInput.files[0];
 
-  reader.onload = function(event) {
 
-    try {
+  const reader =
+    new FileReader();
 
-      const text = event.target.result;
 
-      const lines = text
-        .split(/\r?\n/)
-        .filter(line => line.trim() !== "");
+  reader.onload =
+    function(event) {
 
-      if (lines.length < 2) {
+      try {
+
+        const text =
+          event.target.result;
+
+
+        const lines =
+          text
+            .split(/\r?\n/)
+            .filter(
+              line =>
+                line.trim() !== ""
+            );
+
+
+        if (
+          lines.length < 2
+        ) {
+
+          showStatus(
+            "File me data nahi mila.",
+            "error"
+          );
+
+          return;
+
+        }
+
+
+
+        /* -----------------------------------------
+           HEADER ROW
+        ----------------------------------------- */
+
+        const headers =
+          parseCSVLine(lines[0])
+
+            .map(
+              h =>
+                cleanValue(h)
+                  .toLowerCase()
+            );
+
+
+
+        /* -----------------------------------------
+           RESET OLD DATA
+        ----------------------------------------- */
+
+        menuItems = [];
+
+
+
+        /* -----------------------------------------
+           READ EACH ROW
+        ----------------------------------------- */
+
+        for (
+          let i = 1;
+          i < lines.length;
+          i++
+        ) {
+
+          const values =
+            parseCSVLine(
+              lines[i]
+            );
+
+
+          const row = {};
+
+
+
+          headers.forEach(
+            (header, index) => {
+
+              row[header] =
+                cleanValue(
+                  values[index] || ""
+                );
+
+            }
+          );
+
+
+
+          /* ---------------------------------------
+             FIND ITEM NAME
+          --------------------------------------- */
+
+          const name =
+            cleanValue(
+
+              row.name ||
+
+              row.item ||
+
+              row.item_name ||
+
+              row.menu_item ||
+
+              ""
+
+            );
+
+
+
+          /* ---------------------------------------
+             FIND CATEGORY
+          --------------------------------------- */
+
+          const category =
+            cleanValue(
+
+              row.category ||
+
+              row.categories ||
+
+              ""
+
+            );
+
+
+
+          /* ---------------------------------------
+             FIND PRICE
+          --------------------------------------- */
+
+          const price =
+            cleanNumber(
+
+              row.price ||
+
+              row.rate ||
+
+              row.mrp ||
+
+              row.selling_price ||
+
+              0
+
+            );
+
+
+
+          /* ---------------------------------------
+             FIND GST
+          --------------------------------------- */
+
+          const gst =
+            cleanNumber(
+
+              row.gst_percent ||
+
+              row.gst ||
+
+              row.gst_percentage ||
+
+              0
+
+            );
+
+
+
+          /* ---------------------------------------
+             AVAILABILITY
+          --------------------------------------- */
+
+          let available = 1;
+
+
+          const availability =
+            cleanValue(
+
+              row.is_available ||
+
+              row.available ||
+
+              row.status ||
+
+              ""
+
+            ).toLowerCase();
+
+
+
+          if (
+            availability === "0" ||
+            availability === "no" ||
+            availability === "false" ||
+            availability === "inactive" ||
+            availability === "unavailable"
+          ) {
+
+            available = 0;
+
+          }
+
+
+
+          /* ---------------------------------------
+             CREATE ITEM
+          --------------------------------------- */
+
+          const item = {
+
+            name: name,
+
+            category: category,
+
+            price: price,
+
+            gst_percent: gst,
+
+            is_available: available
+
+          };
+
+
+
+          /* ---------------------------------------
+             ONLY ADD VALID ITEM
+          --------------------------------------- */
+
+          if (
+            item.name.trim() !== ""
+          ) {
+
+            menuItems.push(item);
+
+          }
+
+        }
+
+
+
+        showPreview();
+
+
+      }
+
+      catch (error) {
+
+        console.error(error);
+
 
         showStatus(
-          "File me data nahi mila.",
+          "File read karte waqt error: " +
+          error.message,
           "error"
         );
 
-        return;
       }
 
-      const headers = lines[0]
-        .split(",")
-        .map(h => h.trim().toLowerCase());
+    };
 
-      menuItems = [];
-
-      for (let i = 1; i < lines.length; i++) {
-
-        const values = lines[i]
-          .split(",")
-          .map(v => v.trim());
-
-        if (!values.length) continue;
-
-        const row = {};
-
-        headers.forEach((header, index) => {
-          row[header] = values[index] || "";
-        });
-
-        const item = {
-
-          name:
-            row.name ||
-            row.item ||
-            row.item_name ||
-            "",
-
-          category:
-            row.category ||
-            "",
-
-          price:
-            Number(
-              row.price ||
-              row.rate ||
-              0
-            ),
-
-          gst_percent:
-            Number(
-              row.gst_percent ||
-              row.gst ||
-              0
-            ),
-
-          is_available:
-            row.is_available === "0"
-              ? 0
-              : 1
-        };
-
-        if (item.name) {
-          menuItems.push(item);
-        }
-      }
-
-      showPreview();
-
-    } catch (error) {
-
-      showStatus(
-        "File read karte waqt error: " + error.message,
-        "error"
-      );
-
-    }
-
-  };
 
   reader.readAsText(file);
+
 }
 
+
+
+/* =========================================================
+   SHOW PREVIEW
+========================================================= */
 
 function showPreview() {
 
   const section =
-    document.getElementById("previewSection");
+    document.getElementById(
+      "previewSection"
+    );
+
 
   const tbody =
-    document.querySelector("#previewTable tbody");
+    document.querySelector(
+      "#previewTable tbody"
+    );
+
 
   tbody.innerHTML = "";
 
-  menuItems.forEach(item => {
 
-    const tr = document.createElement("tr");
 
-    tr.innerHTML = `
-      <td>${escapeHtml(item.name)}</td>
-      <td>${escapeHtml(item.category)}</td>
-      <td>₹${item.price}</td>
-      <td>${item.gst_percent}%</td>
-      <td>${item.is_available ? "Yes" : "No"}</td>
-    `;
+  /* -----------------------------------------
+     EMPTY CHECK
+  ----------------------------------------- */
 
-    tbody.appendChild(tr);
+  if (
+    menuItems.length === 0
+  ) {
 
-  });
+    showStatus(
+      "Koi valid menu item nahi mila.",
+      "error"
+    );
 
-  document.getElementById("count").innerText =
-    "Total items found: " + menuItems.length;
+    return;
 
-  section.classList.remove("hidden");
+  }
+
+
+
+  /* -----------------------------------------
+     PREVIEW ROWS
+  ----------------------------------------- */
+
+  menuItems.forEach(
+    item => {
+
+      const tr =
+        document.createElement(
+          "tr"
+        );
+
+
+      tr.innerHTML = `
+
+        <td>
+          ${escapeHtml(item.name)}
+        </td>
+
+        <td>
+          ${escapeHtml(item.category)}
+        </td>
+
+        <td>
+          ₹${item.price}
+        </td>
+
+        <td>
+          ${item.gst_percent}%
+        </td>
+
+        <td>
+          ${
+            item.is_available
+              ? "Yes"
+              : "No"
+          }
+        </td>
+
+      `;
+
+
+      tbody.appendChild(tr);
+
+    }
+  );
+
+
+
+  /* -----------------------------------------
+     COUNT
+  ----------------------------------------- */
+
+  document.getElementById(
+    "count"
+  ).innerText =
+    "Total items found: " +
+    menuItems.length;
+
+
+
+  /* -----------------------------------------
+     PRICE WARNING
+  ----------------------------------------- */
+
+  const zeroPriceItems =
+    menuItems.filter(
+      item =>
+        item.price <= 0
+    );
+
+
+  const warning =
+    document.getElementById(
+      "warning"
+    );
+
+
+  if (
+    zeroPriceItems.length > 0
+  ) {
+
+    warning.classList.remove(
+      "hidden"
+    );
+
+
+    warning.innerText =
+      "⚠️ " +
+      zeroPriceItems.length +
+      " items ka price ₹0 read hua hai. Import karne se pehle please check karein.";
+
+  }
+
+  else {
+
+    warning.classList.add(
+      "hidden"
+    );
+
+  }
+
+
+
+  section.classList.remove(
+    "hidden"
+  );
+
+
 
   showStatus(
+
     menuItems.length +
-    " menu items successfully read. Import karne ke liye button dabayein.",
+    " menu items successfully read. Import karne se pehle preview check karein.",
+
     "success"
+
   );
+
 }
 
 
+
+/* =========================================================
+   IMPORT MENU
+========================================================= */
+
 async function importMenu() {
 
-  if (!menuItems.length) {
+  if (
+    !menuItems.length
+  ) {
 
     showStatus(
       "Import karne ke liye koi menu item nahi hai.",
@@ -355,42 +908,64 @@ async function importMenu() {
     );
 
     return;
+
   }
 
+
+
   const button =
-    document.getElementById("importBtn");
+    document.getElementById(
+      "importBtn"
+    );
+
 
   button.disabled = true;
 
+
   button.innerText =
     "⏳ Importing...";
+
 
   showStatus(
     "Menu database me save ho raha hai...",
     "info"
   );
 
+
+
   try {
 
-    const response = await fetch(
-      "/api/menu/import",
-      {
-        method: "POST",
+    const response =
+      await fetch(
+        "/api/menu/import",
+        {
 
-        headers: {
-          "Content-Type": "application/json"
-        },
+          method: "POST",
 
-        body: JSON.stringify({
-          items: menuItems
-        })
-      }
-    );
+          headers: {
+            "Content-Type":
+              "application/json"
+          },
+
+          body:
+            JSON.stringify({
+              items: menuItems
+            })
+
+        }
+      );
+
+
 
     const result =
       await response.json();
 
-    if (!response.ok || !result.success) {
+
+
+    if (
+      !response.ok ||
+      !result.success
+    ) {
 
       throw new Error(
         result.error ||
@@ -399,42 +974,111 @@ async function importMenu() {
 
     }
 
+
+
+    /* -----------------------------------------
+       SUCCESS
+    ----------------------------------------- */
+
     showStatus(
       "✅ Menu successfully imported into Viraasat POS database.",
       "success"
     );
 
+
     button.innerText =
       "✅ Import Completed";
 
-  } catch (error) {
+
+
+    const summary =
+      document.getElementById(
+        "importSummary"
+      );
+
+
+    summary.classList.remove(
+      "hidden"
+    );
+
+
+    summary.innerHTML = `
+
+      <strong>Import completed successfully.</strong>
+
+      <br>
+
+      Total items sent:
+      ${menuItems.length}
+
+    `;
+
+
+
+  }
+
+  catch (error) {
 
     console.error(error);
 
+
     showStatus(
-      "❌ Import failed: " + error.message,
+      "❌ Import failed: " +
+      error.message,
       "error"
     );
 
-    button.disabled = false;
+
+    button.disabled =
+      false;
+
 
     button.innerText =
       "🚀 Import All Menu Items";
+
   }
+
 }
 
+
+
+/* =========================================================
+   HTML SECURITY
+========================================================= */
 
 function escapeHtml(value) {
 
   return String(value)
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+
+    .replace(
+      /&/g,
+      "&amp;"
+    )
+
+    .replace(
+      /</g,
+      "&lt;"
+    )
+
+    .replace(
+      />/g,
+      "&gt;"
+    )
+
+    .replace(
+      /"/g,
+      "&quot;"
+    )
+
+    .replace(
+      /'/g,
+      "&#039;"
+    );
+
 }
 
 </script>
 
 </body>
+
 </html>
