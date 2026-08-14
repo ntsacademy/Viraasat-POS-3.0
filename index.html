@@ -652,11 +652,11 @@
     <div id="printSection"></div>
 
     <script>
-        const scriptURL = 'https://script.google.com/macros/s/AKfycbyKuVmEYRbJaYkdUDVNcU9c6mDT4q-VMTESwrikIZvJwK6PteEVwMObdmTMcgqR12KIPA/exec';
-        // Cloudflare Worker + D1 API. Dashboard data is now read from D1.
-        const D1_API_BASE = '/api'; 
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbyKuVmEYRbJaYkdUDVNcU9c6mDT4q-VMTESwrikIZvJwK6PteEVwMObdmTMcgqR12KIPA/exec'; 
+        const D1_API_BASE = '/api';
+        const API_TIMEOUT_MS = 10000;
         
-const APP_VERSION = "D1-Mobile-3.3"; 
+const APP_VERSION = "D1-Hybrid-4.1"; 
         
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
@@ -797,10 +797,8 @@ const APP_VERSION = "D1-Mobile-3.3";
                 document.getElementById('appHeader').style.display = 'flex';
                 document.getElementById('appMain').style.display = 'block';
                 document.getElementById('appBottomNav').style.display = 'flex';
-                applyAdminRights(savedMobile);
-                // Never keep the splash screen visible while waiting for API/D1 data.
-                hideSplashScreen();
-                fetchData();
+                applyAdminRights(savedMobile); 
+                fetchData(); 
                 enforceBackTrap(); enforceBackTrap(); 
             } else { 
                 document.getElementById('loginScreen').style.display = 'flex'; 
@@ -959,19 +957,9 @@ const APP_VERSION = "D1-Mobile-3.3";
         function updateStockAdmin() {
             let item = document.getElementById('adminStockItem').value.trim(); let qty = parseInt(document.getElementById('adminStockQty').value);
             if(!item || isNaN(qty)) { showCustomAlert("Please enter valid item and quantity."); return; }
-            d1Post('/stock', {
-                name: item,
-                quantity: qty,
-                unit: 'pcs',
-                low_stock_level: 5
-            })
-            .then(async () => {
-                document.getElementById('adminStockItem').value = "";
-                document.getElementById('adminStockQty').value = "";
-                await fetchData();
-                showCustomAlert("Stock updated to " + qty + " for " + item);
-            })
-            .catch(e => showCustomAlert(`Stock update failed: ${e.message}`));
+            stockData[item] = qty; renderStockDashboard(); checkStockDisplay(); showCustomAlert("Stock updated to " + qty + " for " + item);
+            document.getElementById('adminStockItem').value = ""; document.getElementById('adminStockQty').value = "";
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'updateStock', item: item, qty: qty }) }).catch(e => console.log("Stock update sync failed"));
         }
 
         function addMenuItemUI() {
@@ -979,20 +967,9 @@ const APP_VERSION = "D1-Mobile-3.3";
             if(!name || isNaN(price) || price <= 0) { showCustomAlert("Please enter valid item name and price."); return; }
             let existing = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === name.toLowerCase());
             if(existing) { showCustomAlert("Item already exists!"); return; }
-            d1Post('/menu', {
-                name,
-                category: cat,
-                price,
-                gst_percent: 0,
-                is_available: 1
-            })
-            .then(async () => {
-                showCustomAlert(name + " added successfully!");
-                document.getElementById('newMenuName').value = "";
-                document.getElementById('newMenuPrice').value = "";
-                await fetchData();
-            })
-            .catch(e => showCustomAlert(`Menu addition failed: ${e.message}`));
+            let newItem = { name: name, price: price, category: cat }; menuData.push(newItem); populateDropdown(); 
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'addMenu', category: cat, name: name, price: price }) }).catch(e => console.log("Menu addition failed"));
+            showCustomAlert(name + " added successfully!"); document.getElementById('newMenuName').value = ""; document.getElementById('newMenuPrice').value = "";
         }
 
         function logoutUser(clearFields = true) {
@@ -1012,22 +989,11 @@ const APP_VERSION = "D1-Mobile-3.3";
         function addStaffUI() {
             let name = document.getElementById('newStaffName').value.trim(); let mobile = document.getElementById('newStaffMobile').value.trim(); let role = document.getElementById('newStaffRole').value; let salary = parseInt(document.getElementById('newStaffSalary').value); let joinDate = document.getElementById('newStaffDate').value; 
             if(!name || mobile.length < 10 || isNaN(salary)) { showCustomAlert("Please fill all details correctly."); return; }
-            d1Post('/staff', {
-                name,
-                mobile,
-                role,
-                salary,
-                join_date: joinDate
-            })
-            .then(async () => {
-                showCustomAlert(`${name} added successfully!`);
-                document.getElementById('newStaffName').value = "";
-                document.getElementById('newStaffMobile').value = "";
-                document.getElementById('newStaffSalary').value = "";
-                document.getElementById('newStaffDate').value = "";
-                await fetchData();
-            })
-            .catch(err => showCustomAlert(`Staff save failed: ${err.message}`));
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'addStaff', name: name, mobile: mobile, role: role, salary: salary, joinDate: joinDate }) })
+            .then(res => res.json()).then(data => {
+                showCustomAlert(`${name} added successfully! Emp ID: ${data.empId}`);
+                document.getElementById('newStaffName').value = ""; document.getElementById('newStaffMobile').value = ""; document.getElementById('newStaffSalary').value = ""; document.getElementById('newStaffDate').value = ""; fetchData(); 
+            });
         }
 
         function calculateStaffBalance() {
@@ -1073,214 +1039,161 @@ const APP_VERSION = "D1-Mobile-3.3";
             window.open(`https://wa.me/91${sPhone}?text=${encodeURIComponent(slipText)}`, '_blank');
         }
 
-        async function d1Get(path, timeoutMs = 8000) {
+        async function d1Get(path, timeoutMs = API_TIMEOUT_MS) {
             const controller = new AbortController();
             const timer = setTimeout(() => controller.abort(), timeoutMs);
-
             try {
-                const response = await fetch(`${D1_API_BASE}${path}`, {
-                    method: 'GET',
-                    headers: { 'Accept': 'application/json' },
-                    cache: 'no-store',
-                    signal: controller.signal
-                });
-
-                const data = await response.json().catch(() => ({}));
-
-                if (!response.ok || data.success === false) {
-                    throw new Error(data.error || `D1 API error (${response.status})`);
-                }
-
+                const response = await fetch(`${D1_API_BASE}${path}`, { method:'GET', headers:{'Accept':'application/json'}, cache:'no-store', signal:controller.signal });
+                const data = await response.json().catch(()=>({}));
+                if (!response.ok || data.success === false) throw new Error(data.error || `D1 API error (${response.status})`);
                 return data;
-            } catch (error) {
-                if (error.name === 'AbortError') {
-                    throw new Error(`D1 request timeout: ${path}`);
-                }
-                throw error;
-            } finally {
-                clearTimeout(timer);
-            }
+            } finally { clearTimeout(timer); }
         }
-
-        async function d1Post(path, body) {
-            const response = await fetch(`${D1_API_BASE}${path}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify(body)
-            });
-            const data = await response.json().catch(() => ({}));
-            if (!response.ok || data.success === false) {
-                throw new Error(data.error || `D1 API error (${response.status})`);
+        async function legacyGet(timeoutMs = API_TIMEOUT_MS) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                const response = await fetch(scriptURL,{cache:'no-store',signal:controller.signal});
+                if(!response.ok) throw new Error(`Legacy API error (${response.status})`);
+                return await response.json();
+            } finally { clearTimeout(timer); }
+        }
+        function normalizeArray(payload, keys) {
+            if (Array.isArray(payload)) return payload;
+            for (const k of keys) if (payload && Array.isArray(payload[k])) return payload[k];
+            return [];
+        }
+        function normalizeStock(payload) {
+            const raw = payload && (payload.stock || payload.items || payload.data || payload.result || payload);
+            const out = {};
+            if (Array.isArray(raw)) {
+                raw.forEach(x => {
+                    const name = getVal(x,['name','itemname','item','stockname']);
+                    const qty = getVal(x,['quantity','qty','stock','currentstock','currentquantity']);
+                    if(name) out[String(name).trim()] = Number(qty)||0;
+                });
+            } else if (raw && typeof raw === 'object') {
+                Object.keys(raw).forEach(k => {
+                    const v=raw[k];
+                    out[k]=Number(v && typeof v==='object' ? getVal(v,['quantity','qty','stock','currentstock']) : v)||0;
+                });
             }
-            return data;
+            return out;
+        }
+        function localISODate(value) {
+            const s=String(value||'').trim();
+            if(!s) return '';
+            const m=s.match(/^(\d{4}-\d{2}-\d{2})/);
+            if(m) return m[1];
+            const d=new Date(s);
+            return isNaN(d.getTime()) ? '' : `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        }
+        function mapD1Order(o) {
+            const created=o.created_at||o.createdAt||o.date||o.order_date||'';
+            const tn=o.table_number ?? o.tableNumber ?? '';
+            const ot=o.order_type||o.orderType||'';
+            const total=Number(o.grand_total ?? o.grandTotal ?? o.total ?? o.amount ?? 0)||0;
+            return {
+                id:o.id,
+                orderid:o.order_number||o.orderNumber||o.id||'',
+                tablenumber:tn!==''&&tn!=null?`Table ${tn}`:(ot||'Order'),
+                table:tn!==''&&tn!=null?`Table ${tn}`:(ot||'Order'),
+                order_type:ot,
+                customerphone:o.customer_phone||o.customerPhone||o.phone||'',
+                phone:o.customer_phone||o.customerPhone||o.phone||'',
+                date:created,isodate:created,time:created,
+                totalamount:total,total:total,amount:total,
+                discount:Number(o.discount||0)||0,
+                payment_method:o.payment_method||o.paymentMethod||'',
+                payment_status:o.payment_status||o.paymentStatus||'',
+                order_status:o.order_status||o.orderStatus||'',
+                items:o.items_string||o.itemsString||o.items||''
+            };
         }
 
         async function fetchData() {
-            const loader = document.getElementById('loader');
-            loader.style.display = 'flex';
-            loader.innerHTML = '<div class="spinner"></div> <span>Syncing D1...</span>';
+            const loader=document.getElementById('loader');
+            loader.style.display='flex';
+            loader.innerHTML='<div class="spinner"></div> <span>Syncing D1...</span>';
 
-            try {
-                // Dashboard + menu + tables + orders + expenses are now loaded from Cloudflare D1.
-                const results = await Promise.allSettled([
-                    d1Get('/dashboard'),
-                    d1Get('/menu'),
-                    d1Get('/tables'),
-                    d1Get('/orders?limit=200'),
-                    d1Get('/expenses?limit=500'),
-                    d1Get('/staff')
-                ]);
+            const results=await Promise.allSettled([
+                d1Get('/dashboard'),
+                d1Get('/menu'),
+                d1Get('/tables'),
+                d1Get('/orders?limit=500'),
+                d1Get('/expenses?limit=500'),
+                d1Get('/stock'),
+                d1Get('/staff'),
+                legacyGet()
+            ]);
 
-                const [dashboardResult, menuResult, tablesResult, ordersResult, expensesResult, staffResult] = results;
+            const dash=results[0].status==='fulfilled'?results[0].value:{};
+            const menu=results[1].status==='fulfilled'?results[1].value:{};
+            const tables=results[2].status==='fulfilled'?results[2].value:{};
+            const orders=results[3].status==='fulfilled'?results[3].value:{};
+            const expenses=results[4].status==='fulfilled'?results[4].value:{};
+            const stock=results[5].status==='fulfilled'?results[5].value:{};
+            const staff=results[6].status==='fulfilled'?results[6].value:{};
+            const legacy=results[7].status==='fulfilled'?results[7].value:{};
 
-                const dashboard = dashboardResult.status === 'fulfilled'
-                    ? dashboardResult.value
-                    : { summary: {}, tables: {}, stock: [] };
+            menuData=normalizeArray(menu,['items','menu','data','result']);
+            if(!menuData.length) menuData=legacy.menu||[];
 
-                const menu = menuResult.status === 'fulfilled'
-                    ? menuResult.value
-                    : { items: [] };
+            expenseHistory=normalizeArray(expenses,['expenses','data','result']);
+            if(!expenseHistory.length) expenseHistory=legacy.expenses||[];
 
-                const tables = tablesResult.status === 'fulfilled'
-                    ? tablesResult.value
-                    : { tables: [] };
+            staffData=normalizeArray(staff,['staff','employees','data','result']);
+            if(!staffData.length && Array.isArray(legacy.staff)) staffData=legacy.staff;
 
-                const orders = ordersResult.status === 'fulfilled'
-                    ? ordersResult.value
-                    : { orders: [] };
+            stockData=normalizeStock(stock);
+            if(!Object.keys(stockData).length) stockData=normalizeStock(dash.stock);
+            if(!Object.keys(stockData).length) stockData=normalizeStock(legacy.stock);
 
-                const expenses = expensesResult.status === 'fulfilled'
-                    ? expensesResult.value
-                    : { expenses: [] };
+            const d1Orders=normalizeArray(orders,['orders','sales','data','result']);
+            const legacySales=Array.isArray(legacy.sales)?legacy.sales:[];
+            salesHistory=(d1Orders.length?d1Orders:legacySales).map(mapD1Order).reverse();
 
-                const staff = staffResult.status === 'fulfilled'
-                    ? staffResult.value
-                    : { staff: [] };
-
-                menuData = menu.items || [];
-                expenseHistory = expenses.expenses || [];
-                staffData = staff.staff || [];
-
-                const failedEndpoints = results
-                    .map((r, i) => r.status === 'rejected' ? ['/dashboard','/menu','/tables','/orders','/expenses','/staff'][i] : null)
-                    .filter(Boolean);
-
-                if (failedEndpoints.length) {
-                    console.warn('D1 endpoints unavailable:', failedEndpoints);
-                }
-
-                // Convert D1 orders into the field names used by the existing mobile UI.
-                salesHistory = (orders.orders || []).map(order => ({
-                    id: order.id,
-                    orderid: order.order_number || order.id,
-                    tablenumber: order.table_number ? `Table ${order.table_number}` : (order.order_type || 'Order'),
-                    table: order.table_number ? `Table ${order.table_number}` : (order.order_type || 'Order'),
-                    order_type: order.order_type,
-                    customerphone: order.customer_phone || '',
-                    phone: order.customer_phone || '',
-                    date: order.created_at || '',
-                    isodate: order.created_at || '',
-                    time: order.created_at || '',
-                    totalamount: Number(order.grand_total) || 0,
-                    total: Number(order.grand_total) || Number(order.total) || 0,
-                    amount: Number(order.grand_total) || Number(order.total) || 0,
-                    discount: Number(order.discount) || 0,
-                    payment_method: order.payment_method || '',
-                    payment_status: order.payment_status || '',
-                    order_status: order.order_status || '',
-                    items: order.items_string || order.items || ''
-                }));
-
-                // D1 is the source of truth for restaurant tables.
-                const d1Tables = tables.tables || [];
-                tableSections = [
-                    { title: "Hut Seating", tables: [] },
-                    { title: "Ground Seating", tables: [] },
-                    { title: "Terrace Seating", tables: [] }
-                ];
-
-                const areaMap = {
-                    'Hut Seating': 0,
-                    'Ground Seating': 1,
-                    'Terrace Seating': 2
-                };
-
-                runningTables = {};
-
-                d1Tables.forEach(t => {
-                    const number = String(t.table_number);
-                    const area = String(t.seating_area || '').trim();
-                    const idx = areaMap[area] !== undefined ? areaMap[area] : 1;
-
-                    if (!tableSections[idx].tables.includes(number)) {
-                        tableSections[idx].tables.push(number);
-                    }
-
-                    // Keep a marker for occupied tables so the existing color coding works.
-                    if (String(t.status).toLowerCase() === 'occupied') {
-                        runningTables[`Table ${number}`] = [{ __d1Occupied: true, orderId: t.current_order_id }];
-                    } else {
-                        runningTables[`Table ${number}`] = [];
-                    }
+            const d1Tables=normalizeArray(tables,['tables','data','result']);
+            if(d1Tables.length){
+                tableSections=[{title:'Hut Seating',tables:[]},{title:'Ground Seating',tables:[]},{title:'Terrace Seating',tables:[]}];
+                const areaMap={'Hut Seating':0,'Ground Seating':1,'Terrace Seating':2};
+                runningTables={};
+                d1Tables.forEach(t=>{
+                    const n=String(t.table_number??t.tableNumber??'');
+                    if(!n)return;
+                    const area=String(t.seating_area||t.seatingArea||'').trim();
+                    const i=areaMap[area]!==undefined?areaMap[area]:1;
+                    if(!tableSections[i].tables.includes(n)) tableSections[i].tables.push(n);
+                    runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied'?[{__d1Occupied:true,orderId:t.current_order_id||t.currentOrderId}]:[];
                 });
-
-                // Fallback only if the D1 table list is empty.
-                if (d1Tables.length === 0) {
-                    tableSections = [
-                        { title: "Hut Seating", tables: ["1", "2", "3", "4"] },
-                        { title: "Ground Seating", tables: ["5", "6", "7"] },
-                        { title: "Terrace Seating", tables: ["8", "9", "10"] }
-                    ];
-                }
-
-                // Dashboard summary comes directly from the Worker/D1 calculation.
-                const summary = dashboard.summary || {};
-                const tableSummary = dashboard.tables || {};
-
-                stockData = {};
-                (dashboard.stock || []).forEach(item => {
-                    stockData[item.name] = Number(item.quantity) || 0;
-                });
-
-                document.getElementById('homeTodaySale').innerText =
-                    `₹${Math.round(Number(summary.today_sales) || 0).toLocaleString('en-IN')}`;
-                document.getElementById('homeAvgOrder').innerText =
-                    `₹${Math.round(Number(summary.average_order) || 0).toLocaleString('en-IN')}`;
-                document.getElementById('homeOverallSale').innerText =
-                    `₹${Math.round(Number(summary.overall_sales) || 0).toLocaleString('en-IN')}`;
-                document.getElementById('homeActiveTables').innerText =
-                    `${Number(tableSummary.occupied) || 0} / ${Number(tableSummary.total) || d1Tables.length}`;
-
-                populateDropdown();
-                populateStaffDropdown();
-                renderEmployeeList();
-                renderTableGrid();
-                renderStockDashboard();
-                checkStockDisplay();
-                renderLiveSales();
-                generateTrends();
-
-                hideSplashScreen();
-                console.log('Viraasat POS - D1 dashboard connected');
-                console.log('D1 menu items:', menuData.length);
-                console.log('D1 tables:', d1Tables.length);
-                console.log('D1 orders:', salesHistory.length);
-                console.log('D1 expenses:', expenseHistory.length);
-
-            } catch (error) {
-                console.error('D1 Sync Error:', error);
-                loader.innerHTML = `<span style="color:var(--danger);">D1 Sync Error: ${error.message}</span>`;
-                hideSplashScreen();
-                return;
-            } finally {
-                setTimeout(() => {
-                    loader.style.display = 'none';
-                    loader.innerHTML = '<div class="spinner"></div> <span>Syncing...</span>';
-                }, 300);
+            } else {
+                runningTables=legacy.runningTables||{};
             }
+
+            const summary=dash.summary||{};
+            const tableSummary=dash.tables||{};
+            const overallFallback=salesHistory.reduce((a,s)=>a+parseAmount(getVal(s,['totalamount','total','amount'])),0);
+            const todayKey=localISODate(new Date().toISOString());
+            const todaySalesFallback=salesHistory.filter(s=>localISODate(getVal(s,['date','isodate']))===todayKey).reduce((a,s)=>a+parseAmount(getVal(s,['totalamount','total','amount'])),0);
+            const todayOrdersFallback=salesHistory.filter(s=>localISODate(getVal(s,['date','isodate']))===todayKey).length;
+            const todaySales=Number(summary.today_sales)||todaySalesFallback;
+            const avgOrder=Number(summary.average_order)|| (todayOrdersFallback ? todaySalesFallback/todayOrdersFallback : 0);
+            document.getElementById('homeTodaySale').innerText=`₹${Math.round(todaySales).toLocaleString('en-IN')}`;
+            document.getElementById('homeAvgOrder').innerText=`₹${Math.round(avgOrder).toLocaleString('en-IN')}`;
+            document.getElementById('homeOverallSale').innerText=`₹${Math.round(Number(summary.overall_sales)||overallFallback).toLocaleString('en-IN')}`;
+            const totalTables=Number(tableSummary.total)||Object.values(tableSections).reduce((a,s)=>a+s.tables.length,0);
+            document.getElementById('homeActiveTables').innerText=`${Number(tableSummary.occupied)||0} / ${totalTables}`;
+
+            populateDropdown();
+            populateStaffDropdown();
+            renderEmployeeList();
+            renderTableGrid();
+            renderStockDashboard();
+            checkStockDisplay();
+            renderLiveSales();
+            generateTrends();
+            hideSplashScreen();
+            loader.style.display='none';
         }
 
         function generateTrends() {
@@ -1380,8 +1293,8 @@ const APP_VERSION = "D1-Mobile-3.3";
             
             let filteredSales = salesHistory.filter(sale => {
                 if (!startDateInput && !endDateInput) return true;
-                let sDate = String(getVal(sale, ['date', 'isodate']) || '').trim(); let saleIsoDate = ""; let dObj = new Date(sDate);
-                if (!isNaN(dObj.getTime())) { saleIsoDate = `${dObj.getFullYear()}-${String(dObj.getMonth() + 1).padStart(2, '0')}-${String(dObj.getDate()).padStart(2, '0')}`; } else { saleIsoDate = sDate.split("T")[0].split(" ")[0]; }
+                let sDate = String(getVal(sale, ['date', 'isodate']) || '').trim();
+                let saleIsoDate = localISODate(sDate);
                 if (startDateInput && saleIsoDate < startDateInput) return false; if (endDateInput && saleIsoDate > endDateInput) return false; return true;
             });
             
@@ -1413,65 +1326,21 @@ const APP_VERSION = "D1-Mobile-3.3";
         }
 
         function renderTableGrid() {
-            const gridContainer = document.getElementById('tableGrid');
-            if (!gridContainer) return;
-
-            gridContainer.innerHTML = "";
-            let activeCount = 0;
-            let totalCount = 0;
-
+            const gridContainer = document.getElementById('tableGrid'); gridContainer.innerHTML = ""; let activeCount = 0; let totalCount = 0;
             tableSections.forEach((section) => {
-                if (!section.tables || section.tables.length === 0) return;
-
-                gridContainer.innerHTML +=
-                    `<div class="section-header"><h4>${section.title}</h4></div>`;
-
-                let gridHTML =
-                    '<div class="table-grid" style="margin-bottom:24px;">';
-
-                section.tables.forEach(i => {
-                    const tName = "Table " + i;
-                    const tableState = runningTables[tName];
-                    const isOccupied =
-                        Array.isArray(tableState) &&
-                        tableState.length > 0;
-
-                    if (isOccupied) activeCount++;
-                    totalCount++;
-
-                    const statusStr = isOccupied ? "OCCUPIED" : "AVAILABLE";
-                    const statusCls = isOccupied ? "status-occ" : "status-avail";
-                    const cardCls = isOccupied ? "table-card occupied" : "table-card";
-
-                    gridHTML += `
-                        <div class="${cardCls}"
-                             onclick="openTable('${i}')"
-                             style="width:100%; min-width:auto; padding:20px 10px;">
-                            <div class="tc-name">Table ${i}</div>
-                            <div class="tc-status ${statusCls}">${statusStr}</div>
-                            <div class="tc-sub">${section.title}</div>
-                        </div>`;
-                });
-
+                gridContainer.innerHTML += `<div class="section-header"><h4>${section.title}</h4></div>`; let gridHTML = '<div class="table-grid" style="margin-bottom:24px;">'; 
+                section.tables.forEach(i => { 
+                    let tName = "Table " + i; let isOccupied = runningTables.hasOwnProperty(tName) && runningTables[tName] && runningTables[tName].length > 0;
+                    if(isOccupied) activeCount++; totalCount++;
+                    let statusStr = isOccupied ? "OCCUPIED" : "AVAILABLE"; let statusCls = isOccupied ? "status-occ" : "status-avail"; let cardCls = isOccupied ? "table-card occupied" : "table-card";
+                    gridHTML += `<div class="${cardCls}" onclick="openTable('${i}')" style="width:100%; min-width:auto; padding:20px 10px;"><div class="tc-name">Table ${i}</div><div class="tc-status ${statusCls}">${statusStr}</div><div class="tc-sub">Dining Area</div></div>`;
+                }); 
                 gridContainer.innerHTML += gridHTML + '</div>';
             });
-
-            document.getElementById('homeActiveTables').innerText =
-                `${activeCount} / ${totalCount}`;
-
-            const tkOccupied =
-                Array.isArray(runningTables["Takeaway"]) &&
-                runningTables["Takeaway"].length > 0;
-
-            const delOccupied =
-                Array.isArray(runningTables["Home Delivery"]) &&
-                runningTables["Home Delivery"].length > 0;
-
-            document.getElementById('cardTakeaway').className =
-                tkOccupied ? "quick-card occupied" : "quick-card";
-
-            document.getElementById('cardDelivery').className =
-                delOccupied ? "quick-card occupied" : "quick-card";
+            
+            document.getElementById('homeActiveTables').innerText = `${activeCount} / ${totalCount}`;
+            let tkOccupied = runningTables.hasOwnProperty("Takeaway") && runningTables["Takeaway"] && runningTables["Takeaway"].length > 0; document.getElementById('cardTakeaway').className = tkOccupied ? "quick-card occupied" : "quick-card";
+            let delOccupied = runningTables.hasOwnProperty("Home Delivery") && runningTables["Home Delivery"] && runningTables["Home Delivery"].length > 0; document.getElementById('cardDelivery').className = delOccupied ? "quick-card occupied" : "quick-card";
         }
 
         function showAddTableModal() { 
@@ -1483,20 +1352,7 @@ const APP_VERSION = "D1-Mobile-3.3";
             if(!tNum) { showCustomAlert("Please enter a table number."); return; } 
             let isDuplicate = false; tableSections.forEach(sec => { if(sec.tables.includes(tNum)) isDuplicate = true; }); 
             if(isDuplicate) { showCustomAlert("Table " + tNum + " already exists!"); return; } 
-            const seatingArea = tableSections[catIdx].title;
-
-            d1Post('/tables', {
-                table_number: tNum,
-                seating_area: seatingArea
-            })
-            .then(async () => {
-                tableSections[catIdx].tables.push(tNum);
-                localStorage.setItem('viraasat_table_sections', JSON.stringify(tableSections));
-                document.getElementById('addTableModal').style.display = 'none';
-                await fetchData();
-                showCustomAlert(`Table ${tNum} added successfully.`);
-            })
-            .catch(err => showCustomAlert(`Table add failed: ${err.message}`)); 
+            tableSections[catIdx].tables.push(tNum); localStorage.setItem('viraasat_table_sections', JSON.stringify(tableSections)); document.getElementById('addTableModal').style.display = 'none'; renderTableGrid(); 
         }
 
         function switchMainTab(tabName, btnElement, skipHistory = false) {
@@ -1591,20 +1447,8 @@ const APP_VERSION = "D1-Mobile-3.3";
 
         function clearTableWithoutCheckout() {
             showCustomConfirm(`Are you sure you want to clear ${activeTableNumber}?`, () => {
-                const tableNumber = activeTableNumber.startsWith('Table ')
-                    ? activeTableNumber.replace('Table ', '')
-                    : activeTableNumber;
-
-                d1Post('/tables/clear', {
-                    table_number: tableNumber
-                })
-                .then(async () => {
-                    delete runningTables[activeTableNumber];
-                    currentBill = [];
-                    await fetchData();
-                    goBackToTables();
-                })
-                .catch(e => showCustomAlert(`Clear failed: ${e.message}`));
+                fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'clear', tableName: activeTableNumber }) })
+                .then(res => res.json()).then(data => { delete runningTables[activeTableNumber]; currentBill = []; goBackToTables(); }).catch(e => { delete runningTables[activeTableNumber]; currentBill = []; goBackToTables(); });
             }, null);
         }
 
@@ -1635,77 +1479,28 @@ const APP_VERSION = "D1-Mobile-3.3";
 
             let grandTotal = parseInt(document.getElementById('grandTotal').innerText.replace(/[^0-9]/g, '')) || 0;
 
-            fetch(`${D1_API_BASE}/orders/checkout`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    order_number: orderId,
-                    table_number: activeTableNumber.startsWith('Table ')
-                        ? activeTableNumber.replace('Table ', '')
-                        : null,
-                    order_type: activeTableNumber === 'Takeaway'
-                        ? 'Takeaway'
-                        : (activeTableNumber === 'Home Delivery'
-                            ? 'Home Delivery'
-                            : 'Dine-in'),
-                    customer_phone: phone,
-                    items: currentBill,
-                    subtotal: currentBill.reduce(
-                        (sum, item) => sum + Number(item.total || 0), 0
-                    ),
-                    discount,
-                    grand_total: grandTotal,
-                    payment_method: selectedPaymentMode,
-                    payment_status: 'paid',
-                    order_status: 'completed'
-                })
-            })
-            .then(async res => {
-                const data = await res.json().catch(() => ({}));
-                if (!res.ok || data.success === false) {
-                    throw new Error(data.error || `Checkout failed (${res.status})`);
-                }
-
-                delete runningTables[activeTableNumber];
-                currentBill = [];
-
-                btn.innerText = "Confirm Checkout";
-                btn.disabled = false;
-                document.getElementById('paymentModal').style.display = 'none';
-
-                showCustomAlert(`Order ${data.orderNumber || orderId} saved successfully.`);
-                await fetchData();
-                goBackToTables();
-            })
-            .catch(err => {
-                console.error('D1 Checkout Error:', err);
-                btn.innerText = "Confirm Checkout";
-                btn.disabled = false;
-                showCustomAlert(`Checkout failed: ${err.message}`);
-            });
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'checkout', tableName: activeTableNumber, orderId: orderId, phone: phone, itemsString: itemsString, rawItems: currentBill, total: grandTotal, discount: discount }) })
+            .then(res => res.json()).then(data => {
+                delete runningTables[activeTableNumber]; 
+                currentBill.forEach(item => { let foundKey = Object.keys(stockData).find(key => key.trim().toLowerCase() === item.name.trim().toLowerCase()); if(foundKey) stockData[foundKey] -= item.qty; });
+                let now = new Date(); let fDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                salesHistory.unshift({ date: fDate, isodate: fDate, time: now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), orderid: orderId, items: itemsString, total: grandTotal, table: activeTableNumber });
+                
+                btn.innerText = "Confirm Checkout"; btn.disabled = false; document.getElementById('paymentModal').style.display = 'none'; generateTrends(); goBackToTables();
+            }).catch(err => { btn.innerText = "Confirm Checkout"; btn.disabled = false; });
         }
 
         function submitExpense() {
             let category = document.getElementById('expCategory').value; let amount = document.getElementById('expAmount').value;
             if (!amount || amount <= 0) { showCustomAlert("Enter valid amount."); return; }
-            d1Post('/expenses', {
-                category,
-                amount: Number(amount),
-                description: document.getElementById('expDescription').value || "NA"
-            })
-            .then(async () => {
-                showCustomAlert("Expense Saved!");
-                document.getElementById('expAmount').value = "";
-                document.getElementById('expDescription').value = "";
-                await fetchData();
-            })
-            .catch(err => showCustomAlert(`Expense save failed: ${err.message}`));
+            let now = new Date(); let fDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            expenseHistory.push({ date: fDate, isodate: fDate, amount: parseInt(amount) });
+            
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'expense', category: category, amount: amount, description: document.getElementById('expDescription').value || "NA" }) })
+            .then(res => res.json()).then(data => { showCustomAlert("Expense Saved!"); document.getElementById('expAmount').value = ""; document.getElementById('expDescription').value = ""; generateTrends(); });
         }
 
-        function setActiveFilterBtn(id) { document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active')); if(id) document.getElementById(id).classList.add('active'); }
+        function setActiveFilterBtn(id) { ['btnFilterToday','btnFilterYesterday','btnFilterClear'].forEach(x=>{const b=document.getElementById(x);if(b)b.classList.remove('active');}); if(id){const b=document.getElementById(id);if(b)b.classList.add('active');} }
         function setTodayFilter() { setActiveFilterBtn('btnFilterToday'); let now = new Date(); let todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`; document.getElementById('filterStartDate').value = todayStr; document.getElementById('filterEndDate').value = todayStr; renderLiveSales(); }
         function setYesterdayFilter() { setActiveFilterBtn('btnFilterYesterday'); let yest = new Date(); yest.setDate(yest.getDate() - 1); let yestStr = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, '0')}-${String(yest.getDate()).padStart(2, '0')}`; document.getElementById('filterStartDate').value = yestStr; document.getElementById('filterEndDate').value = yestStr; renderLiveSales(); }
         function resetDateFilter() { setActiveFilterBtn('btnFilterClear'); document.getElementById('filterStartDate').value = ""; document.getElementById('filterEndDate').value = ""; renderLiveSales(); }
