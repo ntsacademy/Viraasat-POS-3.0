@@ -39,9 +39,17 @@ export default {
 // Import menu items
 if (url.pathname === "/api/menu/import" && request.method === "POST") {
   try {
-    const data = await request.json();
+    const body = await request.json();
 
-    if (!Array.isArray(data)) {
+const data = Array.isArray(body)
+  ? body
+  : Array.isArray(body.data)
+    ? body.data
+    : Array.isArray(body.items)
+      ? body.items
+      : null;
+
+if (!Array.isArray(data)) {
       return new Response(
         JSON.stringify({
           success: false,
