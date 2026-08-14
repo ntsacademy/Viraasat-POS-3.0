@@ -797,8 +797,10 @@ const APP_VERSION = "D1-Mobile-3.3";
                 document.getElementById('appHeader').style.display = 'flex';
                 document.getElementById('appMain').style.display = 'block';
                 document.getElementById('appBottomNav').style.display = 'flex';
-                applyAdminRights(savedMobile); 
-                fetchData(); 
+                applyAdminRights(savedMobile);
+                // Never keep the splash screen visible while waiting for API/D1 data.
+                hideSplashScreen();
+                fetchData();
                 enforceBackTrap(); enforceBackTrap(); 
             } else { 
                 document.getElementById('loginScreen').style.display = 'flex'; 
@@ -1113,8 +1115,6 @@ const APP_VERSION = "D1-Mobile-3.3";
             if (!response.ok || data.success === false) {
                 throw new Error(data.error || `D1 API error (${response.status})`);
             }
-            return data;
-        }
             return data;
         }
 
