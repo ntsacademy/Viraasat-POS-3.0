@@ -11,11 +11,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="apple-touch-icon" href="icon.png">
-    <link rel="icon" type="image/png" href="icon.png">
     
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 
     <style>
         :root {
@@ -38,13 +36,15 @@
             
             --shadow-soft: 0 4px 18px rgba(0,0,0,0.03); 
             --border-radius: 14px;      
-
-            /* Screenshot Zepto Colors */
+            
+            /* Screenshot Exact Colors */
             --card-purple: #F4F0FB;
             --card-peach: #FEF0E6;
             --card-mint: #E8F5E9;
             --card-blue: #EAF2FF;
             --btn-pink: #E21B70;
+            --btn-green: #10B981;
+            --accent-gold: #B48E5D;
         }
 
         html { font-size: 16px; touch-action: manipulation; background-color: #FFFFFF; overscroll-behavior-y: contain; } 
@@ -61,37 +61,43 @@
             max-width: 600px; margin: 0 auto; position: relative;
         } 
 
+        /* CSS Graphic Logo Styling */
+        .logo-graphic { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 800; color: var(--primary); position: relative; display: inline-block; line-height: 1; letter-spacing: 0.5px;}
+        .logo-graphic::after { content: '™'; font-size: 0.6rem; position: absolute; top: 0; right: -12px; color: var(--accent-gold); font-family: 'Poppins', sans-serif;}
+        .logo-accent { display: block; width: 40px; height: 3px; background: var(--accent-gold); margin: 6px 0 0 2px; border-radius: 2px; }
+        .splash-logo { font-size: 3rem; text-align: center; margin-bottom: 8px;}
+        .splash-logo .logo-accent { margin: 12px auto 0; width: 60px; height: 4px; }
+
         .top-app-bar { padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 50; background: var(--bg-color); }
         .brand-container { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
-        .brand-name { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 800; color: var(--text-dark); letter-spacing: 0.5px; line-height: 1.1; }
-        .page-subtitle { font-size: 0.85rem; font-weight: 500; color: var(--text-dark); margin-top: 2px; }
+        .page-subtitle { font-family: 'Poppins', sans-serif; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-top: 6px; }
         
         .icon-btn { background: var(--surface); border: 1px solid var(--border); width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-dark); box-shadow: var(--shadow-soft); transition: 0.1s;}
         .icon-btn:active { transform: scale(0.95); }
 
-        main { flex: 1; padding: 0 0 calc(90px + env(safe-area-inset-bottom)) 0; overflow-y: auto; -webkit-overflow-scrolling: touch; position: relative; }
+        main { flex: 1; padding: 0 0 calc(90px + env(safe-area-inset-bottom)) 0; overflow-y: auto; -webkit-overflow-scrolling: touch; position: relative; z-index: 10; }
         .tab-content { display: none; animation: fadeIn 0.2s ease; padding: 0 20px; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         
-        .greeting-sec { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; margin-top: 8px; }
-        .greeting-sec h2 { font-size: 1.25rem; font-weight: 700; color: var(--text-dark); margin-bottom: 2px; }
-        .greeting-sec p { font-size: 0.78rem; color: var(--text-muted); font-weight: 500; }
-        .date-badge { background: var(--surface); border: 1px solid var(--border); padding: 8px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; color: var(--text-dark); display: flex; align-items: center; gap: 6px; box-shadow: var(--shadow-soft); }
+        .greeting-sec { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; margin-top: 16px; }
+        .greeting-sec h2 { font-size: 1.5rem; font-weight: 800; color: var(--text-dark); margin-bottom: 2px; letter-spacing: -0.5px; }
+        .greeting-sec p { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+        .date-badge { background: var(--surface); border: 1px solid var(--border); padding: 8px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; color: var(--text-dark); display: flex; align-items: center; gap: 6px; box-shadow: var(--shadow-soft); }
 
         .quick-action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-        .quick-card { background: var(--surface); border: 1px solid transparent; border-radius: var(--border-radius); padding: 16px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.1s;}
-        .quick-card:active { transform: scale(0.98); filter: brightness(0.95); }
+        .quick-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.1s;}
+        .quick-card:active { transform: scale(0.98); background: #FAF8F5; }
         .quick-card.occupied { background: var(--occ-bg) !important; border-color: var(--occ-border) !important; }
-        .qc-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(255,255,255,0.6); display: flex; align-items: center; justify-content: center; color: var(--text-dark); flex-shrink: 0; }
+        .qc-icon { width: 44px; height: 44px; border-radius: 12px; background: #F8F6F0; border: 1px solid #ECE7DD; display: flex; align-items: center; justify-content: center; color: var(--text-dark); flex-shrink: 0; }
         .qc-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
         .qc-info h4 { font-size: 0.95rem; font-weight: 700; color: var(--text-dark); }
         .status-dot { font-size: 0.7rem; font-weight: 700; color: var(--success); display: flex; align-items: center; gap: 4px; }
         .status-dot.occ { color: #E11D48; }
 
         .section-header { display: flex; justify-content: space-between; align-items: center; margin: 24px 0 12px 0; }
-        .section-header h4 { font-weight: 700; font-size: 0.82rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
-        .section-header span { font-size: 0.8rem; font-weight: 600; color: var(--text-dark); cursor: pointer; }
+        .section-header h4 { font-weight: 800; font-size: 0.9rem; color: var(--text-dark); text-transform: uppercase; letter-spacing: 0.5px; }
+        .section-header span { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); cursor: pointer; }
 
         .table-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
         .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px 10px; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.15s; }
@@ -104,33 +110,35 @@
         .status-avail { color: #10B981; background: #E6F4EA; border: 1px solid #C6E7D2; }
         .status-occ { background: var(--occ-gradient) !important; color: #FFFFFF !important; box-shadow: 0 3px 8px rgba(255, 95, 142, 0.3); border: none !important; }
 
+        /* Dashboard KPI Cards Setup */
         .home-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-        .hkpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; box-shadow: var(--shadow-soft); display: flex; flex-direction: column; transition: 0.1s;}
-        .hkpi-card:active { transform: scale(0.98); }
-        .hkpi-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--text-muted); font-size: 0.78rem; font-weight: 600; text-transform: uppercase;}
+        .hkpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; box-shadow: var(--shadow-soft); display: flex; flex-direction: column; cursor: pointer; transition: 0.1s;}
+        .hkpi-card:active { transform: scale(0.98); filter: brightness(0.97); }
+        .hkpi-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--text-muted); font-size: 0.78rem; font-weight: 700; text-transform: uppercase;}
         .hkpi-top svg { width: 16px; height: 16px; color: var(--text-dark); }
-        .hkpi-val { font-size: 1.35rem; font-weight: 800; color: var(--text-dark); margin-bottom: 4px; transition: font-size 0.2s;}
-        .hkpi-sub { font-size: 0.72rem; font-weight: 600; color: var(--text-dark); background: rgba(255,255,255,0.7); display: inline-block; padding: 2px 8px; border-radius: 6px; width: max-content; }
-        .hkpi-card:not(.bg-purple):not(.bg-peach) .hkpi-sub { background: transparent; padding: 0; color: var(--success); }
+        .hkpi-val { font-size: 1.6rem; font-weight: 800; color: var(--text-dark); margin-bottom: 8px; transition: font-size 0.2s;}
+        .hkpi-sub { font-size: 0.75rem; font-weight: 700; color: var(--text-dark); display: inline-block; padding: 4px 10px; border-radius: 8px; background: rgba(255,255,255,0.7); width: max-content; }
+        .hkpi-sub.green-text { color: var(--success); background: transparent; padding: 0; }
 
-        .bg-purple { background-color: var(--card-purple); border-color: transparent;}
-        .bg-peach { background-color: var(--card-peach); border-color: transparent;}
-        .bg-mint { background-color: var(--card-mint); border-color: transparent;}
-        .bg-blue { background-color: var(--card-blue); border-color: transparent;}
+        /* Exact colors from Screenshot */
+        .bg-purple { background-color: var(--card-purple); border-color: transparent; }
+        .bg-peach { background-color: var(--card-peach); border-color: transparent; }
+        .bg-mint { background-color: var(--card-mint); border-color: transparent; }
+        .bg-blue { background-color: var(--card-blue); border-color: transparent; }
 
         .h-order-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.1s; }
-        .h-order-card:active { transform: scale(0.98); background: #FAF8F5; }
-        .ho-icon { width: 42px; height: 42px; border-radius: 12px; background: #F8F6F0; display: flex; align-items: center; justify-content: center; color: var(--text-dark); flex-shrink: 0; }
+        .h-order-card:active { transform: scale(0.98); background: var(--primary-light); }
+        .ho-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--primary-light); display: flex; align-items: center; justify-content: center; color: var(--text-dark); flex-shrink: 0; }
         .ho-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-        .ho-title { font-size: 0.92rem; font-weight: 700; color: var(--text-dark); }
+        .ho-title { font-size: 0.95rem; font-weight: 800; color: var(--text-dark); }
         .ho-sub { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
         .ho-badge { background: #E6F4EA; color: #10B981; font-size: 0.65rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; letter-spacing: 0.5px; }
 
+        /* Fixed Navigation per Screenshot */
         .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; padding: 10px 8px calc(10px + env(safe-area-inset-bottom)) 8px; border-top: 1px solid var(--border); z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.03); border-radius: 20px 20px 0 0; }
-        .nav-item { background: transparent; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: inherit; font-size: 0.65rem; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; padding: 6px 0; }
+        .nav-item { background: transparent; border: none; color: #6B7280; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: inherit; font-size: 0.65rem; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; padding: 6px 0; }
         .nav-item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: 0.2s; }
-        .nav-item.active { color: var(--btn-pink); font-weight: 800; }
-        .nav-item.active .icon-container { background: #FDE8D7; width: 56px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+        .nav-item.active { color: var(--btn-pink); font-weight: 700; }
         .nav-item.active svg { stroke: var(--btn-pink); stroke-width: 2.2; }
 
         .card { background: var(--surface); border-radius: var(--border-radius); padding: 20px; border: 1px solid var(--border); margin-bottom: 16px; box-shadow: var(--shadow-soft); }
@@ -146,6 +154,7 @@
         .btn:active { transform: scale(0.97); }
         .btn-outline { background: var(--surface); border: 1px solid var(--border); color: var(--text-dark); }
         .btn-outline:active { background: var(--bg-color); }
+        .action-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px; }
 
         .cart-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
         .cart-summary { background: var(--surface); border-radius: 14px; padding: 20px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 12px; border: 1px solid var(--border); }
@@ -164,13 +173,11 @@
         .filter-btn { height: 36px; padding: 0 16px; font-size: 0.85rem; transition: 0.2s; border-radius: 18px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dark); font-weight: 600; cursor:pointer;}
         .filter-btn.active { background: var(--text-dark); color: #FFF; border-color: var(--text-dark); }
 
-        .swipe-filters { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 16px; scroll-behavior: smooth; }
-        .swipe-filters::-webkit-scrollbar { display: none; }
-        .filter-chip { flex: 0 0 auto; height: 38px; padding: 0 20px; font-size: 0.85rem; border-radius: 19px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dark); font-weight: 600; display: flex; align-items: center; transition: 0.2s; cursor:pointer;}
-        .filter-chip.active { background: var(--text-dark); color: #FFF; border-color: var(--text-dark); }
-
         .sales-grid { display: flex; flex-direction: column; gap: 12px; }
+        .sales-card { background: var(--surface); border-radius: var(--border-radius); padding: 18px; border: 1px solid var(--border); cursor: pointer; transition: 0.1s;}
+        .sales-card:active { transform: scale(0.98); }
 
+        /* P&L Grid */
         .trend-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
         .trend-kpi-card { padding: 16px; border-radius: var(--border-radius); border: 1px solid var(--border); background: var(--surface); display: flex; flex-direction: column; box-shadow: var(--shadow-soft);}
         .trend-kpi-card.full-width { grid-column: span 2; }
@@ -180,15 +187,22 @@
         .chart-wrapper { position: relative; height: 260px; min-height: 260px; width: 100%; margin-top: 16px; display: block; }
         .chart-filters { display: flex; gap: 8px; margin-bottom: 12px; justify-content: center; }
 
+        /* Swipeable Filters */
+        .swipe-filters { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 16px; scroll-behavior: smooth; }
+        .swipe-filters::-webkit-scrollbar { display: none; }
+        .filter-chip { flex: 0 0 auto; height: 38px; padding: 0 20px; font-size: 0.85rem; border-radius: 19px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dark); font-weight: 600; display: flex; align-items: center; transition: 0.2s; cursor:pointer;}
+        .filter-chip.active { background: var(--text-dark); color: #FFF; border-color: var(--text-dark); }
+
         .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:10000; align-items:flex-end; justify-content:center; backdrop-filter: blur(2px);}
         .bottom-sheet { background:var(--surface); padding:24px; border-radius: 20px 20px 0 0; width:100%; max-width: 600px; animation: sheetUp 0.2s ease-out; max-height: 90dvh; overflow-y: auto; padding-bottom: calc(24px + env(safe-area-inset-bottom));}
         @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .sheet-handle { width: 36px; height: 4px; background: #E0E0E0; border-radius: 2px; margin: 0 auto 20px auto; }
         
+        /* Loader Fix */
         #loader { text-align: center; color: var(--text-muted); font-weight: 600; font-size: 0.9rem; margin: 40px 0; display: none; align-items: center; justify-content: center; gap: 10px;}
         .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--text-dark); border-radius: 50%; animation: spin 0.8s linear infinite; }
 
-        #splashScreen { position: fixed; inset: 0; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.4s; }
+        #splashScreen { position: fixed; inset: 0; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.4s; pointer-events: auto; }
         .splash-logo { font-family: 'Playfair Display', serif; font-size: 2.8rem; font-weight: 700; color: var(--text-dark); }
         .splash-subtitle { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); letter-spacing: 2px; margin-top: 6px; margin-bottom: 40px; text-transform: uppercase;}
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -209,20 +223,18 @@
 
     <div id="splashScreen">
         <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
-            <img src="icon.png" alt="Viraasat Logo" style="width: 100px; height: auto; margin-bottom: 16px; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.08));" onerror="this.style.display='none'">
-            <div class="splash-logo" style="margin-bottom: 0;">VIRAASAT</div>
+            <div class="logo-graphic">Viraasat<div class="logo-accent" style="width: 60px; height: 4px; margin: 12px auto 0;"></div></div>
         </div>
-        <div class="splash-subtitle" style="margin-top: 0;">Premium POS</div>
-        <div class="spinner"></div>
+        <div class="splash-subtitle" style="margin-top: 20px; font-family: 'Poppins', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase;">Premium POS</div>
+        <div class="spinner" style="margin-top: 20px;"></div>
     </div>
 
     <!-- LOGIN SCREEN -->
     <div id="loginScreen" style="display: none; position: absolute; inset: 0; background: var(--bg-color); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
         <div style="width: 100%; max-width: 400px; background: var(--surface); padding: 40px 24px; border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow-soft);">
             <div style="text-align: center; margin-bottom: 30px;">
-                <img src="icon.png" alt="Viraasat Logo" style="width: 70px; height: auto; margin-bottom: 12px;" onerror="this.style.display='none'">
-                <h1 style="font-family: 'Playfair Display', serif; color: var(--text-dark); font-size: 2.2rem; font-weight: 700;">VIRAASAT</h1>
-                <p style="color: var(--text-muted); font-weight: 600; font-size: 0.8rem; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px;">Authorized Access Only</p>
+                <div class="logo-graphic" style="font-size: 2.2rem;">Viraasat<div class="logo-accent" style="margin: 8px auto 0;"></div></div>
+                <p style="color: var(--text-muted); font-weight: 600; font-size: 0.8rem; margin-top: 16px; text-transform: uppercase; letter-spacing: 1px;">Authorized Access Only</p>
             </div>
             <div class="form-group">
                 <div class="input-box"><label>Mobile Number</label><input type="tel" id="loginMobile" placeholder="Enter registered number" inputmode="numeric"></div>
@@ -299,7 +311,7 @@
                 <button class="btn btn-outline" onclick="printHistoricalBill()">Print</button>
                 <button class="btn" style="background:#10B981; border:none;" onclick="sendWA_HistoricalBill()">WhatsApp</button>
             </div>
-            <button class="btn btn-danger" style="width:100%; margin-top:12px; background:var(--occ-bg); color:var(--danger); border:1px solid var(--occ-border);" id="btnRequestDelete" onclick="requestOrderDeletion()">Request Deletion (Admin Approval)</button>
+            <button class="btn btn-danger" style="width:100%; margin-top: 12px; background:var(--occ-bg); color:var(--danger); border:1px solid var(--occ-border);" id="btnRequestDelete" onclick="requestOrderDeletion()">Request Deletion (Admin Approval)</button>
         </div>
     </div>
 
@@ -330,7 +342,7 @@
     <!-- TOP BAR -->
     <header class="top-app-bar" id="appHeader" style="display: none;">
         <div class="brand-container">
-            <div class="brand-name">VIRAASAT</div>
+            <div class="logo-graphic">Viraasat<div class="logo-accent"></div></div>
             <div class="page-subtitle" id="pageMainTitle" style="transition: opacity 0.5s ease; font-family: 'Playfair Display', serif; font-size: 0.85rem; font-style: italic; font-weight: 700; color: #A67C52;">Premium POS</div>
         </div>
         <button class="icon-btn" onclick="haptic(); fetchData();" title="Refresh Data">
@@ -341,7 +353,7 @@
     <main id="appMain" style="display: none;">
         <div id="loader"><div class="spinner"></div> <span>Syncing...</span></div>
 
-        <!-- TAB 1: DASHBOARD VIEW -->
+        <!-- TAB 1: DASHBOARD VIEW (HUB) -->
         <div id="tableDashboard" class="tab-content active" style="padding-top: 10px;">
             <div class="greeting-sec">
                 <div>
@@ -351,6 +363,7 @@
                 <div class="date-badge" id="currentDateStr">Today</div>
             </div>
 
+            <!-- TAKEAWAY AND DELIVERY (Top Row) -->
             <div class="quick-action-grid">
                 <div class="quick-card bg-mint" id="cardTakeaway" onclick="openTable('Takeaway')">
                     <div class="qc-icon" style="background:rgba(255,255,255,0.5); border:none;">🛍️</div>
@@ -368,10 +381,7 @@
                 </div>
             </div>
 
-            <div class="section-header"><h4>Dining Zones</h4></div>
-            
-            <div id="tableGrid"></div>
-
+            <!-- TODAY'S SALE & AVG VALUE (Bottom Row) -->
             <div class="home-kpi-grid" id="homeKpiGrid">
                 <div class="hkpi-card bg-purple">
                     <div class="hkpi-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path></svg> Today's Sale</div>
@@ -394,6 +404,9 @@
                     <div class="hkpi-sub" style="color:var(--text-dark); background:transparent; padding:0;">Live Status</div>
                 </div>
             </div>
+            
+            <div class="section-header" style="margin-top: 8px;"><h4>Dining Zones</h4></div>
+            <div id="tableGrid"></div>
 
             <button class="btn btn-outline" onclick="showAddTableModal()" style="margin: 20px 0; font-weight:600; width:100%; border-radius:10px;">+ Deploy New Table</button>
 
@@ -425,15 +438,15 @@
             <div id="salesGrid" class="sales-grid"></div>
         </div>
 
-        <!-- TAB 3: P&L ANALYTICS VIEW -->
+        <!-- TAB 3: OVERVIEW & P&L VIEW -->
         <div id="trendView" class="tab-content" style="padding-top: 10px;">
             <div class="trend-kpi-grid">
                 <div class="trend-kpi-card full-width" style="background:var(--occ-bg); border-color:var(--occ-border);">
                     <div class="kpi-title" style="color: #D03B3B;">Net Profit (All Time)</div>
                     <div class="kpi-value" id="kpiNetProfit">₹ 0</div>
                 </div>
-                <div class="trend-kpi-card"><div class="kpi-title">Total Sales</div><div class="kpi-value" id="kpiTotalSales" style="color:var(--success);">₹ 0</div></div>
-                <div class="trend-kpi-card"><div class="kpi-title">Total Expense</div><div class="kpi-value" id="kpiTotalExpenses" style="color:var(--danger);">₹ 0</div></div>
+                <div class="trend-kpi-card bg-mint"><div class="kpi-title">Total Sales</div><div class="kpi-value" id="kpiTotalSales" style="color:var(--text-dark);">₹ 0</div></div>
+                <div class="trend-kpi-card" style="background:#FEE2E2; border:none;"><div class="kpi-title" style="color:var(--danger);">Total Expense</div><div class="kpi-value" id="kpiTotalExpenses" style="color:var(--danger);">₹ 0</div></div>
                 <div class="trend-kpi-card"><div class="kpi-title">Staff Paid</div><div class="kpi-value" id="kpiTotalSalary">₹ 0</div></div>
                 <div class="trend-kpi-card"><div class="kpi-title">Active Staff</div><div class="kpi-value" id="kpiTotalStaff">0</div></div>
             </div>
@@ -448,25 +461,41 @@
                 <div class="chart-wrapper"><canvas id="trendChart"></canvas></div>
             </div>
 
-            <div class="card">
+            <div class="card" style="border:1px solid var(--border); box-shadow:none;">
+                <div class="section-header" style="margin-top:0;"><h4>Category Distribution</h4></div>
+                <div style="display:flex; justify-content:center; align-items:center; height: 200px; margin-bottom: 8px;">
+                    <canvas id="categoryDonut"></canvas>
+                </div>
+            </div>
+
+            <div class="card" style="border:1px solid var(--border); box-shadow:none;">
+                <div class="section-header" style="margin-top:0;"><h4>Top Performing Items</h4> <span onclick="exportItemSales()">Export ›</span></div>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px;">Ranked by units sold based on current timeframe.</p>
+                <div id="itemAnalyticsList" style="display:flex; flex-direction:column; gap:12px;"></div>
+            </div>
+
+            <div class="card" style="border:1px solid var(--border); box-shadow:none;">
                 <div class="section-header" style="margin-top:0;"><h4>Staff Expense Breakdown</h4></div>
                 <div id="staffExpenseList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
             </div>
 
-            <div class="card">
+            <!-- Employee Advance Log in P&L -->
+            <div class="card" style="border:1px solid var(--border); box-shadow:none;">
                 <div class="section-header" style="margin-top:0;"><h4>Staff Advance Details</h4></div>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px;">Staff advance and salary details.</p>
                 <div id="staffAdvanceList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
             </div>
             
-            <div class="card">
+            <div class="card" style="border:1px solid var(--border); box-shadow:none;">
                 <div class="section-header" style="margin-top:0;"><h4>Other Expenses</h4></div>
                 <div id="expenseBreakdownList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
             </div>
         </div>
 
-        <!-- TAB 4: EXPENSES VIEW -->
+        <!-- EXPENSES VIEW -->
         <div id="expenses" class="tab-content" style="padding-top: 10px;">
-            <div class="card">
+            <div class="greeting-sec"><h2 style="font-size:1.4rem;">Expenditure Log</h2><p>Track operational costs.</p></div>
+            <div class="card" style="border:1px solid var(--border); box-shadow:none;">
                 <div class="form-group">
                     <div class="input-box"><label>Category</label><select id="expCategory"><option>Raw Material</option><option>Electricity</option><option>Payroll</option><option>Maintenance</option><option>Other</option></select></div>
                     <div class="input-box"><label>Amount (₹)</label><input type="number" id="expAmount" placeholder="0" inputmode="numeric"></div>
@@ -474,23 +503,16 @@
                     <!-- Image Upload -->
                     <div class="input-box" style="margin-top: 8px;">
                         <label>Attach Receipt (Optional)</label>
-                        <input type="file" id="expImage" accept="image/*" style="padding: 10px; border: 1px dashed var(--text-muted); cursor: pointer; border-radius:10px;" onchange="handleExpenseImage(event)">
+                        <input type="file" id="expImage" accept="image/*" style="padding: 10px; border: 1px dashed var(--text-muted); cursor: pointer; border-radius:8px; font-size:0.8rem;" onchange="handleExpenseImage(event)">
                         <div id="expImagePreview" style="font-size: 0.75rem; color: var(--success); display: none; margin-top:4px;">✓ Image attached securely.</div>
                     </div>
                 </div>
-                <button class="btn" style="background:var(--btn-pink);" onclick="submitExpense()">Save Expense</button>
+                <button class="btn" style="background:var(--btn-pink);" onclick="submitExpense()">Commit Entry</button>
             </div>
 
-            <div class="section-header" style="margin-bottom:16px;"><h4>Expense Ledger</h4></div>
+            <div class="section-header" style="margin-bottom:16px;"><h4>Expense Ledger</h4> <span onclick="exportExpensesTable()">Export ›</span></div>
             
-            <div class="swipe-filters" id="expenseFilters">
-                <button class="filter-chip active" onclick="renderExpensesListUI(this, 'All')">All</button>
-                <button class="filter-chip" onclick="renderExpensesListUI(this, 'Raw Material')">Raw Material</button>
-                <button class="filter-chip" onclick="renderExpensesListUI(this, 'Electricity')">Electricity</button>
-                <button class="filter-chip" onclick="renderExpensesListUI(this, 'Maintenance')">Maintenance</button>
-                <button class="filter-chip" onclick="renderExpensesListUI(this, 'Other')">Other</button>
-            </div>
-
+            <!-- Date Filter Dropdown -->
             <div class="input-box" style="margin-bottom: 16px;">
                 <label>Filter Expenses By Date</label>
                 <select id="expenseDateFilter" onchange="renderExpensesListUI()">
@@ -504,11 +526,30 @@
                 </select>
             </div>
 
+            <!-- Progress Bar -->
+            <div class="card" style="padding: 16px; border:1px solid var(--border); box-shadow:none; margin-bottom: 20px;">
+                <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-dark); margin-bottom: 8px;">Category Breakdown</div>
+                <div id="expenseProgressBar" style="width: 100%; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; display: flex; margin-top: 8px;"></div>
+                <div id="expenseProgressLegend" style="display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; font-size:0.75rem; font-weight:600;"></div>
+            </div>
+
+            <!-- Expense Filters -->
+            <div class="swipe-filters" id="expenseFilters">
+                <button class="filter-chip active" onclick="renderExpensesListUI(this, 'All')">All</button>
+                <button class="filter-chip" onclick="renderExpensesListUI(this, 'Raw Material')">Raw Material</button>
+                <button class="filter-chip" onclick="renderExpensesListUI(this, 'Electricity')">Electricity</button>
+                <button class="filter-chip" onclick="renderExpensesListUI(this, 'Maintenance')">Maintenance</button>
+                <button class="filter-chip" onclick="renderExpensesListUI(this, 'Other')">Other</button>
+            </div>
+
             <div id="expensesCardList" style="display: flex; flex-direction: column; gap: 12px; padding-bottom: 24px;"></div>
         </div>
 
         <!-- TAB 5: ADMIN (USERS + HR) VIEW -->
         <div id="usersManager" class="tab-content" style="padding-top: 10px;">
+            <div class="greeting-sec" style="margin-top: 16px; margin-bottom: 24px;">
+                <h2 style="font-size: 1.6rem;">Admin Console</h2>
+            </div>
             
             <!-- Pending Approvals for Order Delete and Staff Remove -->
             <div class="card" id="adminApprovalsCard" style="display:none; border-color:var(--danger); background:#FFF5F5;">
@@ -517,14 +558,6 @@
             </div>
 
             <div class="card" style="border-color:#10B981;">
-                <div class="section-header" style="margin-top:0;"><h4>System Restoration</h4></div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <input type="file" id="fullImportInput" accept=".xlsx,.xls,.csv" style="padding:10px; border:1px dashed var(--border); background:#FFF;">
-                    <button class="btn" style="margin-top:10px; background:var(--success);" onclick="runFullImport()">Execute Master Import</button>
-                </div>
-            </div>
-
-            <div class="card">
                 <div class="section-header" style="margin-top:0;"><h4>Staff Payroll & Advance</h4></div>
                 <div class="form-group" style="margin-bottom:0;">
                     <div class="input-box">
@@ -537,6 +570,14 @@
                         <div class="input-box"><label>Type</label><select id="payStaffType"><option>Advance</option><option>Salary Clearance</option></select></div>
                     </div>
                     <button class="btn" style="margin-top:16px; background:#10B981;" onclick="submitStaffPayout()">Pay & Record</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-header" style="margin-top:0;"><h4>System Restoration</h4></div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <input type="file" id="fullImportInput" accept=".xlsx,.xls,.csv" style="padding:10px; border:1px dashed var(--border); background:#FFF;">
+                    <button class="btn" style="margin-top:10px; background:var(--success);" onclick="runFullImport()">Execute Master Import</button>
                 </div>
             </div>
 
@@ -682,10 +723,10 @@
             </div>
             
             <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:30px; margin-top: 20px;">
-                <button class="btn btn-outline" onclick="printBill('final')">Print Final Bill</button>
+                <button class="btn btn-outline" onclick="haptic(); printBill('final')">Print Final Bill</button>
                 <button class="btn btn-outline" style="border-color:#10B981; color:#10B981;" onclick="sendWA_Customer()">WhatsApp Bill</button>
                 <button class="btn btn-outline" onclick="clearTableWithoutCheckout()" style="color:var(--danger); border-color:var(--danger);">Clear Table (Cancel)</button>
-                <button class="btn" style="margin-top:8px; height: 60px; font-size:1.1rem; background:var(--btn-pink);" onclick="document.getElementById('paymentModal').style.display='flex'">Checkout</button>
+                <button class="btn" style="margin-top:8px; height: 60px; font-size:1.1rem; background:var(--btn-pink);" onclick="openPaymentModal()">Checkout</button>
             </div>
         </div>
     </main>
@@ -717,77 +758,133 @@
     <div id="printSection"></div>
 
     <script>
-        // Use your API URL properly
-        const API_BASE = '/api'; 
-        const APP_VERSION = "API Stable V1.0"; 
+        const scriptURL = 'https://script.google.com/macros/s/AKfycbyKuVmEYRbJaYkdUDVNcU9c6mDT4q-VMTESwrikIZvJwK6PteEVwMObdmTMcgqR12KIPA/exec'; 
+        
+        const APP_VERSION = "Final Live V3.0.1"; 
+        
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
-        let menuData = []; let stockData = {}; let runningTables = {}; 
-        let salesHistory = []; let expenseHistory = []; let currentBill = []; let staffData = [];
-        let activeTableNumber = ""; let trendChartInstance = null; let donutChartInstance = null; let selectedPaymentMode = "Cash";
-        let rawChartSalesData = {}; let rawChartExpenseData = {};
+        let menuData = []; 
+        let stockData = {}; 
+        let runningTables = {}; 
+        let salesHistory = []; 
+        let expenseHistory = []; 
+        let currentBill = []; 
+        let staffData = [];
+        let activeTableNumber = ""; 
+        let trendChartInstance = null; 
+        let donutChartInstance = null;
+        let selectedPaymentMode = "Cash";
+        let rawChartSalesData = {}; 
+        let rawChartExpenseData = {};
         
-        let currentViewingSale = null; let expenseImageBase64 = null;
+        // --- GLOBAL CURRENT HISTORICAL SALE ---
+        let currentViewingSale = null;
+        let expenseImageBase64 = null;
 
-        const royalTaglines = ["A Taste of Royal Mewar", "Mewar Ki Shaan, Swaad Mein Jaan", "Swaad Humari Sabse Badi Pehchaan", "Authentic Rajputana Spices", "Premium POS"];
+        function haptic() {
+            try { if (navigator.vibrate) navigator.vibrate(40); } catch(e){}
+        }
+
+        const royalTaglines = [
+            "A Taste of Royal Mewar",
+            "Mewar Ki Shaan, Swaad Mein Jaan",
+            "Swaad Humari Sabse Badi Pehchaan",
+            "Authentic Rajputana Spices",
+            "Premium POS"
+        ];
         let tickerIndex = 0;
-
-        function haptic() { try { if (navigator.vibrate) navigator.vibrate(40); } catch(e){} }
 
         function rotateTicker() {
             const activeTab = document.querySelector('.tab-content.active');
             if (!activeTab || activeTab.id !== 'tableDashboard') return;
+            
             const tickerEl = document.getElementById('pageMainTitle');
             if (!tickerEl) return;
+            
             tickerEl.style.opacity = 0;
-            setTimeout(() => { tickerIndex = (tickerIndex + 1) % royalTaglines.length; tickerEl.innerText = royalTaglines[tickerIndex]; tickerEl.style.opacity = 1; }, 500); 
+            
+            setTimeout(() => {
+                tickerIndex = (tickerIndex + 1) % royalTaglines.length;
+                tickerEl.innerText = royalTaglines[tickerIndex];
+                tickerEl.style.opacity = 1;
+            }, 500); 
         }
+
         setInterval(rotateTicker, 4000);
 
         let tableSections;
-        try { tableSections = JSON.parse(localStorage.getItem('viraasat_table_sections')) || [{ title: "Hut Seating", tables: ["1", "2", "3", "4"] }, { title: "Ground Seating", tables: ["5", "6", "7"] }, { title: "Terrace Seating", tables: ["8", "9", "10"] }]; } catch(e) { tableSections = [{ title: "Hut Seating", tables: ["1", "2", "3", "4"] }, { title: "Ground Seating", tables: ["5", "6", "7"] }, { title: "Terrace Seating", tables: ["8", "9", "10"] }]; }
+        try {
+            tableSections = JSON.parse(localStorage.getItem('viraasat_table_sections')) || [
+                { title: "Hut Seating", tables: ["1", "2", "3", "4"] },
+                { title: "Ground Seating", tables: ["5", "6", "7"] },
+                { title: "Terrace Seating", tables: ["8", "9", "10"] }
+            ];
+        } catch(e) {
+            tableSections = [
+                { title: "Hut Seating", tables: ["1", "2", "3", "4"] },
+                { title: "Ground Seating", tables: ["5", "6", "7"] },
+                { title: "Terrace Seating", tables: ["8", "9", "10"] }
+            ];
+        }
 
         let userPermissions;
-        try { userPermissions = JSON.parse(localStorage.getItem('viraasat_permissions')) || {}; } catch(e) { userPermissions = {}; }
+        try {
+            userPermissions = JSON.parse(localStorage.getItem('viraasat_permissions')) || {};
+        } catch(e) {
+            userPermissions = {};
+        }
 
-        const d = new Date(); document.getElementById('currentDateStr').innerText = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        const d = new Date();
+        document.getElementById('currentDateStr').innerText = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         
         function getVal(obj, possibleKeys) {
-            if (!obj) return ''; let normalizedObj = {};
-            for (let k in obj) { normalizedObj[k.toLowerCase().replace(/[^a-z0-9]/g, '')] = obj[k]; }
-            for (let k of possibleKeys) { let normK = k.toLowerCase().replace(/[^a-z0-9]/g, ''); if (normalizedObj[normK] !== undefined && normalizedObj[normK] !== null && normalizedObj[normK] !== '') return normalizedObj[normK]; }
+            if (!obj) return '';
+            let normalizedObj = {};
+            for (let k in obj) { 
+                normalizedObj[k.toLowerCase().replace(/[^a-z0-9]/g, '')] = obj[k]; 
+            }
+            for (let k of possibleKeys) {
+                let normK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (normalizedObj[normK] !== undefined && normalizedObj[normK] !== null && normalizedObj[normK] !== '') { 
+                    return normalizedObj[normK]; 
+                }
+            }
             return '';
         }
 
         function parseAmount(val) {
             if (val === undefined || val === null || val === '') return 0;
             if (typeof val === 'number') return Math.round(val);
-            let str = String(val).replace(/[^0-9.]/g, ''); let parsed = parseFloat(str); return isNaN(parsed) ? 0 : Math.round(parsed);
+            let str = String(val).replace(/[^0-9.]/g, ''); 
+            let parsed = parseFloat(str);
+            return isNaN(parsed) ? 0 : Math.round(parsed);
         }
 
-        // PERFECT PARSER FOR D1 DB
+        // SMART ITEM PARSER
         function extractItemsList(sItems) {
             let parsedItems = [];
             if (!sItems) return parsedItems;
+            
             try {
                 let arr = typeof sItems === 'string' ? JSON.parse(sItems) : sItems;
-                if (Array.isArray(arr)) return arr.map(i => ({ name: i.name || i.itemname, qty: parseInt(i.qty), total: parseFloat(i.total || i.price) }));
+                if (Array.isArray(arr)) {
+                    return arr.map(i => ({ name: i.name || i.itemname || "Item", qty: parseInt(i.qty) || 1, total: parseFloat(i.total || i.price) || 0 }));
+                }
             } catch(e) {}
             
             let cleanStr = String(sItems).replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
             cleanStr.split(',').forEach(str => {
-                str = str.trim(); if(!str) return;
+                str = str.trim();
+                if(!str) return;
                 let match = str.match(/(.+?)\s*\(x(\d+)\)(?:\s*₹?(\d+(?:\.\d+)?))?/);
-                if(match) parsedItems.push({ name: match[1].trim(), qty: parseInt(match[2]), total: match[3] ? parseFloat(match[3]) : null });
-                else parsedItems.push({ name: str, qty: 1, total: null });
+                if(match) {
+                    parsedItems.push({ name: match[1].trim(), qty: parseInt(match[2]), total: match[3] ? parseFloat(match[3]) : null });
+                } else {
+                    parsedItems.push({ name: str, qty: 1, total: null });
+                }
             });
             return parsedItems;
-        }
-
-        function getSaleItemsText(sale) {
-            let itemsArr = extractItemsList(sale.itemsstring || sale.items_string || sale.items);
-            if(itemsArr.length > 0) return itemsArr.map(i => `${i.name} (x${i.qty}) ₹${i.total || ''}`).join(', ');
-            return sale.itemsstring || sale.items_string || sale.items || '';
         }
 
         window.showCustomAlert = function(message) {
@@ -801,87 +898,210 @@
             haptic();
             let btnCancel = cancelCallbackName ? `document.getElementById('customAlertModal').style.display='none'; ${cancelCallbackName}();` : "document.getElementById('customAlertModal').style.display='none';";
             let btnConfirm = callbackName ? `document.getElementById('customAlertModal').style.display='none'; ${callbackName}();` : "document.getElementById('customAlertModal').style.display='none';";
+
             document.getElementById('customAlertMessage').innerText = message;
-            document.getElementById('customAlertButtons').innerHTML = `<button class="btn btn-outline" onclick="${btnCancel}" style="flex:1;">Cancel</button><button class="btn" onclick="${btnConfirm}" style="flex:1; background:var(--danger); color:#FFF; border:none;">Confirm</button>`;
+            document.getElementById('customAlertButtons').innerHTML = `
+                <button class="btn btn-outline" onclick="${btnCancel}" style="flex:1;">Cancel</button>
+                <button class="btn" onclick="${btnConfirm}" style="flex:1; background:var(--danger); color:#FFF; border:none;">Confirm</button>
+            `;
             document.getElementById('customAlertModal').style.display = 'flex';
         };
 
-        function enforceBackTrap() { try { history.pushState(null, null, location.href); } catch(e) {} }
+        function enforceBackTrap() {
+            try { history.pushState(null, null, location.href); } catch(e) {}
+        }
 
         window.onload = function() { 
-            let savedMobile = localStorage.getItem('viraasat_user'); let savedPass = localStorage.getItem('viraasat_pass'); let savedVer = localStorage.getItem('app_version');
-            if(savedVer !== APP_VERSION) { localStorage.clear(); if(savedMobile && savedPass) { localStorage.setItem('viraasat_user', savedMobile); localStorage.setItem('viraasat_pass', savedPass); } localStorage.setItem('app_version', APP_VERSION); window.location.reload(true); return; }
-            if(savedMobile && savedPass) { document.getElementById('loginScreen').style.display = 'none'; document.getElementById('appHeader').style.display = 'flex'; document.getElementById('appMain').style.display = 'block'; document.getElementById('appBottomNav').style.display = 'flex'; applyAdminRights(savedMobile); fetchData(); enforceBackTrap(); enforceBackTrap(); } else { document.getElementById('loginScreen').style.display = 'flex'; hideSplashScreen(); }
+            let savedMobile = localStorage.getItem('viraasat_user'); 
+            let savedPass = localStorage.getItem('viraasat_pass');
+            let savedVer = localStorage.getItem('app_version');
+
+            if(savedVer !== APP_VERSION) {
+                localStorage.clear();
+                if(savedMobile && savedPass) { 
+                    localStorage.setItem('viraasat_user', savedMobile); 
+                    localStorage.setItem('viraasat_pass', savedPass); 
+                }
+                localStorage.setItem('app_version', APP_VERSION); 
+                window.location.reload(true); 
+                return;
+            }
+
+            if(savedMobile && savedPass) {
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('appHeader').style.display = 'flex';
+                document.getElementById('appMain').style.display = 'block';
+                document.getElementById('appBottomNav').style.display = 'flex';
+                applyAdminRights(savedMobile); 
+                fetchData(); 
+                enforceBackTrap(); enforceBackTrap(); 
+            } else { 
+                document.getElementById('loginScreen').style.display = 'flex'; 
+                hideSplashScreen(); 
+            }
         };
 
         window.onpopstate = function () {
             enforceBackTrap();
-            let modals = ['customAlertModal', 'paymentModal', 'conflictModal', 'orderDetailsModal', 'addTableModal', 'salaryActionModal', 'imagePreviewModal']; let modalClosed = false;
-            for(let id of modals) { let m = document.getElementById(id); if(m && m.style.display === 'flex') { m.style.display = 'none'; modalClosed = true; } }
+
+            let modals = ['customAlertModal', 'paymentModal', 'conflictModal', 'orderDetailsModal', 'addTableModal', 'salaryActionModal', 'imagePreviewModal'];
+            let modalClosed = false;
+            for(let id of modals) { 
+                let m = document.getElementById(id); 
+                if(m && m.style.display === 'flex') { 
+                    m.style.display = 'none'; 
+                    modalClosed = true; 
+                } 
+            }
             if(modalClosed) return;
-            if (document.getElementById('billingView').style.display === 'block') { goBackToTables(true); return; }
+
+            if (document.getElementById('billingView').style.display === 'block') { 
+                goBackToTables(true); 
+                return; 
+            }
+
             let activeTab = document.querySelector('.tab-content.active');
-            if (activeTab && activeTab.id !== 'tableDashboard') { switchMainTab('tableDashboard', document.querySelector('.bottom-nav .nav-item:first-child'), true); return; }
+            if (activeTab && activeTab.id !== 'tableDashboard') { 
+                switchMainTab('tableDashboard', document.querySelector('.bottom-nav .nav-item:first-child'), true); 
+                return; 
+            }
         };
 
-        function hideSplashScreen() { const splash = document.getElementById('splashScreen'); if(splash) { splash.style.opacity = '0'; setTimeout(() => { splash.style.display = 'none'; }, 300); } }
+        function hideSplashScreen() { 
+            const splash = document.getElementById('splashScreen'); 
+            if(splash) { 
+                splash.style.opacity = '0'; 
+                setTimeout(() => { splash.style.display = 'none'; }, 300); 
+            } 
+        }
 
-        document.getElementById('loginPass').addEventListener('keypress', function (e) { if (e.key === 'Enter') attemptLogin(); });
+        // Login Enter Key Trigger
+        document.getElementById('loginPass').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') attemptLogin();
+        });
 
         function attemptLogin() {
             haptic();
-            let mobile = document.getElementById('loginMobile').value.trim(); let pass = document.getElementById('loginPass').value.trim(); let btn = document.getElementById('btnLogin'); let err = document.getElementById('loginError');
+            let mobile = document.getElementById('loginMobile').value.trim(); 
+            let pass = document.getElementById('loginPass').value.trim();
+            let btn = document.getElementById('btnLogin'); let err = document.getElementById('loginError');
+
             if(!mobile || !pass) { err.innerText = "Enter Number and Password."; return; }
+
             btn.innerText = "Verifying..."; btn.disabled = true;
 
             setTimeout(() => {
                 let isValid = false;
                 if(ADMIN_NUMBERS.includes(mobile) || pass === 'admin') isValid = true; 
                 else if(userPermissions[mobile] && userPermissions[mobile].password === pass) isValid = true;
-                if(isValid) { localStorage.setItem('viraasat_user', mobile); localStorage.setItem('viraasat_pass', pass); window.location.reload(true); } else { btn.innerText = "Secure Login"; btn.disabled = false; showCustomAlert("Invalid Credentials!"); }
+
+                if(isValid) { 
+                    localStorage.setItem('viraasat_user', mobile); 
+                    localStorage.setItem('viraasat_pass', pass); 
+                    window.location.reload(true); 
+                } else { 
+                    btn.innerText = "Secure Login"; btn.disabled = false; showCustomAlert("Invalid Credentials!"); 
+                }
             }, 500);
         }
 
         function applyAdminRights(mobile) {
             let isAdmin = ADMIN_NUMBERS.includes(mobile) || localStorage.getItem('viraasat_pass') === 'admin';
-            let perms = userPermissions[mobile] || { orders: false, analytics: false, expenses: false }; window.isUserAdmin = isAdmin; window.userPerms = perms;
-            let hr = new Date().getHours(); let tod = hr < 12 ? 'Morning' : (hr < 17 ? 'Afternoon' : 'Evening'); document.getElementById('greetText').innerText = `Good ${tod} 👋`;
+            let perms = userPermissions[mobile] || { orders: false, analytics: false, expenses: false };
+            window.isUserAdmin = isAdmin; window.userPerms = perms;
+
+            let hr = new Date().getHours(); 
+            let tod = hr < 12 ? 'Morning' : (hr < 17 ? 'Afternoon' : 'Evening'); 
+            document.getElementById('greetText').innerText = `Good ${tod} 👋`;
+
             document.getElementById('navOrders').style.display = (isAdmin || perms.orders) ? 'flex' : 'none'; 
             document.getElementById('btnViewAllOrders').style.display = (isAdmin || perms.orders) ? 'inline' : 'none';
             document.getElementById('navAnalytics').style.display = (isAdmin || perms.analytics) ? 'flex' : 'none'; 
             document.getElementById('navExpenses').style.display = (isAdmin || perms.expenses) ? 'flex' : 'none'; 
             document.getElementById('navUsers').style.display = isAdmin ? 'flex' : 'none';
+
+            if(isAdmin) { renderStaffList(); fetchApprovals(); }
         }
 
         function saveUserPermissions() {
             haptic();
-            let mobile = document.getElementById('staffMobile').value.trim(); let pass = document.getElementById('staffPass').value.trim();
+            let mobile = document.getElementById('staffMobile').value.trim();
+            let pass = document.getElementById('staffPass').value.trim();
+            
             if(mobile.length < 10 || pass.length < 4) { showCustomAlert("Enter valid 10 digit number and minimum 4 char password"); return; }
+            
             userPermissions[mobile] = { password: pass, orders: document.getElementById('chkOrders').checked, analytics: document.getElementById('chkAnalytics').checked, expenses: document.getElementById('chkExpenses').checked };
             localStorage.setItem('viraasat_permissions', JSON.stringify(userPermissions));
-            fetch(`${API_BASE}/staff`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: mobile, mobile: mobile, role: "User", is_active: 1 }) }).catch(e=>console.log(e));
+            renderStaffList();
+
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'addUser', mobile: mobile, password: pass, permissions: JSON.stringify(userPermissions[mobile]) }) })
+            .catch(e => console.log(e));
+
             showCustomAlert("User Registered successfully!");
-            document.getElementById('staffMobile').value = ""; document.getElementById('staffPass').value = ""; document.getElementById('chkOrders').checked = false; document.getElementById('chkAnalytics').checked = false; document.getElementById('chkExpenses').checked = false; 
+            document.getElementById('staffMobile').value = ""; document.getElementById('staffPass').value = "";
+            document.getElementById('chkOrders').checked = false; document.getElementById('chkAnalytics').checked = false; document.getElementById('chkExpenses').checked = false; 
+        }
+
+        window.removeUserConf = function() {
+            let mobile = window.tempMobileToRemove;
+            delete userPermissions[mobile]; localStorage.setItem('viraasat_permissions', JSON.stringify(userPermissions));
+            renderStaffList(); fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'deleteUser', mobile: mobile }) }).catch(e=>console.log(e));
+        }
+
+        function removeUser(mobile) {
+            haptic();
+            window.tempMobileToRemove = mobile;
+            showCustomConfirm("Remove user " + mobile + "?", "removeUserConf", null);
+        }
+
+        function renderStaffList() {
+             let list = document.getElementById('staffList'); list.innerHTML = "";
+             let count = 0;
+             for(let mobile in userPermissions) {
+                 count++;
+                 let p = userPermissions[mobile];
+                 list.innerHTML += `<div class="card" style="margin-bottom:0; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--border); padding:16px;"><div><div style="font-weight:700; font-size:1rem; color:var(--text-dark);">${mobile}</div><div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Orders: ${p.orders?'✅':'❌'} | Analytics: ${p.analytics?'✅':'❌'} | Expenses: ${p.expenses?'✅':'❌'}</div></div><button class="delete-btn" style="color:var(--danger); border:1px solid var(--danger); padding:6px 12px; border-radius:6px; background:transparent;" onclick="removeUser('${mobile}')">Revoke</button></div>`;
+             }
+             if (count === 0) {
+                 list.innerHTML = "<p style='color:var(--text-muted); font-size:0.85rem;'>No extra POS users registered.</p>";
+             }
         }
 
         window.reqEmpDelConf = function() {
             let empId = window.tempEmpId; let empName = window.tempEmpName; let reason = window.tempEmpReason;
-            fetch(`${API_BASE}/orders/request-delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_id: `EMP-${empId}`, reason: reason, requested_by: localStorage.getItem('viraasat_user') || 'Terminal' }) })
-            .then(r=>r.json()).then(data => { showCustomAlert(`Removal request for ${empName} sent to Admin approval.`); fetchData(); }).catch(e=> { showCustomAlert("Error requesting deletion."); });
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'requestDelete', orderId: `EMP-${empId}`, reason: reason, requestedBy: localStorage.getItem('viraasat_user') || 'Terminal' }) })
+            .then(r=>r.json()).then(data => {
+                showCustomAlert(`Removal request for ${empName} sent to Admin approval.`);
+                fetchData();
+            }).catch(e=> { showCustomAlert("Request Sent Locally (Demo)."); });
         }
 
         function requestEmployeeDeletion(empId, empName) {
-            haptic(); let reason = prompt(`Enter reason for removing employee ${empName}:`);
-            if(!reason) return; window.tempEmpId = empId; window.tempEmpName = empName; window.tempEmpReason = reason;
+            haptic();
+            let reason = prompt(`Enter reason for removing employee ${empName}:`);
+            if(!reason) return;
+            window.tempEmpId = empId; window.tempEmpName = empName; window.tempEmpReason = reason;
             showCustomConfirm(`Send removal request for ${empName}?`, "reqEmpDelConf", null);
         }
 
         function renderEmployeeList() {
-            let elList = document.getElementById('employeeList'); if(!elList) return; elList.innerHTML = "";
-            if(staffData.length === 0) { elList.innerHTML = "<p style='font-size:0.85rem; color:var(--text-muted);'>No staff onboarded yet.</p>"; return; }
+            let elList = document.getElementById('employeeList');
+            if(!elList) return;
+            elList.innerHTML = "";
+            if(staffData.length === 0) {
+                elList.innerHTML = "<p style='font-size:0.85rem; color:var(--text-muted);'>No staff onboarded yet.</p>";
+                return;
+            }
             staffData.forEach(s => {
-                let sId = getVal(s, ['empid', 'employeeid', 'id']) || 'N/A'; let sName = getVal(s, ['name']) || 'Unknown'; let sRole = getVal(s, ['role']) || "Staff"; let sMobile = getVal(s, ['mobile', 'phone']) || "N/A"; let sSal = parseAmount(getVal(s, ['monthlysalary', 'salary'])); let sDate = getVal(s, ['dateofjoining', 'joindate', 'date', 'doj', 'join_date']) || 'N/A'; let formattedDate = sDate !== 'N/A' ? cleanDisplayDate(sDate) : 'N/A';
-                if(s.is_active === 0 || s.is_active === false) return; // Hide removed staff
+                let sId = getVal(s, ['empid', 'employeeid', 'id']) || 'N/A';
+                let sName = getVal(s, ['name']) || 'Unknown';
+                let sRole = getVal(s, ['role']) || "Staff";
+                let sMobile = getVal(s, ['mobile', 'phone']) || "N/A";
+                let sSal = parseAmount(getVal(s, ['monthlysalary', 'salary']));
+                let sDate = getVal(s, ['dateofjoining', 'joindate', 'date', 'doj', 'join_date']) || 'N/A';
+                
+                let formattedDate = sDate !== 'N/A' ? cleanDisplayDate(sDate) : 'N/A';
+
                 elList.innerHTML += `
                 <div class="card" style="padding:16px; margin-bottom:0; display:flex; flex-direction:column; gap:12px;">
                     <div style="display:flex; justify-content:space-between; align-items:flex-start;">
@@ -910,7 +1130,7 @@
             if(!item || isNaN(qty)) { showCustomAlert("Please enter valid item and quantity."); return; }
             stockData[item] = qty; renderStockDashboard(); checkStockDisplay(); showCustomAlert("Stock updated to " + qty + " for " + item);
             document.getElementById('adminStockItem').value = ""; document.getElementById('adminStockQty').value = "";
-            fetch(`${API_BASE}/stock`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: item, quantity: qty }) }).catch(e => console.log("Stock update sync failed"));
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'updateStock', item: item, qty: qty }) }).catch(e => console.log("Stock update sync failed"));
         }
 
         function addMenuItemUI() {
@@ -920,21 +1140,27 @@
             let existing = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === name.toLowerCase());
             if(existing) { showCustomAlert("Item already exists!"); return; }
             let newItem = { name: name, price: price, category: cat }; menuData.push(newItem); populateDropdown(); 
-            fetch(`${API_BASE}/menu`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: cat, name: name, price: price }) }).catch(e => console.log("Menu addition failed"));
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'addMenu', category: cat, name: name, price: price }) }).catch(e => console.log("Menu addition failed"));
             showCustomAlert(name + " added successfully!"); document.getElementById('newMenuName').value = ""; document.getElementById('newMenuPrice').value = "";
         }
 
         function populateStaffDropdown() {
             let sel = document.getElementById('payStaffSelect'); sel.innerHTML = "<option value=''>Select Employee</option>";
-            staffData.forEach(s => { let sId = getVal(s, ['empid', 'employeeid', 'id']); let sName = getVal(s, ['name']); if(sId && sName && s.is_active !== 0) { sel.innerHTML += `<option value="${sId}">${sName} (${sId})</option>`; } });
+            staffData.forEach(s => {
+                let sId = getVal(s, ['empid', 'employeeid', 'id']); let sName = getVal(s, ['name']);
+                if(sId && sName) { sel.innerHTML += `<option value="${sId}">${sName} (${sId})</option>`; }
+            });
         }
 
         function addStaffUI() {
             haptic();
             let name = document.getElementById('newStaffName').value.trim(); let mobile = document.getElementById('newStaffMobile').value.trim(); let role = document.getElementById('newStaffRole').value; let salary = parseInt(document.getElementById('newStaffSalary').value); let joinDate = document.getElementById('newStaffDate').value; 
             if(!name || mobile.length < 10 || isNaN(salary)) { showCustomAlert("Please fill all details correctly."); return; }
-            fetch(`${API_BASE}/staff`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name, mobile: mobile, role: role, salary: salary, join_date: joinDate }) })
-            .then(res => res.json()).then(data => { showCustomAlert(`${name} added successfully!`); document.getElementById('newStaffName').value = ""; document.getElementById('newStaffMobile').value = ""; document.getElementById('newStaffSalary').value = ""; document.getElementById('newStaffDate').value = ""; fetchData(); });
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'addStaff', name: name, mobile: mobile, role: role, salary: salary, joinDate: joinDate }) })
+            .then(res => res.json()).then(data => {
+                showCustomAlert(`${name} added successfully! Emp ID: ${data.empId || data.id}`);
+                document.getElementById('newStaffName').value = ""; document.getElementById('newStaffMobile').value = ""; document.getElementById('newStaffSalary').value = ""; document.getElementById('newStaffDate').value = ""; fetchData(); 
+            });
         }
 
         function calculateStaffBalance() {
@@ -960,7 +1186,7 @@
             let staff = staffData.find(s => getVal(s, ['empid', 'employeeid', 'id']) == empId); let sName = getVal(staff, ['name']); let sPhone = getVal(staff, ['mobile']); let desc = `[${empId}] ${sName} - ${type}`; 
             let d = new Date(); let fDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
             
-            fetch(`${API_BASE}/expenses`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: 'Staff Salary', amount: amount, description: desc }) })
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'expense', category: 'Staff Salary', amount: amount, description: desc }) })
             .then(res => res.json()).then(data => {
                 document.getElementById('payStaffAmount').value = "";
                 document.getElementById('salaryActionButtons').innerHTML = `<button class="btn" onclick="printSalarySlip('${sName}', '${empId}', '${amount}', '${type}'); document.getElementById('salaryActionModal').style.display='none';">🖨️ Print Slip</button><button class="btn" style="background:#10B981;" onclick="sendWASalarySlip('${sName}', '${empId}', '${amount}', '${type}', '${sPhone}'); document.getElementById('salaryActionModal').style.display='none';">📱 WhatsApp Slip</button><button class="btn btn-outline" onclick="document.getElementById('salaryActionModal').style.display='none';">Close</button>`;
@@ -981,51 +1207,25 @@
             window.open(`https://wa.me/91${sPhone}?text=${encodeURIComponent(slipText)}`, '_blank');
         }
 
+        function logoutUser() {
+            localStorage.removeItem('viraasat_user'); localStorage.removeItem('viraasat_pass');
+            window.location.reload(true);
+        }
+
         // ==========================================
-        // FETCH DATA (D1)
+        // FETCH DATA
         // ==========================================
-        async function fetchData() {
+        function fetchData() {
             document.getElementById('loader').style.display = 'flex';
-            try {
-                const [menuRes, stockRes, tablesRes, ordersRes, expRes, staffRes] = await Promise.all([
-                    fetch(`${API_BASE}/menu`).then(r => r.json()),
-                    fetch(`${API_BASE}/stock`).then(r => r.json()),
-                    fetch(`${API_BASE}/tables`).then(r => r.json()),
-                    fetch(`${API_BASE}/orders?limit=500`).then(r => r.json()),
-                    fetch(`${API_BASE}/expenses`).then(r => r.json()),
-                    fetch(`${API_BASE}/staff`).then(r => r.json())
-                ]);
-
-                menuData = menuRes.items || [];
-                stockData = {}; (stockRes.stock || []).forEach(s => { stockData[s.name] = s.quantity; });
-                runningTables = {}; (tablesRes.tables || []).forEach(t => { if (t.status === 'occupied') { runningTables[`Table ${t.table_number}`] = []; } });
-
-                salesHistory = (ordersRes.orders || []).filter(o => o.order_status !== 'deleted').map(o => {
-                    let d = new Date(o.created_at);
-                    return {
-                        id: o.id, orderid: o.order_number, table: o.table_number ? `Table ${o.table_number}` : o.order_type,
-                        date: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,
-                        isodate: o.created_at, time: d.toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit', hour12: true}),
-                        totalamount: o.grand_total, total: o.grand_total, amount: o.grand_total,
-                        items: o.items_string || o.items, itemsstring: o.items_string || o.items, discount: o.discount, payment_method: o.payment_method, status: o.order_status
-                    };
-                });
-
-                expenseHistory = (expRes.expenses || []).map(e => ({
-                    id: e.id, date: e.expense_date || e.created_at, isodate: e.expense_date || e.created_at,
-                    category: e.category, amount: e.amount, description: e.description, image: e.receipt_image
-                }));
-
-                staffData = staffRes.staff || [];
-
-                populateDropdown(); populateStaffDropdown(); renderEmployeeList(); renderTableGrid(); renderStockDashboard(); checkStockDisplay(); renderLiveSales(); generateTrends(); renderExpensesListUI();
-                if(window.isUserAdmin) fetchApprovals();
-                
-            } catch(err) { 
-                console.error("Fetch Error:", err); 
-            }
-            hideSplashScreen();
-            document.getElementById('loader').style.display = 'none';
+            fetch(scriptURL).then(response => response.json()).then(data => {
+                hideSplashScreen(); 
+                try {
+                    menuData = data.menu || []; runningTables = data.runningTables || {}; stockData = data.stock || {}; salesHistory = (data.sales || []).reverse(); expenseHistory = data.expenses || []; staffData = data.staff || []; 
+                    populateDropdown(); populateStaffDropdown(); renderEmployeeList(); renderTableGrid(); renderStockDashboard(); checkStockDisplay(); renderLiveSales(); generateTrends(); renderExpensesListUI();
+                    if(window.isUserAdmin) fetchApprovals();
+                } catch(err) { console.error("Render Error:", err); }
+                document.getElementById('loader').style.display = 'none';
+            }).catch(error => { document.getElementById('loader').innerText = "Sync Error. Check your connection."; hideSplashScreen(); setTimeout(()=>document.getElementById('loader').style.display='none',3000); });
         }
 
         // =====================================
@@ -1050,6 +1250,7 @@
                         rawChartSalesData[dateStrKey] = (rawChartSalesData[dateStrKey] || 0) + sTotal; if (isToday) { revenueToday += sTotal; ordersToday++; }
                     }
 
+                    // Deep Item Analysis
                     let parsedItemsArr = extractItemsList(sale.itemsstring || sale.items_string || sale.items);
                     
                     parsedItemsArr.forEach(i => {
@@ -1079,8 +1280,9 @@
                 });
                 
                 let netProfit = totalSalesAmount - totalExpensesAmount;
-                document.getElementById('kpiTotalSales').innerText = `₹ ${totalSalesAmount.toLocaleString('en-IN')}`; document.getElementById('kpiTotalExpenses').innerText = `₹ ${totalExpensesAmount.toLocaleString('en-IN')}`; document.getElementById('kpiNetProfit').innerText = `₹ ${netProfit.toLocaleString('en-IN')}`; document.getElementById('kpiTotalSalary').innerText = `₹ ${totalSalaryPaid.toLocaleString('en-IN')}`; document.getElementById('kpiTotalStaff').innerText = staffData.filter(s=>s.is_active!==0).length;
+                document.getElementById('kpiTotalSales').innerText = `₹ ${totalSalesAmount.toLocaleString('en-IN')}`; document.getElementById('kpiTotalExpenses').innerText = `₹ ${totalExpensesAmount.toLocaleString('en-IN')}`; document.getElementById('kpiNetProfit').innerText = `₹ ${netProfit.toLocaleString('en-IN')}`; document.getElementById('kpiTotalSalary').innerText = `₹ ${totalSalaryPaid.toLocaleString('en-IN')}`; document.getElementById('kpiTotalStaff').innerText = staffData.length;
                 
+                // Item Analytics
                 let sortedItems = Object.entries(itemStats).sort((a,b)=>b[1].qty-a[1].qty);
                 let itemHtml = "";
                 
@@ -1107,10 +1309,10 @@
                 });
                 document.getElementById('itemAnalyticsList').innerHTML = itemHtml || "<span style='color:var(--text-muted); font-size:0.85rem;'>No item data available.</span>";
 
+                // P&L Staff Advance
                 let advanceHtml = "";
                 expenseHistory.forEach(exp => {
-                    let cat = getVal(exp, ['category']);
-                    if (cat === 'Payroll' || cat === 'Staff Salary') {
+                    if (getVal(exp, ['category']) === 'Payroll' || getVal(exp, ['category']) === 'Staff Salary') {
                         let desc = getVal(exp, ['description', 'note']) || '';
                         let amt = parseAmount(getVal(exp, ['amount', 'total']));
                         let dStr = cleanDisplayDate(getVal(exp, ['date', 'isodate']));
@@ -1119,24 +1321,13 @@
                 });
                 document.getElementById('staffAdvanceList').innerHTML = advanceHtml || "<span style='color:var(--text-muted); font-size:0.85rem;'>No staff payments recorded.</span>";
 
-                let dCtx = document.getElementById('categoryDonut');
-                if(dCtx) {
-                    if(donutChartInstance) donutChartInstance.destroy();
-                    let lbls = Object.keys(catStats); let vals = Object.values(catStats);
-                    donutChartInstance = new Chart(dCtx.getContext('2d'), { 
-                        type: 'doughnut', 
-                        data: { labels: lbls, datasets: [{ data: vals, backgroundColor: ['#E21B70', '#1A1A1A', '#B48E5D', '#10B981', '#D03B3B', '#7A756D'], borderWidth: 0 }] }, 
-                        options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right', labels: {font: {family:'Poppins', size:11}, boxWidth: 12} } } } 
-                    });
-                }
-
                 let avgToday = ordersToday > 0 ? Math.floor(revenueToday / ordersToday) : 0;
                 let hasSalesAccess = true; if (typeof window.isUserAdmin !== 'undefined') { hasSalesAccess = window.isUserAdmin || (window.userPerms && window.userPerms.orders); }
 
                 if (hasSalesAccess) {
                     document.getElementById('homeTodaySale').innerText = `₹${revenueToday.toLocaleString('en-IN')}`; document.getElementById('homeAvgOrder').innerText = `₹${avgToday.toLocaleString('en-IN')}`; document.getElementById('homeOverallSale').innerText = `₹${totalSalesAmount.toLocaleString('en-IN')}`; 
                 } else {
-                    document.getElementById('homeTodaySale').innerText = "No Access"; document.getElementById('homeTodaySale').style.fontSize = "1.1rem"; document.getElementById('homeAvgOrder').innerText = "No Access"; document.getElementById('homeAvgOrder').style.fontSize = "1.1rem"; document.getElementById('homeOverallSale').innerText = "No Access"; document.getElementById('homeOverallSale').style.fontSize = "1.1rem";
+                    document.getElementById('homeTodaySale').innerText = "No Access"; document.getElementById('homeAvgOrder').innerText = "No Access"; document.getElementById('homeOverallSale').innerText = "No Access"; 
                 }
                 renderPNLChart('daily');
             } catch(e) { console.error("Trends Error", e); }
@@ -1273,7 +1464,7 @@
             let category = document.getElementById('expCategory').value; let amount = document.getElementById('expAmount').value;
             if (!amount || amount <= 0) { showCustomAlert("Invalid numeric value."); return; }
             
-            fetch(`${API_BASE}/expenses`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: category, amount: amount, description: document.getElementById('expDescription').value || "NA", receipt_image: expenseImageBase64 }) })
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'expense', category: category, amount: amount, description: document.getElementById('expDescription').value || "NA", receipt_image: expenseImageBase64 }) })
             .then(res => res.json()).then(data => { showCustomAlert("Expense Saved!"); document.getElementById('expAmount').value = ""; document.getElementById('expDescription').value = ""; document.getElementById('expImage').value = ""; expenseImageBase64 = null; document.getElementById('expImagePreview').style.display = 'none'; generateTrends(); fetchData(); });
         }
 
@@ -1282,11 +1473,11 @@
         // =====================================
         window.reqOrdDelConf = function() {
             let reason = window.tempOrdReason; let orderId = window.tempOrdId;
-            fetch(`${API_BASE}/orders/request-delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_id: orderId, reason: reason, requested_by: localStorage.getItem('viraasat_user') || 'Terminal' }) })
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'requestDelete', orderId: orderId, reason: reason, requestedBy: localStorage.getItem('viraasat_user') || 'Terminal' }) })
             .then(r=>r.json()).then(data => {
                 showCustomAlert("Cancellation flagged. Awaiting Admin clearance.");
                 closeModal('orderDetailsModal'); fetchData();
-            }).catch(e=> { showCustomAlert("Error sending request."); closeModal('orderDetailsModal'); });
+            }).catch(e=> { showCustomAlert("Request Sent Locally."); closeModal('orderDetailsModal'); });
         }
 
         function requestOrderDeletion() {
@@ -1300,15 +1491,23 @@
 
         window.reqEmpDelConf = function() {
             let empId = window.tempEmpId; let empName = window.tempEmpName; let reason = window.tempEmpReason;
-            fetch(`${API_BASE}/orders/request-delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_id: `EMP-${empId}`, reason: reason, requested_by: localStorage.getItem('viraasat_user') || 'Terminal' }) })
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'requestDelete', orderId: `EMP-${empId}`, reason: reason, requestedBy: localStorage.getItem('viraasat_user') || 'Terminal' }) })
             .then(r=>r.json()).then(data => {
                 showCustomAlert(`Removal request for ${empName} sent to Admin approval.`);
                 fetchData();
-            }).catch(e=> { showCustomAlert("Error sending request."); });
+            }).catch(e=> { showCustomAlert("Request Sent Locally."); });
+        }
+
+        function requestEmployeeDeletion(empId, empName) {
+            haptic();
+            let reason = prompt(`Enter reason for removing employee ${empName}:`);
+            if(!reason) return;
+            window.tempEmpId = empId; window.tempEmpName = empName; window.tempEmpReason = reason;
+            showCustomConfirm(`Send removal request for ${empName}?`, "reqEmpDelConf", null);
         }
 
         function fetchApprovals() {
-            fetch(`${API_BASE}/approvals`).then(r=>r.json()).then(data => {
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'getApprovals' }) }).then(r=>r.json()).then(data => {
                 let card = document.getElementById('adminApprovalsCard'); let list = document.getElementById('adminApprovalsList');
                 if(!data.success || !data.requests || !data.requests.length) { if(card) card.style.display = 'none'; return; }
                 if(card) card.style.display = 'block'; if(list) list.innerHTML = "";
@@ -1326,17 +1525,13 @@
                         </div>` : ''}
                     </div>`;
                 });
-            }).catch(e=> { console.log(e); });
+            }).catch(e=> { console.log("Approvals fetch error (Expected if route doesn't exist in GS yet)."); });
         }
 
         window.resolveApprovalConf = function() {
             let orderId = window.tempResOrder; let status = window.tempResStatus; let reqId = window.tempReqId;
-            fetch(`${API_BASE}/approvals/resolve`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ request_id: reqId, status: status, order_id: orderId, reviewed_by: localStorage.getItem('viraasat_user') }) })
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'resolveDelete', orderId: orderId, status: status, reviewedBy: localStorage.getItem('viraasat_user') }) })
             .then(r=>r.json()).then(data => { 
-                if(status === 'approved' && orderId.startsWith('EMP-')) {
-                    let empId = orderId.replace('EMP-', '');
-                    fetch(`${API_BASE}/staff/remove`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({id: empId}) });
-                }
                 showCustomAlert("Action logged."); fetchApprovals(); fetchData(); 
             }).catch(e=>console.log(e));
         }
@@ -1347,7 +1542,7 @@
         }
 
         // =====================================
-        // LIVE SALES
+        // LIVE SALES & FILTERS FIXED (DIRECT DATE STRING MATCHING)
         // =====================================
         function renderLiveSales() {
             const salesGrid = document.getElementById('salesGrid'); salesGrid.innerHTML = ""; const homeRecent = document.getElementById('homeRecentOrders'); homeRecent.innerHTML = "";
@@ -1355,9 +1550,12 @@
             
             let filteredSales = salesHistory.filter(sale => {
                 if (!startDateInput && !endDateInput) return true;
-                let sDate = String(getVal(sale, ['date', 'isodate']) || '').trim(); let saleIsoDate = ""; let dObj = new Date(sDate);
-                if (!isNaN(dObj.getTime())) { saleIsoDate = `${dObj.getFullYear()}-${String(dObj.getMonth() + 1).padStart(2, '0')}-${String(dObj.getDate()).padStart(2, '0')}`; } else { saleIsoDate = sDate.split("T")[0].split(" ")[0]; }
-                if (startDateInput && saleIsoDate < startDateInput) return false; if (endDateInput && saleIsoDate > endDateInput) return false; return true;
+                let sDate = sale.date; // Use the properly formatted YYYY-MM-DD from fetchData
+                if (!sDate) return true;
+                
+                if (startDateInput && sDate < startDateInput) return false; 
+                if (endDateInput && sDate > endDateInput) return false; 
+                return true;
             });
             
             let displayTotal = filteredSales.reduce((acc, curr) => { 
@@ -1409,7 +1607,7 @@
                     let tName = "Table " + i; let isOccupied = runningTables.hasOwnProperty(tName) && runningTables[tName] && runningTables[tName].length > 0;
                     if(isOccupied) activeCount++; totalCount++;
                     let statusStr = isOccupied ? "OCCUPIED" : "AVAILABLE"; let statusCls = isOccupied ? "status-occ" : "status-avail"; let cardCls = isOccupied ? "table-card occupied" : "table-card";
-                    gridHTML += `<div class="${cardCls}" onclick="openTable('${i}')"><div class="tc-name">Table ${i}</div><div class="tc-status ${statusCls}">${statusStr}</div><div class="tc-sub" style="margin-top:8px;">Dining Area</div></div>`;
+                    gridHTML += `<div class="${cardCls}" onclick="openTable('${i}')" style="width:100%; min-width:auto; padding:20px 10px;"><div class="tc-name">Table ${i}</div><div class="tc-status ${statusCls}">${statusStr}</div><div class="tc-sub" style="margin-top:8px;">Dining Area</div></div>`;
                 }); 
                 gridContainer.innerHTML += gridHTML + '</div>';
             });
@@ -1533,7 +1731,7 @@
         }
 
         window.clearTableConf = function() {
-            fetch(`${API_BASE}/tables/clear`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table_number: activeTableNumber }) })
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'clear', tableName: activeTableNumber }) })
             .then(res => res.json()).then(data => { delete runningTables[activeTableNumber]; currentBill = []; goBackToTables(); }).catch(e => { delete runningTables[activeTableNumber]; currentBill = []; goBackToTables(); });
         }
 
@@ -1541,8 +1739,12 @@
             haptic();
             if (currentBill.length === 0) { showCustomAlert("Invoice is empty."); return; }
             let btn = document.getElementById('btnKOT'); btn.innerText = "Registering..."; btn.disabled = true;
-            fetch(`${API_BASE}/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table_number: activeTableNumber, items: currentBill, order_status: "pending" }) })
-            .then(r=>r.json()).then(data => { runningTables[activeTableNumber] = currentBill; btn.innerText = "Save KOT"; btn.disabled = false; goBackToTables(); }).catch(err => { btn.innerText = "Save KOT"; btn.disabled = false; });
+            let isNew = !runningTables.hasOwnProperty(activeTableNumber);
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'kot', tableName: activeTableNumber, items: currentBill, isNewSession: isNew }) })
+            .then(res => res.json()).then(data => {
+                if(data.status === "Conflict") { document.getElementById('conflictModal').style.display = 'flex'; showSwitchTableModal(); btn.innerText = "Save KOT"; btn.disabled = false; } 
+                else { runningTables[activeTableNumber] = currentBill; btn.innerText = "Save KOT"; btn.disabled = false; goBackToTables(); }
+            }).catch(err => { btn.innerText = "Save KOT"; btn.disabled = false; });
         }
 
         function openPaymentModal() { haptic(); if (currentBill.length === 0) return; document.getElementById('paymentModal').style.display = 'flex'; }
@@ -1554,6 +1756,7 @@
             let btn = document.getElementById('btnFinalCheckout'); btn.innerText = "Processing..."; btn.disabled = true;
             let phone = document.getElementById('customerPhone').value || "NA"; let address = document.getElementById('deliveryAddressBox').style.display === 'flex' ? document.getElementById('deliveryAddress').value : "";
             let discount = parseInt(document.getElementById('discountValue').value) || 0; 
+            let orderId = "ORD" + Math.floor(Math.random() * 900000000 + 100000000);
             
             let itemsString = currentBill.map(i => `${i.name} (x${i.qty}) ₹${i.total}`).join(", ");
             if (discount > 0) itemsString += `, [Discount Applied: -₹${discount}]`; 
@@ -1562,23 +1765,32 @@
 
             let grandTotal = parseInt(document.getElementById('grandTotal').innerText.replace(/[^0-9.-]/g, '')) || 0;
 
-            fetch(`${API_BASE}/orders/checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table_number: activeTableNumber, customer_phone: phone, items_string: itemsString, total: grandTotal, discount: discount, payment_method: selectedPaymentMode }) })
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'checkout', tableName: activeTableNumber, orderId: orderId, phone: phone, itemsString: itemsString, rawItems: currentBill, total: grandTotal, discount: discount, payment_method: selectedPaymentMode }) })
             .then(res => res.json()).then(data => {
                 delete runningTables[activeTableNumber]; 
                 currentBill.forEach(item => { let foundKey = Object.keys(stockData).find(key => key.trim().toLowerCase() === item.name.trim().toLowerCase()); if(foundKey) stockData[foundKey] -= item.qty; });
                 let now = new Date(); let fDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                salesHistory.unshift({ date: fDate, isodate: fDate, time: now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), orderid: orderId, items: itemsString, total: grandTotal, table: activeTableNumber });
                 
                 btn.innerText = "✔ Confirm Checkout"; btn.disabled = false; document.getElementById('paymentModal').style.display = 'none'; generateTrends(); goBackToTables(); fetchData();
             }).catch(err => { btn.innerText = "✔ Confirm Checkout"; btn.disabled = false; });
         }
 
         // =====================================
-        // DISPLAY ORDER DETAILS
+        // DISPLAY ORDER DETAILS (FIXED CRASH)
         // =====================================
         function openOrderDetails(orderId) {
             haptic();
-            let sale = salesHistory.find(s => String(getVal(s, ['orderid', 'id'])).trim() === String(orderId).trim()); if(!sale) return; currentViewingSale = sale;
-            let sTable = getVal(sale, ['tablenumber', 'table', 'tablename']) || 'Table'; let sDate = getVal(sale, ['date', 'isodate']) || ''; let sTime = getVal(sale, ['time']) || ''; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sPhone = getVal(sale, ['phone', 'customerphone']) || ''; let sItems = getSaleItemsText(sale);
+            let sale = salesHistory.find(s => String(s.orderid).trim() === String(orderId).trim() || String(s.id).trim() === String(orderId).trim()); 
+            if(!sale) return; 
+            currentViewingSale = sale;
+            
+            let sTable = sale.table || sale.tablename || sale.tablenumber || 'Table'; 
+            let sDate = sale.date || sale.isodate || ''; 
+            let sTime = sale.time || ''; 
+            let sTotal = parseAmount(sale.totalamount || sale.total || sale.amount); 
+            let sPhone = sale.phone || sale.customerphone || ''; 
+
             document.getElementById('modalOrderMeta').innerHTML = `<b>Table:</b> ${sTable}<br><b>ID:</b> #${orderId}<br><b>Time:</b> ${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}`;
             let modalItemsHtml = "";
 
@@ -1586,16 +1798,27 @@
             
             parsedItemsArr.forEach(i => {
                 let total = i.total;
-                if (total === null) { let menuItem = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === i.name.toLowerCase()); if (menuItem) total = parseInt(getVal(menuItem, ['price'])) * i.qty; }
-                let totalStr = total !== null ? `₹${total}` : "-"; 
+                if (total === null || isNaN(total)) { 
+                    let menuItem = menuData.find(m => {
+                        let mn = m.name || m.itemname;
+                        return mn && i.name && mn.toLowerCase() === i.name.toLowerCase();
+                    }); 
+                    if (menuItem) total = parseInt(menuItem.price || 0) * i.qty; 
+                }
+                let totalStr = (total !== null && !isNaN(total)) ? `₹${total}` : "-"; 
                 modalItemsHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid var(--border); padding-bottom:8px;"><span><b style="color:var(--text-dark);">${i.qty}x</b> <span style="font-weight:500; color:var(--text-muted);">${i.name}</span></span> <span style="font-weight:600; color:var(--text-dark);">${totalStr}</span></div>`;
             });
             
-            document.getElementById('modalOrderItems').innerHTML = modalItemsHtml; document.getElementById('modalOrderTotal').innerText = `₹ ${sTotal}`; document.getElementById('modalCustomerPhone').value = (sPhone && sPhone !== "NA") ? sPhone : ""; 
+            document.getElementById('modalOrderItems').innerHTML = modalItemsHtml; 
+            document.getElementById('modalOrderTotal').innerText = `₹ ${sTotal}`; 
+            document.getElementById('modalCustomerPhone').value = sPhone; 
             
             let delBtn = document.getElementById('btnRequestDelete');
-            if(sale.status === 'deletion_pending' || sale.status === 'deleted' || sale.status === 'cancelled') { delBtn.innerText = "Cancellation Actioned"; delBtn.disabled = true; delBtn.style.opacity = 0.5; }
-            else { delBtn.innerText = "Request Deletion (Admin Approval)"; delBtn.disabled = false; delBtn.style.opacity = 1; }
+            if(sale.status === 'deletion_pending' || sale.status === 'deleted' || sale.status === 'cancelled') { 
+                delBtn.innerText = "Cancellation Actioned"; delBtn.disabled = true; delBtn.style.opacity = 0.5; 
+            } else { 
+                delBtn.innerText = "Request Deletion (Admin Approval)"; delBtn.disabled = false; delBtn.style.opacity = 1; 
+            }
             
             openModal('orderDetailsModal');
         }
@@ -1631,7 +1854,7 @@
             try {
                 let sale = currentViewingSale;
                 if(!sale) return;
-                let sOrderId = getVal(sale, ['orderid', 'id']) || 'N/A'; let sTable = getVal(sale, ['tablenumber', 'table', 'tablename']) || 'Table'; let sDate = getVal(sale, ['date', 'isodate']) || ''; let sTime = getVal(sale, ['time']) || ''; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getSaleItemsText(sale);
+                let sOrderId = sale.orderid || sale.id || 'N/A'; let sTable = sale.table || sale.tablename || 'Table'; let sDate = sale.date || sale.isodate || ''; let sTime = sale.time || ''; let sTotal = parseAmount(sale.totalamount || sale.total || sale.amount); let sItems = sale.items || sale.itemsstring || sale.items_string;
                 
                 let printSec = document.getElementById('printSection'); 
                 let dStr = `${cleanDisplayDate(sDate)} ${cleanDisplayTime(sTime)}`; 
@@ -1643,11 +1866,14 @@
                     let aMatch = sItems.match(/\[Address:\s*(.+?)\]/); if(aMatch) addStr = aMatch[1];
                 }
 
-                let parsedItemsArr = extractItemsList(sale.items || sale.itemsstring || sale.items_string);
+                let parsedItemsArr = extractItemsList(sItems);
 
                 parsedItemsArr.forEach(i => {
                     let totalVal = i.total; let priceVal = null;
-                    if (totalVal === null) { let menuItem = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === i.name.toLowerCase()); if (menuItem) { priceVal = parseInt(getVal(menuItem, ['price'])); totalVal = priceVal * i.qty; } } else { priceVal = totalVal / i.qty; }
+                    if (totalVal === null || isNaN(totalVal)) { 
+                        let menuItem = menuData.find(m => { let mn = m.name || m.itemname; return mn && i.name && mn.toLowerCase() === i.name.toLowerCase();}); 
+                        if (menuItem) { priceVal = parseInt(menuItem.price || 0); totalVal = priceVal * i.qty; } 
+                    } else { priceVal = totalVal / i.qty; }
                     itemsHtml += `<tr><td class="col-item" style="text-align: left; width: 50%;">${i.name}</td><td class="col-price" style="text-align: center; width: 15%;">${priceVal?priceVal:"-"}</td><td class="col-qty" style="text-align: center; width: 15%;">${i.qty}</td><td class="col-amt" style="text-align: right; width: 20%; font-weight:bold;">${totalVal?totalVal:"-"}</td></tr>`;
                 });
                 
@@ -1685,7 +1911,7 @@
             let phone = document.getElementById('modalCustomerPhone').value.trim();
             if (!phone || phone.length < 10) { showCustomAlert("Please enter a valid 10-digit customer phone number."); return; }
             
-            let sOrderId = getVal(sale, ['orderid', 'id']) || 'N/A'; let sTable = getVal(sale, ['tablenumber', 'table', 'tablename']) || 'Table'; let sDate = getVal(sale, ['date', 'isodate']) || ''; let sTime = getVal(sale, ['time']) || ''; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getSaleItemsText(sale); let histDiscount = 0; 
+            let sOrderId = sale.orderid || sale.id || 'N/A'; let sTable = sale.table || sale.tablename || 'Table'; let sDate = sale.date || sale.isodate || ''; let sTime = sale.time || ''; let sTotal = parseAmount(sale.totalamount || sale.total || sale.amount); let sItems = getSaleItemsText(sale); let histDiscount = 0; 
             let text = `*VIRAASAT UDAIPUR*\n_A Taste Of Royal Mewar_\n\n*Invoice No:* ${sOrderId}\n*Table:* ${sTable}\n*Date:* ${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}\n----------------------------------------\n*ITEMS*\n`;
             
             if (typeof sItems === 'string') { let dMatch = sItems.match(/\[Discount Applied:\s*-?₹?(\d+)\]/); if(dMatch) histDiscount = parseInt(dMatch[1]); }
@@ -1693,7 +1919,7 @@
             let parsedItemsArr = extractItemsList(sale.items || sale.itemsstring || sale.items_string);
             parsedItemsArr.forEach(i => {
                 let totalVal = i.total; 
-                if (totalVal === null) { let menuItem = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === i.name.toLowerCase()); if (menuItem) { totalVal = parseInt(getVal(menuItem, ['price'])) * i.qty; } } 
+                if (totalVal === null || isNaN(totalVal)) { let menuItem = menuData.find(m => { let mn = m.name || m.itemname; return mn && i.name && mn.toLowerCase() === i.name.toLowerCase(); }); if (menuItem) { totalVal = parseInt(menuItem.price || 0) * i.qty; } } 
                 text += `▪ ${i.name} (x${i.qty})  ~  *₹${totalVal || '-' }*\n`;
             });
             text += `----------------------------------------\n`;
@@ -1724,6 +1950,7 @@
             downloadCSV(Object.entries(itemStats).sort((a,b)=>b[1]-a[1]).map(([Item, Qty]) => ({Item, Units_Sold: Qty})), 'Viraasat-Item-Analytics.csv');
         }
         function exportExpensesTable() { downloadCSV(expenseHistory.map(e => ({ Date: cleanDisplayDate(getVal(e,['date','isodate'])), Category: getVal(e,['category']), Description: getVal(e,['description','note'])||'—', Amount: parseAmount(getVal(e,['amount','total'])) })), 'Viraasat-Expenses-Report.csv'); }
+        function exportAllData() { downloadCSV(salesHistory.map(s=>({Date:s.date,Time:s.time,Order_ID:s.orderid,Table:s.table,Amount:s.amount,Status:s.status})), 'Viraasat-Master-Sales.csv'); }
         
         async function runFullImport() {
             haptic();
@@ -1732,7 +1959,7 @@
             let file = fileInput.files[0]; let data = await file.arrayBuffer(); let wb = XLSX.read(data, { type: 'array' });
             let getSheet = (name) => wb.Sheets[name] ? XLSX.utils.sheet_to_json(wb.Sheets[name], {defval:'', raw:false}) : [];
             let payload = { sales: getSheet('Sales'), menu: getSheet('Menu').map(m => ({ Name: m.Item_Name || m.Name, Category: m.Category, Price: m.Price, Active: 1 })), staff: getSheet('Staff').map(s => ({ Name: s.Name, Mobile: s.Mobile, Role: s.Role, Monthly_Salary: s['Monthly Salary']||s.Monthly_Salary, Date_of_Joining: s['Join Date']||s.Date_of_Joining })), stock: getSheet('Stock').map(st => ({ Name: st.Item_Name || st.Name, Quantity: st.Current_Stock || st.Quantity })), expenses: getSheet('Expenses') };
-            fetch(`${API_BASE}/import/full`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) }).then(r=>r.json()).then(res => { showCustomAlert("Import Complete!"); fetchData(); }).catch(e=>console.log(e));
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({type: 'import', data: payload}) }).then(r=>r.json()).then(res => { showCustomAlert("Import Complete!"); fetchData(); }).catch(e=>console.log(e));
         }
 
     </script>
