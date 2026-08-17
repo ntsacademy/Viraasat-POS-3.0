@@ -15,6 +15,7 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 
     <style>
         :root {
@@ -38,7 +39,7 @@
             --shadow-soft: 0 4px 18px rgba(0,0,0,0.03); 
             --border-radius: 14px;      
             
-            /* Screenshot Exact Colors */
+            /* Zepto Exact Pastel Colors */
             --card-purple: #F4F0FB;
             --card-peach: #FEF0E6;
             --card-mint: #E8F5E9;
@@ -61,7 +62,7 @@
             max-width: 600px; margin: 0 auto; position: relative;
         } 
 
-        .top-app-bar { padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 50; background: var(--surface); box-shadow: 0 1px 5px rgba(0,0,0,0.02); border-bottom: 1px solid var(--border); }
+        .top-app-bar { padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 50; background: var(--bg-color); }
         .brand-container { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
         .brand-name { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 800; color: var(--text-dark); letter-spacing: 0.5px; line-height: 1.1; }
         .page-subtitle { font-size: 0.85rem; font-weight: 500; color: var(--text-dark); margin-top: 2px; }
@@ -69,29 +70,35 @@
         .icon-btn { background: var(--surface); border: 1px solid var(--border); width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-dark); box-shadow: var(--shadow-soft); transition: 0.1s;}
         .icon-btn:active { transform: scale(0.95); }
 
-        main { flex: 1; padding: 0 0 calc(90px + env(safe-area-inset-bottom)) 0; overflow-y: auto; -webkit-overflow-scrolling: touch; position: relative; }
+        main { flex: 1; padding: 0 0 calc(90px + env(safe-area-inset-bottom)) 0; overflow-y: auto; -webkit-overflow-scrolling: touch; position: relative; z-index: 10; }
         .tab-content { display: none; animation: fadeIn 0.2s ease; padding: 0 20px; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         
-        .greeting-sec { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; margin-top: 16px; }
-        .greeting-sec h2 { font-size: 1.5rem; font-weight: 800; color: var(--text-dark); margin-bottom: 2px; letter-spacing: -0.5px; }
-        .greeting-sec p { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
-        .date-badge { background: var(--surface); border: 1px solid var(--border); padding: 8px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; color: var(--text-dark); display: flex; align-items: center; gap: 6px; box-shadow: var(--shadow-soft); }
+        .greeting-sec { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; margin-top: 8px; }
+        .greeting-sec h2 { font-size: 1.25rem; font-weight: 700; color: var(--text-dark); margin-bottom: 2px; }
+        .greeting-sec p { font-size: 0.78rem; color: var(--text-muted); font-weight: 500; }
+        .date-badge { background: var(--surface); border: 1px solid var(--border); padding: 8px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; color: var(--text-dark); display: flex; align-items: center; gap: 6px; box-shadow: var(--shadow-soft); }
+
+        /* Color Utility Classes */
+        .bg-mint { background-color: var(--card-mint) !important; border-color: transparent !important; }
+        .bg-blue { background-color: var(--card-blue) !important; border-color: transparent !important; }
+        .bg-purple { background-color: var(--card-purple) !important; border-color: transparent !important; }
+        .bg-peach { background-color: var(--card-peach) !important; border-color: transparent !important; }
 
         .quick-action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
         .quick-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.1s;}
         .quick-card:active { transform: scale(0.98); background: #FAF8F5; }
         .quick-card.occupied { background: var(--occ-bg) !important; border-color: var(--occ-border) !important; }
-        .qc-icon { width: 44px; height: 44px; border-radius: 12px; background: #F8F6F0; border: 1px solid #ECE7DD; display: flex; align-items: center; justify-content: center; color: var(--text-dark); flex-shrink: 0; }
+        .qc-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(255,255,255,0.6); display: flex; align-items: center; justify-content: center; color: var(--text-dark); flex-shrink: 0; }
         .qc-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
         .qc-info h4 { font-size: 0.95rem; font-weight: 700; color: var(--text-dark); }
         .status-dot { font-size: 0.7rem; font-weight: 700; color: var(--success); display: flex; align-items: center; gap: 4px; }
         .status-dot.occ { color: #E11D48; }
 
         .section-header { display: flex; justify-content: space-between; align-items: center; margin: 24px 0 12px 0; }
-        .section-header h4 { font-weight: 800; font-size: 0.9rem; color: var(--text-dark); text-transform: uppercase; letter-spacing: 0.5px; }
-        .section-header span { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); cursor: pointer; }
+        .section-header h4 { font-weight: 700; font-size: 0.82rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .section-header span { font-size: 0.8rem; font-weight: 600; color: var(--text-dark); cursor: pointer; }
 
         .table-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
         .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px 10px; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.15s; }
@@ -104,35 +111,29 @@
         .status-avail { color: #10B981; background: #E6F4EA; border: 1px solid #C6E7D2; }
         .status-occ { background: var(--occ-gradient) !important; color: #FFFFFF !important; box-shadow: 0 3px 8px rgba(255, 95, 142, 0.3); border: none !important; }
 
-        /* Dashboard KPI Cards Setup */
         .home-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
         .hkpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; box-shadow: var(--shadow-soft); display: flex; flex-direction: column; cursor: pointer;}
         .hkpi-card:active { transform: scale(0.98); }
-        .hkpi-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--text-muted); font-size: 0.78rem; font-weight: 700; text-transform: uppercase;}
+        .hkpi-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--text-muted); font-size: 0.78rem; font-weight: 600; text-transform: uppercase;}
         .hkpi-top svg { width: 16px; height: 16px; color: var(--text-dark); }
-        .hkpi-val { font-size: 1.6rem; font-weight: 800; color: var(--text-dark); margin-bottom: 8px; transition: font-size 0.2s;}
-        .hkpi-sub { font-size: 0.75rem; font-weight: 700; color: var(--text-dark); display: inline-block; padding: 4px 10px; border-radius: 8px; background: rgba(255,255,255,0.7); width: max-content; }
-        .hkpi-sub.green-text { color: var(--success); background: transparent; padding: 0; }
-
-        /* Exact colors from Screenshot */
-        .bg-purple { background-color: var(--card-purple); border-color: transparent; }
-        .bg-peach { background-color: var(--card-peach); border-color: transparent; }
-        .bg-mint { background-color: var(--card-mint); border-color: transparent; }
-        .bg-blue { background-color: var(--card-blue); border-color: transparent; }
+        .hkpi-val { font-size: 1.35rem; font-weight: 800; color: var(--text-dark); margin-bottom: 4px; transition: font-size 0.2s;}
+        .hkpi-sub { font-size: 0.72rem; font-weight: 600; color: var(--text-dark); background: rgba(255,255,255,0.7); display: inline-block; padding: 2px 8px; border-radius: 6px; width: max-content;}
+        .hkpi-card:not(.bg-purple):not(.bg-peach) .hkpi-sub { background: transparent; padding: 0; color: var(--success); }
 
         .h-order-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.1s; }
-        .h-order-card:active { transform: scale(0.98); background: var(--primary-light); }
-        .ho-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--primary-light); display: flex; align-items: center; justify-content: center; color: var(--text-dark); flex-shrink: 0; }
+        .h-order-card:active { transform: scale(0.98); }
+        .ho-icon { width: 42px; height: 42px; border-radius: 12px; background: #F8F6F0; display: flex; align-items: center; justify-content: center; color: var(--text-dark); flex-shrink: 0; }
         .ho-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-        .ho-title { font-size: 0.95rem; font-weight: 800; color: var(--text-dark); }
+        .ho-title { font-size: 0.92rem; font-weight: 700; color: var(--text-dark); }
         .ho-sub { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
         .ho-badge { background: #E6F4EA; color: #10B981; font-size: 0.65rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; letter-spacing: 0.5px; }
 
         .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; padding: 10px 8px calc(10px + env(safe-area-inset-bottom)) 8px; border-top: 1px solid var(--border); z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.03); border-radius: 20px 20px 0 0; }
-        .nav-item { background: transparent; border: none; color: #6B7280; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: inherit; font-size: 0.65rem; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; padding: 6px 0; }
+        .nav-item { background: transparent; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: inherit; font-size: 0.65rem; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; padding: 6px 0; }
         .nav-item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: 0.2s; }
-        .nav-item.active { color: var(--text-dark); font-weight: 700; }
-        .nav-item.active svg { stroke: var(--text-dark); stroke-width: 2.2; }
+        .nav-item.active { color: var(--btn-pink); font-weight: 800; }
+        .nav-item.active .icon-container { background: #FDE8D7; width: 56px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+        .nav-item.active svg { stroke: var(--btn-pink); stroke-width: 2.2; }
 
         .card { background: var(--surface); border-radius: var(--border-radius); padding: 20px; border: 1px solid var(--border); margin-bottom: 16px; box-shadow: var(--shadow-soft); }
         .form-group { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
@@ -163,7 +164,7 @@
         .stock-tag.low { border-color: var(--danger); color: var(--danger); }
         .stock-tag.low span { background: #FDE8E8; color: var(--danger); }
 
-        .filter-btn { height: 36px; padding: 0 16px; font-size: 0.85rem; transition: 0.2s; border-radius: 18px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dark); font-weight: 600; cursor:pointer;}
+        .filter-btn { height: 36px; padding: 0 16px; font-size: 0.85rem; transition: 0.2s; border-radius: 18px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dark); font-weight: 600; cursor: pointer;}
         .filter-btn.active { background: var(--text-dark); color: #FFF; border-color: var(--text-dark); }
 
         .sales-grid { display: flex; flex-direction: column; gap: 12px; }
@@ -180,15 +181,22 @@
         .chart-wrapper { position: relative; height: 260px; min-height: 260px; width: 100%; margin-top: 16px; display: block; }
         .chart-filters { display: flex; gap: 8px; margin-bottom: 12px; justify-content: center; }
 
+        /* Swipeable Filters */
+        .swipe-filters { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 16px; scroll-behavior: smooth; }
+        .swipe-filters::-webkit-scrollbar { display: none; }
+        .filter-chip { flex: 0 0 auto; height: 38px; padding: 0 20px; font-size: 0.85rem; border-radius: 19px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dark); font-weight: 600; display: flex; align-items: center; transition: 0.2s; cursor:pointer;}
+        .filter-chip.active { background: var(--text-dark); color: #FFF; border-color: var(--text-dark); }
+
         .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:10000; align-items:flex-end; justify-content:center; backdrop-filter: blur(2px);}
         .bottom-sheet { background:var(--surface); padding:24px; border-radius: 20px 20px 0 0; width:100%; max-width: 600px; animation: sheetUp 0.2s ease-out; max-height: 90dvh; overflow-y: auto; padding-bottom: calc(24px + env(safe-area-inset-bottom));}
         @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .sheet-handle { width: 36px; height: 4px; background: #E0E0E0; border-radius: 2px; margin: 0 auto 20px auto; }
         
-        #loader { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 99999; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 16px; color: var(--primary); font-weight: 600; font-size: 0.9rem; }
-        .spinner { width: 24px; height: 24px; border: 3px solid var(--border); border-top-color: var(--text-dark); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        /* Fixed Loader (Does not block clicks when hidden) */
+        #loader { position: fixed; inset: 0; background: rgba(251,249,245,0.9); z-index: 99999; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 16px; color: var(--text-dark); font-weight: 600; font-size: 0.9rem; pointer-events: auto; }
+        .spinner { width: 30px; height: 30px; border: 3px solid var(--border); border-top-color: var(--text-dark); border-radius: 50%; animation: spin 0.8s linear infinite; }
 
-        #splashScreen { position: fixed; inset: 0; background: var(--surface); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.4s; }
+        #splashScreen { position: fixed; inset: 0; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.4s; pointer-events: auto; }
         .splash-logo { font-family: 'Playfair Display', serif; font-size: 2.8rem; font-weight: 700; color: var(--text-dark); }
         .splash-subtitle { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); letter-spacing: 2px; margin-top: 6px; margin-bottom: 40px; text-transform: uppercase;}
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -215,8 +223,7 @@
         <div class="splash-subtitle" style="margin-top: 0;">Premium POS</div>
         <div class="spinner"></div>
     </div>
-
-    <!-- LOADER -->
+    
     <div id="loader"><div class="spinner"></div><div id="loaderText">Syncing...</div></div>
 
     <!-- LOGIN SCREEN -->
@@ -343,7 +350,7 @@
 
     <main id="appMain" style="display: none;">
         
-        <!-- TAB 1: DASHBOARD VIEW (HUB) -->
+        <!-- TAB 1: DASHBOARD VIEW (Exact Order Kept) -->
         <div id="tableDashboard" class="tab-content active" style="padding-top: 10px;">
             <div class="greeting-sec">
                 <div>
@@ -353,7 +360,6 @@
                 <div class="date-badge" id="currentDateStr">Today</div>
             </div>
 
-            <!-- TAKEAWAY AND DELIVERY (Top Row) -->
             <div class="quick-action-grid">
                 <div class="quick-card bg-mint" id="cardTakeaway" onclick="openTable('Takeaway')">
                     <div class="qc-icon" style="background:rgba(255,255,255,0.5); border:none;">🛍️</div>
@@ -370,66 +376,60 @@
                     </div>
                 </div>
             </div>
-
-            <div class="section-header" style="margin-top: 8px;"><h4>Dining Zones</h4></div>
             
             <div id="tableGrid"></div>
 
-            <!-- TODAY'S SALE & AVG VALUE (Bottom Row) -->
             <div class="home-kpi-grid" id="homeKpiGrid">
                 <div class="hkpi-card bg-purple">
                     <div class="hkpi-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path></svg> Today's Sale</div>
                     <div class="hkpi-val" id="homeTodaySale">₹0</div>
-                    <div class="hkpi-sub" style="background:#FFF; color:var(--text-dark);">Gross Net</div>
+                    <div class="hkpi-sub" style="background:#FFF;">Gross Net</div>
                 </div>
                 <div class="hkpi-card bg-peach">
                     <div class="hkpi-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg> Avg. Order Value</div>
                     <div class="hkpi-val" id="homeAvgOrder">₹0</div>
-                    <div class="hkpi-sub" style="background:#FFF; color:var(--text-dark);">Per Invoice</div>
+                    <div class="hkpi-sub" style="background:#FFF;">Per Invoice</div>
                 </div>
-                <div class="hkpi-card" style="border:1px solid var(--border);">
+                <div class="hkpi-card">
                     <div class="hkpi-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg> Overall Sale</div>
                     <div class="hkpi-val" id="homeOverallSale">₹0</div>
-                    <div class="hkpi-sub" style="color:var(--success); background:transparent; padding:0;">Lifetime</div>
+                    <div class="hkpi-sub">Lifetime</div>
                 </div>
-                <div class="hkpi-card" style="border:1px solid var(--border);">
+                <div class="hkpi-card">
                     <div class="hkpi-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg> Active Tables</div>
                     <div class="hkpi-val" id="homeActiveTables">0 / 0</div>
-                    <div class="hkpi-sub" style="color:var(--text-dark); background:transparent; padding:0;">Live Status</div>
+                    <div class="hkpi-sub" style="color:var(--text-dark);">Live Status</div>
                 </div>
             </div>
-
-            <button class="btn btn-outline" onclick="showAddTableModal()" style="margin: 20px 0; font-weight:600; width:100%; border-radius:10px;">+ Deploy New Table</button>
 
             <div class="section-header"><h4>Recent Orders</h4> <span id="btnViewAllOrders" onclick="switchMainTab('salesDashboard', document.getElementById('navOrders'))">View All ›</span></div>
             <div id="homeRecentOrders"></div>
+
+            <button class="btn btn-outline" onclick="showAddTableModal()" style="margin: 20px 0; font-weight:600;">+ Add New Table</button>
             
             <div class="section-header"><h4>Stock Alert</h4></div>
-            <div id="dashboardStockList" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px;"></div>
+            <div id="dashboardStockList" class="stock-list-container" style="margin-bottom:0; display: flex; flex-wrap: wrap; gap: 8px;"></div>
         </div>
 
-        <!-- TAB 2: REGISTRY (LIVE SALES) VIEW -->
+        <!-- TAB 2: LIVE SALES VIEW -->
         <div id="salesDashboard" class="tab-content" style="padding-top: 10px;">
-            <div class="card" style="padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border:none;">
+            <div class="card" style="padding: 16px; margin-bottom: 16px;">
                 <div class="input-row" style="margin-bottom: 12px;">
-                    <div class="input-box"><label>Start Date</label><input type="date" id="filterStartDate" onchange="renderLiveSales()"></div>
-                    <div class="input-box"><label>End Date</label><input type="date" id="filterEndDate" onchange="renderLiveSales()"></div>
+                    <div class="input-box"><label>From</label><input type="date" id="filterStartDate" onchange="renderLiveSales()"></div>
+                    <div class="input-box"><label>To</label><input type="date" id="filterEndDate" onchange="renderLiveSales()"></div>
                 </div>
-                <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-bottom: 12px;">
-                    <button id="btnFilterToday" class="filter-btn" style="background:var(--text-dark); color:#FFF; border-color:var(--text-dark);" onclick="haptic(); setTodayFilter()">Today</button>
-                    <button id="btnFilterYesterday" class="filter-btn" onclick="haptic(); setYesterdayFilter()">Yesterday</button>
-                    <button id="btnFilterClear" class="filter-btn" style="color: var(--danger); border-color: var(--danger); background:transparent;" onclick="haptic(); resetDateFilter()">Reset</button>
+                <div class="swipe-filters">
+                    <button id="btnFilterToday" class="filter-chip active" onclick="setTodayFilter()">Today</button>
+                    <button id="btnFilterYesterday" class="filter-chip" onclick="setYesterdayFilter()">Yesterday</button>
+                    <button id="btnFilterClear" class="filter-chip" style="border-color: var(--danger); color: var(--danger); background:transparent;" onclick="resetDateFilter()">Clear</button>
                 </div>
-                <div style="display:flex; gap:8px;">
-                    <div style="flex:1; background:var(--text-dark); border-radius:8px; font-weight:700; font-size:1.1rem; text-align:center; color:#FFF; display:flex; align-items:center; justify-content:center; height:50px;" id="totalSalesBox">Total Sales: ₹ 0</div>
-                    <button class="btn btn-outline" style="width: auto; padding: 0 16px; height:50px;" onclick="exportRegistrySales()">Export</button>
-                </div>
+                <div style="background:#FAFAFA; border:1px solid var(--border); padding:12px; border-radius:8px; font-weight:700; font-size:1.1rem; text-align:center; color:var(--text-dark);" id="totalSalesBox">Total Sales: ₹ 0</div>
             </div>
-            <div class="section-header"><h4>Transaction Directory</h4></div>
+            <div class="section-header"><h4>All Orders</h4></div>
             <div id="salesGrid" class="sales-grid"></div>
         </div>
 
-        <!-- TAB 3: OVERVIEW & P&L VIEW -->
+        <!-- TAB 3: P&L ANALYTICS VIEW -->
         <div id="trendView" class="tab-content" style="padding-top: 10px;">
             <div class="trend-kpi-grid">
                 <div class="trend-kpi-card full-width" style="background:var(--occ-bg); border-color:var(--occ-border);">
@@ -457,7 +457,6 @@
                 <div id="staffExpenseList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
             </div>
 
-            <!-- Employee Advance Log in P&L -->
             <div class="card">
                 <div class="section-header" style="margin-top:0;"><h4>Staff Advance Details</h4></div>
                 <div id="staffAdvanceList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
@@ -473,22 +472,28 @@
         <div id="expenses" class="tab-content" style="padding-top: 10px;">
             <div class="card">
                 <div class="form-group">
-                    <div class="input-box"><label>Category</label><select id="expCategory"><option>Raw Material</option><option>Electricity</option><option>Payroll</option><option>Maintenance</option><option>Other</option></select></div>
+                    <div class="input-box"><label>Category</label><select id="expCategory"><option>Raw Material</option><option>Electricity</option><option>Maintenance</option><option>Other</option></select></div>
                     <div class="input-box"><label>Amount (₹)</label><input type="number" id="expAmount" placeholder="0" inputmode="numeric"></div>
                     <div class="input-box"><label>Note (Optional)</label><input type="text" id="expDescription" placeholder="Add details"></div>
-                    <!-- Image Upload Option Added -->
                     <div class="input-box" style="margin-top: 8px;">
                         <label>Attach Receipt (Optional)</label>
                         <input type="file" id="expImage" accept="image/*" style="padding: 10px; border: 1px dashed var(--text-muted); cursor: pointer; border-radius:10px;" onchange="handleExpenseImage(event)">
                         <div id="expImagePreview" style="font-size: 0.75rem; color: var(--success); display: none; margin-top:4px;">✓ Image attached securely.</div>
                     </div>
                 </div>
-                <button class="btn" style="background:var(--btn-pink);" onclick="submitExpense()">Save Expense</button>
+                <button class="btn" onclick="submitExpense()">Save Expense</button>
             </div>
 
-            <div class="section-header" style="margin-bottom:16px;"><h4>Expense Ledger</h4> <span onclick="exportExpensesTable()">Export ›</span></div>
-            
-            <!-- Date Filter Dropdown Added -->
+            <div class="section-header" style="margin-bottom:16px;"><h4>Expense Ledger</h4></div>
+
+            <div class="swipe-filters" id="expenseFilters">
+                <button class="filter-chip active" onclick="renderExpensesListUI(this, 'All')">All</button>
+                <button class="filter-chip" onclick="renderExpensesListUI(this, 'Raw Material')">Raw Material</button>
+                <button class="filter-chip" onclick="renderExpensesListUI(this, 'Electricity')">Electricity</button>
+                <button class="filter-chip" onclick="renderExpensesListUI(this, 'Maintenance')">Maintenance</button>
+                <button class="filter-chip" onclick="renderExpensesListUI(this, 'Other')">Other</button>
+            </div>
+
             <div class="input-box" style="margin-bottom: 16px;">
                 <label>Filter Expenses By Date</label>
                 <select id="expenseDateFilter" onchange="renderExpensesListUI()">
@@ -502,27 +507,12 @@
                 </select>
             </div>
 
-            <div class="card" style="padding: 0; overflow: hidden; border:1px solid var(--border); box-shadow:none;">
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;" id="expensesTable">
-                        <thead>
-                            <tr style="background: var(--surface-alt); text-align: left;">
-                                <th style="padding: 10px; border-bottom: 1px solid var(--border);">Date</th>
-                                <th style="padding: 10px; border-bottom: 1px solid var(--border);">Category</th>
-                                <th style="padding: 10px; border-bottom: 1px solid var(--border);">Description</th>
-                                <th style="padding: 10px; border-bottom: 1px solid var(--border); text-align: right;">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody id="expensesTableBody"></tbody>
-                    </table>
-                </div>
-            </div>
+            <div id="expensesCardList" style="display: flex; flex-direction: column; gap: 12px; padding-bottom: 24px;"></div>
         </div>
 
         <!-- TAB 5: ADMIN (USERS + HR) VIEW -->
         <div id="usersManager" class="tab-content" style="padding-top: 10px;">
             
-            <!-- Pending Approvals for Order Delete and Staff Remove -->
             <div class="card" id="adminApprovalsCard" style="display:none; border-color:var(--danger); background:#FFF5F5;">
                 <div class="section-header" style="margin-top:0;"><h4>⚠️ Pending Approvals</h4></div>
                 <div id="adminApprovalsList" style="display:flex; flex-direction:column; gap:12px;"></div>
@@ -614,7 +604,7 @@
             </div>
 
             <div class="section-header" style="margin-top:24px;"><h4>Active Staff Directory</h4></div>
-            <div id="employeeList" style="display:flex; flex-direction:column; gap:12px; margin-bottom:32px;"></div>
+            <div id="employeeList" style="display:flex; flex-direction:column; gap:12px;"></div>
 
             <div class="section-header" style="margin-top:24px;"><h4>Registered POS App Users</h4></div>
             <div id="staffList" style="display:flex; flex-direction:column; gap:10px; margin-bottom: 24px;"></div>
@@ -645,7 +635,7 @@
             </div>
 
             <details style="background:var(--surface); border-radius:12px; margin-bottom:24px; border:1px solid var(--border);">
-                <summary style="padding:16px; font-weight:500; font-size: 0.95rem; color:var(--text-dark); outline:none; cursor:pointer; list-style: none; display: flex; align-items: center; gap: 8px;" onclick="haptic()">
+                <summary style="padding:16px; font-weight:500; font-size: 0.95rem; color:var(--text-dark); outline:none; cursor:pointer; list-style: none; display: flex; align-items: center; gap: 8px;">
                     <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Add Custom Item
                 </summary>
                 <div style="padding:0 16px 16px 16px;">
@@ -688,8 +678,8 @@
             <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:30px; margin-top: 20px;">
                 <button class="btn btn-outline" onclick="printBill('final')">Print Final Bill</button>
                 <button class="btn btn-outline" style="border-color:#10B981; color:#10B981;" onclick="sendWA_Customer()">WhatsApp Bill</button>
-                <button class="btn btn-outline" onclick="clearTableWithoutCheckout()" style="color:var(--danger); border-color:var(--danger);">Clear Table (Cancel)</button>
-                <button class="btn" style="margin-top:8px; height: 60px; font-size:1.1rem; background:var(--btn-pink);" onclick="document.getElementById('paymentModal').style.display='flex'">Checkout</button>
+                <button class="btn btn-danger-action" onclick="clearTableWithoutCheckout()" style="background:var(--surface); border:1px solid var(--border); color:var(--text-dark); height:50px; border-radius:10px; font-weight:600; font-size:0.95rem;">Clear Table (Cancel)</button>
+                <button class="btn" style="margin-top:8px; height: 60px; font-size:1.1rem;" onclick="document.getElementById('paymentModal').style.display='flex'">Checkout</button>
             </div>
         </div>
     </main>
@@ -723,7 +713,7 @@
     <script>
         const scriptURL = 'https://script.google.com/macros/s/AKfycbyKuVmEYRbJaYkdUDVNcU9c6mDT4q-VMTESwrikIZvJwK6PteEVwMObdmTMcgqR12KIPA/exec'; 
         
-        const APP_VERSION = "New 2.0.1"; 
+        const APP_VERSION = "New 2.0.2 Fix"; 
         
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
@@ -824,7 +814,7 @@
             return isNaN(parsed) ? 0 : Math.round(parsed);
         }
 
-        // SMART ITEM PARSER (Fixes missing items issue perfectly for JSON & Old Formats)
+        // SMART ITEM PARSER (Fixes missing items perfectly)
         function extractItemsList(sItems) {
             let parsedItems = [];
             if (!sItems) return parsedItems;
@@ -865,8 +855,14 @@
             document.getElementById('customAlertModal').style.display = 'flex';
         };
 
+        let currentConfirmCallback = null; 
+        let currentCancelCallback = null;
+
         window.showCustomConfirm = function(message, callbackName, cancelCallbackName) {
             haptic();
+            currentConfirmCallback = callbackName; 
+            currentCancelCallback = cancelCallbackName;
+            
             let btnCancel = cancelCallbackName ? `document.getElementById('customAlertModal').style.display='none'; ${cancelCallbackName}();` : "document.getElementById('customAlertModal').style.display='none';";
             let btnConfirm = callbackName ? `document.getElementById('customAlertModal').style.display='none'; ${callbackName}();` : "document.getElementById('customAlertModal').style.display='none';";
 
@@ -1265,7 +1261,7 @@
                             ${badge}
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:12px;">
-                            <span style="font-size:0.8rem; color:var(--text-muted); font-weight:500;">Sold: <b style="color:var(--text-dark); font-size:0.95rem;">${data.qty}</b></span>
+                            <span style="font-size:0.8rem; color:var(--text-muted); font-weight:500;">Sold: <b style="color:var(--text-dark); font-size:0.95rem;">${data.qty}</b> units</span>
                             <span style="font-size:1.1rem; font-weight:700; color:var(--text-dark);">₹${data.revenue.toLocaleString('en-IN')}</span>
                         </div>
                     </div>`;
@@ -1732,7 +1728,7 @@
         }
 
         // =====================================
-        // DISPLAY ORDER DETAILS
+        // DISPLAY ORDER DETAILS (FIXED PARSING)
         // =====================================
         function openOrderDetails(orderId) {
             haptic();
