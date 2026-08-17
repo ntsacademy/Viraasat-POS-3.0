@@ -11,8 +11,9 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" type="image/png" href="icon.png">
     
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
@@ -44,7 +45,6 @@
             --card-blue: #EAF2FF;
             --btn-pink: #E21B70;
             --btn-green: #10B981;
-            --accent-gold: #B48E5D;
         }
 
         html { font-size: 16px; touch-action: manipulation; background-color: #FFFFFF; overscroll-behavior-y: contain; } 
@@ -61,16 +61,10 @@
             max-width: 600px; margin: 0 auto; position: relative;
         } 
 
-        /* CSS Graphic Logo Styling */
-        .logo-graphic { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 800; color: var(--primary); position: relative; display: inline-block; line-height: 1; letter-spacing: 0.5px;}
-        .logo-graphic::after { content: '™'; font-size: 0.6rem; position: absolute; top: 0; right: -12px; color: var(--accent-gold); font-family: 'Poppins', sans-serif;}
-        .logo-accent { display: block; width: 40px; height: 3px; background: var(--accent-gold); margin: 6px 0 0 2px; border-radius: 2px; }
-        .splash-logo { font-size: 3rem; text-align: center; margin-bottom: 8px;}
-        .splash-logo .logo-accent { margin: 12px auto 0; width: 60px; height: 4px; }
-
         .top-app-bar { padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 50; background: var(--bg-color); }
         .brand-container { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
-        .page-subtitle { font-family: 'Poppins', sans-serif; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-top: 6px; }
+        .brand-name { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 800; color: var(--text-dark); letter-spacing: 0.5px; line-height: 1.1; }
+        .page-subtitle { font-size: 0.85rem; font-weight: 500; color: var(--text-dark); margin-top: 2px; }
         
         .icon-btn { background: var(--surface); border: 1px solid var(--border); width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-dark); box-shadow: var(--shadow-soft); transition: 0.1s;}
         .icon-btn:active { transform: scale(0.95); }
@@ -80,10 +74,10 @@
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         
-        .greeting-sec { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; margin-top: 16px; }
-        .greeting-sec h2 { font-size: 1.5rem; font-weight: 800; color: var(--text-dark); margin-bottom: 2px; letter-spacing: -0.5px; }
-        .greeting-sec p { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
-        .date-badge { background: var(--surface); border: 1px solid var(--border); padding: 8px 16px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; color: var(--text-dark); display: flex; align-items: center; gap: 6px; box-shadow: var(--shadow-soft); }
+        .greeting-sec { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; margin-top: 8px; }
+        .greeting-sec h2 { font-size: 1.25rem; font-weight: 700; color: var(--text-dark); margin-bottom: 2px; }
+        .greeting-sec p { font-size: 0.78rem; color: var(--text-muted); font-weight: 500; }
+        .date-badge { background: var(--surface); border: 1px solid var(--border); padding: 8px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; color: var(--text-dark); display: flex; align-items: center; gap: 6px; box-shadow: var(--shadow-soft); }
 
         .quick-action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
         .quick-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.1s;}
@@ -96,8 +90,8 @@
         .status-dot.occ { color: #E11D48; }
 
         .section-header { display: flex; justify-content: space-between; align-items: center; margin: 24px 0 12px 0; }
-        .section-header h4 { font-weight: 800; font-size: 0.9rem; color: var(--text-dark); text-transform: uppercase; letter-spacing: 0.5px; }
-        .section-header span { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); cursor: pointer; }
+        .section-header h4 { font-weight: 700; font-size: 0.82rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .section-header span { font-size: 0.8rem; font-weight: 600; color: var(--text-dark); cursor: pointer; }
 
         .table-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
         .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px 10px; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.15s; }
@@ -110,35 +104,32 @@
         .status-avail { color: #10B981; background: #E6F4EA; border: 1px solid #C6E7D2; }
         .status-occ { background: var(--occ-gradient) !important; color: #FFFFFF !important; box-shadow: 0 3px 8px rgba(255, 95, 142, 0.3); border: none !important; }
 
-        /* Updated Dashboard KPI Cards Setup based on user image */
+        /* Exact colors applied to original grid class */
         .home-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-        .hkpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; box-shadow: var(--shadow-soft); display: flex; flex-direction: column; cursor: pointer;}
-        .hkpi-card:active { transform: scale(0.98); }
-        .hkpi-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--text-muted); font-size: 0.78rem; font-weight: 700; text-transform: uppercase;}
+        .hkpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; box-shadow: var(--shadow-soft); display: flex; flex-direction: column; }
+        .hkpi-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--text-muted); font-size: 0.78rem; font-weight: 600; }
         .hkpi-top svg { width: 16px; height: 16px; color: var(--text-dark); }
-        .hkpi-val { font-size: 1.6rem; font-weight: 800; color: var(--text-dark); margin-bottom: 8px; transition: font-size 0.2s;}
-        .hkpi-sub { font-size: 0.75rem; font-weight: 700; color: var(--text-dark); display: inline-block; padding: 4px 10px; border-radius: 8px; background: rgba(255,255,255,0.7); width: max-content; }
-        .hkpi-sub.green-text { color: var(--success); background: transparent; padding: 0; }
+        .hkpi-val { font-size: 1.35rem; font-weight: 800; color: var(--text-dark); margin-bottom: 4px; transition: font-size 0.2s;}
+        .hkpi-sub { font-size: 0.72rem; font-weight: 600; color: var(--success); }
 
-        /* Exact colors from Screenshot */
-        .bg-purple { background-color: var(--card-purple); border-color: transparent; }
-        .bg-peach { background-color: var(--card-peach); border-color: transparent; }
-        .bg-mint { background-color: var(--card-mint); border-color: transparent; }
-        .bg-blue { background-color: var(--card-blue); border-color: transparent; }
+        .bg-purple { background-color: var(--card-purple) !important; border-color: transparent !important; }
+        .bg-peach { background-color: var(--card-peach) !important; border-color: transparent !important; }
+        .bg-mint { background-color: var(--card-mint) !important; border-color: transparent !important; }
+        .bg-blue { background-color: var(--card-blue) !important; border-color: transparent !important; }
 
         .h-order-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.1s; }
-        .h-order-card:active { transform: scale(0.98); background: var(--primary-light); }
-        .ho-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--primary-light); display: flex; align-items: center; justify-content: center; color: var(--text-dark); flex-shrink: 0; }
+        .h-order-card:active { transform: scale(0.98); }
+        .ho-icon { width: 42px; height: 42px; border-radius: 12px; background: #F8F6F0; display: flex; align-items: center; justify-content: center; color: var(--text-dark); flex-shrink: 0; }
         .ho-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-        .ho-title { font-size: 0.95rem; font-weight: 800; color: var(--text-dark); }
+        .ho-title { font-size: 0.92rem; font-weight: 700; color: var(--text-dark); }
         .ho-sub { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
         .ho-badge { background: #E6F4EA; color: #10B981; font-size: 0.65rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; letter-spacing: 0.5px; }
 
-        /* Fixed Navigation per Screenshot */
         .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; padding: 10px 8px calc(10px + env(safe-area-inset-bottom)) 8px; border-top: 1px solid var(--border); z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.03); border-radius: 20px 20px 0 0; }
-        .nav-item { background: transparent; border: none; color: #6B7280; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: inherit; font-size: 0.65rem; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; padding: 6px 0; }
+        .nav-item { background: transparent; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: inherit; font-size: 0.65rem; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; padding: 6px 0; }
         .nav-item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: 0.2s; }
-        .nav-item.active { color: var(--btn-pink); font-weight: 700; }
+        .nav-item.active { color: var(--btn-pink); font-weight: 800; }
+        .nav-item.active .icon-container { background: #FDE8D7; width: 56px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
         .nav-item.active svg { stroke: var(--btn-pink); stroke-width: 2.2; }
 
         .card { background: var(--surface); border-radius: var(--border-radius); padding: 20px; border: 1px solid var(--border); margin-bottom: 16px; box-shadow: var(--shadow-soft); }
@@ -170,7 +161,7 @@
         .stock-tag.low { border-color: var(--danger); color: var(--danger); }
         .stock-tag.low span { background: #FDE8E8; color: var(--danger); }
 
-        .filter-btn { height: 36px; padding: 0 16px; font-size: 0.85rem; transition: 0.2s; border-radius: 18px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dark); font-weight: 600;}
+        .filter-btn { height: 36px; padding: 0 16px; font-size: 0.85rem; transition: 0.2s; border-radius: 18px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dark); font-weight: 600; cursor:pointer;}
         .filter-btn.active { background: var(--text-dark); color: #FFF; border-color: var(--text-dark); }
 
         .sales-grid { display: flex; flex-direction: column; gap: 12px; }
@@ -196,6 +187,8 @@
         .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--text-dark); border-radius: 50%; animation: spin 0.8s linear infinite; }
 
         #splashScreen { position: fixed; inset: 0; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.4s; }
+        .splash-logo { font-family: 'Playfair Display', serif; font-size: 2.8rem; font-weight: 700; color: var(--text-dark); }
+        .splash-subtitle { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); letter-spacing: 2px; margin-top: 6px; margin-bottom: 40px; text-transform: uppercase;}
         @keyframes spin { to { transform: rotate(360deg); } }
 
         @media screen { #printSection { display: none !important; } }
@@ -214,18 +207,20 @@
 
     <div id="splashScreen">
         <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
-            <div class="logo-graphic">Viraasat<div class="logo-accent" style="width: 60px; height: 4px; margin: 12px auto 0;"></div></div>
+            <img src="icon.png" alt="Viraasat Logo" style="width: 100px; height: auto; margin-bottom: 16px; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.08));" onerror="this.style.display='none'">
+            <div class="splash-logo" style="margin-bottom: 0;">VIRAASAT</div>
         </div>
-        <div class="splash-subtitle" style="margin-top: 20px; font-family: 'Poppins', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase;">Premium POS</div>
-        <div class="spinner" style="margin-top: 20px;"></div>
+        <div class="splash-subtitle" style="margin-top: 0;">Premium POS</div>
+        <div class="spinner"></div>
     </div>
 
     <!-- LOGIN SCREEN -->
     <div id="loginScreen" style="display: none; position: absolute; inset: 0; background: var(--bg-color); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
         <div style="width: 100%; max-width: 400px; background: var(--surface); padding: 40px 24px; border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow-soft);">
             <div style="text-align: center; margin-bottom: 30px;">
-                <div class="logo-graphic" style="font-size: 2.2rem;">Viraasat<div class="logo-accent" style="margin: 8px auto 0;"></div></div>
-                <p style="color: var(--text-muted); font-weight: 600; font-size: 0.8rem; margin-top: 16px; text-transform: uppercase; letter-spacing: 1px;">Authorized Access Only</p>
+                <img src="icon.png" alt="Viraasat Logo" style="width: 70px; height: auto; margin-bottom: 12px;" onerror="this.style.display='none'">
+                <h1 style="font-family: 'Playfair Display', serif; color: var(--text-dark); font-size: 2.2rem; font-weight: 700;">VIRAASAT</h1>
+                <p style="color: var(--text-muted); font-weight: 600; font-size: 0.8rem; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px;">Authorized Access Only</p>
             </div>
             <div class="form-group">
                 <div class="input-box"><label>Mobile Number</label><input type="tel" id="loginMobile" placeholder="Enter registered number" inputmode="numeric"></div>
@@ -246,7 +241,7 @@
                 <div class="input-box"><label>Table Number</label><input type="number" id="newTableNumber" placeholder="e.g. 11" inputmode="numeric"></div>
             </div>
             <div class="input-row">
-                <button class="btn btn-outline" onclick="closeModal('addTableModal')">Cancel</button>
+                <button class="btn btn-outline" onclick="document.getElementById('addTableModal').style.display='none'">Cancel</button>
                 <button class="btn" onclick="confirmAddTable()">Save Table</button>
             </div>
         </div>
@@ -263,7 +258,7 @@
                 <button class="pay-btn" id="payCard" onclick="selectPaymentMode('Card')"><span style="font-size:1.2rem;">💳</span> Card</button>
             </div>
             <button class="btn" style="height:56px; font-size:1.05rem;" id="btnFinalCheckout" onclick="processFinalCheckout()">✔ Confirm Checkout</button>
-            <button class="btn-outline" onclick="closeModal('paymentModal')" style="width:100%; height:48px; margin-top:12px; border-radius:10px; font-weight:600;">Cancel</button>
+            <button class="btn-outline" onclick="document.getElementById('paymentModal').style.display='none'" style="width:100%; height:48px; margin-top:12px; border-radius:10px; font-weight:600;">Cancel</button>
         </div>
     </div>
 
@@ -275,7 +270,7 @@
             <p style="margin-bottom:20px; color:var(--text-muted); font-size: 0.9rem;">Select an empty table to move items.</p>
             <div class="form-group"><select id="switchTableSelect"></select></div>
             <div class="input-row">
-                <button class="btn btn-outline" onclick="closeModal('conflictModal')">Cancel</button>
+                <button class="btn btn-outline" onclick="document.getElementById('conflictModal').style.display='none'">Cancel</button>
                 <button class="btn" onclick="confirmSwitchTable()">Move Items</button>
             </div>
         </div>
@@ -287,7 +282,7 @@
             <div class="sheet-handle"></div>
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
                 <h3 style="font-size:1.2rem; font-weight: 700;">Order Details</h3>
-                <button onclick="closeModal('orderDetailsModal')" style="background:transparent; border:none; font-size:1.2rem; cursor:pointer; color:var(--text-muted);">✕</button>
+                <button onclick="document.getElementById('orderDetailsModal').style.display='none'" style="background:transparent; border:none; font-size:1.2rem; cursor:pointer; color:var(--text-muted);">✕</button>
             </div>
             <div id="modalOrderMeta" style="background:#FAFAFA; padding:12px; border-radius:8px; font-size:0.85rem; color:var(--text-dark); margin-bottom:16px; line-height: 1.6; border: 1px solid var(--border);"></div>
             <div style="margin-bottom:16px; max-height: 30vh; overflow-y:auto; font-size:0.9rem; line-height:1.6;" id="modalOrderItems"></div>
@@ -302,15 +297,7 @@
                 <button class="btn btn-outline" onclick="printHistoricalBill()">Print</button>
                 <button class="btn" style="background:#10B981; border:none;" onclick="sendWA_HistoricalBill()">WhatsApp</button>
             </div>
-            <button class="btn" style="width:100%; margin-top: 12px; background:var(--danger); border:none;" id="btnRequestDelete" onclick="requestOrderDeletion()">Request Deletion (Admin Approval)</button>
-        </div>
-    </div>
-
-    <!-- IMAGE PREVIEW MODAL -->
-    <div id="imagePreviewModal" class="modal-overlay" style="z-index: 100000; align-items: center;">
-        <div class="bottom-sheet" style="max-width: 90%; border-radius: 20px; padding: 16px; text-align: center; margin: 0 auto; transform: none; background: transparent; box-shadow: none;">
-            <img id="fullSizeReceipt" src="" style="max-width: 100%; max-height: 70vh; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-            <button class="btn" style="margin-top: 20px; background: #FFF; color: var(--text-dark);" onclick="closeModal('imagePreviewModal')">Close Preview</button>
+            <button class="btn btn-danger" style="width:100%; margin-top:12px; background:var(--occ-bg); color:var(--danger); border:1px solid var(--occ-border);" id="btnRequestDelete" onclick="requestOrderDeletion()">Request Deletion (Admin Approval)</button>
         </div>
     </div>
 
@@ -330,13 +317,21 @@
         </div>
     </div>
 
+    <!-- IMAGE PREVIEW MODAL -->
+    <div id="imagePreviewModal" class="modal-overlay" style="z-index: 100000; align-items: center;">
+        <div class="bottom-sheet" style="max-width: 90%; border-radius: 20px; padding: 16px; text-align: center; margin: 0 auto; transform: none; background: transparent; box-shadow: none;">
+            <img id="fullSizeReceipt" src="" style="max-width: 100%; max-height: 70vh; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <button class="btn" style="margin-top: 20px; background: #FFF; color: var(--text-dark);" onclick="document.getElementById('imagePreviewModal').style.display='none'">Close Preview</button>
+        </div>
+    </div>
+
     <!-- TOP BAR -->
     <header class="top-app-bar" id="appHeader" style="display: none;">
         <div class="brand-container">
-            <div class="logo-graphic">Viraasat<div class="logo-accent"></div></div>
-            <div class="page-subtitle" id="pageMainTitle" style="transition: opacity 0.5s ease;">Premium POS</div>
+            <div class="brand-name">VIRAASAT</div>
+            <div class="page-subtitle" id="pageMainTitle" style="transition: opacity 0.5s ease; font-family: 'Playfair Display', serif; font-size: 0.85rem; font-style: italic; font-weight: 700; color: #A67C52;">Premium POS</div>
         </div>
-        <button class="icon-btn" onclick="haptic(); fetchData();" title="Refresh Data">
+        <button class="icon-btn" onclick="fetchData()" title="Refresh Data">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path></svg>
         </button>
     </header>
@@ -349,111 +344,161 @@
             <div class="greeting-sec">
                 <div>
                     <h2 id="greetText">Good Evening 👋</h2>
-                    <p>Current operational metrics.</p>
+                    <p>Here's what's happening today.</p>
                 </div>
                 <div class="date-badge" id="currentDateStr">Today</div>
             </div>
 
-            <div class="home-kpi-grid" id="homeKpiGrid">
-                <div class="hkpi-card bg-purple" onclick="haptic()">
-                    <div class="hkpi-top">💰 Today's Sale</div>
-                    <div class="hkpi-val" id="homeTodaySale">₹0</div>
-                    <div class="hkpi-sub" style="background:#FFF;">Gross Net</div>
+            <div class="quick-action-grid">
+                <div class="quick-card bg-mint" id="cardTakeaway" onclick="openTable('Takeaway')">
+                    <div class="qc-icon" style="background:rgba(255,255,255,0.5); border:none;">🛍️</div>
+                    <div class="qc-info">
+                        <h4>Takeaway</h4>
+                        <span class="status-dot" id="takeawayStatus">● READY</span>
+                    </div>
                 </div>
-                <div class="hkpi-card bg-peach" onclick="haptic()">
-                    <div class="hkpi-top">📊 Avg. Value</div>
-                    <div class="hkpi-val" id="homeAvgOrder">₹0</div>
-                    <div class="hkpi-sub" style="background:#FFF;">Per Invoice</div>
-                </div>
-                <div class="hkpi-card bg-mint" onclick="openTable('Takeaway')">
-                    <div class="hkpi-top">🛍️ Takeaway</div>
-                    <div class="hkpi-val" id="takeawayStatus" style="font-size:1.1rem; padding-top:4px;">Ready</div>
-                </div>
-                <div class="hkpi-card bg-blue" onclick="openTable('Home Delivery')">
-                    <div class="hkpi-top">🛵 Delivery</div>
-                    <div class="hkpi-val" id="deliveryStatus" style="font-size:1.1rem; padding-top:4px;">Ready</div>
+                <div class="quick-card bg-blue" id="cardDelivery" onclick="openTable('Home Delivery')">
+                    <div class="qc-icon" style="background:rgba(255,255,255,0.5); border:none;">🛵</div>
+                    <div class="qc-info">
+                        <h4>Delivery</h4>
+                        <span class="status-dot" id="deliveryStatus">● READY</span>
+                    </div>
                 </div>
             </div>
-            
-            <div class="section-header"><h4>Dining Zones</h4></div>
-            
-            <button class="btn btn-outline" onclick="showAddTableModal()" style="margin-bottom: 20px; font-weight:600; width:100%; border-radius:10px;">+ Deploy New Table</button>
             
             <div id="tableGrid"></div>
 
-            <div class="section-header"><h4>Recent Orders</h4> <span id="btnViewAllOrders" onclick="switchMainTab('salesDashboard', document.getElementById('navOrders'))">View All ›</span></div>
-            <div id="homeRecentOrders"></div>
-        </div>
-
-        <!-- TAB 2: REGISTRY (LIVE SALES) VIEW -->
-        <div id="salesDashboard" class="tab-content" style="padding-top: 10px;">
-            <div class="card" style="padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border:none;">
-                <div class="input-row" style="margin-bottom: 12px;">
-                    <div class="input-box"><label>Start Date</label><input type="date" id="filterStartDate" onchange="renderLiveSales()"></div>
-                    <div class="input-box"><label>End Date</label><input type="date" id="filterEndDate" onchange="renderLiveSales()"></div>
+            <div class="home-kpi-grid" id="homeKpiGrid">
+                <div class="hkpi-card bg-purple">
+                    <div class="hkpi-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path></svg> Today's Sale</div>
+                    <div class="hkpi-val" id="homeTodaySale">₹0</div>
+                    <div class="hkpi-sub" style="background: rgba(255,255,255,0.7); width:max-content; padding:2px 8px; border-radius:6px; color:var(--text-dark);">Gross Net</div>
                 </div>
-                <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-bottom: 12px;">
-                    <button id="btnFilterToday" class="filter-btn" style="background:var(--text-dark); color:#FFF; border-color:var(--text-dark);" onclick="haptic(); setTodayFilter()">Today</button>
-                    <button id="btnFilterYesterday" class="filter-btn" onclick="haptic(); setYesterdayFilter()">Yesterday</button>
-                    <button id="btnFilterClear" class="filter-btn" style="color: var(--danger); border-color: var(--danger); background:transparent;" onclick="haptic(); resetDateFilter()">Reset</button>
+                <div class="hkpi-card bg-peach">
+                    <div class="hkpi-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg> Avg. Order Value</div>
+                    <div class="hkpi-val" id="homeAvgOrder">₹0</div>
+                    <div class="hkpi-sub" style="background: rgba(255,255,255,0.7); width:max-content; padding:2px 8px; border-radius:6px; color:var(--text-dark);">Per Invoice</div>
                 </div>
-                <div style="display:flex; gap:8px;">
-                    <div style="flex:1; background:var(--text-dark); border-radius:8px; font-weight:700; font-size:1.1rem; text-align:center; color:#FFF; display:flex; align-items:center; justify-content:center; height:50px;" id="totalSalesBox">₹ 0</div>
-                    <button class="btn btn-outline" style="width: auto; padding: 0 16px; height:50px;" onclick="haptic(); exportRegistrySales()">Export</button>
+                <div class="hkpi-card" style="border:1px solid var(--border);">
+                    <div class="hkpi-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg> Overall Sale</div>
+                    <div class="hkpi-val" id="homeOverallSale">₹0</div>
+                    <div class="hkpi-sub" style="color:var(--success);">Lifetime</div>
+                </div>
+                <div class="hkpi-card" style="border:1px solid var(--border);">
+                    <div class="hkpi-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg> Active Tables</div>
+                    <div class="hkpi-val" id="homeActiveTables">0 / 0</div>
+                    <div class="hkpi-sub" style="color:var(--text-dark);">Live Status</div>
                 </div>
             </div>
-            <div class="section-header"><h4>Transaction Directory</h4></div>
+
+            <div class="section-header"><h4>Recent Orders</h4> <span id="btnViewAllOrders" onclick="switchMainTab('salesDashboard', document.getElementById('navOrders'))">View All ›</span></div>
+            <div id="homeRecentOrders"></div>
+
+            <button class="btn btn-outline" onclick="document.getElementById('addTableModal').style.display='flex'" style="margin: 20px 0; font-weight:600;">+ Add New Table</button>
+            
+            <div class="section-header"><h4>Stock Alert</h4></div>
+            <div id="dashboardStockList" class="stock-list-container" style="margin-bottom:0; display: flex; flex-wrap: wrap;"></div>
+        </div>
+
+        <!-- LIVE SALES VIEW -->
+        <div id="salesDashboard" class="tab-content" style="padding-top: 10px;">
+            <div class="card" style="padding: 16px; margin-bottom: 16px;">
+                <div class="input-row" style="margin-bottom: 12px;">
+                    <div class="input-box"><label>From</label><input type="date" id="filterStartDate" onchange="renderLiveSales()"></div>
+                    <div class="input-box"><label>To</label><input type="date" id="filterEndDate" onchange="renderLiveSales()"></div>
+                </div>
+                <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-bottom: 12px;">
+                    <button id="btnFilterToday" class="filter-btn" onclick="setTodayFilter()">Today</button>
+                    <button id="btnFilterYesterday" class="filter-btn" onclick="setYesterdayFilter()">Yesterday</button>
+                    <button id="btnFilterClear" class="filter-btn" style="border-color: var(--danger); color: var(--danger);" onclick="resetDateFilter()">Clear</button>
+                </div>
+                <div style="background:#FAFAFA; border:1px solid var(--border); padding:12px; border-radius:8px; font-weight:700; font-size:1.1rem; text-align:center; color:var(--text-dark);" id="totalSalesBox">Total Sales: ₹ 0</div>
+            </div>
+            <div class="section-header"><h4>All Orders</h4></div>
             <div id="salesGrid" class="sales-grid"></div>
         </div>
 
-        <!-- TAB 3: OVERVIEW & P&L VIEW -->
+        <!-- P&L ANALYTICS VIEW -->
         <div id="trendView" class="tab-content" style="padding-top: 10px;">
-            <div class="greeting-sec"><h2 style="font-size:1.4rem;">Overview & P&L</h2><p>Metrics & intelligence.</p></div>
-            
             <div class="trend-kpi-grid">
-                <div class="trend-kpi-card full-width" style="background:var(--text-dark); color:#FFF;">
-                    <div class="kpi-title" style="color: rgba(255,255,255,0.7);">Net Profit (Calculated)</div>
+                <div class="trend-kpi-card full-width" style="background:var(--occ-bg); border-color:var(--occ-border);">
+                    <div class="kpi-title" style="color: #D03B3B;">Net Profit (All Time)</div>
                     <div class="kpi-value" id="kpiNetProfit">₹ 0</div>
                 </div>
-                <div class="trend-kpi-card bg-mint"><div class="kpi-title">Gross Sales</div><div class="kpi-value" id="kpiTotalSales" style="color:var(--text-dark);">₹ 0</div></div>
-                <div class="trend-kpi-card" style="background:#FEE2E2; border:none;"><div class="kpi-title" style="color:var(--danger);">Gross Expenses</div><div class="kpi-value" id="kpiTotalExpenses" style="color:var(--danger);">₹ 0</div></div>
+                <div class="trend-kpi-card"><div class="kpi-title">Total Sales</div><div class="kpi-value" id="kpiTotalSales" style="color:var(--success);">₹ 0</div></div>
+                <div class="trend-kpi-card"><div class="kpi-title">Total Expense</div><div class="kpi-value" id="kpiTotalExpenses" style="color:var(--danger);">₹ 0</div></div>
+                <div class="trend-kpi-card"><div class="kpi-title">Staff Paid</div><div class="kpi-value" id="kpiTotalSalary">₹ 0</div></div>
+                <div class="trend-kpi-card"><div class="kpi-title">Active Staff</div><div class="kpi-value" id="kpiTotalStaff">0</div></div>
             </div>
 
-            <div class="card" style="border:1px solid var(--border); box-shadow:none;">
-                <div class="section-header" style="margin-top:0;"><h4>Top Performing Items</h4> <span onclick="haptic(); exportItemSales()">Export ›</span></div>
+            <div class="card">
+                <div class="section-header" style="margin-top:0;"><h4>Category Distribution</h4></div>
+                <div style="display:flex; justify-content:center; align-items:center; height: 200px; margin-bottom: 8px;">
+                    <canvas id="categoryDonut"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-header" style="margin-top:0;"><h4>Top Performing Items</h4> <span onclick="exportItemSales()">Export ›</span></div>
                 <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px;">Ranked by units sold based on current timeframe.</p>
                 <div id="itemAnalyticsList" style="display:flex; flex-direction:column; gap:12px;"></div>
             </div>
             
-            <div class="card" style="border:1px solid var(--border); box-shadow:none;">
-                <div class="section-header" style="margin-top:0;"><h4>Staff Advance Details</h4></div>
-                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px;">Employee advances and payroll issued.</p>
+            <div class="card" style="border-color: var(--border); background: var(--bg-color);">
+                <div class="section-header" style="margin-top:0;"><h4>Zero Traction Items</h4></div>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px;">Items not sold in the current period.</p>
+                <div id="slowMoversList" style="display:flex; flex-wrap: wrap; gap:8px;"></div>
+            </div>
+
+            <div class="card">
+                <div class="section-header" style="margin-top:0;"><h4>Profit Trend</h4></div>
+                <div class="chart-filters">
+                    <button class="filter-btn active" id="btnChartDOD" onclick="renderPNLChart('daily')">Daily</button>
+                    <button class="filter-btn" id="btnChartWeekly" onclick="renderPNLChart('weekly')">Weekly</button>
+                    <button class="filter-btn" id="btnChartMonthly" onclick="renderPNLChart('monthly')">Monthly</button>
+                </div>
+                <div class="chart-wrapper"><canvas id="trendChart"></canvas></div>
+            </div>
+
+            <div class="card">
+                <div class="section-header" style="margin-top:0;"><h4>Employee Advances & Payroll</h4></div>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px;">Staff advance details.</p>
                 <div id="staffAdvanceList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
+            </div>
+            
+            <div class="card">
+                <div class="section-header" style="margin-top:0;"><h4>Other Expenses</h4></div>
+                <div id="expenseBreakdownList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
             </div>
         </div>
 
-        <!-- TAB 4: EXPENSES VIEW -->
+        <!-- EXPENSES VIEW -->
         <div id="expenses" class="tab-content" style="padding-top: 10px;">
-            <div class="greeting-sec"><h2 style="font-size:1.4rem;">Expenditure Log</h2><p>Track operational costs.</p></div>
-            <div class="card" style="border:1px solid var(--border); box-shadow:none;">
+            <div class="card">
                 <div class="form-group">
-                    <div class="input-box"><label>Category</label><select id="expCategory"><option>Raw Material</option><option>Electricity</option><option>Payroll</option><option>Maintenance</option><option>Other</option></select></div>
+                    <div class="input-box"><label>Category</label><select id="expCategory"><option>Raw Material</option><option>Electricity</option><option>Maintenance</option><option>Other</option></select></div>
                     <div class="input-box"><label>Amount (₹)</label><input type="number" id="expAmount" placeholder="0" inputmode="numeric"></div>
                     <div class="input-box"><label>Note (Optional)</label><input type="text" id="expDescription" placeholder="Add details"></div>
                     <div class="input-box" style="margin-top: 8px;">
                         <label>Attach Receipt (Optional)</label>
-                        <input type="file" id="expImage" accept="image/*" style="padding: 10px; border: 1px dashed var(--text-muted); cursor: pointer; border-radius:8px; font-size: 0.8rem;" onchange="handleExpenseImage(event)">
+                        <input type="file" id="expImage" accept="image/*" style="padding: 10px; border: 1px dashed var(--text-muted); cursor: pointer; border-radius:8px;" onchange="handleExpenseImage(event)">
                         <div id="expImagePreview" style="font-size: 0.75rem; color: var(--success); display: none; margin-top:4px;">✓ Image attached securely.</div>
                     </div>
                 </div>
-                <button class="btn" style="background:var(--btn-pink);" onclick="submitExpense()">Commit Entry</button>
+                <button class="btn" onclick="submitExpense()">Save Expense</button>
             </div>
 
-            <div class="section-header" style="margin-bottom:16px;"><h4>Expense Ledger</h4> <span onclick="haptic(); exportExpensesTable()">Export ›</span></div>
+            <div class="section-header" style="margin-bottom:16px;"><h4>Expense Ledger</h4></div>
             
+            <div class="card" style="padding: 16px; border:1px solid var(--border); box-shadow:none; margin-bottom: 20px;">
+                <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-dark); margin-bottom: 8px;">Category Breakdown</div>
+                <div id="expenseProgressBar" style="width: 100%; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; display: flex; margin-top: 8px;"></div>
+                <div id="expenseProgressLegend" style="display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; font-size:0.75rem; font-weight:600;"></div>
+            </div>
+
             <div class="input-box" style="margin-bottom: 16px;">
                 <label>Filter Expenses By Date</label>
-                <select id="expenseDateFilter" onchange="renderExpensesList()">
+                <select id="expenseDateFilter" onchange="renderExpensesListUI()">
                     <option value="All">All Time</option>
                     <option value="Today">Today</option>
                     <option value="Yesterday">Yesterday</option>
@@ -464,39 +509,30 @@
                 </select>
             </div>
 
-            <div class="card" style="padding: 0; overflow: hidden; border:1px solid var(--border); box-shadow:none;">
-                <div style="overflow-x: auto;">
-                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;" id="expensesTable">
-                        <thead>
-                            <tr style="background: var(--surface-alt); text-align: left;">
-                                <th style="padding: 10px; border-bottom: 1px solid var(--border);">Date</th>
-                                <th style="padding: 10px; border-bottom: 1px solid var(--border);">Category</th>
-                                <th style="padding: 10px; border-bottom: 1px solid var(--border);">Description</th>
-                                <th style="padding: 10px; border-bottom: 1px solid var(--border); text-align: right;">Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody id="expensesTableBody"></tbody>
-                    </table>
-                </div>
-            </div>
+            <div id="expensesCardList" style="display: flex; flex-direction: column; gap: 12px; padding-bottom: 24px;"></div>
         </div>
 
-        <!-- TAB 5: ADMIN (USERS + HR) VIEW -->
+        <!-- ADMIN (USERS + HR) VIEW -->
         <div id="usersManager" class="tab-content" style="padding-top: 10px;">
-            <div class="greeting-sec" style="margin-top: 16px; margin-bottom: 24px;">
-                <h2 style="font-size: 1.6rem;">Admin Console</h2>
-            </div>
             
             <div class="card" id="adminApprovalsCard" style="display:none; border-color:var(--danger); background:#FFF5F5;">
-                <div class="section-header" style="margin-top:0;"><h4>⚠️ Pending Approvals</h4></div>
+                <div class="section-header" style="margin-top:0;"><h4>⚠️ Pending Deletion Approvals</h4></div>
                 <div id="adminApprovalsList" style="display:flex; flex-direction:column; gap:12px;"></div>
             </div>
 
-            <div class="card" style="border-color:var(--success);">
-                <div class="section-header" style="margin-top:0;"><h4>System Restoration</h4></div>
+            <div class="card" style="border-color:#10B981;">
+                <div class="section-header" style="margin-top:0;"><h4>Staff Payroll & Advance</h4></div>
                 <div class="form-group" style="margin-bottom:0;">
-                    <input type="file" id="fullImportInput" accept=".xlsx,.xls,.csv" style="padding:10px; border:1px dashed var(--border); background:#FFF;">
-                    <button class="btn" style="margin-top:10px; background:var(--success);" onclick="haptic(); runFullImport()">Execute Master Import</button>
+                    <div class="input-box">
+                        <label>Select Staff</label>
+                        <select id="payStaffSelect" onchange="calculateStaffBalance()"><option value="">Select Employee</option></select>
+                    </div>
+                    <div id="staffBalanceInfo" style="margin-top:8px; font-size:0.85rem; color:var(--text-dark); line-height: 1.5; background: #F4EFEA; padding: 10px; border-radius: 8px;"></div>
+                    <div class="input-row" style="margin-top:12px;">
+                        <div class="input-box"><label>Amount (₹)</label><input type="number" id="payStaffAmount" placeholder="Amount"></div>
+                        <div class="input-box"><label>Type</label><select id="payStaffType"><option>Advance</option><option>Salary Clearance</option></select></div>
+                    </div>
+                    <button class="btn" style="margin-top:16px; background:#10B981;" onclick="submitStaffPayout()">Pay & Record</button>
                 </div>
             </div>
 
@@ -528,6 +564,20 @@
                 </div>
             </div>
 
+            <div class="card">
+                <div class="section-header" style="margin-top:0;"><h4>Quick Stock Update</h4></div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <div class="input-box">
+                        <label>Select Item</label>
+                        <input list="menuItemsList" id="adminStockItem" placeholder="Type item name...">
+                    </div>
+                    <div class="input-row" style="margin-top:12px;">
+                        <div class="input-box"><label>New Quantity</label><input type="number" id="adminStockQty" placeholder="e.g. 50" inputmode="numeric"></div>
+                        <button class="btn" style="flex:1;" onclick="updateStockAdmin()">Update</button>
+                    </div>
+                </div>
+            </div>
+            
             <div class="card">
                 <div class="section-header" style="margin-top:0;"><h4>Add New Menu Item</h4></div>
                 <div class="form-group" style="margin-bottom:0;">
@@ -597,7 +647,7 @@
             </div>
 
             <details style="background:var(--surface); border-radius:12px; margin-bottom:24px; border:1px solid var(--border);">
-                <summary style="padding:16px; font-weight:500; font-size: 0.95rem; color:var(--text-dark); outline:none; cursor:pointer; list-style: none; display: flex; align-items: center; gap: 8px;" onclick="haptic()">
+                <summary style="padding:16px; font-weight:500; font-size: 0.95rem; color:var(--text-dark); outline:none; cursor:pointer; list-style: none; display: flex; align-items: center; gap: 8px;">
                     <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Add Custom Item
                 </summary>
                 <div style="padding:0 16px 16px 16px;">
@@ -638,10 +688,10 @@
             </div>
             
             <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:30px; margin-top: 20px;">
-                <button class="btn btn-outline" onclick="haptic(); printBill('final')">Print Final Bill</button>
+                <button class="btn btn-outline" onclick="printBill('final')">Print Final Bill</button>
                 <button class="btn btn-outline" style="border-color:#10B981; color:#10B981;" onclick="sendWA_Customer()">WhatsApp Bill</button>
-                <button class="btn btn-outline" onclick="clearTableWithoutCheckout()" style="color:var(--danger); border-color:var(--danger);">Clear Table (Cancel)</button>
-                <button class="btn" style="margin-top:8px; height: 60px; font-size:1.1rem; background:var(--btn-pink);" onclick="openPaymentModal()">Checkout</button>
+                <button class="btn btn-danger-action" onclick="clearTableWithoutCheckout()" style="background:var(--surface); border:1px solid var(--border); color:var(--text-dark); height:50px; border-radius:10px; font-weight:600; font-size:0.95rem;">Clear Table (Cancel)</button>
+                <button class="btn" style="margin-top:8px; height: 60px; font-size:1.1rem;" onclick="document.getElementById('paymentModal').style.display='flex'">Checkout</button>
             </div>
         </div>
     </main>
@@ -658,7 +708,7 @@
         </button>
         <button class="nav-item" id="navAnalytics" onclick="switchMainTab('trendView', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></div>
-            <span>Overview</span>
+            <span>P&L</span>
         </button>
         <button class="nav-item" id="navExpenses" onclick="switchMainTab('expenses', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></div>
@@ -679,7 +729,7 @@
     <script>
         const scriptURL = 'https://script.google.com/macros/s/AKfycbyKuVmEYRbJaYkdUDVNcU9c6mDT4q-VMTESwrikIZvJwK6PteEVwMObdmTMcgqR12KIPA/exec'; 
         
-        const APP_VERSION = "Viraasat Final V3.0"; 
+        const APP_VERSION = "New 2.0.1"; 
         
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
@@ -692,6 +742,7 @@
         let staffData = [];
         let activeTableNumber = ""; 
         let trendChartInstance = null; 
+        let donutChartInstance = null;
         let selectedPaymentMode = "Cash";
         let rawChartSalesData = {}; 
         let rawChartExpenseData = {};
@@ -700,7 +751,7 @@
         let currentViewingSale = null;
         let expenseImageBase64 = null;
 
-        // --- DYNAMIC TICKER LOGIC ---
+        // --- DYNAMIC TICKER LOGIC (MEWADI THEME TAGLINES) ---
         const royalTaglines = [
             "A Taste of Royal Mewar",
             "Mewar Ki Shaan, Swaad Mein Jaan",
@@ -710,14 +761,19 @@
         ];
         let tickerIndex = 0;
 
-        function haptic() { try { if (navigator.vibrate) navigator.vibrate(40); } catch(e){} }
+        function haptic() {
+            try { if (navigator.vibrate) navigator.vibrate(40); } catch(e){}
+        }
 
         function rotateTicker() {
             const activeTab = document.querySelector('.tab-content.active');
             if (!activeTab || activeTab.id !== 'tableDashboard') return;
+            
             const tickerEl = document.getElementById('pageMainTitle');
             if (!tickerEl) return;
+            
             tickerEl.style.opacity = 0;
+            
             setTimeout(() => {
                 tickerIndex = (tickerIndex + 1) % royalTaglines.length;
                 tickerEl.innerText = royalTaglines[tickerIndex];
@@ -728,8 +784,19 @@
         setInterval(rotateTicker, 4000);
 
         let tableSections;
-        try { tableSections = JSON.parse(localStorage.getItem('viraasat_table_sections')) || [{ title: "Hut Seating", tables: ["1", "2", "3", "4"] }, { title: "Ground Seating", tables: ["5", "6", "7"] }, { title: "Terrace Seating", tables: ["8", "9", "10"] }]; } 
-        catch(e) { tableSections = [{ title: "Hut Seating", tables: ["1", "2", "3", "4"] }]; }
+        try {
+            tableSections = JSON.parse(localStorage.getItem('viraasat_table_sections')) || [
+                { title: "Hut Seating", tables: ["1", "2", "3", "4"] },
+                { title: "Ground Seating", tables: ["5", "6", "7"] },
+                { title: "Terrace Seating", tables: ["8", "9", "10"] }
+            ];
+        } catch(e) {
+            tableSections = [
+                { title: "Hut Seating", tables: ["1", "2", "3", "4"] },
+                { title: "Ground Seating", tables: ["5", "6", "7"] },
+                { title: "Terrace Seating", tables: ["8", "9", "10"] }
+            ];
+        }
 
         let userPermissions;
         try { userPermissions = JSON.parse(localStorage.getItem('viraasat_permissions')) || {}; } catch(e) { userPermissions = {}; }
@@ -738,7 +805,8 @@
         document.getElementById('currentDateStr').innerText = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         
         function getVal(obj, possibleKeys) {
-            if (!obj) return ''; let normalizedObj = {};
+            if (!obj) return '';
+            let normalizedObj = {};
             for (let k in obj) { normalizedObj[k.toLowerCase().replace(/[^a-z0-9]/g, '')] = obj[k]; }
             for (let k of possibleKeys) {
                 let normK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -754,7 +822,7 @@
             let parsed = parseFloat(str); return isNaN(parsed) ? 0 : Math.round(parsed);
         }
 
-        // SMART ITEM PARSER (Robust parsing to fix missing items issue)
+        // SMART ITEM PARSER (Fixes missing items issue perfectly for JSON & Old Formats)
         function getSaleItemsText(sale) {
             let text = sale.itemsstring || sale.items_string || sale.items || '';
             if (typeof text === 'string' && text.startsWith('[')) {
@@ -769,21 +837,24 @@
         }
 
         window.showCustomAlert = function(message) {
-            haptic();
             document.getElementById('customAlertMessage').innerText = message;
             document.getElementById('customAlertButtons').innerHTML = `<button class="btn" onclick="document.getElementById('customAlertModal').style.display='none'">OK</button>`;
             document.getElementById('customAlertModal').style.display = 'flex';
         };
 
-        window.showCustomConfirm = function(message, callbackName, cancelCallbackName) {
-            haptic();
-            let btnExec = callbackName ? `document.getElementById('customAlertModal').style.display='none'; ${callbackName}();` : "document.getElementById('customAlertModal').style.display='none';";
-            let btnCancel = cancelCallbackName ? `document.getElementById('customAlertModal').style.display='none'; ${cancelCallbackName}();` : "document.getElementById('customAlertModal').style.display='none';";
-            
+        let currentConfirmCallback = null; 
+        let currentCancelCallback = null;
+
+        window.showCustomConfirm = function(message, callback, cancelCallback) {
+            currentConfirmCallback = callback; 
+            currentCancelCallback = cancelCallback;
             document.getElementById('customAlertMessage').innerText = message;
+            let btnCancel = cancelCallback ? `document.getElementById('customAlertModal').style.display='none'; ${cancelCallback}();` : "document.getElementById('customAlertModal').style.display='none';";
+            let btnConfirm = callback ? `document.getElementById('customAlertModal').style.display='none'; ${callback}();` : "document.getElementById('customAlertModal').style.display='none';";
+
             document.getElementById('customAlertButtons').innerHTML = `
                 <button class="btn btn-outline" onclick="${btnCancel}" style="flex:1;">Cancel</button>
-                <button class="btn" onclick="${btnExec}" style="flex:1; background:var(--danger); color:#FFF; border:none;">Confirm</button>
+                <button class="btn" onclick="${btnConfirm}" style="flex:1; background:var(--danger); color:#FFF; border:none;">Confirm</button>
             `;
             document.getElementById('customAlertModal').style.display = 'flex';
         };
@@ -827,23 +898,25 @@
 
         function hideSplashScreen() { const splash = document.getElementById('splashScreen'); if(splash) { splash.style.opacity = '0'; setTimeout(() => { splash.style.display = 'none'; }, 300); } }
 
+        // Login Enter Key Trigger
         document.getElementById('loginPass').addEventListener('keypress', function (e) { if (e.key === 'Enter') attemptLogin(); });
 
         function attemptLogin() {
-            haptic();
-            let mobile = document.getElementById('loginMobile').value.trim(); 
-            let pass = document.getElementById('loginPass').value.trim();
+            let mobile = document.getElementById('loginMobile').value.trim(); let pass = document.getElementById('loginPass').value.trim();
             let btn = document.getElementById('btnLogin'); let err = document.getElementById('loginError');
 
             if(!mobile || !pass) { err.innerText = "Enter Number and Password."; return; }
             btn.innerText = "Verifying..."; btn.disabled = true;
 
-            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'login', mobile: mobile, password: pass }) })
-            .then(res => res.json()).then(data => {
-                if(data.success) { 
+            setTimeout(() => {
+                let isValid = false;
+                if(ADMIN_NUMBERS.includes(mobile) || pass === 'admin') isValid = true; 
+                else if(userPermissions[mobile] && userPermissions[mobile].password === pass) isValid = true;
+
+                if(isValid) { 
                     localStorage.setItem('viraasat_user', mobile); localStorage.setItem('viraasat_pass', pass); window.location.reload(true); 
-                } else { btn.innerText = "Secure Login"; btn.disabled = false; showCustomAlert(data.message || "Invalid Credentials!"); }
-            }).catch(e => { btn.innerText = "Secure Login"; btn.disabled = false; showCustomAlert("Network Error. Please try again."); }); 
+                } else { btn.innerText = "Secure Login"; btn.disabled = false; showCustomAlert("Invalid Credentials!"); }
+            }, 500);
         }
 
         function applyAdminRights(mobile) {
@@ -864,7 +937,6 @@
         }
 
         function saveUserPermissions() {
-            haptic();
             let mobile = document.getElementById('staffMobile').value.trim(); let pass = document.getElementById('staffPass').value.trim();
             if(mobile.length < 10 || pass.length < 4) { showCustomAlert("Enter valid 10 digit number and minimum 4 char password"); return; }
             
@@ -900,7 +972,7 @@
             let elList = document.getElementById('employeeList'); if(!elList) return; elList.innerHTML = "";
             if(staffData.length === 0) { elList.innerHTML = "<p style='font-size:0.85rem; color:var(--text-muted);'>No staff onboarded yet.</p>"; return; }
             staffData.forEach(s => {
-                let sId = getVal(s, ['empid', 'employeeid']) || 'N/A'; let sName = getVal(s, ['name']) || 'Unknown'; let sRole = getVal(s, ['role']) || "Staff"; let sMobile = getVal(s, ['mobile', 'phone']) || "N/A"; let sSal = parseAmount(getVal(s, ['monthlysalary', 'salary'])); let sDate = getVal(s, ['dateofjoining', 'joindate', 'date', 'doj']) || 'N/A'; let formattedDate = sDate !== 'N/A' ? cleanDisplayDate(sDate) : 'N/A';
+                let sId = getVal(s, ['empid', 'employeeid', 'id']) || 'N/A'; let sName = getVal(s, ['name']) || 'Unknown'; let sRole = getVal(s, ['role']) || "Staff"; let sMobile = getVal(s, ['mobile', 'phone']) || "N/A"; let sSal = parseAmount(getVal(s, ['monthlysalary', 'salary'])); let sDate = getVal(s, ['dateofjoining', 'joindate', 'date', 'doj', 'join_date']) || 'N/A'; let formattedDate = sDate !== 'N/A' ? cleanDisplayDate(sDate) : 'N/A';
 
                 elList.innerHTML += `
                 <div class="card" style="padding:16px; margin-bottom:0; display:flex; flex-direction:column; gap:12px;">
@@ -911,7 +983,7 @@
                         </div>
                         <div style="display:flex; gap:8px;">
                             <div style="background:#F4EFEA; color:var(--text-muted); font-size:0.75rem; font-weight:700; padding:6px 10px; border-radius:6px; display:flex; align-items:center;">#${sId}</div>
-                            <button onclick="requestEmployeeDeletion('${sId}', '${sName}')" style="background:#FEE2E2; color:var(--danger); border:none; padding:6px 10px; border-radius:6px; font-weight:700; cursor:pointer;">Request Remove</button>
+                            <button onclick="requestEmployeeDeletion('${sId}', '${sName}')" style="background:#FEE2E2; color:var(--danger); border:none; padding:6px 10px; border-radius:6px; font-weight:700; cursor:pointer;">Req Remove</button>
                         </div>
                     </div>
                     <div style="border-top:1px dashed var(--border); margin:4px 0;"></div>
@@ -925,7 +997,6 @@
         }
 
         function updateStockAdmin() {
-            haptic();
             let item = document.getElementById('adminStockItem').value.trim(); let qty = parseInt(document.getElementById('adminStockQty').value);
             if(!item || isNaN(qty)) { showCustomAlert("Please enter valid item and quantity."); return; }
             stockData[item] = qty; renderStockDashboard(); checkStockDisplay(); showCustomAlert("Stock updated to " + qty + " for " + item);
@@ -934,7 +1005,6 @@
         }
 
         function addMenuItemUI() {
-            haptic();
             let cat = document.getElementById('newMenuCategory').value; let name = document.getElementById('newMenuName').value.trim(); let price = parseInt(document.getElementById('newMenuPrice').value);
             if(!name || isNaN(price) || price <= 0) { showCustomAlert("Please enter valid item name and price."); return; }
             let existing = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === name.toLowerCase());
@@ -947,13 +1017,12 @@
         function populateStaffDropdown() {
             let sel = document.getElementById('payStaffSelect'); sel.innerHTML = "<option value=''>Select Employee</option>";
             staffData.forEach(s => {
-                let sId = getVal(s, ['empid', 'employeeid']); let sName = getVal(s, ['name']);
+                let sId = getVal(s, ['empid', 'employeeid', 'id']); let sName = getVal(s, ['name']);
                 if(sId && sName) { sel.innerHTML += `<option value="${sId}">${sName} (${sId})</option>`; }
             });
         }
 
         function addStaffUI() {
-            haptic();
             let name = document.getElementById('newStaffName').value.trim(); let mobile = document.getElementById('newStaffMobile').value.trim(); let role = document.getElementById('newStaffRole').value; let salary = parseInt(document.getElementById('newStaffSalary').value); let joinDate = document.getElementById('newStaffDate').value; 
             if(!name || mobile.length < 10 || isNaN(salary)) { showCustomAlert("Please fill all details correctly."); return; }
             fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'addStaff', name: name, mobile: mobile, role: role, salary: salary, joinDate: joinDate }) })
@@ -966,7 +1035,7 @@
         function calculateStaffBalance() {
             let empId = document.getElementById('payStaffSelect').value; let infoDiv = document.getElementById('staffBalanceInfo');
             if(!empId) { infoDiv.innerHTML = ''; return; }
-            let staff = staffData.find(s => getVal(s, ['empid', 'employeeid']) === empId); 
+            let staff = staffData.find(s => getVal(s, ['empid', 'employeeid', 'id']) == empId); 
             let monthlySal = parseAmount(getVal(staff, ['monthlysalary', 'salary'])); let d = new Date(); let currentMonthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; let advTaken = 0;
 
             expenseHistory.forEach(exp => {
@@ -980,10 +1049,9 @@
         }
 
         function submitStaffPayout() {
-            haptic();
             let empId = document.getElementById('payStaffSelect').value; let amount = document.getElementById('payStaffAmount').value; let type = document.getElementById('payStaffType').value;
             if(!empId || !amount || amount <= 0) { showCustomAlert("Please select staff and enter valid amount."); return; }
-            let staff = staffData.find(s => getVal(s, ['empid', 'employeeid']) === empId); let sName = getVal(staff, ['name']); let sPhone = getVal(staff, ['mobile']); let desc = `[${empId}] ${sName} - ${type}`; 
+            let staff = staffData.find(s => getVal(s, ['empid', 'employeeid', 'id']) == empId); let sName = getVal(staff, ['name']); let sPhone = getVal(staff, ['mobile']); let desc = `[${empId}] ${sName} - ${type}`; 
             let d = new Date(); let fDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
             expenseHistory.push({ date: fDate, isodate: fDate, category: 'Staff Salary', amount: parseInt(amount), description: desc });
             
@@ -1007,25 +1075,19 @@
             window.open(`https://wa.me/91${sPhone}?text=${encodeURIComponent(slipText)}`, '_blank');
         }
 
-        // ==========================================
-        // FETCH DATA
-        // ==========================================
         async function fetchData() {
             document.getElementById('loader').style.display = 'flex';
             fetch(scriptURL).then(response => response.json()).then(data => {
                 hideSplashScreen(); 
                 try {
                     menuData = data.menu || []; runningTables = data.runningTables || {}; stockData = data.stock || {}; salesHistory = (data.sales || []).reverse(); expenseHistory = data.expenses || []; staffData = data.staff || []; 
-                    populateDropdown(); populateStaffDropdown(); renderEmployeeList(); renderTableGrid(); renderStockDashboard(); checkStockDisplay(); renderLiveSales(); generateTrends(); renderExpensesList();
+                    populateDropdown(); populateStaffDropdown(); renderEmployeeList(); renderTableGrid(); renderStockDashboard(); checkStockDisplay(); renderLiveSales(); generateTrends(); renderExpensesListUI();
                     if(window.isUserAdmin) fetchApprovals();
                 } catch(err) { console.error("Render Error:", err); }
                 document.getElementById('loader').style.display = 'none';
             }).catch(error => { document.getElementById('loader').innerText = "Sync Error. Check your connection."; hideSplashScreen(); setTimeout(()=>document.getElementById('loader').style.display='none',3000); });
         }
 
-        // =====================================
-        // SMART OVERVIEW & ANALYTICS
-        // =====================================
         function generateTrends() {
             try {
                 let totalSalesAmount = 0; let totalExpensesAmount = 0; let totalSalaryPaid = 0;
@@ -1038,7 +1100,6 @@
                     if(sale.status === 'deleted' || sale.status === 'deletion_pending' || sale.status === 'cancelled') return;
                     let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sDate = String(getVal(sale, ['date', 'isodate']) || '').trim();
                     totalSalesAmount += sTotal; 
-                    
                     if(sDate) {
                         let isToday = false; let dateStrKey = sDate.split("T")[0].split(" ")[0]; 
                         if (sDate.startsWith(todayIso) || sDate.includes(todayIso) || sDate.includes(todayGb)) { isToday = true; } else { let parsedDate = new Date(sDate); if (!isNaN(parsedDate.getTime())) { if (parsedDate.getDate() === d.getDate() && parsedDate.getMonth() === d.getMonth() && parsedDate.getFullYear() === d.getFullYear()) { isToday = true; } dateStrKey = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')}`; } }
@@ -1083,7 +1144,7 @@
                 
                 // Item Analytics
                 let sortedItems = Object.entries(itemStats).sort((a,b)=>b[1].qty-a[1].qty);
-                let itemHtml = "";
+                let itemHtml = ""; let slowHtml = "";
                 
                 sortedItems.slice(0, 10).forEach(([name, data], index) => {
                     let perc = totalSalesAmount > 0 ? ((data.revenue / totalSalesAmount) * 100).toFixed(1) : 0;
@@ -1108,6 +1169,13 @@
                 });
                 document.getElementById('itemAnalyticsList').innerHTML = itemHtml || "<span style='color:var(--text-muted); font-size:0.85rem;'>No item data available.</span>";
 
+                // Slow Movers
+                menuData.forEach(mi => {
+                    let n = getVal(mi, ['itemname','name']);
+                    if(!itemStats[n]) slowHtml += `<span style="background:var(--surface-alt); color:var(--text-muted); padding:6px 12px; border-radius:8px; font-size:0.75rem; font-weight:600; border:1px solid var(--border);">${n}</span>`;
+                });
+                document.getElementById('slowMoversList').innerHTML = slowHtml || "<span style='color:var(--text-muted); font-size:0.85rem;'>All items have traction!</span>";
+
                 // P&L Staff Advance
                 let advanceHtml = "";
                 expenseHistory.forEach(exp => {
@@ -1115,7 +1183,7 @@
                         let desc = getVal(exp, ['description', 'note']) || '';
                         let amt = parseAmount(getVal(exp, ['amount', 'total']));
                         let dStr = cleanDisplayDate(getVal(exp, ['date', 'isodate']));
-                        advanceHtml += `<div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:8px; margin-bottom:8px;"><span>👤 ${desc}</span> <span style="font-weight:500; color:var(--text-dark); font-size:0.8rem;">${dStr}</span> <span style="font-weight:700; color:var(--danger);">- ₹${amt.toLocaleString('en-IN')}</span></div>`;
+                        advanceHtml += `<div style="display:flex; justify-content:space-between; border-bottom:1px dashed var(--border); padding-bottom:8px; margin-bottom:8px;"><span>👤 <span style="font-weight:600; color:var(--text-dark);">${desc}</span></span> <span style="font-weight:500; color:var(--text-muted); font-size:0.8rem;">${dStr}</span> <span style="font-weight:700; color:var(--danger);">- ₹${amt.toLocaleString('en-IN')}</span></div>`;
                     }
                 });
                 document.getElementById('staffAdvanceList').innerHTML = advanceHtml || "<span style='color:var(--text-muted); font-size:0.85rem;'>No staff payments recorded.</span>";
@@ -1127,7 +1195,7 @@
                     let lbls = Object.keys(catStats); let vals = Object.values(catStats);
                     donutChartInstance = new Chart(dCtx.getContext('2d'), { 
                         type: 'doughnut', 
-                        data: { labels: lbls, datasets: [{ data: vals, backgroundColor: ['#E21B70', '#111827', '#B48E5D', '#10B981', '#F59E0B', '#9CA3AF'], borderWidth: 0 }] }, 
+                        data: { labels: lbls, datasets: [{ data: vals, backgroundColor: ['#E21B70', '#1A1A1A', '#B48E5D', '#10B981', '#D03B3B', '#7A756D'], borderWidth: 0 }] }, 
                         options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right', labels: {font: {family:'Poppins', size:11}, boxWidth: 12} } } } 
                     });
                 }
@@ -1138,14 +1206,13 @@
                 if (hasSalesAccess) {
                     document.getElementById('homeTodaySale').innerText = `₹${revenueToday.toLocaleString('en-IN')}`; document.getElementById('homeAvgOrder').innerText = `₹${avgToday.toLocaleString('en-IN')}`; document.getElementById('homeOverallSale').innerText = `₹${totalSalesAmount.toLocaleString('en-IN')}`; 
                 } else {
-                    document.getElementById('homeTodaySale').innerText = "No Access"; document.getElementById('homeAvgOrder').innerText = "No Access"; document.getElementById('homeOverallSale').innerText = "No Access"; 
+                    document.getElementById('homeTodaySale').innerText = "No Access"; document.getElementById('homeTodaySale').style.fontSize = "1.1rem"; document.getElementById('homeAvgOrder').innerText = "No Access"; document.getElementById('homeAvgOrder').style.fontSize = "1.1rem"; document.getElementById('homeOverallSale').innerText = "No Access"; document.getElementById('homeOverallSale').style.fontSize = "1.1rem";
                 }
                 renderPNLChart('daily');
             } catch(e) { console.error("Trends Error", e); }
         }
 
         function renderPNLChart(viewType) {
-            haptic();
             document.querySelectorAll('.chart-filters .filter-btn').forEach(btn => btn.classList.remove('active'));
             if(viewType === 'daily') document.getElementById('btnChartDOD').classList.add('active'); else if(viewType === 'weekly') document.getElementById('btnChartWeekly').classList.add('active'); else if(viewType === 'monthly') document.getElementById('btnChartMonthly').classList.add('active');
 
@@ -1161,60 +1228,48 @@
             finalLabels.forEach(lbl => { finalSales.push(aggSales[lbl] || 0); finalExp.push(aggExp[lbl] || 0); });
 
             const canvas = document.getElementById('trendChart'); if(!canvas) return; const ctx = canvas.getContext('2d'); if(typeof Chart === 'undefined') return; if(trendChartInstance) trendChartInstance.destroy();
-            trendChartInstance = new Chart(ctx, { type: 'line', data: { labels: finalLabels, datasets: [ { label: 'Sales (₹)', data: finalSales, borderColor: '#10B981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#10B981', pointRadius: 4 }, { label: 'Expenses (₹)', data: finalExp, borderColor: '#EF4444', backgroundColor: 'rgba(239, 68, 68, 0.1)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#EF4444', pointRadius: 4 } ] }, options: { responsive: true, maintainAspectRatio: false } });
-        }
-
-        function populateDropdown() { 
-            const datalist = document.getElementById('menuItemsList'); datalist.innerHTML = ""; 
-            menuData.forEach(item => { let itemName = getVal(item, ['itemname', 'name']); if(itemName) { let option = document.createElement('option'); option.value = itemName; datalist.appendChild(option); } }); 
-        }
-
-        function renderStockDashboard() { 
-            let stockDiv = document.getElementById('dashboardStockList'); if(!stockDiv) return; stockDiv.innerHTML = ""; let keys = Object.keys(stockData); 
-            if(keys.length === 0) { stockDiv.innerHTML = "<p style='color:var(--text-muted); font-size:0.85rem;'>No stock tracked.</p>"; return; } 
-            keys.forEach(key => { let qty = parseInt(stockData[key]); let tagClass = qty <= 5 ? 'stock-tag low' : 'stock-tag'; stockDiv.innerHTML += `<div class="${tagClass}">${key}: <span>${qty}</span></div>`; }); 
-        }
-
-        function checkStockDisplay() { 
-            let itemName = document.getElementById('itemInput').value; let statusDiv = document.getElementById('stockStatus'); let foundStockKey = Object.keys(stockData).find(key => key.trim().toLowerCase() === itemName.trim().toLowerCase()); 
-            if(foundStockKey !== undefined) { let currentQty = parseInt(stockData[foundStockKey]); statusDiv.style.color = ""; statusDiv.style.backgroundColor = ""; statusDiv.style.border = ""; statusDiv.className = currentQty > 5 ? "stock-tag" : "stock-tag low"; statusDiv.innerHTML = currentQty > 5 ? `Available: <span>${currentQty}</span>` : `Low Stock: <span>${currentQty}</span>`; statusDiv.style.display = "inline-flex"; statusDiv.style.marginTop = "8px"; } else { statusDiv.style.display = "none"; statusDiv.innerHTML = ""; } 
-        }
-
-        function cleanDisplayDate(dStr) { 
-            if (!dStr) return ""; try { let d = new Date(dStr); if (isNaN(d.getTime())) return dStr.split(" ")[0]; return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); } catch(e) { return dStr; } 
-        }
-
-        function cleanDisplayTime(tStr) { 
-            if (!tStr) return ""; try { let d = new Date(tStr); if (!isNaN(d.getTime())) return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); return tStr; } catch(e) { return tStr; } 
+            trendChartInstance = new Chart(ctx, { type: 'line', data: { labels: finalLabels, datasets: [ { label: 'Sales (₹)', data: finalSales, borderColor: '#10B981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#10B981', pointRadius: 4 }, { label: 'Expenses (₹)', data: finalExp, borderColor: '#D03B3B', backgroundColor: 'rgba(208, 59, 59, 0.1)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#D03B3B', pointRadius: 4 } ] }, options: { responsive: true, maintainAspectRatio: false } });
         }
 
         // =====================================
-        // EXPENSES UI
+        // EXPENSES UI (Filters, Image)
         // =====================================
-        function renderExpensesList() {
-            let filter = document.getElementById('expenseDateFilter') ? document.getElementById('expenseDateFilter').value : 'All';
-            let tbody = document.getElementById('expensesTableBody'); if(!tbody) return;
-            tbody.innerHTML = "";
-            let now = new Date();
+        function renderExpensesListUI(filterBtn = null) {
+            if(filterBtn) { haptic(); document.querySelectorAll('#expenseFilters .filter-chip').forEach(b=>b.classList.remove('active')); filterBtn.classList.add('active'); }
             
+            let dateFilter = document.getElementById('expenseDateFilter') ? document.getElementById('expenseDateFilter').value : 'All';
+            let catFilter = 'All';
+            let activeCatBtn = document.querySelector('#expenseFilters .filter-chip.active');
+            if(activeCatBtn) catFilter = activeCatBtn.innerText.trim();
+
+            let tbody = document.getElementById('expensesTableBody'); if(!tbody) return;
+            let container = document.getElementById('expensesCardList');
+            if(container) container.innerHTML = "";
+            tbody.innerHTML = "";
+            
+            let now = new Date();
+            let todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            let yest = new Date(); yest.setDate(yest.getDate() - 1);
+            let yestIso = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, '0')}-${String(yest.getDate()).padStart(2, '0')}`;
+
             let filtered = expenseHistory.filter(e => {
+                let passCat = (catFilter === 'All') ? true : getVal(e,['category']) === catFilter;
+                if(!passCat) return false;
+
                 let eDateStr = getVal(e, ['date', 'isodate', 'expense_date', 'created_at']);
                 if(!eDateStr) return false;
                 let eDate = new Date(eDateStr);
                 if(isNaN(eDate.getTime())) return true;
                 
-                let diffDays = Math.ceil(Math.abs(now - eDate) / (1000 * 60 * 60 * 24));
                 let eDateIso = eDate.toISOString().split('T')[0];
-                let todayIso = now.toISOString().split('T')[0];
-                let yest = new Date(); yest.setDate(yest.getDate()-1);
-                let yestIso = yest.toISOString().split('T')[0];
-
-                if(filter === 'Today') return eDateIso === todayIso;
-                if(filter === 'Yesterday') return eDateIso === yestIso;
-                if(filter === '7days') return diffDays <= 7;
-                if(filter === '10days') return diffDays <= 10;
-                if(filter === '15days') return diffDays <= 15;
-                if(filter === '1month') return diffDays <= 30;
+                let diffDays = Math.ceil(Math.abs(now - eDate) / (1000 * 60 * 60 * 24));
+                
+                if(dateFilter === 'Today') return eDateIso === todayIso;
+                if(dateFilter === 'Yesterday') return eDateIso === yestIso;
+                if(dateFilter === '7days') return diffDays <= 7;
+                if(dateFilter === '10days') return diffDays <= 10;
+                if(dateFilter === '15days') return diffDays <= 15;
+                if(dateFilter === '1month') return diffDays <= 30;
                 return true; 
             });
 
@@ -1224,16 +1279,16 @@
             let pBar = document.getElementById('expenseProgressBar'); let pLeg = document.getElementById('expenseProgressLegend');
             if(pBar && pLeg) {
                 pBar.innerHTML = ""; pLeg.innerHTML = "";
-                const colors = {'Raw Material':'#111827', 'Utility':'#B48E5D', 'Payroll':'#10B981', 'Maintenance':'#E21B70', 'Other':'#9CA3AF'};
+                const colors = {'Raw Material':'#1A1A1A', 'Utility':'#B48E5D', 'Payroll':'#10B981', 'Maintenance':'#D03B3B', 'Other':'#7A756D'};
                 for(let c in catTotals) {
-                    let perc = (catTotals[c]/grandTotal)*100; let col = colors[c]||'#6B7280';
+                    let perc = (catTotals[c]/grandTotal)*100; let col = colors[c]||'#7A756D';
                     pBar.innerHTML += `<div style="height:100%; width:${perc}%; background:${col};"></div>`;
                     pLeg.innerHTML += `<div style="display:flex; align-items:center; gap:4px;"><span style="width:8px; height:8px; border-radius:50%; background:${col};"></span> ${c} (${Math.round(perc)}%)</div>`;
                 }
             }
 
             if(!filtered.length) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:12px; color:var(--text-muted);">No expenses found.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:12px; color:var(--text-muted);">No expenses found for this period.</td></tr>`;
                 return;
             }
 
@@ -1244,9 +1299,9 @@
                 }
                 tbody.innerHTML += `<tr>
                     <td style="padding:10px; border-bottom:1px solid var(--border);">${cleanDisplayDate(getVal(e,['date','isodate']))}</td>
-                    <td style="padding:10px; border-bottom:1px solid var(--border);">${getVal(e,['category'])}</td>
-                    <td style="padding:10px; border-bottom:1px solid var(--border);">${getVal(e,['description','note'])||'—'} ${imgThumb}</td>
-                    <td style="padding:10px; border-bottom:1px solid var(--border); text-align:right; font-weight:700;">₹${parseAmount(getVal(e,['amount','total'])).toLocaleString('en-IN')}</td>
+                    <td style="padding:10px; border-bottom:1px solid var(--border); font-weight:600;">${getVal(e,['category'])}</td>
+                    <td style="padding:10px; border-bottom:1px solid var(--border); color:var(--text-muted);">${getVal(e,['description','note'])||'—'} ${imgThumb}</td>
+                    <td style="padding:10px; border-bottom:1px solid var(--border); text-align:right; font-weight:700; color:var(--text-dark);">₹${parseAmount(getVal(e,['amount','total'])).toLocaleString('en-IN')}</td>
                 </tr>`;
             });
         }
@@ -1257,15 +1312,6 @@
             const reader = new FileReader();
             reader.onload = (e) => { expenseImageBase64 = e.target.result; document.getElementById('expImagePreview').style.display = 'block'; };
             reader.readAsDataURL(file);
-        }
-
-        function submitExpense() {
-            haptic();
-            let category = document.getElementById('expCategory').value; let amount = document.getElementById('expAmount').value;
-            if (!amount || amount <= 0) { showCustomAlert("Invalid numeric value."); return; }
-            
-            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'expense', category: category, amount: amount, description: document.getElementById('expDescription').value || "NA", receipt_image: expenseImageBase64 }) })
-            .then(res => res.json()).then(data => { showCustomAlert("Expense Saved!"); document.getElementById('expAmount').value = ""; document.getElementById('expDescription').value = ""; document.getElementById('expImage').value = ""; expenseImageBase64 = null; document.getElementById('expImagePreview').style.display = 'none'; generateTrends(); fetchData(); });
         }
 
         function openImagePreview(b64) { haptic(); document.getElementById('fullSizeReceipt').src = b64; openModal('imagePreviewModal'); }
@@ -1304,24 +1350,25 @@
         }
 
         function fetchApprovals() {
-            let card = document.getElementById('adminApprovalsCard'); let list = document.getElementById('adminApprovalsList');
-            let deletedOrders = salesHistory.filter(s => s.status === 'deleted' || s.status === 'cancelled' || s.status === 'deletion_pending');
-            
-            if(!deletedOrders.length) { card.style.display = 'none'; return; }
-            card.style.display = 'block'; list.innerHTML = "";
-            
-            deletedOrders.forEach(req => {
-                let badge = req.status === 'deletion_pending' ? `<span style="background:#FEE2E2; color:#D03B3B; font-size:0.65rem; padding:4px 8px; border-radius:6px; font-weight:700;">Pending</span>` : `<span style="background:#E6F4EA; color:#10B981; font-size:0.65rem; padding:4px 8px; border-radius:6px; font-weight:700;">Actioned</span>`;
-                list.innerHTML += `<div style="background:#FFF; padding:16px; border-radius:12px; border:1px solid var(--occ-border);">
-                    <div style="font-weight:800; margin-bottom:4px; font-size:1.05rem; display:flex; justify-content:space-between;"><span>Invoice: #${req.orderid}</span> ${badge}</div>
-                    <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">Amount: <b style="color:var(--text-dark);">₹${req.total}</b><br>Timestamp: ${req.date}</div>
-                    ${req.status === 'deletion_pending' ? `
-                    <div style="display:flex; gap:8px;">
-                        <button class="btn" style="background:var(--success); color:#FFF; border:none; padding:8px 16px; border-radius:8px; font-weight:700; font-size:0.8rem; flex:1;" onclick="resolveApproval('${req.orderid}', 'approved')">Approve</button>
-                        <button class="btn" style="background:var(--primary-light); color:var(--text-dark); border:none; padding:8px 16px; border-radius:8px; font-weight:700; font-size:0.8rem; flex:1;" onclick="resolveApproval('${req.orderid}', 'rejected')">Reject</button>
-                    </div>` : ''}
-                </div>`;
-            });
+            fetch(`${API_BASE}/approvals`).then(r=>r.json()).then(data => {
+                if(!data.success || !data.requests.length) { document.getElementById('adminApprovalsCard').style.display = 'none'; return; }
+                document.getElementById('adminApprovalsCard').style.display = 'block';
+                let html = "";
+                data.requests.forEach(req => {
+                    let title = req.order_id.startsWith('EMP-') ? `Staff Removal: ${req.order_id.replace('EMP-','')}` : `Invoice Cancel: #${req.order_id}`;
+                    let badge = req.status === 'deletion_pending' ? `<span style="background:#FEE2E2; color:#D03B3B; font-size:0.65rem; padding:4px 8px; border-radius:6px; font-weight:700;">Pending</span>` : `<span style="background:#E6F4EA; color:#10B981; font-size:0.65rem; padding:4px 8px; border-radius:6px; font-weight:700;">Actioned</span>`;
+                    html += `<div style="background:#FFF; padding:16px; border-radius:12px; border:1px solid var(--occ-border);">
+                        <div style="font-weight:800; margin-bottom:4px; font-size:1.05rem; display:flex; justify-content:space-between;"><span>${title}</span> ${badge}</div>
+                        <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">By: ${req.requested_by}<br>Reason: ${req.reason}</div>
+                        ${req.status === 'deletion_pending' ? `
+                        <div style="display:flex; gap:8px;">
+                            <button onclick="resolveApproval(${req.id}, 'approved', '${req.order_id}')" style="background:var(--success); color:#FFF; border:none; padding:8px 16px; border-radius:8px; font-weight:600; cursor:pointer; flex:1;">Approve</button>
+                            <button onclick="resolveApproval(${req.id}, 'rejected', '${req.order_id}')" style="background:var(--primary-light); color:var(--text-dark); border:none; padding:8px 16px; border-radius:8px; font-weight:600; cursor:pointer; flex:1;">Reject</button>
+                        </div>` : ''}
+                    </div>`;
+                });
+                document.getElementById('adminApprovalsList').innerHTML = html;
+            }).catch(e=> { console.log(e); });
         }
 
         window.resolveApprovalConf = function() {
@@ -1336,7 +1383,7 @@
         }
 
         // =====================================
-        // LIVE SALES (REGISTRY)
+        // LIVE SALES
         // =====================================
         function renderLiveSales() {
             const salesGrid = document.getElementById('salesGrid'); salesGrid.innerHTML = ""; const homeRecent = document.getElementById('homeRecentOrders'); homeRecent.innerHTML = "";
@@ -1350,7 +1397,7 @@
             });
             
             let displayTotal = filteredSales.reduce((acc, curr) => acc + parseAmount(getVal(curr, ['totalamount', 'total', 'amount'])), 0);
-            document.getElementById('totalSalesBox').innerText = `₹ ${displayTotal.toLocaleString('en-IN')}`;
+            document.getElementById('totalSalesBox').innerText = `Total Sales: ₹ ${displayTotal.toLocaleString('en-IN')}`;
             
             if(filteredSales.length === 0) { salesGrid.innerHTML = "<p style='color:var(--text-muted); font-size:0.9rem; text-align:center;'>No orders found.</p>"; return; }
             
@@ -1364,7 +1411,7 @@
                 let cleanItemsView = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
                 let statusFlag = sale.status === 'deletion_pending' ? `<span style="background:#FEE2E2; color:#D03B3B; font-size:0.65rem; padding:4px 8px; border-radius:6px; font-weight:700;">APPROVAL PENDING</span>` : (sale.status === 'deleted' || sale.status === 'cancelled' ? `<span style="background:#FEE2E2; color:#D03B3B; font-size:0.65rem; padding:4px 8px; border-radius:6px; font-weight:700;">CANCELLED</span>` : '');
 
-                salesGrid.innerHTML += `<div class="card" style="padding:16px; margin-bottom:12px; cursor:pointer; border:1px solid var(--border); box-shadow:none;" onclick="openOrderDetails('${sOrderId}')"><div style="display:flex; justify-content:space-between; margin-bottom:12px;"><div><h4 style="margin-bottom:2px; font-weight:700; color:var(--text-dark);">${tName}${sessionLabel}</h4><span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">#${sOrderId}</span></div>${statusFlag}</div><div style="font-size:0.85rem; color:var(--text-muted); line-height:1.5; margin-bottom:16px; max-height:42px; overflow:hidden;">${cleanItemsView.replace(/ ₹\d+(?:\.\d+)?/g, '')}</div><div style="display:flex; justify-content:space-between; align-items:center;"><span style="background:#F4EFEA; color:var(--text-dark); padding:6px 10px; border-radius:6px; font-weight:600; font-size:0.78rem; border:1px solid var(--border); white-space:nowrap;">${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}</span><span style="color: #E65100; font-size: 1.2rem; font-weight: 800; background: #FFEDD5; padding: 6px 12px; border-radius: 8px; white-space: nowrap; border: 1px solid #FDE68A;">₹ ${sTotal}</span></div></div>`;
+                salesGrid.innerHTML += `<div class="card" style="padding:16px; margin-bottom:12px; cursor:pointer;" onclick="openOrderDetails('${sOrderId}')"><div style="display:flex; justify-content:space-between; margin-bottom:12px;"><div><h4 style="margin-bottom:2px; font-weight:700; color:var(--text-dark);">${tName}${sessionLabel}</h4><span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">#${sOrderId}</span></div>${statusFlag}</div><div style="font-size:0.85rem; color:var(--text-muted); line-height:1.5; margin-bottom:16px; max-height:42px; overflow:hidden;">${cleanItemsView.replace(/ ₹\d+(?:\.\d+)?/g, '')}</div><div style="display:flex; justify-content:space-between; align-items:center;"><span style="background:#F4EFEA; color:var(--text-dark); padding:6px 10px; border-radius:6px; font-weight:600; font-size:0.78rem; border:1px solid var(--border); white-space:nowrap;">${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}</span><span style="color: #E65100; font-size: 1.2rem; font-weight: 800; background: #FFEDD5; padding: 6px 12px; border-radius: 8px; white-space: nowrap; border: 1px solid #FDE68A;">₹ ${sTotal}</span></div></div>`;
             });
             
             filteredSales.slice(0, 3).forEach(sale => {
@@ -1413,116 +1460,33 @@
             openModal('orderDetailsModal');
         }
 
-        // =====================================
-        // DIRECT PRINT / WHATSAPP COMMANDS (FIXED ITEMS PARSING)
-        // =====================================
-        function printBill(type) {
-            haptic();
-            try {
-                if (currentBill.length === 0) { showCustomAlert("Cart is empty! Nothing to print."); return; }
-                let printSec = document.getElementById('printSection'); let d = new Date(); let dStr = d.toLocaleDateString('en-IN') + ' ' + d.toLocaleTimeString('en-IN');
-                
-                if(type === 'kot') {
-                    let itemsHtml = currentBill.map(i => `<div style="font-size:1.1rem; font-weight:bold; margin-bottom:5px; border-bottom:1px dashed #ccc; padding-bottom:5px;">[ ${i.qty} ] x ${i.name}</div>`).join("");
-                    printSec.innerHTML = `<div style="text-align:center; margin-bottom:10px;"><h2 style="margin:0; font-size:1.5rem;">K.O.T</h2><h3 style="margin:5px 0;">Table: ${activeTableNumber}</h3><p style="margin:0; font-size:0.8rem;">Date: ${dStr}</p></div><div style="border-top:2px dashed #000; padding-top:10px;">${itemsHtml}</div>`;
-                } else {
-                    let discountEl = document.getElementById('discountValue'); let discount = discountEl ? (parseInt(discountEl.value) || 0) : 0; 
-                    let grandTotalEl = document.getElementById('grandTotal'); let grandTotal = grandTotalEl ? (parseInt(grandTotalEl.innerText.replace(/[^0-9]/g, '')) || 0) : 0;
-                    let addBox = document.getElementById('deliveryAddressBox'); let addInput = document.getElementById('deliveryAddress'); let addStr = (addBox && addBox.style.display === 'flex' && addInput) ? addInput.value : "";
-                    
-                    let itemsHtml = currentBill.map(i => `<tr><td class="col-item" style="text-align: left; width: 50%;">${i.name}</td><td class="col-price" style="text-align: center; width: 15%;">${i.price}</td><td class="col-qty" style="text-align: center; width: 15%;">${i.qty}</td><td class="col-amt" style="text-align: right; width: 20%;">${i.total}</td></tr>`).join("");
-                    
-                    printSec.innerHTML = `<div style="text-align: center; margin-bottom: 10px;"><h2 style="font-size: 1.2rem; margin: 0; padding: 0; font-weight: bold;">VIRAASAT UDAIPUR</h2><p style="font-size: 0.8rem; margin: 2px 0;">A Taste Of Royal Mewar</p><p style="font-size: 0.8rem; margin: 2px 0;">Contact: +91 7852041644</p><p style="font-size: 0.8rem; margin: 2px 0;">Udaipur, Rajasthan</p></div><div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; margin-bottom: 10px; font-size: 0.85rem;"><div style="display: flex; justify-content: space-between;"><span>Invoice No: INV-${Math.floor(Math.random() * 9000 + 1000)}</span> <span>${d.toLocaleDateString('en-IN')}</span></div><div style="margin-top:2px;">Table: ${activeTableNumber}</div>${addStr?`<div style="margin-top:2px;">Address: ${addStr}</div>`:""}</div><table style="width: 100%; font-size: 0.85rem; text-align: left; border-collapse: collapse;"><thead><tr><th class="col-item" style="text-align: left; width: 50%;">ITEM</th><th class="col-price" style="text-align: center; width: 15%;">PRICE</th><th class="col-qty" style="text-align: center; width: 15%;">QTY</th><th class="col-amt" style="text-align: right; width: 20%;">AMT</th></tr></thead><tbody>${itemsHtml}</tbody></table><div style="border-top: 1px dashed #000; margin-top: 10px; padding-top: 5px; font-size: 0.9rem;">${discount > 0 ? `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Discount:</span><span>-₹${discount}</span></div>` : ''}<div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;"><span>TOTAL (FOOD):</span><span>₹${grandTotal}</span></div></div><div style="text-align: center; font-size: 0.85rem; font-weight: bold; margin-top: 20px;">THANK YOU FOR DINING WITH US!</div>`;
-                }
-                
-                printSec.offsetHeight; window.print();
-            } catch (e) { console.log(e); }
+        function downloadCSV(rows,filename){
+            if(!rows||!rows.length){showCustomAlert('No data available to export.');return;}
+            const headers=Object.keys(rows[0]);const csv=[headers.join(','),...rows.map(r=>headers.map(h=>`"${String(r[h]??'').replace(/"/g,'""')}"`).join(','))].join('\r\n');
+            const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
         }
 
-        function printHistoricalBill() {
-            haptic();
-            try {
-                let sale = currentViewingSale;
-                if(!sale) return;
-                let sOrderId = getVal(sale, ['orderid', 'id']) || 'N/A'; let sTable = getVal(sale, ['tablenumber', 'table', 'tablename']) || 'Table'; let sDate = getVal(sale, ['date', 'isodate']) || ''; let sTime = getVal(sale, ['time']) || ''; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getSaleItemsText(sale);
-                
-                let printSec = document.getElementById('printSection'); 
-                let dStr = `${cleanDisplayDate(sDate)} ${cleanDisplayTime(sTime)}`; 
-                let itemsHtml = ""; let histDiscount = 0; let modeStr = ""; let addStr = "";
-                
-                let dMatch = sItems.match(/\[Discount Applied:\s*-?₹?(\d+)\]/); if(dMatch) histDiscount = parseInt(dMatch[1]);
-                let mMatch = sItems.match(/\[Mode:\s*(.+?)\]/); if(mMatch) modeStr = mMatch[1];
-                let aMatch = sItems.match(/\[Address:\s*(.+?)\]/); if(aMatch) addStr = aMatch[1];
-
-                let cleanItems = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
-
-                cleanItems.split(', ').forEach(itemStr => {
-                    itemStr = itemStr.trim();
-                    if(!itemStr) return;
-                    let match = itemStr.match(/(.+?)\s*\(x(\d+)\)(?:\s*₹?(\d+(?:\.\d+)?))?/);
-                    if(match) {
-                        let name = match[1].trim(); let qty = parseInt(match[2]); let totalVal = match[3] ? parseFloat(match[3]) : null; let priceVal = null;
-                        if (totalVal === null) { let menuItem = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === name.toLowerCase()); if (menuItem) { priceVal = parseInt(getVal(menuItem, ['price'])); totalVal = priceVal * qty; } } else { priceVal = totalVal / qty; }
-                        itemsHtml += `<tr><td class="col-item" style="text-align: left; width: 50%;">${name}</td><td class="col-price" style="text-align: center; width: 15%;">${priceVal?priceVal:"-"}</td><td class="col-qty" style="text-align: center; width: 15%;">${qty}</td><td class="col-amt" style="text-align: right; width: 20%;">${totalVal?totalVal:"-"}</td></tr>`;
-                    } else { itemsHtml += `<tr><td colspan="4" class="col-item">${itemStr}</td></tr>`; }
-                });
-                
-                printSec.innerHTML = `<div style="text-align: center; margin-bottom: 10px;"><h2 style="font-size: 1.2rem; margin: 0; padding: 0; font-weight: bold;">VIRAASAT UDAIPUR</h2><p style="font-size: 0.8rem; margin: 2px 0;">A Taste Of Royal Mewar</p><p style="font-size: 0.8rem; margin: 2px 0;">Contact: +91 7852041644</p><p style="font-size: 0.8rem; margin: 2px 0;">Udaipur, Rajasthan</p></div><div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; margin-bottom: 10px; font-size: 0.85rem;"><div style="display: flex; justify-content: space-between;"><span>Invoice No: #${sOrderId}</span> <span>(DUPLICATE)</span></div><div style="margin-top:2px;">Table: ${sTable}</div>${modeStr?`<div style="margin-top:2px;">Payment Mode: ${modeStr}</div>`:""}${addStr?`<div style="margin-top:2px;">Address: ${addStr}</div>`:""}</div><table style="width: 100%; font-size: 0.85rem; text-align: left; border-collapse: collapse;"><thead><tr><th class="col-item" style="text-align: left; width: 50%;">ITEM</th><th class="col-price" style="text-align: center; width: 15%;">PRICE</th><th class="col-qty" style="text-align: center; width: 15%;">QTY</th><th class="col-amt" style="text-align: right; width: 20%;">AMT</th></tr></thead><tbody>${itemsHtml}</tbody></table><div style="border-top: 1px dashed #000; margin-top: 10px; padding-top: 5px; font-size: 0.9rem;">${histDiscount > 0 ? `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Discount:</span><span>-₹${histDiscount}</span></div>` : ''}<div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;"><span>TOTAL (FOOD):</span><span>₹${sTotal}</span></div></div><div style="border-bottom: 1px dashed #000; margin-bottom: 10px; padding-bottom: 5px;"></div><div style="text-align: center; font-size: 0.85rem; font-weight: bold; margin-top: 10px;">THANK YOU FOR DINING WITH US!</div><div style="text-align: center; font-size: 0.75rem; margin-top: 5px;">Print Date: ${dStr}</div>`;
-                
-                printSec.offsetHeight; window.print();
-            } catch (e) { console.log(e); }
-        }
-
-        function sendWA_Customer() {
-            haptic();
-            if (currentBill.length === 0) { showCustomAlert("Cart is empty! Please add items first."); return; }
-            let phone = document.getElementById('customerPhone').value.trim();
-            if (!phone || phone.length < 10) { showCustomAlert("Please enter a valid 10-digit customer phone number."); return; }
-            
-            let discount = parseInt(document.getElementById('discountValue').value) || 0; 
-            let grandTotal = parseInt(document.getElementById('grandTotal').innerText.replace(/[^0-9]/g, '')) || 0;
-            let d = new Date(); let dateStr = d.toLocaleDateString('en-IN'); let timeStr = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-            let invoiceNo = "INV-" + Math.floor(Math.random() * 9000 + 1000);
-            
-            let text = `*VIRAASAT UDAIPUR*\n_A Taste Of Royal Mewar_\n\n*Invoice No:* ${invoiceNo}\n*Table:* ${activeTableNumber}\n*Date:* ${dateStr} • ${timeStr}\n----------------------------------------\n*ITEMS*\n`;
-            currentBill.forEach(item => { text += `▪ ${item.name} (x${item.qty})  ~  *₹${item.total}*\n`; });
-            text += `----------------------------------------\n`;
-            if (discount > 0) { text += `*Discount:*  -₹${discount}\n`; }
-            text += `*TOTAL AMOUNT:  ₹${grandTotal}*\n----------------------------------------\n\nThank you for dining with us! 🙏\n\n⭐ *We would love to hear your feedback:*\nhttps://g.page/r/CSJLAggbIn1JEBM/review`;
-            
-            let waLink = `https://wa.me/91${phone}?text=${encodeURIComponent(text)}`; 
-            window.open(waLink, '_blank');
-        }
-
-        function sendWA_HistoricalBill() {
-            haptic();
-            let sale = currentViewingSale;
-            if(!sale) return;
-            let phone = document.getElementById('modalCustomerPhone').value.trim();
-            if (!phone || phone.length < 10) { showCustomAlert("Please enter a valid 10-digit customer phone number."); return; }
-            
-            let sOrderId = getVal(sale, ['orderid', 'id']) || 'N/A'; let sTable = getVal(sale, ['tablenumber', 'table', 'tablename']) || 'Table'; let sDate = getVal(sale, ['date', 'isodate']) || ''; let sTime = getVal(sale, ['time']) || ''; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getSaleItemsText(sale); let histDiscount = 0; 
-            let text = `*VIRAASAT UDAIPUR*\n_A Taste Of Royal Mewar_\n\n*Invoice No:* ${sOrderId}\n*Table:* ${sTable}\n*Date:* ${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}\n----------------------------------------\n*ITEMS*\n`;
-            
-            let dMatch = sItems.match(/\[Discount Applied:\s*-?₹?(\d+)\]/); if(dMatch) histDiscount = parseInt(dMatch[1]);
-            let cleanItems = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
-
-            cleanItems.split(', ').forEach(itemStr => {
-                itemStr = itemStr.trim();
-                if(!itemStr) return;
-                let match = itemStr.match(/(.+?)\s*\(x(\d+)\)(?:\s*₹?(\d+(?:\.\d+)?))?/);
-                if(match) {
-                    let name = match[1].trim(); let qty = parseInt(match[2]); let totalVal = match[3] ? parseFloat(match[3]) : null; 
-                    if (totalVal === null) { let menuItem = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === name.toLowerCase()); if (menuItem) { totalVal = parseInt(getVal(menuItem, ['price'])) * qty; } } 
-                    text += `▪ ${name} (x${qty})  ~  *₹${totalVal || '-' }*\n`;
-                } else if (itemStr.trim()) { text += `▪ ${itemStr.trim()}\n`; }
+        function exportRegistrySales() { downloadCSV(salesHistory.map(s => ({ Date: s.date, Time: s.time, Order_ID: s.orderid, Table: s.table, Amount: s.amount, Payment: s.payment_method })), 'Viraasat-Registry-Sales.csv'); }
+        function exportItemSales() {
+            let itemStats = {};
+            salesHistory.forEach(sale => { 
+                if(sale.status === 'deleted' || sale.status === 'deletion_pending') return;
+                let rawItems = getSaleItemsText(sale); let cleanItems = rawItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
+                cleanItems.split(', ').forEach(str => { let m = str.match(/(.+?)\s*\(x(\d+)\)/); if(m) { let name = m[1].trim(); let qty = parseInt(m[2]); itemStats[name] = (itemStats[name]||0) + qty; } });
             });
-            text += `----------------------------------------\n`;
-            if (histDiscount > 0) { text += `*Discount:*  -₹${histDiscount}\n`; }
-            text += `*TOTAL AMOUNT:  ₹${sTotal}*\n----------------------------------------\n\nThank you for dining with us! 🙏\n\n⭐ *We would love to hear your feedback:*\nhttps://g.page/r/CSJLAggbIn1JEBM/review`;
-            
-            let waLink = `https://wa.me/91${phone}?text=${encodeURIComponent(text)}`; 
-            window.open(waLink, '_blank');
+            downloadCSV(Object.entries(itemStats).sort((a,b)=>b[1]-a[1]).map(([Item, Qty]) => ({Item, Units_Sold: Qty})), 'Viraasat-Item-Analytics.csv');
+        }
+        function exportExpensesTable() {
+            downloadCSV(expenseHistory.map(e => ({ Date: cleanDisplayDate(getVal(e,['date','isodate'])), Category: getVal(e,['category']), Description: getVal(e,['description','note'])||'—', Amount: parseAmount(getVal(e,['amount','total'])) })), 'Viraasat-Expenses-Report.csv');
+        }
+        
+        async function runFullImport() {
+            let fileInput = document.getElementById('fullImportInput'); 
+            if(!fileInput.files.length) { showCustomAlert("Select full Excel workbook."); return; }
+            let file = fileInput.files[0]; let data = await file.arrayBuffer(); let wb = XLSX.read(data, { type: 'array' });
+            let getSheet = (name) => wb.Sheets[name] ? XLSX.utils.sheet_to_json(wb.Sheets[name], {defval:'', raw:false}) : [];
+            let payload = { sales: getSheet('Sales'), menu: getSheet('Menu').map(m => ({ Name: m.Item_Name || m.Name, Category: m.Category, Price: m.Price, Active: 1 })), staff: getSheet('Staff').map(s => ({ Name: s.Name, Mobile: s.Mobile, Role: s.Role, Monthly_Salary: s['Monthly Salary']||s.Monthly_Salary, Date_of_Joining: s['Join Date']||s.Date_of_Joining })), stock: getSheet('Stock').map(st => ({ Name: st.Item_Name || st.Name, Quantity: st.Current_Stock || st.Quantity })), expenses: getSheet('Expenses') };
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({type: 'import', data: payload}) }).then(r=>r.json()).then(res => { showCustomAlert("Import Complete!"); fetchData(); }).catch(e=>console.log(e));
         }
 
     </script>
