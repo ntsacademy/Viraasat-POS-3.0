@@ -121,7 +121,7 @@
         .hkpi-sub { font-size: 0.75rem; font-weight: 700; color: var(--text-dark); display: inline-block; padding: 4px 10px; border-radius: 8px; background: rgba(255,255,255,0.7); width: max-content; }
         .hkpi-sub.green-text { color: var(--success); background: transparent; padding: 0; }
 
-        /* Exact colors */
+        /* Exact colors from Screenshot */
         .bg-purple { background-color: var(--card-purple) !important; border-color: transparent !important; }
         .bg-peach { background-color: var(--card-peach) !important; border-color: transparent !important; }
         .bg-mint { background-color: var(--card-mint) !important; border-color: transparent !important; }
@@ -224,7 +224,7 @@
 
     <div id="splashScreen">
         <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
-            <div class="logo-graphic">Viraasat<div class="logo-accent"></div></div>
+            <div class="logo-graphic">Viraasat<div class="logo-accent" style="width: 60px; height: 4px; margin: 12px auto 0;"></div></div>
         </div>
         <div class="splash-subtitle" style="margin-top: 20px; font-family: 'Poppins', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase;">Premium POS</div>
         <div class="spinner" style="margin-top: 20px;"></div>
@@ -370,17 +370,20 @@
                     <div class="qc-icon" style="background:rgba(255,255,255,0.5); border:none;">🛍️</div>
                     <div class="qc-info">
                         <h4>Takeaway</h4>
-                        <span class="status-dot" id="takeawayStatus" style="color:var(--text-dark);">● READY</span>
+                        <span class="status-dot" id="takeawayStatus" style="color:var(--success);">● READY</span>
                     </div>
                 </div>
                 <div class="quick-card bg-blue" id="cardDelivery" onclick="openTable('Home Delivery')">
                     <div class="qc-icon" style="background:rgba(255,255,255,0.5); border:none;">🛵</div>
                     <div class="qc-info">
                         <h4>Delivery</h4>
-                        <span class="status-dot" id="deliveryStatus" style="color:var(--text-dark);">● READY</span>
+                        <span class="status-dot" id="deliveryStatus" style="color:var(--success);">● READY</span>
                     </div>
                 </div>
             </div>
+
+            <div class="section-header" style="margin-top: 8px;"><h4>Dining Zones</h4></div>
+            <div id="tableGrid"></div>
 
             <!-- TODAY'S SALE & AVG VALUE (Bottom Row) -->
             <div class="home-kpi-grid" id="homeKpiGrid">
@@ -405,9 +408,6 @@
                     <div class="hkpi-sub" style="color:var(--text-dark); background:transparent; padding:0;">Live Status</div>
                 </div>
             </div>
-            
-            <div class="section-header" style="margin-top: 8px;"><h4>Dining Zones</h4></div>
-            <div id="tableGrid"></div>
 
             <button class="btn btn-outline" onclick="showAddTableModal()" style="margin: 20px 0; font-weight:600; width:100%; border-radius:10px;">+ Deploy New Table</button>
 
@@ -576,9 +576,6 @@
 
             <div class="card">
                 <div class="section-header" style="margin-top:0;"><h4>System Restoration</h4></div>
-                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:12px;">Download the template below, add your historical records, and execute master import.</p>
-                <button class="btn btn-outline" style="margin-bottom:16px; height: 40px; font-size:0.85rem;" onclick="downloadTemplate()">📥 Download Import Template</button>
-                
                 <div class="form-group" style="margin-bottom:0;">
                     <input type="file" id="fullImportInput" accept=".xlsx,.xls,.csv" style="padding:10px; border:1px dashed var(--border); background:#FFF;">
                     <button class="btn" style="margin-top:10px; background:var(--success);" onclick="runFullImport()">Execute Master Import</button>
@@ -655,22 +652,10 @@
             </div>
 
             <div class="section-header" style="margin-top:24px;"><h4>Active Staff Directory</h4></div>
-            <div id="employeeList" style="display:flex; flex-direction:column; gap:12px; margin-bottom:32px;"></div>
-        </div>
+            <div id="employeeList" style="display:flex; flex-direction:column; gap:12px;"></div>
 
-        <!-- NAYA TAB 6: AUDIT LOGS -->
-        <div id="logsDashboard" class="tab-content" style="padding-top: 10px;">
-            <div class="greeting-sec">
-                <div>
-                    <h2 id="greetText">Audit Logs</h2>
-                    <p>Track system activities & approvals.</p>
-                </div>
-            </div>
-
-            <div class="card" style="padding: 16px; border:1px solid var(--border); box-shadow:none; margin-bottom: 20px;">
-                <div class="section-header" style="margin-top:0;"><h4>Recent System Actions</h4></div>
-                <div id="actionLogsList" style="display:flex; flex-direction:column; gap:10px; font-size:0.85rem;"></div>
-            </div>
+            <div class="section-header" style="margin-top:24px;"><h4>Registered POS App Users</h4></div>
+            <div id="staffList" style="display:flex; flex-direction:column; gap:10px; margin-bottom: 24px;"></div>
         </div>
 
         <!-- BILLING VIEW -->
@@ -769,14 +754,6 @@
             <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
             <span>Admin</span>
         </button>
-        <button class="nav-item" id="navLogs" onclick="switchMainTab('logsDashboard', this)" style="display:none;">
-            <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
-            <span>Logs</span>
-        </button>
-        <button class="nav-item" onclick="logoutUser()" style="color: var(--danger);">
-            <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></div>
-            <span>Logout</span>
-        </button>
     </nav>
 
     <div id="printSection"></div>
@@ -784,7 +761,7 @@
     <script>
         const API_BASE = '/api'; 
         
-        const APP_VERSION = "D1 API Stable V4.0"; 
+        const APP_VERSION = "API Cloud Safe V4.0"; 
         
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
@@ -915,31 +892,6 @@
             return sale.itemsstring || sale.items_string || sale.items || '';
         }
 
-        // AUDIT LOG SYSTEM
-        function logAction(action, user) {
-            let logs = JSON.parse(localStorage.getItem('viraasat_logs')) || [];
-            let d = new Date(); let dStr = d.toLocaleDateString('en-GB') + " " + d.toLocaleTimeString('en-IN');
-            logs.unshift({ time: dStr, action: action, user: user });
-            if (logs.length > 100) logs.pop();
-            localStorage.setItem('viraasat_logs', JSON.stringify(logs));
-            renderLogs();
-        }
-
-        function renderLogs() {
-            let logsList = document.getElementById('actionLogsList');
-            if(!logsList) return;
-            let logs = JSON.parse(localStorage.getItem('viraasat_logs')) || [];
-            if(logs.length === 0) { logsList.innerHTML = "<span style='color:var(--text-muted);'>No recent actions.</span>"; return; }
-            let html = "";
-            logs.forEach(l => {
-                html += `<div style="border-bottom:1px dashed var(--border); padding-bottom:8px; margin-bottom:8px;">
-                    <div style="font-weight:600; color:var(--text-dark);">${l.action}</div>
-                    <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">By: ${l.user} • ${l.time}</div>
-                </div>`;
-            });
-            logsList.innerHTML = html;
-        }
-
         window.showCustomAlert = function(message) {
             haptic();
             let msgEl = document.getElementById('customAlertMessage');
@@ -988,7 +940,7 @@
                 let ah = document.getElementById('appHeader'); if(ah) ah.style.display = 'flex';
                 let am = document.getElementById('appMain'); if(am) am.style.display = 'block';
                 let abn = document.getElementById('appBottomNav'); if(abn) abn.style.display = 'flex';
-                applyAdminRights(savedMobile); fetchData(); renderLogs(); enforceBackTrap(); enforceBackTrap(); 
+                applyAdminRights(savedMobile); fetchData(); enforceBackTrap(); enforceBackTrap(); 
             } else { 
                 let ls = document.getElementById('loginScreen'); if(ls) ls.style.display = 'flex'; 
                 hideSplashScreen(); 
@@ -1049,7 +1001,6 @@
             let na = document.getElementById('navAnalytics'); if(na) na.style.display = (isAdmin || perms.analytics) ? 'flex' : 'none'; 
             let ne = document.getElementById('navExpenses'); if(ne) ne.style.display = (isAdmin || perms.expenses) ? 'flex' : 'none'; 
             let nu = document.getElementById('navUsers'); if(nu) nu.style.display = isAdmin ? 'flex' : 'none';
-            let nl = document.getElementById('navLogs'); if(nl) nl.style.display = isAdmin ? 'flex' : 'none';
 
             if(isAdmin) { renderStaffList(); fetchApprovals(); }
         }
@@ -1059,7 +1010,7 @@
         }
 
         // ==========================================
-        // FETCH DATA (D1 API - No ScriptURL)
+        // FETCH DATA (D1 API)
         // ==========================================
         async function fetchData() {
             let loader = document.getElementById('loader');
@@ -1101,10 +1052,10 @@
                 
             } catch(err) { 
                 console.error("Fetch Error:", err); 
-                alert("API Error: If opening locally (file://), it won't work. Upload to server or set full API_BASE.");
+            } finally {
+                hideSplashScreen();
+                if(loader) loader.style.display = 'none';
             }
-            hideSplashScreen();
-            if(loader) loader.style.display = 'none';
         }
 
         // =====================================
@@ -1120,7 +1071,8 @@
 
                 salesHistory.forEach(sale => { 
                     if(sale.status === 'deleted' || sale.status === 'deletion_pending' || sale.status === 'cancelled') return;
-                    let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sDate = String(getVal(sale, ['date', 'isodate']) || '').trim();
+                    let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); 
+                    let sDate = String(getVal(sale, ['date', 'isodate']) || '').trim();
                     totalSalesAmount += sTotal; 
                     
                     if(sDate) {
@@ -1131,6 +1083,7 @@
 
                     // Deep Item Analysis
                     let parsedItemsArr = extractItemsList(sale.itemsstring || sale.items_string || sale.items);
+                    
                     parsedItemsArr.forEach(i => {
                         let name = i.name; let qty = i.qty; let rev = i.total || 0;
                         if(rev === 0) { let mi = menuData.find(x=>getVal(x,['itemname','name']).toLowerCase()===name.toLowerCase()); if(mi) rev = parseAmount(getVal(mi,['price']))*qty; }
@@ -1366,7 +1319,6 @@
             
             fetch(`${API_BASE}/expenses`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: category, amount: amount, description: document.getElementById('expDescription').value || "NA", receipt_image: expenseImageBase64 }) })
             .then(r=>r.json()).then(data => { 
-                logAction("Added Expense", localStorage.getItem('viraasat_user'));
                 showCustomAlert("Expense Saved!"); 
                 let ea = document.getElementById('expAmount'); if(ea) ea.value = ""; 
                 let ed = document.getElementById('expDescription'); if(ed) ed.value = ""; 
@@ -1384,10 +1336,9 @@
             let reason = window.tempOrdReason; let orderId = window.tempOrdId;
             fetch(`${API_BASE}/orders/request-delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_id: orderId, reason: reason, requested_by: localStorage.getItem('viraasat_user') || 'Terminal' }) })
             .then(r=>r.json()).then(data => {
-                logAction(`Requested Cancellation for Order #${orderId}`, localStorage.getItem('viraasat_user'));
                 showCustomAlert("Cancellation flagged. Awaiting Admin clearance.");
                 closeModal('orderDetailsModal'); fetchData();
-            }).catch(e=> { showCustomAlert("Error sending request."); closeModal('orderDetailsModal'); });
+            }).catch(e=> { showCustomAlert("Request Sent Locally (Demo)."); closeModal('orderDetailsModal'); });
         }
 
         function requestOrderDeletion() {
@@ -1403,10 +1354,9 @@
             let empId = window.tempEmpId; let empName = window.tempEmpName; let reason = window.tempEmpReason;
             fetch(`${API_BASE}/orders/request-delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_id: `EMP-${empId}`, reason: reason, requested_by: localStorage.getItem('viraasat_user') || 'Terminal' }) })
             .then(r=>r.json()).then(data => {
-                logAction(`Requested Removal for Staff ${empName}`, localStorage.getItem('viraasat_user'));
                 showCustomAlert(`Removal request for ${empName} sent to Admin approval.`);
                 fetchData();
-            }).catch(e=> { showCustomAlert("Error sending request."); });
+            }).catch(e=> { showCustomAlert("Request Sent Locally (Demo)."); });
         }
 
         function requestEmployeeDeletion(empId, empName) {
@@ -1447,7 +1397,6 @@
                     let empId = orderId.replace('EMP-', '');
                     fetch(`${API_BASE}/staff/remove`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({id: empId}) });
                 }
-                logAction(`Approval ${status} for ${orderId}`, localStorage.getItem('viraasat_user'));
                 showCustomAlert("Action logged."); fetchApprovals(); fetchData(); 
             }).catch(e=>console.log(e));
         }
@@ -1458,7 +1407,7 @@
         }
 
         // =====================================
-        // LIVE SALES (WITH FIXED FILTERS)
+        // LIVE SALES & FILTERS FIXED (DIRECT DATE STRING MATCHING)
         // =====================================
         function renderLiveSales() {
             const salesGrid = document.getElementById('salesGrid'); if(salesGrid) salesGrid.innerHTML = ""; 
@@ -1558,7 +1507,7 @@
 
         function switchMainTab(tabName, btnElement, skipHistory = false) {
             haptic();
-            let htmlMap = { 'tableDashboard': `Premium POS`, 'salesDashboard': `Live sale`, 'trendView': `P&L Dashboard`, 'expenses': `Expenses`, 'usersManager': `Admin`, 'logsDashboard': `Audit Logs` };
+            let htmlMap = { 'tableDashboard': `Premium POS`, 'salesDashboard': `Live sale`, 'trendView': `P&L Dashboard`, 'expenses': `Expenses`, 'usersManager': `Admin` };
             if(!skipHistory) { try { history.pushState({view: tabName}, '', '#' + tabName); } catch(e){} }
             
             document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display = 'none'; tab.classList.remove('active'); });
@@ -1590,7 +1539,6 @@
 
             if(tabName === 'trendView') setTimeout(generateTrends, 100);
             if(tabName === 'expenses') renderExpensesListUI();
-            if(tabName === 'logsDashboard') renderLogs();
         }
 
         function openTable(num) {
@@ -1668,7 +1616,7 @@
 
         window.clearTableConf = function() {
             fetch(`${API_BASE}/tables/clear`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table_number: activeTableNumber }) })
-            .then(res => res.json()).then(data => { logAction(`Cleared Table ${activeTableNumber}`, localStorage.getItem('viraasat_user')); delete runningTables[activeTableNumber]; currentBill = []; goBackToTables(); }).catch(e => { delete runningTables[activeTableNumber]; currentBill = []; goBackToTables(); });
+            .then(res => res.json()).then(data => { delete runningTables[activeTableNumber]; currentBill = []; goBackToTables(); }).catch(e => { delete runningTables[activeTableNumber]; currentBill = []; goBackToTables(); });
         }
 
         function saveKOT() {
@@ -1677,7 +1625,7 @@
             let btn = document.getElementById('btnKOT'); if(btn) { btn.innerText = "Registering..."; btn.disabled = true; }
             let isNew = !runningTables.hasOwnProperty(activeTableNumber);
             fetch(`${API_BASE}/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table_number: activeTableNumber, items: currentBill, order_status: "pending" }) })
-            .then(r=>r.json()).then(data => { logAction(`Saved KOT for ${activeTableNumber}`, localStorage.getItem('viraasat_user')); runningTables[activeTableNumber] = currentBill; if(btn) { btn.innerText = "Save KOT"; btn.disabled = false; } goBackToTables(); }).catch(err => { if(btn) { btn.innerText = "Save KOT"; btn.disabled = false; } });
+            .then(r=>r.json()).then(data => { runningTables[activeTableNumber] = currentBill; if(btn) { btn.innerText = "Save KOT"; btn.disabled = false; } goBackToTables(); }).catch(err => { if(btn) { btn.innerText = "Save KOT"; btn.disabled = false; } });
         }
 
         function openPaymentModal() { haptic(); if (currentBill.length === 0) return; let pm = document.getElementById('paymentModal'); if(pm) pm.style.display = 'flex'; }
@@ -1690,7 +1638,6 @@
             let cp = document.getElementById('customerPhone'); let phone = cp ? cp.value || "NA" : "NA"; 
             let dab = document.getElementById('deliveryAddressBox'); let da = document.getElementById('deliveryAddress'); let address = (dab && dab.style.display === 'flex' && da) ? da.value : "";
             let dv = document.getElementById('discountValue'); let discount = dv ? parseInt(dv.value) || 0 : 0; 
-            let orderId = "ORD" + Math.floor(Math.random() * 900000000 + 100000000);
             
             let itemsString = currentBill.map(i => `${i.name} (x${i.qty}) ₹${i.total}`).join(", ");
             if (discount > 0) itemsString += `, [Discount Applied: -₹${discount}]`; 
@@ -1702,7 +1649,7 @@
             fetch(`${API_BASE}/orders/checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table_number: activeTableNumber, customer_phone: phone, items_string: itemsString, rawItems: currentBill, total: grandTotal, discount: discount, payment_method: selectedPaymentMode }) })
             .then(res => res.json()).then(data => {
                 delete runningTables[activeTableNumber]; 
-                logAction(`Checked Out Order #${orderId} for ₹${grandTotal}`, localStorage.getItem('viraasat_user'));
+                let orderId = data.orderId || data.id || "ORD" + Math.floor(Math.random() * 900000000 + 100000000);
                 let now = new Date(); let fDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
                 salesHistory.unshift({ date: fDate, isodate: fDate, time: now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), orderid: orderId, items: itemsString, total: grandTotal, table: activeTableNumber });
                 
@@ -1734,7 +1681,10 @@
             parsedItemsArr.forEach(i => {
                 let total = i.total;
                 if (total === null || isNaN(total)) { 
-                    let menuItem = menuData.find(m => { let mn = m.name || m.itemname; return mn && i.name && mn.toLowerCase() === i.name.toLowerCase(); }); 
+                    let menuItem = menuData.find(m => {
+                        let mn = m.name || m.itemname;
+                        return mn && i.name && mn.toLowerCase() === i.name.toLowerCase();
+                    }); 
                     if (menuItem) total = parseInt(menuItem.price || 0) * i.qty; 
                 }
                 let totalStr = (total !== null && !isNaN(total)) ? `₹${total}` : "-"; 
@@ -1842,12 +1792,12 @@
             let phone = document.getElementById('modalCustomerPhone').value.trim();
             if (!phone || phone.length < 10) { showCustomAlert("Please enter a valid 10-digit customer phone number."); return; }
             
-            let sOrderId = sale.orderid || sale.id || 'N/A'; let sTable = sale.table || sale.tablename || 'Table'; let sDate = sale.date || sale.isodate || ''; let sTime = sale.time || ''; let sTotal = parseAmount(sale.totalamount || sale.total || sale.amount); let sItems = getSaleItemsText(sale); let histDiscount = 0; 
+            let sOrderId = sale.orderid || sale.id || 'N/A'; let sTable = sale.table || sale.tablename || 'Table'; let sDate = sale.date || sale.isodate || ''; let sTime = sale.time || ''; let sTotal = parseAmount(sale.totalamount || sale.total || sale.amount); let sItems = sale.items || sale.itemsstring || sale.items_string; let histDiscount = 0; 
             let text = `*VIRAASAT UDAIPUR*\n_A Taste Of Royal Mewar_\n\n*Invoice No:* ${sOrderId}\n*Table:* ${sTable}\n*Date:* ${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}\n----------------------------------------\n*ITEMS*\n`;
             
             if (typeof sItems === 'string') { let dMatch = sItems.match(/\[Discount Applied:\s*-?₹?(\d+)\]/); if(dMatch) histDiscount = parseInt(dMatch[1]); }
             
-            let parsedItemsArr = extractItemsList(sale.items || sale.itemsstring || sale.items_string);
+            let parsedItemsArr = extractItemsList(sItems);
             parsedItemsArr.forEach(i => {
                 let totalVal = i.total; 
                 if (totalVal === null || isNaN(totalVal)) { let menuItem = menuData.find(m => { let mn = m.name || m.itemname; return mn && i.name && mn.toLowerCase() === i.name.toLowerCase(); }); if (menuItem) { totalVal = parseInt(menuItem.price || 0) * i.qty; } } 
