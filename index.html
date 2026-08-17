@@ -15,6 +15,7 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 
     <style>
         :root {
@@ -43,8 +44,6 @@
             --card-peach: #FEF0E6;
             --card-mint: #E8F5E9;
             --card-blue: #EAF2FF;
-            --btn-pink: #E21B70;
-            --btn-green: #10B981;
         }
 
         html { font-size: 16px; touch-action: manipulation; background-color: #FFFFFF; overscroll-behavior-y: contain; } 
@@ -104,18 +103,22 @@
         .status-avail { color: #10B981; background: #E6F4EA; border: 1px solid #C6E7D2; }
         .status-occ { background: var(--occ-gradient) !important; color: #FFFFFF !important; box-shadow: 0 3px 8px rgba(255, 95, 142, 0.3); border: none !important; }
 
-        /* Exact colors applied to original grid class */
+        /* KPI Layout exactly as requested (Takeaway/Delivery on Top, Sales Below) */
         .home-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-        .hkpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; box-shadow: var(--shadow-soft); display: flex; flex-direction: column; }
-        .hkpi-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--text-muted); font-size: 0.78rem; font-weight: 600; }
+        .hkpi-card { background: var(--surface); border: 1px solid transparent; border-radius: var(--border-radius); padding: 16px; box-shadow: var(--shadow-soft); display: flex; flex-direction: column; cursor:pointer; transition: 0.1s;}
+        .hkpi-card:active { transform: scale(0.98); filter: brightness(0.97); }
+        .hkpi-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--text-muted); font-size: 0.78rem; font-weight: 700; text-transform: uppercase;}
         .hkpi-top svg { width: 16px; height: 16px; color: var(--text-dark); }
-        .hkpi-val { font-size: 1.35rem; font-weight: 800; color: var(--text-dark); margin-bottom: 4px; transition: font-size 0.2s;}
-        .hkpi-sub { font-size: 0.72rem; font-weight: 600; color: var(--success); }
+        .hkpi-val { font-size: 1.45rem; font-weight: 800; color: var(--text-dark); margin-bottom: 4px;}
+        .hkpi-sub { font-size: 0.72rem; font-weight: 600; color: var(--text-dark); display: inline-block; padding: 4px 10px; border-radius: 8px; background: rgba(255,255,255,0.7); width: max-content; margin-top:4px;}
+        .hkpi-sub.green-text { color: var(--success); background: transparent; padding: 0; }
 
-        .bg-purple { background-color: var(--card-purple) !important; border-color: transparent !important; }
-        .bg-peach { background-color: var(--card-peach) !important; border-color: transparent !important; }
-        .bg-mint { background-color: var(--card-mint) !important; border-color: transparent !important; }
-        .bg-blue { background-color: var(--card-blue) !important; border-color: transparent !important; }
+        /* Pastel Colors */
+        .bg-purple { background-color: var(--card-purple); }
+        .bg-peach { background-color: var(--card-peach); }
+        .bg-mint { background-color: var(--card-mint); }
+        .bg-blue { background-color: var(--card-blue); }
+        .bg-white-border { background-color: var(--surface); border-color: var(--border); }
 
         .h-order-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.1s; }
         .h-order-card:active { transform: scale(0.98); }
@@ -128,9 +131,9 @@
         .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; padding: 10px 8px calc(10px + env(safe-area-inset-bottom)) 8px; border-top: 1px solid var(--border); z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.03); border-radius: 20px 20px 0 0; }
         .nav-item { background: transparent; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: inherit; font-size: 0.65rem; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; padding: 6px 0; }
         .nav-item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: 0.2s; }
-        .nav-item.active { color: var(--btn-pink); font-weight: 800; }
+        .nav-item.active { color: var(--text-dark); font-weight: 800; }
         .nav-item.active .icon-container { background: #FDE8D7; width: 56px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-        .nav-item.active svg { stroke: var(--btn-pink); stroke-width: 2.2; }
+        .nav-item.active svg { stroke: var(--text-dark); stroke-width: 2.2; }
 
         .card { background: var(--surface); border-radius: var(--border-radius); padding: 20px; border: 1px solid var(--border); margin-bottom: 16px; box-shadow: var(--shadow-soft); }
         .form-group { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
@@ -344,158 +347,139 @@
             <div class="greeting-sec">
                 <div>
                     <h2 id="greetText">Good Evening 👋</h2>
-                    <p>Here's what's happening today.</p>
+                    <p>Current operational metrics.</p>
                 </div>
                 <div class="date-badge" id="currentDateStr">Today</div>
             </div>
 
-            <div class="quick-action-grid">
-                <div class="quick-card bg-mint" id="cardTakeaway" onclick="openTable('Takeaway')">
-                    <div class="qc-icon" style="background:rgba(255,255,255,0.5); border:none;">🛍️</div>
-                    <div class="qc-info">
-                        <h4>Takeaway</h4>
-                        <span class="status-dot" id="takeawayStatus">● READY</span>
-                    </div>
-                </div>
-                <div class="quick-card bg-blue" id="cardDelivery" onclick="openTable('Home Delivery')">
-                    <div class="qc-icon" style="background:rgba(255,255,255,0.5); border:none;">🛵</div>
-                    <div class="qc-info">
-                        <h4>Delivery</h4>
-                        <span class="status-dot" id="deliveryStatus">● READY</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="tableGrid"></div>
-
+            <!-- Zepto Style Reordered KPI Cards -->
             <div class="home-kpi-grid" id="homeKpiGrid">
+                <!-- Row 1: Takeaway & Delivery (Top) -->
+                <div class="hkpi-card bg-mint" onclick="openTable('Takeaway')">
+                    <div class="hkpi-top">🛍️ Takeaway</div>
+                    <div class="hkpi-val" id="takeawayStatus" style="font-size:1.1rem; padding-top:4px;">Ready</div>
+                </div>
+                <div class="hkpi-card bg-blue" onclick="openTable('Home Delivery')">
+                    <div class="hkpi-top">🛵 Delivery</div>
+                    <div class="hkpi-val" id="deliveryStatus" style="font-size:1.1rem; padding-top:4px;">Ready</div>
+                </div>
+                <!-- Row 2: Today's Sale & Avg Value -->
                 <div class="hkpi-card bg-purple">
                     <div class="hkpi-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path></svg> Today's Sale</div>
                     <div class="hkpi-val" id="homeTodaySale">₹0</div>
-                    <div class="hkpi-sub" style="background: rgba(255,255,255,0.7); width:max-content; padding:2px 8px; border-radius:6px; color:var(--text-dark);">Gross Net</div>
+                    <div class="hkpi-sub" style="background:#FFF;">Gross Net</div>
                 </div>
                 <div class="hkpi-card bg-peach">
-                    <div class="hkpi-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg> Avg. Order Value</div>
+                    <div class="hkpi-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg> Avg. Value</div>
                     <div class="hkpi-val" id="homeAvgOrder">₹0</div>
-                    <div class="hkpi-sub" style="background: rgba(255,255,255,0.7); width:max-content; padding:2px 8px; border-radius:6px; color:var(--text-dark);">Per Invoice</div>
+                    <div class="hkpi-sub" style="background:#FFF;">Per Invoice</div>
                 </div>
-                <div class="hkpi-card" style="border:1px solid var(--border);">
+                <!-- Row 3: Overall & Active Tables -->
+                <div class="hkpi-card bg-white-border">
                     <div class="hkpi-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg> Overall Sale</div>
                     <div class="hkpi-val" id="homeOverallSale">₹0</div>
-                    <div class="hkpi-sub" style="color:var(--success);">Lifetime</div>
+                    <div class="hkpi-sub green-text">Lifetime</div>
                 </div>
-                <div class="hkpi-card" style="border:1px solid var(--border);">
+                <div class="hkpi-card bg-white-border">
                     <div class="hkpi-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg> Active Tables</div>
                     <div class="hkpi-val" id="homeActiveTables">0 / 0</div>
-                    <div class="hkpi-sub" style="color:var(--text-dark);">Live Status</div>
+                    <div class="hkpi-sub" style="color:var(--text-dark); background:transparent; padding:0;">Live Status</div>
                 </div>
             </div>
+            
+            <div class="section-header"><h4>Dining Zones</h4></div>
+            <button class="btn btn-outline" onclick="document.getElementById('addTableModal').style.display='flex'" style="margin-bottom: 20px; font-weight:600; width:100%; border-radius:10px;">+ Deploy New Table</button>
+            <div id="tableGrid"></div>
 
             <div class="section-header"><h4>Recent Orders</h4> <span id="btnViewAllOrders" onclick="switchMainTab('salesDashboard', document.getElementById('navOrders'))">View All ›</span></div>
             <div id="homeRecentOrders"></div>
-
-            <button class="btn btn-outline" onclick="document.getElementById('addTableModal').style.display='flex'" style="margin: 20px 0; font-weight:600;">+ Add New Table</button>
-            
-            <div class="section-header"><h4>Stock Alert</h4></div>
-            <div id="dashboardStockList" class="stock-list-container" style="margin-bottom:0; display: flex; flex-wrap: wrap;"></div>
         </div>
 
-        <!-- LIVE SALES VIEW -->
+        <!-- TAB 2: REGISTRY (LIVE SALES) VIEW -->
         <div id="salesDashboard" class="tab-content" style="padding-top: 10px;">
-            <div class="card" style="padding: 16px; margin-bottom: 16px;">
+            <div class="card" style="padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border:none;">
                 <div class="input-row" style="margin-bottom: 12px;">
-                    <div class="input-box"><label>From</label><input type="date" id="filterStartDate" onchange="renderLiveSales()"></div>
-                    <div class="input-box"><label>To</label><input type="date" id="filterEndDate" onchange="renderLiveSales()"></div>
+                    <div class="input-box"><label>Start Date</label><input type="date" id="filterStartDate" onchange="renderLiveSales()"></div>
+                    <div class="input-box"><label>End Date</label><input type="date" id="filterEndDate" onchange="renderLiveSales()"></div>
                 </div>
                 <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-bottom: 12px;">
-                    <button id="btnFilterToday" class="filter-btn" onclick="setTodayFilter()">Today</button>
+                    <button id="btnFilterToday" class="filter-btn" style="background:var(--text-dark); color:#FFF; border-color:var(--text-dark);" onclick="setTodayFilter()">Today</button>
                     <button id="btnFilterYesterday" class="filter-btn" onclick="setYesterdayFilter()">Yesterday</button>
-                    <button id="btnFilterClear" class="filter-btn" style="border-color: var(--danger); color: var(--danger);" onclick="resetDateFilter()">Clear</button>
+                    <button id="btnFilterClear" class="filter-btn" style="color: var(--danger); border-color: var(--danger); background:transparent;" onclick="resetDateFilter()">Reset</button>
                 </div>
-                <div style="background:#FAFAFA; border:1px solid var(--border); padding:12px; border-radius:8px; font-weight:700; font-size:1.1rem; text-align:center; color:var(--text-dark);" id="totalSalesBox">Total Sales: ₹ 0</div>
+                <div style="display:flex; gap:8px;">
+                    <div style="flex:1; background:var(--text-dark); border-radius:8px; font-weight:700; font-size:1.1rem; text-align:center; color:#FFF; display:flex; align-items:center; justify-content:center; height:50px;" id="totalSalesBox">₹ 0</div>
+                    <button class="btn btn-outline" style="width: auto; padding: 0 16px; height:50px;" onclick="exportRegistrySales()">Export</button>
+                </div>
             </div>
-            <div class="section-header"><h4>All Orders</h4></div>
+            <div class="section-header"><h4>Transaction Directory</h4></div>
             <div id="salesGrid" class="sales-grid"></div>
         </div>
 
-        <!-- P&L ANALYTICS VIEW -->
+        <!-- TAB 3: OVERVIEW & P&L VIEW -->
         <div id="trendView" class="tab-content" style="padding-top: 10px;">
+            <div class="greeting-sec"><h2 style="font-size:1.4rem;">Overview & P&L</h2><p>Metrics & intelligence.</p></div>
+            
             <div class="trend-kpi-grid">
-                <div class="trend-kpi-card full-width" style="background:var(--occ-bg); border-color:var(--occ-border);">
-                    <div class="kpi-title" style="color: #D03B3B;">Net Profit (All Time)</div>
+                <div class="trend-kpi-card full-width" style="background:var(--text-dark); color:#FFF;">
+                    <div class="kpi-title" style="color: rgba(255,255,255,0.7);">Net Profit (Calculated)</div>
                     <div class="kpi-value" id="kpiNetProfit">₹ 0</div>
                 </div>
-                <div class="trend-kpi-card"><div class="kpi-title">Total Sales</div><div class="kpi-value" id="kpiTotalSales" style="color:var(--success);">₹ 0</div></div>
-                <div class="trend-kpi-card"><div class="kpi-title">Total Expense</div><div class="kpi-value" id="kpiTotalExpenses" style="color:var(--danger);">₹ 0</div></div>
-                <div class="trend-kpi-card"><div class="kpi-title">Staff Paid</div><div class="kpi-value" id="kpiTotalSalary">₹ 0</div></div>
-                <div class="trend-kpi-card"><div class="kpi-title">Active Staff</div><div class="kpi-value" id="kpiTotalStaff">0</div></div>
+                <div class="trend-kpi-card bg-mint"><div class="kpi-title">Gross Sales</div><div class="kpi-value" id="kpiTotalSales" style="color:var(--text-dark);">₹ 0</div></div>
+                <div class="trend-kpi-card" style="background:#FEE2E2; border:none;"><div class="kpi-title" style="color:var(--danger);">Gross Expenses</div><div class="kpi-value" id="kpiTotalExpenses" style="color:var(--danger);">₹ 0</div></div>
             </div>
 
-            <div class="card">
+            <!-- Donut Chart -->
+            <div class="card" style="border:1px solid var(--border); box-shadow:none;">
                 <div class="section-header" style="margin-top:0;"><h4>Category Distribution</h4></div>
                 <div style="display:flex; justify-content:center; align-items:center; height: 200px; margin-bottom: 8px;">
                     <canvas id="categoryDonut"></canvas>
                 </div>
             </div>
 
-            <div class="card">
+            <!-- Top Items -->
+            <div class="card" style="border:1px solid var(--border); box-shadow:none;">
                 <div class="section-header" style="margin-top:0;"><h4>Top Performing Items</h4> <span onclick="exportItemSales()">Export ›</span></div>
                 <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px;">Ranked by units sold based on current timeframe.</p>
                 <div id="itemAnalyticsList" style="display:flex; flex-direction:column; gap:12px;"></div>
             </div>
             
-            <div class="card" style="border-color: var(--border); background: var(--bg-color);">
-                <div class="section-header" style="margin-top:0;"><h4>Zero Traction Items</h4></div>
-                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px;">Items not sold in the current period.</p>
-                <div id="slowMoversList" style="display:flex; flex-wrap: wrap; gap:8px;"></div>
-            </div>
-
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Profit Trend</h4></div>
-                <div class="chart-filters">
-                    <button class="filter-btn active" id="btnChartDOD" onclick="renderPNLChart('daily')">Daily</button>
-                    <button class="filter-btn" id="btnChartWeekly" onclick="renderPNLChart('weekly')">Weekly</button>
-                    <button class="filter-btn" id="btnChartMonthly" onclick="renderPNLChart('monthly')">Monthly</button>
-                </div>
-                <div class="chart-wrapper"><canvas id="trendChart"></canvas></div>
-            </div>
-
-            <div class="card">
+            <!-- Employee Advance (P&L Addition) -->
+            <div class="card" style="border:1px solid var(--border); box-shadow:none;">
                 <div class="section-header" style="margin-top:0;"><h4>Employee Advances & Payroll</h4></div>
-                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px;">Staff advance details.</p>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px;">Staff advance and salary details.</p>
                 <div id="staffAdvanceList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
-            </div>
-            
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Other Expenses</h4></div>
-                <div id="expenseBreakdownList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
             </div>
         </div>
 
-        <!-- EXPENSES VIEW -->
+        <!-- TAB 4: EXPENSES VIEW -->
         <div id="expenses" class="tab-content" style="padding-top: 10px;">
-            <div class="card">
+            <div class="greeting-sec"><h2 style="font-size:1.4rem;">Expenditure Log</h2><p>Track operational costs.</p></div>
+            <div class="card" style="border:1px solid var(--border); box-shadow:none;">
                 <div class="form-group">
-                    <div class="input-box"><label>Category</label><select id="expCategory"><option>Raw Material</option><option>Electricity</option><option>Maintenance</option><option>Other</option></select></div>
+                    <div class="input-box"><label>Category</label><select id="expCategory"><option>Raw Material</option><option>Electricity</option><option>Payroll</option><option>Maintenance</option><option>Other</option></select></div>
                     <div class="input-box"><label>Amount (₹)</label><input type="number" id="expAmount" placeholder="0" inputmode="numeric"></div>
                     <div class="input-box"><label>Note (Optional)</label><input type="text" id="expDescription" placeholder="Add details"></div>
+                    <!-- Image Upload -->
                     <div class="input-box" style="margin-top: 8px;">
                         <label>Attach Receipt (Optional)</label>
                         <input type="file" id="expImage" accept="image/*" style="padding: 10px; border: 1px dashed var(--text-muted); cursor: pointer; border-radius:8px;" onchange="handleExpenseImage(event)">
                         <div id="expImagePreview" style="font-size: 0.75rem; color: var(--success); display: none; margin-top:4px;">✓ Image attached securely.</div>
                     </div>
                 </div>
-                <button class="btn" onclick="submitExpense()">Save Expense</button>
+                <button class="btn" style="background:var(--text-dark);" onclick="submitExpense()">Commit Entry</button>
             </div>
 
-            <div class="section-header" style="margin-bottom:16px;"><h4>Expense Ledger</h4></div>
+            <div class="section-header" style="margin-bottom:16px;"><h4>Expense Ledger</h4> <span onclick="exportExpensesTable()">Export ›</span></div>
             
+            <!-- Progress Bar -->
             <div class="card" style="padding: 16px; border:1px solid var(--border); box-shadow:none; margin-bottom: 20px;">
                 <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-dark); margin-bottom: 8px;">Category Breakdown</div>
                 <div id="expenseProgressBar" style="width: 100%; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; display: flex; margin-top: 8px;"></div>
                 <div id="expenseProgressLegend" style="display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; font-size:0.75rem; font-weight:600;"></div>
             </div>
 
+            <!-- Date Filter Dropdown -->
             <div class="input-box" style="margin-bottom: 16px;">
                 <label>Filter Expenses By Date</label>
                 <select id="expenseDateFilter" onchange="renderExpensesListUI()">
@@ -509,30 +493,27 @@
                 </select>
             </div>
 
+            <!-- Dynamic Expenses Cards Container -->
             <div id="expensesCardList" style="display: flex; flex-direction: column; gap: 12px; padding-bottom: 24px;"></div>
         </div>
 
-        <!-- ADMIN (USERS + HR) VIEW -->
+        <!-- TAB 5: ADMIN (USERS + HR) VIEW -->
         <div id="usersManager" class="tab-content" style="padding-top: 10px;">
+            <div class="greeting-sec" style="margin-top: 16px; margin-bottom: 24px;">
+                <h2 style="font-size: 1.6rem;">Admin Console</h2>
+            </div>
             
+            <!-- Deletion Approvals -->
             <div class="card" id="adminApprovalsCard" style="display:none; border-color:var(--danger); background:#FFF5F5;">
                 <div class="section-header" style="margin-top:0;"><h4>⚠️ Pending Deletion Approvals</h4></div>
                 <div id="adminApprovalsList" style="display:flex; flex-direction:column; gap:12px;"></div>
             </div>
 
-            <div class="card" style="border-color:#10B981;">
-                <div class="section-header" style="margin-top:0;"><h4>Staff Payroll & Advance</h4></div>
+            <div class="card" style="border-color:var(--success);">
+                <div class="section-header" style="margin-top:0;"><h4>System Restoration</h4></div>
                 <div class="form-group" style="margin-bottom:0;">
-                    <div class="input-box">
-                        <label>Select Staff</label>
-                        <select id="payStaffSelect" onchange="calculateStaffBalance()"><option value="">Select Employee</option></select>
-                    </div>
-                    <div id="staffBalanceInfo" style="margin-top:8px; font-size:0.85rem; color:var(--text-dark); line-height: 1.5; background: #F4EFEA; padding: 10px; border-radius: 8px;"></div>
-                    <div class="input-row" style="margin-top:12px;">
-                        <div class="input-box"><label>Amount (₹)</label><input type="number" id="payStaffAmount" placeholder="Amount"></div>
-                        <div class="input-box"><label>Type</label><select id="payStaffType"><option>Advance</option><option>Salary Clearance</option></select></div>
-                    </div>
-                    <button class="btn" style="margin-top:16px; background:#10B981;" onclick="submitStaffPayout()">Pay & Record</button>
+                    <input type="file" id="fullImportInput" accept=".xlsx,.xls,.csv" style="padding:10px; border:1px dashed var(--border); background:#FFF;">
+                    <button class="btn" style="margin-top:10px; background:var(--success);" onclick="runFullImport()">Execute Master Import</button>
                 </div>
             </div>
 
@@ -546,12 +527,7 @@
                     <div class="input-row" style="margin-top:12px;">
                         <div class="input-box"><label>Role</label>
                             <select id="newStaffRole">
-                                <option>Manager</option>
-                                <option>Chef</option>
-                                <option>Cashier</option>
-                                <option>Waiter</option>
-                                <option>Cleaner</option>
-                                <option>Helper</option>
+                                <option>Manager</option><option>Chef</option><option>Cashier</option><option>Waiter</option><option>Cleaner</option><option>Helper</option>
                             </select>
                         </div>
                         <div class="input-box"><label>Monthly Salary (₹)</label><input type="number" id="newStaffSalary" placeholder="e.g. 15000" inputmode="numeric"></div>
@@ -565,30 +541,11 @@
             </div>
 
             <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Quick Stock Update</h4></div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <div class="input-box">
-                        <label>Select Item</label>
-                        <input list="menuItemsList" id="adminStockItem" placeholder="Type item name...">
-                    </div>
-                    <div class="input-row" style="margin-top:12px;">
-                        <div class="input-box"><label>New Quantity</label><input type="number" id="adminStockQty" placeholder="e.g. 50" inputmode="numeric"></div>
-                        <button class="btn" style="flex:1;" onclick="updateStockAdmin()">Update</button>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card">
                 <div class="section-header" style="margin-top:0;"><h4>Add New Menu Item</h4></div>
                 <div class="form-group" style="margin-bottom:0;">
                     <div class="input-box"><label>Category</label>
                         <select id="newMenuCategory">
-                            <option>Starters</option>
-                            <option>Main Course</option>
-                            <option>Breads</option>
-                            <option>Desserts</option>
-                            <option>Beverages</option>
-                            <option>Add-ons</option>
+                            <option>Starters</option><option>Main Course</option><option>Breads</option><option>Desserts</option><option>Beverages</option><option>Add-ons</option>
                         </select>
                     </div>
                     <div class="input-row" style="margin-top:12px;">
@@ -599,27 +556,8 @@
                 </div>
             </div>
 
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>New User Registration</h4></div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <div class="input-row">
-                        <div class="input-box"><label>Mobile No.</label><input type="tel" id="staffMobile" placeholder="10 Digits" inputmode="numeric"></div>
-                        <div class="input-box"><label>Password</label><input type="text" id="staffPass" placeholder="Set Password"></div>
-                    </div>
-                    <div style="display:flex; flex-direction:column; gap:12px; margin-top:16px; background:var(--bg-color); padding:16px; border-radius:8px; border:1px solid var(--border);">
-                        <label style="display:flex; align-items:center; gap:10px; font-weight:600; font-size:0.9rem;"><input type="checkbox" id="chkOrders" style="width:18px;height:18px; accent-color:var(--text-dark);"> Allow Live sale Tab</label>
-                        <label style="display:flex; align-items:center; gap:10px; font-weight:600; font-size:0.9rem;"><input type="checkbox" id="chkAnalytics" style="width:18px;height:18px; accent-color:var(--text-dark);"> Allow Analytics Tab</label>
-                        <label style="display:flex; align-items:center; gap:10px; font-weight:600; font-size:0.9rem;"><input type="checkbox" id="chkExpenses" style="width:18px;height:18px; accent-color:var(--text-dark);"> Allow Expenses Tab</label>
-                    </div>
-                    <button class="btn" onclick="saveUserPermissions()" style="margin-top:16px;">Register User</button>
-                </div>
-            </div>
-
-            <div class="section-header" style="margin-top:24px;"><h4>Active Staff Directory</h4></div>
-            <div id="employeeList" style="display:flex; flex-direction:column; gap:12px;"></div>
-
-            <div class="section-header" style="margin-top:24px;"><h4>Registered POS App Users</h4></div>
-            <div id="staffList" style="display:flex; flex-direction:column; gap:10px; margin-bottom: 24px;"></div>
+            <div class="section-header" style="margin-top:24px;"><h4>Personnel Directory</h4></div>
+            <div id="employeeList" style="display:flex; flex-direction:column; gap:12px; margin-bottom:32px;"></div>
         </div>
 
         <!-- BILLING VIEW -->
@@ -635,9 +573,8 @@
                 <div class="form-group" style="margin-bottom: 12px;">
                     <div class="input-box">
                         <label>Search Menu Item</label>
-                        <input list="menuItemsList" id="itemInput" placeholder="Type to search..." oninput="checkStockDisplay()" onchange="checkStockDisplay()">
+                        <input list="menuItemsList" id="itemInput" placeholder="Type to search...">
                         <datalist id="menuItemsList"></datalist>
-                        <div id="stockStatus" style="display:none; margin-top: 8px;"></div>
                     </div>
                 </div>
                 <div class="input-row">
@@ -677,9 +614,6 @@
                 <div class="input-box" style="margin-bottom: 16px;">
                     <label>Customer Phone (Strict verification)</label><input type="tel" id="customerPhone" placeholder="10 digits required" inputmode="numeric">
                 </div>
-                <div class="input-box" id="deliveryAddressBox" style="display:none;">
-                    <label>Delivery Address / Notes</label><input type="text" id="deliveryAddress" placeholder="Enter full address or rider info">
-                </div>
             </div>
 
             <div class="action-grid">
@@ -718,10 +652,6 @@
             <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
             <span>Admin</span>
         </button>
-        <button class="nav-item" onclick="logoutUser()" style="color: var(--danger);">
-            <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></div>
-            <span>Logout</span>
-        </button>
     </nav>
 
     <div id="printSection"></div>
@@ -729,7 +659,7 @@
     <script>
         const scriptURL = 'https://script.google.com/macros/s/AKfycbyKuVmEYRbJaYkdUDVNcU9c6mDT4q-VMTESwrikIZvJwK6PteEVwMObdmTMcgqR12KIPA/exec'; 
         
-        const APP_VERSION = "New 2.0.1"; 
+        const APP_VERSION = "New 2.0"; 
         
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
@@ -751,7 +681,7 @@
         let currentViewingSale = null;
         let expenseImageBase64 = null;
 
-        // --- DYNAMIC TICKER LOGIC (MEWADI THEME TAGLINES) ---
+        // --- DYNAMIC TICKER LOGIC ---
         const royalTaglines = [
             "A Taste of Royal Mewar",
             "Mewar Ki Shaan, Swaad Mein Jaan",
@@ -845,12 +775,12 @@
         let currentConfirmCallback = null; 
         let currentCancelCallback = null;
 
-        window.showCustomConfirm = function(message, callback, cancelCallback) {
-            currentConfirmCallback = callback; 
-            currentCancelCallback = cancelCallback;
+        window.showCustomConfirm = function(message, callbackName, cancelCallbackName) {
+            currentConfirmCallback = callbackName; 
+            currentCancelCallback = cancelCallbackName;
             document.getElementById('customAlertMessage').innerText = message;
-            let btnCancel = cancelCallback ? `document.getElementById('customAlertModal').style.display='none'; ${cancelCallback}();` : "document.getElementById('customAlertModal').style.display='none';";
-            let btnConfirm = callback ? `document.getElementById('customAlertModal').style.display='none'; ${callback}();` : "document.getElementById('customAlertModal').style.display='none';";
+            let btnCancel = cancelCallbackName ? `document.getElementById('customAlertModal').style.display='none'; ${cancelCallbackName}();` : "document.getElementById('customAlertModal').style.display='none';";
+            let btnConfirm = callbackName ? `document.getElementById('customAlertModal').style.display='none'; ${callbackName}();` : "document.getElementById('customAlertModal').style.display='none';";
 
             document.getElementById('customAlertButtons').innerHTML = `
                 <button class="btn btn-outline" onclick="${btnCancel}" style="flex:1;">Cancel</button>
@@ -908,15 +838,12 @@
             if(!mobile || !pass) { err.innerText = "Enter Number and Password."; return; }
             btn.innerText = "Verifying..."; btn.disabled = true;
 
-            setTimeout(() => {
-                let isValid = false;
-                if(ADMIN_NUMBERS.includes(mobile) || pass === 'admin') isValid = true; 
-                else if(userPermissions[mobile] && userPermissions[mobile].password === pass) isValid = true;
-
-                if(isValid) { 
+            fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'login', mobile: mobile, password: pass }) })
+            .then(res => res.json()).then(data => {
+                if(data.success) { 
                     localStorage.setItem('viraasat_user', mobile); localStorage.setItem('viraasat_pass', pass); window.location.reload(true); 
-                } else { btn.innerText = "Secure Login"; btn.disabled = false; showCustomAlert("Invalid Credentials!"); }
-            }, 500);
+                } else { btn.innerText = "Secure Login"; btn.disabled = false; showCustomAlert(data.message || "Invalid Credentials!"); }
+            }).catch(e => { btn.innerText = "Secure Login"; btn.disabled = false; showCustomAlert("Network Error. Please try again."); }); 
         }
 
         function applyAdminRights(mobile) {
@@ -972,7 +899,7 @@
             let elList = document.getElementById('employeeList'); if(!elList) return; elList.innerHTML = "";
             if(staffData.length === 0) { elList.innerHTML = "<p style='font-size:0.85rem; color:var(--text-muted);'>No staff onboarded yet.</p>"; return; }
             staffData.forEach(s => {
-                let sId = getVal(s, ['empid', 'employeeid', 'id']) || 'N/A'; let sName = getVal(s, ['name']) || 'Unknown'; let sRole = getVal(s, ['role']) || "Staff"; let sMobile = getVal(s, ['mobile', 'phone']) || "N/A"; let sSal = parseAmount(getVal(s, ['monthlysalary', 'salary'])); let sDate = getVal(s, ['dateofjoining', 'joindate', 'date', 'doj', 'join_date']) || 'N/A'; let formattedDate = sDate !== 'N/A' ? cleanDisplayDate(sDate) : 'N/A';
+                let sId = getVal(s, ['empid', 'employeeid']) || 'N/A'; let sName = getVal(s, ['name']) || 'Unknown'; let sRole = getVal(s, ['role']) || "Staff"; let sMobile = getVal(s, ['mobile', 'phone']) || "N/A"; let sSal = parseAmount(getVal(s, ['monthlysalary', 'salary'])); let sDate = getVal(s, ['dateofjoining', 'joindate', 'date', 'doj']) || 'N/A'; let formattedDate = sDate !== 'N/A' ? cleanDisplayDate(sDate) : 'N/A';
 
                 elList.innerHTML += `
                 <div class="card" style="padding:16px; margin-bottom:0; display:flex; flex-direction:column; gap:12px;">
@@ -1017,7 +944,7 @@
         function populateStaffDropdown() {
             let sel = document.getElementById('payStaffSelect'); sel.innerHTML = "<option value=''>Select Employee</option>";
             staffData.forEach(s => {
-                let sId = getVal(s, ['empid', 'employeeid', 'id']); let sName = getVal(s, ['name']);
+                let sId = getVal(s, ['empid', 'employeeid']); let sName = getVal(s, ['name']);
                 if(sId && sName) { sel.innerHTML += `<option value="${sId}">${sName} (${sId})</option>`; }
             });
         }
@@ -1035,7 +962,7 @@
         function calculateStaffBalance() {
             let empId = document.getElementById('payStaffSelect').value; let infoDiv = document.getElementById('staffBalanceInfo');
             if(!empId) { infoDiv.innerHTML = ''; return; }
-            let staff = staffData.find(s => getVal(s, ['empid', 'employeeid', 'id']) == empId); 
+            let staff = staffData.find(s => getVal(s, ['empid', 'employeeid']) == empId); 
             let monthlySal = parseAmount(getVal(staff, ['monthlysalary', 'salary'])); let d = new Date(); let currentMonthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; let advTaken = 0;
 
             expenseHistory.forEach(exp => {
@@ -1051,7 +978,7 @@
         function submitStaffPayout() {
             let empId = document.getElementById('payStaffSelect').value; let amount = document.getElementById('payStaffAmount').value; let type = document.getElementById('payStaffType').value;
             if(!empId || !amount || amount <= 0) { showCustomAlert("Please select staff and enter valid amount."); return; }
-            let staff = staffData.find(s => getVal(s, ['empid', 'employeeid', 'id']) == empId); let sName = getVal(staff, ['name']); let sPhone = getVal(staff, ['mobile']); let desc = `[${empId}] ${sName} - ${type}`; 
+            let staff = staffData.find(s => getVal(s, ['empid', 'employeeid']) == empId); let sName = getVal(staff, ['name']); let sPhone = getVal(staff, ['mobile']); let desc = `[${empId}] ${sName} - ${type}`; 
             let d = new Date(); let fDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
             expenseHistory.push({ date: fDate, isodate: fDate, category: 'Staff Salary', amount: parseInt(amount), description: desc });
             
@@ -1075,7 +1002,10 @@
             window.open(`https://wa.me/91${sPhone}?text=${encodeURIComponent(slipText)}`, '_blank');
         }
 
-        async function fetchData() {
+        // ==========================================
+        // FETCH DATA
+        // ==========================================
+        function fetchData() {
             document.getElementById('loader').style.display = 'flex';
             fetch(scriptURL).then(response => response.json()).then(data => {
                 hideSplashScreen(); 
@@ -1088,6 +1018,9 @@
             }).catch(error => { document.getElementById('loader').innerText = "Sync Error. Check your connection."; hideSplashScreen(); setTimeout(()=>document.getElementById('loader').style.display='none',3000); });
         }
 
+        // =====================================
+        // SMART OVERVIEW & ANALYTICS
+        // =====================================
         function generateTrends() {
             try {
                 let totalSalesAmount = 0; let totalExpensesAmount = 0; let totalSalaryPaid = 0;
@@ -1100,6 +1033,7 @@
                     if(sale.status === 'deleted' || sale.status === 'deletion_pending' || sale.status === 'cancelled') return;
                     let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sDate = String(getVal(sale, ['date', 'isodate']) || '').trim();
                     totalSalesAmount += sTotal; 
+                    
                     if(sDate) {
                         let isToday = false; let dateStrKey = sDate.split("T")[0].split(" ")[0]; 
                         if (sDate.startsWith(todayIso) || sDate.includes(todayIso) || sDate.includes(todayGb)) { isToday = true; } else { let parsedDate = new Date(sDate); if (!isNaN(parsedDate.getTime())) { if (parsedDate.getDate() === d.getDate() && parsedDate.getMonth() === d.getMonth() && parsedDate.getFullYear() === d.getFullYear()) { isToday = true; } dateStrKey = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')}`; } }
@@ -1144,7 +1078,7 @@
                 
                 // Item Analytics
                 let sortedItems = Object.entries(itemStats).sort((a,b)=>b[1].qty-a[1].qty);
-                let itemHtml = ""; let slowHtml = "";
+                let itemHtml = "";
                 
                 sortedItems.slice(0, 10).forEach(([name, data], index) => {
                     let perc = totalSalesAmount > 0 ? ((data.revenue / totalSalesAmount) * 100).toFixed(1) : 0;
@@ -1169,13 +1103,6 @@
                 });
                 document.getElementById('itemAnalyticsList').innerHTML = itemHtml || "<span style='color:var(--text-muted); font-size:0.85rem;'>No item data available.</span>";
 
-                // Slow Movers
-                menuData.forEach(mi => {
-                    let n = getVal(mi, ['itemname','name']);
-                    if(!itemStats[n]) slowHtml += `<span style="background:var(--surface-alt); color:var(--text-muted); padding:6px 12px; border-radius:8px; font-size:0.75rem; font-weight:600; border:1px solid var(--border);">${n}</span>`;
-                });
-                document.getElementById('slowMoversList').innerHTML = slowHtml || "<span style='color:var(--text-muted); font-size:0.85rem;'>All items have traction!</span>";
-
                 // P&L Staff Advance
                 let advanceHtml = "";
                 expenseHistory.forEach(exp => {
@@ -1183,7 +1110,7 @@
                         let desc = getVal(exp, ['description', 'note']) || '';
                         let amt = parseAmount(getVal(exp, ['amount', 'total']));
                         let dStr = cleanDisplayDate(getVal(exp, ['date', 'isodate']));
-                        advanceHtml += `<div style="display:flex; justify-content:space-between; border-bottom:1px dashed var(--border); padding-bottom:8px; margin-bottom:8px;"><span>👤 <span style="font-weight:600; color:var(--text-dark);">${desc}</span></span> <span style="font-weight:500; color:var(--text-muted); font-size:0.8rem;">${dStr}</span> <span style="font-weight:700; color:var(--danger);">- ₹${amt.toLocaleString('en-IN')}</span></div>`;
+                        advanceHtml += `<div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:8px; margin-bottom:8px;"><span>👤 ${desc}</span> <span style="font-weight:500; color:var(--text-dark); font-size:0.8rem;">${dStr}</span> <span style="font-weight:700; color:var(--danger);">- ₹${amt.toLocaleString('en-IN')}</span></div>`;
                     }
                 });
                 document.getElementById('staffAdvanceList').innerHTML = advanceHtml || "<span style='color:var(--text-muted); font-size:0.85rem;'>No staff payments recorded.</span>";
@@ -1195,7 +1122,7 @@
                     let lbls = Object.keys(catStats); let vals = Object.values(catStats);
                     donutChartInstance = new Chart(dCtx.getContext('2d'), { 
                         type: 'doughnut', 
-                        data: { labels: lbls, datasets: [{ data: vals, backgroundColor: ['#E21B70', '#1A1A1A', '#B48E5D', '#10B981', '#D03B3B', '#7A756D'], borderWidth: 0 }] }, 
+                        data: { labels: lbls, datasets: [{ data: vals, backgroundColor: ['#E21B70', '#111827', '#B48E5D', '#10B981', '#F59E0B', '#9CA3AF'], borderWidth: 0 }] }, 
                         options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right', labels: {font: {family:'Poppins', size:11}, boxWidth: 12} } } } 
                     });
                 }
@@ -1206,7 +1133,7 @@
                 if (hasSalesAccess) {
                     document.getElementById('homeTodaySale').innerText = `₹${revenueToday.toLocaleString('en-IN')}`; document.getElementById('homeAvgOrder').innerText = `₹${avgToday.toLocaleString('en-IN')}`; document.getElementById('homeOverallSale').innerText = `₹${totalSalesAmount.toLocaleString('en-IN')}`; 
                 } else {
-                    document.getElementById('homeTodaySale').innerText = "No Access"; document.getElementById('homeTodaySale').style.fontSize = "1.1rem"; document.getElementById('homeAvgOrder').innerText = "No Access"; document.getElementById('homeAvgOrder').style.fontSize = "1.1rem"; document.getElementById('homeOverallSale').innerText = "No Access"; document.getElementById('homeOverallSale').style.fontSize = "1.1rem";
+                    document.getElementById('homeTodaySale').innerText = "No Access"; document.getElementById('homeAvgOrder').innerText = "No Access"; document.getElementById('homeOverallSale').innerText = "No Access"; 
                 }
                 renderPNLChart('daily');
             } catch(e) { console.error("Trends Error", e); }
@@ -1229,6 +1156,30 @@
 
             const canvas = document.getElementById('trendChart'); if(!canvas) return; const ctx = canvas.getContext('2d'); if(typeof Chart === 'undefined') return; if(trendChartInstance) trendChartInstance.destroy();
             trendChartInstance = new Chart(ctx, { type: 'line', data: { labels: finalLabels, datasets: [ { label: 'Sales (₹)', data: finalSales, borderColor: '#10B981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#10B981', pointRadius: 4 }, { label: 'Expenses (₹)', data: finalExp, borderColor: '#D03B3B', backgroundColor: 'rgba(208, 59, 59, 0.1)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#D03B3B', pointRadius: 4 } ] }, options: { responsive: true, maintainAspectRatio: false } });
+        }
+
+        function populateDropdown() { 
+            const datalist = document.getElementById('menuItemsList'); datalist.innerHTML = ""; 
+            menuData.forEach(item => { let itemName = getVal(item, ['itemname', 'name']); if(itemName) { let option = document.createElement('option'); option.value = itemName; datalist.appendChild(option); } }); 
+        }
+
+        function renderStockDashboard() { 
+            let stockDiv = document.getElementById('dashboardStockList'); if(!stockDiv) return; stockDiv.innerHTML = ""; let keys = Object.keys(stockData); 
+            if(keys.length === 0) { stockDiv.innerHTML = "<p style='color:var(--text-muted); font-size:0.85rem;'>No stock tracked.</p>"; return; } 
+            keys.forEach(key => { let qty = parseInt(stockData[key]); let tagClass = qty <= 5 ? 'stock-tag low' : 'stock-tag'; stockDiv.innerHTML += `<div class="${tagClass}">${key}: <span>${qty}</span></div>`; }); 
+        }
+
+        function checkStockDisplay() { 
+            let itemName = document.getElementById('itemInput').value; let statusDiv = document.getElementById('stockStatus'); let foundStockKey = Object.keys(stockData).find(key => key.trim().toLowerCase() === itemName.trim().toLowerCase()); 
+            if(foundStockKey !== undefined) { let currentQty = parseInt(stockData[foundStockKey]); statusDiv.style.color = ""; statusDiv.style.backgroundColor = ""; statusDiv.style.border = ""; statusDiv.className = currentQty > 5 ? "stock-tag" : "stock-tag low"; statusDiv.innerHTML = currentQty > 5 ? `Available: <span>${currentQty}</span>` : `Low Stock: <span>${currentQty}</span>`; statusDiv.style.display = "inline-flex"; statusDiv.style.marginTop = "8px"; } else { statusDiv.style.display = "none"; statusDiv.innerHTML = ""; } 
+        }
+
+        function cleanDisplayDate(dStr) { 
+            if (!dStr) return ""; try { let d = new Date(dStr); if (isNaN(d.getTime())) return dStr.split(" ")[0]; return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); } catch(e) { return dStr; } 
+        }
+
+        function cleanDisplayTime(tStr) { 
+            if (!tStr) return ""; try { let d = new Date(tStr); if (!isNaN(d.getTime())) return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); return tStr; } catch(e) { return tStr; } 
         }
 
         // =====================================
@@ -1319,17 +1270,22 @@
         // =====================================
         // APPROVALS LOGIC (ORDERS & STAFF)
         // =====================================
-        function requestOrderDeletion() {
-            haptic();
-            let reason = prompt("Enter specific reason for invoice cancellation:");
-            if(!reason) return;
-            let orderId = currentViewingSale.id || currentViewingSale.orderid;
-            
+        window.reqOrdDelConf = function() {
+            let reason = window.tempOrdReason; let orderId = window.tempOrdId;
             fetch(scriptURL, { method: 'POST', body: JSON.stringify({ type: 'requestDelete', orderId: orderId, reason: reason, requestedBy: localStorage.getItem('viraasat_user') || 'Terminal' }) })
             .then(r=>r.json()).then(data => {
                 showCustomAlert("Cancellation flagged. Awaiting Admin clearance.");
                 closeModal('orderDetailsModal'); fetchData();
             }).catch(e=> { showCustomAlert("Request Sent Locally (Demo)."); closeModal('orderDetailsModal'); });
+        }
+
+        function requestOrderDeletion() {
+            haptic();
+            let reason = prompt("Enter specific reason for invoice cancellation:");
+            if(!reason) return;
+            window.tempOrdId = currentViewingSale.id || currentViewingSale.orderid;
+            window.tempOrdReason = reason;
+            showCustomConfirm(`Confirm cancellation request for #${window.tempOrdId}?`, "reqOrdDelConf", null);
         }
 
         window.reqEmpDelConf = function() {
@@ -1350,25 +1306,28 @@
         }
 
         function fetchApprovals() {
-            fetch(`${API_BASE}/approvals`).then(r=>r.json()).then(data => {
-                if(!data.success || !data.requests.length) { document.getElementById('adminApprovalsCard').style.display = 'none'; return; }
-                document.getElementById('adminApprovalsCard').style.display = 'block';
-                let html = "";
-                data.requests.forEach(req => {
-                    let title = req.order_id.startsWith('EMP-') ? `Staff Removal: ${req.order_id.replace('EMP-','')}` : `Invoice Cancel: #${req.order_id}`;
-                    let badge = req.status === 'deletion_pending' ? `<span style="background:#FEE2E2; color:#D03B3B; font-size:0.65rem; padding:4px 8px; border-radius:6px; font-weight:700;">Pending</span>` : `<span style="background:#E6F4EA; color:#10B981; font-size:0.65rem; padding:4px 8px; border-radius:6px; font-weight:700;">Actioned</span>`;
-                    html += `<div style="background:#FFF; padding:16px; border-radius:12px; border:1px solid var(--occ-border);">
-                        <div style="font-weight:800; margin-bottom:4px; font-size:1.05rem; display:flex; justify-content:space-between;"><span>${title}</span> ${badge}</div>
-                        <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">By: ${req.requested_by}<br>Reason: ${req.reason}</div>
-                        ${req.status === 'deletion_pending' ? `
-                        <div style="display:flex; gap:8px;">
-                            <button onclick="resolveApproval(${req.id}, 'approved', '${req.order_id}')" style="background:var(--success); color:#FFF; border:none; padding:8px 16px; border-radius:8px; font-weight:600; cursor:pointer; flex:1;">Approve</button>
-                            <button onclick="resolveApproval(${req.id}, 'rejected', '${req.order_id}')" style="background:var(--primary-light); color:var(--text-dark); border:none; padding:8px 16px; border-radius:8px; font-weight:600; cursor:pointer; flex:1;">Reject</button>
-                        </div>` : ''}
-                    </div>`;
-                });
-                document.getElementById('adminApprovalsList').innerHTML = html;
-            }).catch(e=> { console.log(e); });
+            let card = document.getElementById('adminApprovalsCard'); let list = document.getElementById('adminApprovalsList');
+            
+            // Note: Since this uses Google Sheets backend which only fetches via general fetchData(),
+            // we infer approvals from the 'status' property in salesHistory if available.
+            // If the GAS doesn't expose it, this will safely be empty.
+            let pendingOrders = salesHistory.filter(s => s.status === 'deletion_pending' || s.status === 'deleted' || s.status === 'cancelled');
+            
+            if(!pendingOrders.length) { card.style.display = 'none'; return; }
+            card.style.display = 'block'; list.innerHTML = "";
+            
+            pendingOrders.forEach(req => {
+                let badge = req.status === 'deletion_pending' ? `<span style="background:#FEE2E2; color:#D03B3B; font-size:0.65rem; padding:4px 8px; border-radius:6px; font-weight:700;">Pending</span>` : `<span style="background:#E6F4EA; color:#10B981; font-size:0.65rem; padding:4px 8px; border-radius:6px; font-weight:700;">Actioned</span>`;
+                list.innerHTML += `<div style="background:#FFF; padding:16px; border-radius:12px; border:1px solid var(--occ-border);">
+                    <div style="font-weight:800; margin-bottom:4px; font-size:1.05rem; display:flex; justify-content:space-between;"><span>Invoice: #${req.orderid}</span> ${badge}</div>
+                    <div style="font-size:0.8rem; color:var(--text-muted); margin-bottom:12px;">Amount: <b style="color:var(--text-dark);">₹${req.total}</b><br>Timestamp: ${req.date}</div>
+                    ${req.status === 'deletion_pending' ? `
+                    <div style="display:flex; gap:8px;">
+                        <button onclick="resolveApproval('${req.orderid}', 'approved')" style="background:var(--success); color:#FFF; border:none; padding:8px 16px; border-radius:8px; font-weight:600; cursor:pointer; flex:1;">Approve</button>
+                        <button onclick="resolveApproval('${req.orderid}', 'rejected')" style="background:var(--primary-light); color:var(--text-dark); border:none; padding:8px 16px; border-radius:8px; font-weight:600; cursor:pointer; flex:1;">Reject</button>
+                    </div>` : ''}
+                </div>`;
+            });
         }
 
         window.resolveApprovalConf = function() {
@@ -1396,7 +1355,10 @@
                 if (startDateInput && saleIsoDate < startDateInput) return false; if (endDateInput && saleIsoDate > endDateInput) return false; return true;
             });
             
-            let displayTotal = filteredSales.reduce((acc, curr) => acc + parseAmount(getVal(curr, ['totalamount', 'total', 'amount'])), 0);
+            let displayTotal = filteredSales.reduce((acc, curr) => { 
+                if(curr.status === 'deleted' || curr.status === 'cancelled') return acc; 
+                return acc + parseAmount(getVal(curr, ['totalamount', 'total', 'amount']));
+            }, 0);
             document.getElementById('totalSalesBox').innerText = `Total Sales: ₹ ${displayTotal.toLocaleString('en-IN')}`;
             
             if(filteredSales.length === 0) { salesGrid.innerHTML = "<p style='color:var(--text-muted); font-size:0.9rem; text-align:center;'>No orders found.</p>"; return; }
@@ -1411,7 +1373,7 @@
                 let cleanItemsView = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
                 let statusFlag = sale.status === 'deletion_pending' ? `<span style="background:#FEE2E2; color:#D03B3B; font-size:0.65rem; padding:4px 8px; border-radius:6px; font-weight:700;">APPROVAL PENDING</span>` : (sale.status === 'deleted' || sale.status === 'cancelled' ? `<span style="background:#FEE2E2; color:#D03B3B; font-size:0.65rem; padding:4px 8px; border-radius:6px; font-weight:700;">CANCELLED</span>` : '');
 
-                salesGrid.innerHTML += `<div class="card" style="padding:16px; margin-bottom:12px; cursor:pointer;" onclick="openOrderDetails('${sOrderId}')"><div style="display:flex; justify-content:space-between; margin-bottom:12px;"><div><h4 style="margin-bottom:2px; font-weight:700; color:var(--text-dark);">${tName}${sessionLabel}</h4><span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">#${sOrderId}</span></div>${statusFlag}</div><div style="font-size:0.85rem; color:var(--text-muted); line-height:1.5; margin-bottom:16px; max-height:42px; overflow:hidden;">${cleanItemsView.replace(/ ₹\d+(?:\.\d+)?/g, '')}</div><div style="display:flex; justify-content:space-between; align-items:center;"><span style="background:#F4EFEA; color:var(--text-dark); padding:6px 10px; border-radius:6px; font-weight:600; font-size:0.78rem; border:1px solid var(--border); white-space:nowrap;">${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}</span><span style="color: #E65100; font-size: 1.2rem; font-weight: 800; background: #FFEDD5; padding: 6px 12px; border-radius: 8px; white-space: nowrap; border: 1px solid #FDE68A;">₹ ${sTotal}</span></div></div>`;
+                salesGrid.innerHTML += `<div class="card" style="padding:16px; margin-bottom:12px; cursor:pointer; border:1px solid var(--border); box-shadow:none;" onclick="openOrderDetails('${sOrderId}')"><div style="display:flex; justify-content:space-between; margin-bottom:12px;"><div><h4 style="margin-bottom:2px; font-weight:700; color:var(--text-dark);">${tName}${sessionLabel}</h4><span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">#${sOrderId}</span></div>${statusFlag}</div><div style="font-size:0.85rem; color:var(--text-muted); line-height:1.5; margin-bottom:16px; max-height:42px; overflow:hidden;">${cleanItemsView.replace(/ ₹\d+(?:\.\d+)?/g, '')}</div><div style="display:flex; justify-content:space-between; align-items:center;"><span style="background:#F4EFEA; color:var(--text-dark); padding:6px 10px; border-radius:6px; font-weight:600; font-size:0.78rem; border:1px solid var(--border); white-space:nowrap;">${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}</span><span style="color: #E65100; font-size: 1.2rem; font-weight: 800; background: #FFEDD5; padding: 6px 12px; border-radius: 8px; white-space: nowrap; border: 1px solid #FDE68A;">₹ ${sTotal}</span></div></div>`;
             });
             
             filteredSales.slice(0, 3).forEach(sale => {
@@ -1419,10 +1381,109 @@
                 
                 let cleanItemsView = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
                 let itemCount = cleanItemsView.split(', ').length;
-                let statusBadge = sale.status === 'deletion_pending' ? `<span style="background:#FEE2E2; color:#D03B3B; font-size:0.6rem; padding:4px 8px; border-radius:6px; font-weight:700;">PENDING</span>` : `<span style="background:#E6F4EA; color:#10B981; font-size:0.6rem; padding:4px 8px; border-radius:6px; font-weight:700;">CLEARED</span>`;
+                let statusBadge = sale.status === 'deletion_pending' ? `<span style="background:#FEE2E2; color:#D03B3B; font-size:0.6rem; padding:4px 8px; border-radius:6px; font-weight:700;">PENDING</span>` : (sale.status === 'deleted' || sale.status === 'cancelled' ? `<span style="background:#FEE2E2; color:#D03B3B; font-size:0.6rem; padding:4px 8px; border-radius:6px; font-weight:700;">CANC.</span>` : `<div class="ho-badge" style="background:#E6F4EA; color:#10B981;">COMPLETED</div>`);
                 
-                homeRecent.innerHTML += `<div class="h-order-card" onclick="openOrderDetails('${sOrderId}')"><div class="ho-icon">${iconStr}</div><div class="ho-info"><div class="ho-title">Order #${sOrderId}</div><div class="ho-sub">${tName} • ${cleanDisplayTime(sTime)}</div><div class="ho-sub" style="font-weight:600; color:var(--text-dark); margin-top:2px;">${itemCount} Items • ₹${sTotal}</div></div>${statusBadge}</div>`;
+                homeRecent.innerHTML += `
+                <div class="h-order-card" onclick="openOrderDetails('${sOrderId}')">
+                    <div class="ho-icon">${iconStr}</div>
+                    <div class="ho-info">
+                        <div class="ho-title">Order #${sOrderId}</div>
+                        <div class="ho-sub">${tName} • ${cleanDisplayTime(sTime)}</div>
+                        <div class="ho-sub" style="font-weight:600; color:var(--text-dark); margin-top:2px;">${itemCount} Items • ₹${sTotal}</div>
+                    </div>
+                    ${statusBadge}
+                </div>`;
             });
+        }
+
+        function renderTableGrid() {
+            const gridContainer = document.getElementById('tableGrid'); gridContainer.innerHTML = ""; let activeCount = 0; let totalCount = 0;
+            tableSections.forEach((section) => {
+                gridContainer.innerHTML += `<div class="section-header" style="margin-top:0;"><h4>${section.title}</h4></div>`; let gridHTML = '<div class="table-grid" style="margin-bottom:24px;">'; 
+                section.tables.forEach(i => { 
+                    let tName = "Table " + i; let isOccupied = runningTables.hasOwnProperty(tName) && runningTables[tName] && runningTables[tName].length > 0;
+                    if(isOccupied) activeCount++; totalCount++;
+                    let statusStr = isOccupied ? "OCCUPIED" : "AVAILABLE"; let statusCls = isOccupied ? "status-occ" : "status-avail"; let cardCls = isOccupied ? "table-card occupied" : "table-card";
+                    gridHTML += `<div class="${cardCls}" onclick="openTable('${i}')" style="width:100%; min-width:auto; padding:20px 10px;"><div class="tc-name">Table ${i}</div><div class="tc-status ${statusCls}">${statusStr}</div><div class="tc-sub" style="margin-top:8px;">Dining Area</div></div>`;
+                }); 
+                gridContainer.innerHTML += gridHTML + '</div>';
+            });
+            
+            document.getElementById('homeActiveTables').innerText = `${activeCount} / ${totalCount}`;
+            let tkOccupied = runningTables.hasOwnProperty("Takeaway") && runningTables["Takeaway"] && runningTables["Takeaway"].length > 0; document.getElementById('cardTakeaway').className = tkOccupied ? "quick-card occupied" : "quick-card bg-mint";
+            let delOccupied = runningTables.hasOwnProperty("Home Delivery") && runningTables["Home Delivery"] && runningTables["Home Delivery"].length > 0; document.getElementById('cardDelivery').className = delOccupied ? "quick-card occupied" : "quick-card bg-blue";
+            document.getElementById('takeawayStatus').innerText = tkOccupied ? "Engaged" : "Ready";
+            document.getElementById('deliveryStatus').innerText = delOccupied ? "Engaged" : "Ready";
+        }
+
+        function confirmAddTable() { 
+            haptic();
+            let catIdx = document.getElementById('newTableCategory').value; let tNum = document.getElementById('newTableNumber').value.trim(); 
+            if(!tNum) { showCustomAlert("Please enter a table number."); return; } 
+            let isDuplicate = false; tableSections.forEach(sec => { if(sec.tables.includes(tNum)) isDuplicate = true; }); 
+            if(isDuplicate) { showCustomAlert("Table " + tNum + " already exists!"); return; } 
+            tableSections[catIdx].tables.push(tNum); localStorage.setItem('viraasat_table_sections', JSON.stringify(tableSections)); closeModal('addTableModal'); renderTableGrid(); 
+        }
+
+        function switchMainTab(tabName, btnElement, skipHistory = false) {
+            haptic();
+            let htmlMap = { 'tableDashboard': `Premium POS`, 'salesDashboard': `Live sale`, 'trendView': `P&L Dashboard`, 'expenses': `Expenses`, 'usersManager': `Admin` };
+            if(!skipHistory) { try { history.pushState({view: tabName}, '', '#' + tabName); } catch(e){} }
+            
+            document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display = 'none'; tab.classList.remove('active'); });
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active')); 
+            
+            if(btnElement) btnElement.classList.add('active');
+            if(tabName === 'tableDashboard') { document.getElementById('appHeader').style.display = 'flex'; } else { document.getElementById('appHeader').style.display = 'none'; }
+            
+            document.getElementById(tabName).style.display = 'block'; setTimeout(() => document.getElementById(tabName).classList.add('active'), 10);
+            document.getElementById('appBottomNav').style.display = 'flex';
+            
+            let tickerEl = document.getElementById('pageMainTitle');
+            if(tickerEl) {
+                if(tabName === 'tableDashboard') {
+                    tickerEl.style.color = '#A67C52';
+                    tickerEl.style.fontFamily = "'Playfair Display', serif";
+                    tickerEl.style.fontStyle = 'italic';
+                    tickerEl.style.fontWeight = '700';
+                    tickerEl.innerText = royalTaglines[tickerIndex];
+                } else {
+                    tickerEl.style.color = 'var(--text-muted)';
+                    tickerEl.style.fontFamily = "inherit";
+                    tickerEl.style.fontStyle = 'normal';
+                    tickerEl.style.fontWeight = '500';
+                    tickerEl.innerText = htmlMap[tabName];
+                }
+            }
+
+            if(tabName === 'trendView') setTimeout(generateTrends, 100);
+            if(tabName === 'expenses') renderExpensesListUI();
+        }
+
+        function openTable(num) {
+            haptic();
+            try { history.pushState({view: 'billing'}, '', '#billing'); } catch(e){}
+            activeTableNumber = (num === 'Takeaway' || num === 'Home Delivery') ? num : "Table " + num;
+            document.getElementById('billingTitle').innerText = activeTableNumber;
+            if(num === 'Home Delivery') { document.getElementById('deliveryAddressBox').style.display = 'flex'; } else { document.getElementById('deliveryAddressBox').style.display = 'none'; }
+            
+            currentBill = (runningTables[activeTableNumber] && Array.isArray(runningTables[activeTableNumber])) ? JSON.parse(JSON.stringify(runningTables[activeTableNumber])) : [];
+            document.getElementById('discountValue').value = 0; document.getElementById('customerPhone').value = ""; document.getElementById('deliveryAddress').value = ""; document.getElementById('stockStatus').style.display = "none"; 
+            
+            updateBillTable();
+            document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display = 'none'; tab.classList.remove('active'); });
+            document.getElementById('appHeader').style.display = 'none';
+            document.getElementById('billingView').style.display = 'block'; setTimeout(() => document.getElementById('billingView').classList.add('active'), 10);
+            document.getElementById('appBottomNav').style.display = 'none';
+        }
+
+        function goBackToTables(skipHistory = false) {
+            haptic();
+            if(!skipHistory) { try { history.pushState({view: 'tableDashboard'}, '', '#home'); } catch(e){} }
+            document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display = 'none'; tab.classList.remove('active'); });
+            document.getElementById('appHeader').style.display = 'flex';
+            document.getElementById('tableDashboard').style.display = 'block'; setTimeout(() => document.getElementById('tableDashboard').classList.add('active'), 10);
+            document.getElementById('appBottomNav').style.display = 'flex'; renderTableGrid(); 
         }
 
         // =====================================
@@ -1460,6 +1521,119 @@
             openModal('orderDetailsModal');
         }
 
+        // =====================================
+        // PRINTING & WA COMMANDS
+        // =====================================
+        function printBill(type) {
+            haptic();
+            try {
+                if (currentBill.length === 0) { showCustomAlert("Cart is empty! Nothing to print."); return; }
+                let printSec = document.getElementById('printSection'); let d = new Date(); let dStr = d.toLocaleDateString('en-IN') + ' ' + d.toLocaleTimeString('en-IN');
+                
+                if(type === 'kot') {
+                    let itemsHtml = currentBill.map(i => `<div style="font-size:1.1rem; font-weight:bold; margin-bottom:5px; border-bottom:1px dashed #ccc; padding-bottom:5px;">[ ${i.qty} ] x ${i.name}</div>`).join("");
+                    printSec.innerHTML = `<div style="text-align:center; margin-bottom:10px;"><h2 style="margin:0; font-size:1.5rem;">K.O.T</h2><h3 style="margin:5px 0;">Table: ${activeTableNumber}</h3><p style="margin:0; font-size:0.8rem;">Date: ${dStr}</p></div><div style="border-top:2px dashed #000; padding-top:10px;">${itemsHtml}</div>`;
+                } else {
+                    let discountEl = document.getElementById('discountValue'); let discount = discountEl ? (parseInt(discountEl.value) || 0) : 0; 
+                    let grandTotalEl = document.getElementById('grandTotal'); let grandTotal = grandTotalEl ? (parseInt(grandTotalEl.innerText.replace(/[^0-9.-]/g, '')) || 0) : 0;
+                    let addBox = document.getElementById('deliveryAddressBox'); let addInput = document.getElementById('deliveryAddress'); let addStr = (addBox && addBox.style.display === 'flex' && addInput) ? addInput.value : "";
+                    
+                    let itemsHtml = currentBill.map(i => `<tr><td class="col-item" style="text-align: left; width: 50%;">${i.name}</td><td class="col-price" style="text-align: center; width: 15%;">${i.price}</td><td class="col-qty" style="text-align: center; width: 15%;">${i.qty}</td><td class="col-amt" style="text-align: right; width: 20%; font-weight:bold;">${i.total}</td></tr>`).join("");
+                    
+                    printSec.innerHTML = `<div style="text-align: center; margin-bottom: 10px;"><h2 style="font-size: 1.2rem; margin: 0; padding: 0; font-weight: bold;">VIRAASAT UDAIPUR</h2><p style="font-size: 0.8rem; margin: 2px 0;">A Taste Of Royal Mewar</p><p style="font-size: 0.8rem; margin: 2px 0;">Contact: +91 7852041644</p><p style="font-size: 0.8rem; margin: 2px 0;">Udaipur, Rajasthan</p></div><div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; margin-bottom: 10px; font-size: 0.85rem;"><div style="display: flex; justify-content: space-between;"><span>Invoice No: INV-${Math.floor(Math.random() * 9000 + 1000)}</span> <span>${d.toLocaleDateString('en-IN')}</span></div><div style="margin-top:2px;">Table: ${activeTableNumber}</div>${addStr?`<div style="margin-top:2px;">Address: ${addStr}</div>`:""}</div><table style="width: 100%; font-size: 0.85rem; text-align: left; border-collapse: collapse;"><thead><tr><th class="col-item" style="text-align: left; width: 50%;">ITEM</th><th class="col-price" style="text-align: center; width: 15%;">PRICE</th><th class="col-qty" style="text-align: center; width: 15%;">QTY</th><th class="col-amt" style="text-align: right; width: 20%;">AMT</th></tr></thead><tbody>${itemsHtml}</tbody></table><div style="border-top: 1px dashed #000; margin-top: 10px; padding-top: 5px; font-size: 0.9rem;">${discount > 0 ? `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Discount:</span><span>-₹${discount}</span></div>` : ''}<div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;"><span>TOTAL (FOOD):</span><span>₹${grandTotal}</span></div></div><div style="text-align: center; font-size: 0.85rem; font-weight: bold; margin-top: 20px;">THANK YOU FOR DINING WITH US!</div>`;
+                }
+                
+                printSec.offsetHeight; window.print();
+            } catch (e) { console.log(e); }
+        }
+
+        function printHistoricalBill() {
+            haptic();
+            try {
+                let sale = currentViewingSale;
+                if(!sale) return;
+                let sOrderId = getVal(sale, ['orderid', 'id']) || 'N/A'; let sTable = getVal(sale, ['tablenumber', 'table', 'tablename']) || 'Table'; let sDate = getVal(sale, ['date', 'isodate']) || ''; let sTime = getVal(sale, ['time']) || ''; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getSaleItemsText(sale);
+                
+                let printSec = document.getElementById('printSection'); 
+                let dStr = `${cleanDisplayDate(sDate)} ${cleanDisplayTime(sTime)}`; 
+                let itemsHtml = ""; let histDiscount = 0; let modeStr = ""; let addStr = "";
+                
+                let dMatch = sItems.match(/\[Discount Applied:\s*-?₹?(\d+)\]/); if(dMatch) histDiscount = parseInt(dMatch[1]);
+                let mMatch = sItems.match(/\[Mode:\s*(.+?)\]/); if(mMatch) modeStr = mMatch[1];
+                let aMatch = sItems.match(/\[Address:\s*(.+?)\]/); if(aMatch) addStr = aMatch[1];
+
+                let cleanItems = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
+
+                cleanItems.split(', ').forEach(itemStr => {
+                    itemStr = itemStr.trim();
+                    if(!itemStr) return;
+                    let match = itemStr.match(/(.+?)\s*\(x(\d+)\)(?:\s*₹?(\d+(?:\.\d+)?))?/);
+                    if(match) {
+                        let name = match[1].trim(); let qty = parseInt(match[2]); let totalVal = match[3] ? parseFloat(match[3]) : null; let priceVal = null;
+                        if (totalVal === null) { let menuItem = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === name.toLowerCase()); if (menuItem) { priceVal = parseInt(getVal(menuItem, ['price'])); totalVal = priceVal * qty; } } else { priceVal = totalVal / qty; }
+                        itemsHtml += `<tr><td class="col-item" style="text-align: left; width: 50%;">${name}</td><td class="col-price" style="text-align: center; width: 15%;">${priceVal?priceVal:"-"}</td><td class="col-qty" style="text-align: center; width: 15%;">${qty}</td><td class="col-amt" style="text-align: right; width: 20%; font-weight:bold;">${totalVal?totalVal:"-"}</td></tr>`;
+                    } else { itemsHtml += `<tr><td colspan="4" class="col-item">${itemStr}</td></tr>`; }
+                });
+                
+                printSec.innerHTML = `<div style="text-align: center; margin-bottom: 10px;"><h2 style="font-size: 1.2rem; margin: 0; padding: 0; font-weight: bold;">VIRAASAT UDAIPUR</h2><p style="font-size: 0.8rem; margin: 2px 0;">A Taste Of Royal Mewar</p><p style="font-size: 0.8rem; margin: 2px 0;">Contact: +91 7852041644</p><p style="font-size: 0.8rem; margin: 2px 0;">Udaipur, Rajasthan</p></div><div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; margin-bottom: 10px; font-size: 0.85rem;"><div style="display: flex; justify-content: space-between;"><span>Invoice No: #${sOrderId}</span> <span>(DUPLICATE)</span></div><div style="margin-top:2px;">Table: ${sTable}</div>${modeStr?`<div style="margin-top:2px;">Payment Mode: ${modeStr}</div>`:""}${addStr?`<div style="margin-top:2px;">Address: ${addStr}</div>`:""}</div><table style="width: 100%; font-size: 0.85rem; text-align: left; border-collapse: collapse;"><thead><tr><th class="col-item" style="text-align: left; width: 50%;">ITEM</th><th class="col-price" style="text-align: center; width: 15%;">PRICE</th><th class="col-qty" style="text-align: center; width: 15%;">QTY</th><th class="col-amt" style="text-align: right; width: 20%;">AMT</th></tr></thead><tbody>${itemsHtml}</tbody></table><div style="border-top: 1px dashed #000; margin-top: 10px; padding-top: 5px; font-size: 0.9rem;">${histDiscount > 0 ? `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Discount:</span><span>-₹${histDiscount}</span></div>` : ''}<div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;"><span>TOTAL (FOOD):</span><span>₹${sTotal}</span></div></div><div style="border-bottom: 1px dashed #000; margin-bottom: 10px; padding-bottom: 5px;"></div><div style="text-align: center; font-size: 0.85rem; font-weight: bold; margin-top: 10px;">THANK YOU FOR DINING WITH US!</div><div style="text-align: center; font-size: 0.75rem; margin-top: 5px;">Print Date: ${dStr}</div>`;
+                
+                printSec.offsetHeight; window.print();
+            } catch (e) { console.log(e); }
+        }
+
+        function sendWA_Customer() {
+            haptic();
+            if (currentBill.length === 0) { showCustomAlert("Cart is empty! Please add items first."); return; }
+            let phone = document.getElementById('customerPhone').value.trim();
+            if (!phone || phone.length < 10) { showCustomAlert("Please enter a valid 10-digit customer phone number."); return; }
+            
+            let discount = parseInt(document.getElementById('discountValue').value) || 0; 
+            let grandTotal = parseInt(document.getElementById('grandTotal').innerText.replace(/[^0-9.-]/g, '')) || 0;
+            let d = new Date(); let dateStr = d.toLocaleDateString('en-IN'); let timeStr = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            let invoiceNo = "INV-" + Math.floor(Math.random() * 9000 + 1000);
+            
+            let text = `*VIRAASAT UDAIPUR*\n_A Taste Of Royal Mewar_\n\n*Invoice No:* ${invoiceNo}\n*Table:* ${activeTableNumber}\n*Date:* ${dateStr} • ${timeStr}\n----------------------------------------\n*ITEMS*\n`;
+            currentBill.forEach(item => { text += `▪ ${item.name} (x${item.qty})  ~  *₹${item.total}*\n`; });
+            text += `----------------------------------------\n`;
+            if (discount > 0) { text += `*Discount:*  -₹${discount}\n`; }
+            text += `*TOTAL AMOUNT:  ₹${grandTotal}*\n----------------------------------------\n\nThank you for dining with us! 🙏\n\n⭐ *We would love to hear your feedback:*\nhttps://g.page/r/CSJLAggbIn1JEBM/review`;
+            
+            let waLink = `https://wa.me/91${phone}?text=${encodeURIComponent(text)}`; 
+            window.open(waLink, '_blank');
+        }
+
+        function sendWA_HistoricalBill() {
+            haptic();
+            let sale = currentViewingSale;
+            if(!sale) return;
+            let phone = document.getElementById('modalCustomerPhone').value.trim();
+            if (!phone || phone.length < 10) { showCustomAlert("Please enter a valid 10-digit customer phone number."); return; }
+            
+            let sOrderId = getVal(sale, ['orderid', 'id']) || 'N/A'; let sTable = getVal(sale, ['tablenumber', 'table', 'tablename']) || 'Table'; let sDate = getVal(sale, ['date', 'isodate']) || ''; let sTime = getVal(sale, ['time']) || ''; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getSaleItemsText(sale); let histDiscount = 0; 
+            let text = `*VIRAASAT UDAIPUR*\n_A Taste Of Royal Mewar_\n\n*Invoice No:* ${sOrderId}\n*Table:* ${sTable}\n*Date:* ${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}\n----------------------------------------\n*ITEMS*\n`;
+            
+            let dMatch = sItems.match(/\[Discount Applied:\s*-?₹?(\d+)\]/); if(dMatch) histDiscount = parseInt(dMatch[1]);
+            let cleanItems = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
+
+            cleanItems.split(', ').forEach(itemStr => {
+                itemStr = itemStr.trim();
+                if(!itemStr) return;
+                let match = itemStr.match(/(.+?)\s*\(x(\d+)\)(?:\s*₹?(\d+(?:\.\d+)?))?/);
+                if(match) {
+                    let name = match[1].trim(); let qty = parseInt(match[2]); let totalVal = match[3] ? parseFloat(match[3]) : null; 
+                    if (totalVal === null) { let menuItem = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === name.toLowerCase()); if (menuItem) { totalVal = parseInt(getVal(menuItem, ['price'])) * qty; } } 
+                    text += `▪ ${name} (x${qty})  ~  *₹${totalVal || '-' }*\n`;
+                } else if (itemStr.trim()) { text += `▪ ${itemStr.trim()}\n`; }
+            });
+            text += `----------------------------------------\n`;
+            if (histDiscount > 0) { text += `*Discount:*  -₹${histDiscount}\n`; }
+            text += `*TOTAL AMOUNT:  ₹${sTotal}*\n----------------------------------------\n\nThank you for dining with us! 🙏\n\n⭐ *We would love to hear your feedback:*\nhttps://g.page/r/CSJLAggbIn1JEBM/review`;
+            
+            let waLink = `https://wa.me/91${phone}?text=${encodeURIComponent(text)}`; 
+            window.open(waLink, '_blank');
+        }
+
+        // --- FILTERS & EXPORTS ---
         function downloadCSV(rows,filename){
             if(!rows||!rows.length){showCustomAlert('No data available to export.');return;}
             const headers=Object.keys(rows[0]);const csv=[headers.join(','),...rows.map(r=>headers.map(h=>`"${String(r[h]??'').replace(/"/g,'""')}"`).join(','))].join('\r\n');
@@ -1476,11 +1650,11 @@
             });
             downloadCSV(Object.entries(itemStats).sort((a,b)=>b[1]-a[1]).map(([Item, Qty]) => ({Item, Units_Sold: Qty})), 'Viraasat-Item-Analytics.csv');
         }
-        function exportExpensesTable() {
-            downloadCSV(expenseHistory.map(e => ({ Date: cleanDisplayDate(getVal(e,['date','isodate'])), Category: getVal(e,['category']), Description: getVal(e,['description','note'])||'—', Amount: parseAmount(getVal(e,['amount','total'])) })), 'Viraasat-Expenses-Report.csv');
-        }
+        function exportExpensesTable() { downloadCSV(expenseHistory.map(e => ({ Date: cleanDisplayDate(getVal(e,['date','isodate'])), Category: getVal(e,['category']), Description: getVal(e,['description','note'])||'—', Amount: parseAmount(getVal(e,['amount','total'])) })), 'Viraasat-Expenses-Report.csv'); }
+        function exportAllData() { downloadCSV(salesHistory.map(s=>({Date:s.date,Time:s.time,Order_ID:s.orderid,Table:s.table,Amount:s.amount,Status:s.status})), 'Viraasat-Master-Sales.csv'); }
         
         async function runFullImport() {
+            haptic();
             let fileInput = document.getElementById('fullImportInput'); 
             if(!fileInput.files.length) { showCustomAlert("Select full Excel workbook."); return; }
             let file = fileInput.files[0]; let data = await file.arrayBuffer(); let wb = XLSX.read(data, { type: 'array' });
