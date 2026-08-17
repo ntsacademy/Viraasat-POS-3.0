@@ -121,7 +121,7 @@
         .hkpi-sub { font-size: 0.75rem; font-weight: 700; color: var(--text-dark); display: inline-block; padding: 4px 10px; border-radius: 8px; background: rgba(255,255,255,0.7); width: max-content; }
         .hkpi-sub.green-text { color: var(--success); background: transparent; padding: 0; }
 
-        /* Exact colors from Screenshot */
+        /* Exact colors */
         .bg-purple { background-color: var(--card-purple) !important; border-color: transparent !important; }
         .bg-peach { background-color: var(--card-peach) !important; border-color: transparent !important; }
         .bg-mint { background-color: var(--card-mint) !important; border-color: transparent !important; }
@@ -135,11 +135,10 @@
         .ho-sub { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
         .ho-badge { background: #E6F4EA; color: #10B981; font-size: 0.65rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; letter-spacing: 0.5px; }
 
-        /* Fixed Navigation per Screenshot */
         .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; padding: 10px 4px calc(10px + env(safe-area-inset-bottom)) 4px; border-top: 1px solid var(--border); z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.03); border-radius: 20px 20px 0 0; }
         .nav-item { background: transparent; border: none; color: #6B7280; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: inherit; font-size: 0.6rem; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; padding: 6px 0; }
         .nav-item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: 0.2s; }
-        .nav-item.active { color: var(--btn-pink); font-weight: 700; }
+        .nav-item.active { color: var(--btn-pink); font-weight: 800; }
         .nav-item.active .icon-container { background: #FDE8D7; width: 50px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
         .nav-item.active svg { stroke: var(--btn-pink); stroke-width: 2.2; }
 
@@ -156,7 +155,6 @@
         .btn:active { transform: scale(0.97); }
         .btn-outline { background: var(--surface); border: 1px solid var(--border); color: var(--text-dark); }
         .btn-outline:active { background: var(--bg-color); }
-        .action-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px; }
 
         .cart-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
         .cart-summary { background: var(--surface); border-radius: 14px; padding: 20px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 12px; border: 1px solid var(--border); }
@@ -184,7 +182,6 @@
         .sales-card { background: var(--surface); border-radius: var(--border-radius); padding: 18px; border: 1px solid var(--border); cursor: pointer; transition: 0.1s;}
         .sales-card:active { transform: scale(0.98); }
 
-        /* P&L Grid */
         .trend-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
         .trend-kpi-card { padding: 16px; border-radius: var(--border-radius); border: 1px solid var(--border); background: var(--surface); display: flex; flex-direction: column; box-shadow: var(--shadow-soft);}
         .trend-kpi-card.full-width { grid-column: span 2; }
@@ -224,7 +221,7 @@
 
     <div id="splashScreen">
         <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
-            <div class="logo-graphic">Viraasat<div class="logo-accent" style="width: 60px; height: 4px; margin: 12px auto 0;"></div></div>
+            <div class="logo-graphic">Viraasat<div class="logo-accent"></div></div>
         </div>
         <div class="splash-subtitle" style="margin-top: 20px; font-family: 'Poppins', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase;">Premium POS</div>
         <div class="spinner" style="margin-top: 20px;"></div>
@@ -313,14 +310,6 @@
                 <button class="btn" style="background:#10B981; border:none;" onclick="sendWA_HistoricalBill()">WhatsApp</button>
             </div>
             <button class="btn btn-danger" style="width:100%; margin-top: 12px; background:var(--occ-bg); color:var(--danger); border:1px solid var(--occ-border);" id="btnRequestDelete" onclick="requestOrderDeletion()">Request Deletion (Admin Approval)</button>
-        </div>
-    </div>
-
-    <!-- CUSTOM THREE BUTTON MODAL (For Salary Print) -->
-    <div id="salaryActionModal" class="modal-overlay" style="z-index: 100000; align-items: center;">
-        <div class="bottom-sheet" style="max-width: 320px; border-radius: 16px; padding: 24px; text-align: center; margin: 0 20px; transform: none; animation: fadeIn 0.2s ease-out; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
-            <h3 id="salaryActionMessage" style="font-size:1.1rem; font-weight:700; margin-bottom: 24px; color: var(--text-dark); line-height: 1.5;">Payout Recorded!</h3>
-            <div style="display:flex; flex-direction:column; gap: 10px;" id="salaryActionButtons"></div>
         </div>
     </div>
 
@@ -446,8 +435,8 @@
                     <div class="kpi-title" style="color: #D03B3B;">Net Profit (All Time)</div>
                     <div class="kpi-value" id="kpiNetProfit">₹ 0</div>
                 </div>
-                <div class="trend-kpi-card bg-mint"><div class="kpi-title">Total Sales</div><div class="kpi-value" id="kpiTotalSales" style="color:var(--text-dark);">₹ 0</div></div>
-                <div class="trend-kpi-card" style="background:#FEE2E2; border:none;"><div class="kpi-title" style="color:var(--danger);">Total Expense</div><div class="kpi-value" id="kpiTotalExpenses" style="color:var(--danger);">₹ 0</div></div>
+                <div class="trend-kpi-card"><div class="kpi-title">Total Sales</div><div class="kpi-value" id="kpiTotalSales" style="color:var(--success);">₹ 0</div></div>
+                <div class="trend-kpi-card"><div class="kpi-title">Total Expense</div><div class="kpi-value" id="kpiTotalExpenses" style="color:var(--danger);">₹ 0</div></div>
                 <div class="trend-kpi-card"><div class="kpi-title">Staff Paid</div><div class="kpi-value" id="kpiTotalSalary">₹ 0</div></div>
                 <div class="trend-kpi-card"><div class="kpi-title">Active Staff</div><div class="kpi-value" id="kpiTotalStaff">0</div></div>
             </div>
@@ -480,7 +469,6 @@
                 <div id="staffExpenseList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
             </div>
 
-            <!-- Employee Advance Log in P&L -->
             <div class="card" style="border:1px solid var(--border); box-shadow:none;">
                 <div class="section-header" style="margin-top:0;"><h4>Staff Advance Details</h4></div>
                 <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px;">Staff advance and salary details.</p>
@@ -501,7 +489,6 @@
                     <div class="input-box"><label>Category</label><select id="expCategory"><option>Raw Material</option><option>Electricity</option><option>Payroll</option><option>Maintenance</option><option>Other</option></select></div>
                     <div class="input-box"><label>Amount (₹)</label><input type="number" id="expAmount" placeholder="0" inputmode="numeric"></div>
                     <div class="input-box"><label>Note (Optional)</label><input type="text" id="expDescription" placeholder="Add details"></div>
-                    <!-- Image Upload -->
                     <div class="input-box" style="margin-top: 8px;">
                         <label>Attach Receipt (Optional)</label>
                         <input type="file" id="expImage" accept="image/*" style="padding: 10px; border: 1px dashed var(--text-muted); cursor: pointer; border-radius:8px; font-size:0.8rem;" onchange="handleExpenseImage(event)">
@@ -513,7 +500,6 @@
 
             <div class="section-header" style="margin-bottom:16px;"><h4>Expense Ledger</h4> <span onclick="exportExpensesTable()">Export ›</span></div>
             
-            <!-- Date Filter Dropdown -->
             <div class="input-box" style="margin-bottom: 16px;">
                 <label>Filter Expenses By Date</label>
                 <select id="expenseDateFilter" onchange="renderExpensesListUI()">
@@ -527,14 +513,12 @@
                 </select>
             </div>
 
-            <!-- Progress Bar -->
             <div class="card" style="padding: 16px; border:1px solid var(--border); box-shadow:none; margin-bottom: 20px;">
                 <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-dark); margin-bottom: 8px;">Category Breakdown</div>
                 <div id="expenseProgressBar" style="width: 100%; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; display: flex; margin-top: 8px;"></div>
                 <div id="expenseProgressLegend" style="display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; font-size:0.75rem; font-weight:600;"></div>
             </div>
 
-            <!-- Expense Filters -->
             <div class="swipe-filters" id="expenseFilters">
                 <button class="filter-chip active" onclick="renderExpensesListUI(this, 'All')">All</button>
                 <button class="filter-chip" onclick="renderExpensesListUI(this, 'Raw Material')">Raw Material</button>
@@ -546,13 +530,9 @@
             <div id="expensesCardList" style="display: flex; flex-direction: column; gap: 12px; padding-bottom: 24px;"></div>
         </div>
 
-        <!-- TAB 5: ADMIN (USERS + HR) VIEW -->
+        <!-- ADMIN (USERS + HR) VIEW -->
         <div id="usersManager" class="tab-content" style="padding-top: 10px;">
-            <div class="greeting-sec" style="margin-top: 16px; margin-bottom: 24px;">
-                <h2 style="font-size: 1.6rem;">Admin Console</h2>
-            </div>
             
-            <!-- Pending Approvals for Order Delete and Staff Remove -->
             <div class="card" id="adminApprovalsCard" style="display:none; border-color:var(--danger); background:#FFF5F5;">
                 <div class="section-header" style="margin-top:0;"><h4>⚠️ Pending Approvals</h4></div>
                 <div id="adminApprovalsList" style="display:flex; flex-direction:column; gap:12px;"></div>
@@ -576,6 +556,9 @@
 
             <div class="card">
                 <div class="section-header" style="margin-top:0;"><h4>System Restoration</h4></div>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:12px;">Download the template below, add your historical records, and execute master import.</p>
+                <button class="btn btn-outline" style="margin-bottom:16px; height: 40px; font-size:0.85rem;" onclick="downloadTemplate()">📥 Download Import Template</button>
+                
                 <div class="form-group" style="margin-bottom:0;">
                     <input type="file" id="fullImportInput" accept=".xlsx,.xls,.csv" style="padding:10px; border:1px dashed var(--border); background:#FFF;">
                     <button class="btn" style="margin-top:10px; background:var(--success);" onclick="runFullImport()">Execute Master Import</button>
@@ -760,73 +743,33 @@
 
     <script>
         const API_BASE = '/api'; 
-        
-        const APP_VERSION = "API Cloud Safe V4.0"; 
-        
+        const APP_VERSION = "Enterprise V5.0 Stable"; 
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
-        let menuData = []; 
-        let stockData = {}; 
-        let runningTables = {}; 
-        let salesHistory = []; 
-        let expenseHistory = []; 
-        let currentBill = []; 
-        let staffData = [];
-        let activeTableNumber = ""; 
-        let trendChartInstance = null; 
-        let donutChartInstance = null;
-        let selectedPaymentMode = "Cash";
-        let rawChartSalesData = {}; 
-        let rawChartExpenseData = {};
+        let menuData = []; let stockData = {}; let runningTables = {}; 
+        let salesHistory = []; let expenseHistory = []; let currentBill = []; let staffData = [];
+        let activeTableNumber = ""; let trendChartInstance = null; let donutChartInstance = null; let selectedPaymentMode = "Cash";
+        let rawChartSalesData = {}; let rawChartExpenseData = {};
         
-        let currentViewingSale = null;
-        let expenseImageBase64 = null;
+        let currentViewingSale = null; let expenseImageBase64 = null;
 
-        function haptic() {
-            try { if (navigator.vibrate) navigator.vibrate(40); } catch(e){}
-        }
+        function haptic() { try { if (navigator.vibrate) navigator.vibrate(40); } catch(e){} }
 
-        const royalTaglines = [
-            "A Taste of Royal Mewar",
-            "Mewar Ki Shaan, Swaad Mein Jaan",
-            "Swaad Humari Sabse Badi Pehchaan",
-            "Authentic Rajputana Spices",
-            "Premium POS"
-        ];
+        const royalTaglines = ["A Taste of Royal Mewar", "Mewar Ki Shaan, Swaad Mein Jaan", "Swaad Humari Sabse Badi Pehchaan", "Authentic Rajputana Spices", "Premium POS"];
         let tickerIndex = 0;
 
         function rotateTicker() {
             const activeTab = document.querySelector('.tab-content.active');
             if (!activeTab || activeTab.id !== 'tableDashboard') return;
-            
-            const tickerEl = document.getElementById('pageMainTitle');
-            if (!tickerEl) return;
-            
+            const tickerEl = document.getElementById('pageMainTitle'); if (!tickerEl) return;
             tickerEl.style.opacity = 0;
-            
-            setTimeout(() => {
-                tickerIndex = (tickerIndex + 1) % royalTaglines.length;
-                tickerEl.innerText = royalTaglines[tickerIndex];
-                tickerEl.style.opacity = 1;
-            }, 500); 
+            setTimeout(() => { tickerIndex = (tickerIndex + 1) % royalTaglines.length; tickerEl.innerText = royalTaglines[tickerIndex]; tickerEl.style.opacity = 1; }, 500); 
         }
-
         setInterval(rotateTicker, 4000);
 
         let tableSections;
-        try {
-            tableSections = JSON.parse(localStorage.getItem('viraasat_table_sections')) || [
-                { title: "Hut Seating", tables: ["1", "2", "3", "4"] },
-                { title: "Ground Seating", tables: ["5", "6", "7"] },
-                { title: "Terrace Seating", tables: ["8", "9", "10"] }
-            ];
-        } catch(e) {
-            tableSections = [
-                { title: "Hut Seating", tables: ["1", "2", "3", "4"] },
-                { title: "Ground Seating", tables: ["5", "6", "7"] },
-                { title: "Terrace Seating", tables: ["8", "9", "10"] }
-            ];
-        }
+        try { tableSections = JSON.parse(localStorage.getItem('viraasat_table_sections')) || [{ title: "Hut Seating", tables: ["1", "2", "3", "4"] }, { title: "Ground Seating", tables: ["5", "6", "7"] }, { title: "Terrace Seating", tables: ["8", "9", "10"] }]; } 
+        catch(e) { tableSections = [{ title: "Hut Seating", tables: ["1", "2", "3", "4"] }, { title: "Ground Seating", tables: ["5", "6", "7"] }, { title: "Terrace Seating", tables: ["8", "9", "10"] }]; }
 
         let userPermissions;
         try { userPermissions = JSON.parse(localStorage.getItem('viraasat_permissions')) || {}; } catch(e) { userPermissions = {}; }
@@ -836,16 +779,11 @@
         if(dt) dt.innerText = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         
         function getVal(obj, possibleKeys) {
-            if (!obj) return '';
-            let normalizedObj = {};
-            for (let k in obj) { 
-                normalizedObj[k.toLowerCase().replace(/[^a-z0-9]/g, '')] = obj[k]; 
-            }
+            if (!obj) return ''; let normalizedObj = {};
+            for (let k in obj) { normalizedObj[k.toLowerCase().replace(/[^a-z0-9]/g, '')] = obj[k]; }
             for (let k of possibleKeys) {
                 let normK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
-                if (normalizedObj[normK] !== undefined && normalizedObj[normK] !== null && normalizedObj[normK] !== '') { 
-                    return normalizedObj[normK]; 
-                }
+                if (normalizedObj[normK] !== undefined && normalizedObj[normK] !== null && normalizedObj[normK] !== '') { return normalizedObj[normK]; }
             }
             return '';
         }
@@ -853,88 +791,62 @@
         function parseAmount(val) {
             if (val === undefined || val === null || val === '') return 0;
             if (typeof val === 'number') return Math.round(val);
-            let str = String(val).replace(/[^0-9.-]/g, ''); 
-            let parsed = parseFloat(str);
-            return isNaN(parsed) ? 0 : Math.round(parsed);
+            let str = String(val).replace(/[^0-9.-]/g, ''); let parsed = parseFloat(str); return isNaN(parsed) ? 0 : Math.round(parsed);
         }
 
-        // SMART ITEM PARSER
+        // SMART ITEM PARSER (Bulletproof string matching)
         function extractItemsList(sItems) {
             let parsedItems = [];
             if (!sItems) return parsedItems;
             
             try {
                 let arr = typeof sItems === 'string' ? JSON.parse(sItems) : sItems;
-                if (Array.isArray(arr)) {
-                    return arr.map(i => ({ name: i.name || i.itemname || "Item", qty: parseInt(i.qty) || 1, total: parseFloat(i.total || i.price) || 0 }));
-                }
+                if (Array.isArray(arr)) { return arr.map(i => ({ name: i.name || i.itemname || "Item", qty: parseInt(i.qty) || 1, total: parseFloat(i.total || i.price) || 0 })); }
             } catch(e) {}
             
             let cleanStr = String(sItems).replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
             cleanStr.split(',').forEach(str => {
-                str = str.trim();
-                if(!str) return;
+                str = str.trim(); if(!str) return;
                 let match = str.match(/(.+?)\s*\(x(\d+)\)(?:\s*₹?(\d+(?:\.\d+)?))?/);
-                if(match) {
-                    parsedItems.push({ name: match[1].trim(), qty: parseInt(match[2]), total: match[3] ? parseFloat(match[3]) : null });
-                } else {
-                    parsedItems.push({ name: str, qty: 1, total: null });
-                }
+                if(match) { parsedItems.push({ name: match[1].trim(), qty: parseInt(match[2]), total: match[3] ? parseFloat(match[3]) : null }); } 
+                else { parsedItems.push({ name: str, qty: 1, total: null }); }
             });
             return parsedItems;
         }
 
         function getSaleItemsText(sale) {
             let itemsArr = extractItemsList(sale.itemsstring || sale.items_string || sale.items);
-            if(itemsArr.length > 0) {
-                return itemsArr.map(i => `${i.name} (x${i.qty}) ₹${i.total || ''}`).join(', ');
-            }
+            if(itemsArr.length > 0) { return itemsArr.map(i => `${i.name} (x${i.qty}) ₹${i.total || ''}`).join(', '); }
             return sale.itemsstring || sale.items_string || sale.items || '';
         }
 
         window.showCustomAlert = function(message) {
             haptic();
-            let msgEl = document.getElementById('customAlertMessage');
-            if(msgEl) msgEl.innerText = message;
-            let btnEl = document.getElementById('customAlertButtons');
-            if(btnEl) btnEl.innerHTML = `<button class="btn" onclick="document.getElementById('customAlertModal').style.display='none'">OK</button>`;
-            let modEl = document.getElementById('customAlertModal');
-            if(modEl) modEl.style.display = 'flex';
+            let msgEl = document.getElementById('customAlertMessage'); if(msgEl) msgEl.innerText = message;
+            let btnEl = document.getElementById('customAlertButtons'); if(btnEl) btnEl.innerHTML = `<button class="btn" onclick="document.getElementById('customAlertModal').style.display='none'">OK</button>`;
+            let modEl = document.getElementById('customAlertModal'); if(modEl) modEl.style.display = 'flex';
         };
 
-        let currentConfirmCallback = null; 
-        let currentCancelCallback = null;
-
+        let currentConfirmCallback = null; let currentCancelCallback = null;
         window.showCustomConfirm = function(message, callbackName, cancelCallbackName) {
             haptic();
             let btnCancel = cancelCallbackName ? `document.getElementById('customAlertModal').style.display='none'; ${cancelCallbackName}();` : "document.getElementById('customAlertModal').style.display='none';";
             let btnConfirm = callbackName ? `document.getElementById('customAlertModal').style.display='none'; ${callbackName}();` : "document.getElementById('customAlertModal').style.display='none';";
-
-            let msgEl = document.getElementById('customAlertMessage');
-            if(msgEl) msgEl.innerText = message;
-            
-            let btnEl = document.getElementById('customAlertButtons');
-            if(btnEl) btnEl.innerHTML = `
-                <button class="btn btn-outline" onclick="${btnCancel}" style="flex:1;">Cancel</button>
-                <button class="btn" onclick="${btnConfirm}" style="flex:1; background:var(--danger); color:#FFF; border:none;">Confirm</button>
-            `;
-            let modEl = document.getElementById('customAlertModal');
-            if(modEl) modEl.style.display = 'flex';
+            let msgEl = document.getElementById('customAlertMessage'); if(msgEl) msgEl.innerText = message;
+            let btnEl = document.getElementById('customAlertButtons'); if(btnEl) btnEl.innerHTML = `<button class="btn btn-outline" onclick="${btnCancel}" style="flex:1;">Cancel</button><button class="btn" onclick="${btnConfirm}" style="flex:1; background:var(--danger); color:#FFF; border:none;">Confirm</button>`;
+            let modEl = document.getElementById('customAlertModal'); if(modEl) modEl.style.display = 'flex';
         };
 
         function enforceBackTrap() { try { history.pushState(null, null, location.href); } catch(e) {} }
 
-        window.onload = function() { 
-            let savedMobile = localStorage.getItem('viraasat_user'); 
-            let savedPass = localStorage.getItem('viraasat_pass');
-            let savedVer = localStorage.getItem('app_version');
-
+        // Failsafe initialization
+        function initApp() {
+            let savedMobile = localStorage.getItem('viraasat_user'); let savedPass = localStorage.getItem('viraasat_pass'); let savedVer = localStorage.getItem('app_version');
             if(savedVer !== APP_VERSION) {
                 localStorage.clear();
                 if(savedMobile && savedPass) { localStorage.setItem('viraasat_user', savedMobile); localStorage.setItem('viraasat_pass', savedPass); }
                 localStorage.setItem('app_version', APP_VERSION); window.location.reload(true); return;
             }
-
             if(savedMobile && savedPass) {
                 let ls = document.getElementById('loginScreen'); if(ls) ls.style.display = 'none';
                 let ah = document.getElementById('appHeader'); if(ah) ah.style.display = 'flex';
@@ -943,9 +855,10 @@
                 applyAdminRights(savedMobile); fetchData(); enforceBackTrap(); enforceBackTrap(); 
             } else { 
                 let ls = document.getElementById('loginScreen'); if(ls) ls.style.display = 'flex'; 
-                hideSplashScreen(); 
             }
-        };
+        }
+        
+        document.addEventListener('DOMContentLoaded', initApp);
 
         window.onpopstate = function () {
             enforceBackTrap();
@@ -953,16 +866,20 @@
             let modalClosed = false;
             for(let id of modals) { let m = document.getElementById(id); if(m && m.style.display === 'flex') { m.style.display = 'none'; modalClosed = true; } }
             if(modalClosed) return;
-
-            let bv = document.getElementById('billingView');
-            if (bv && bv.style.display === 'block') { goBackToTables(true); return; }
-
-            let activeTab = document.querySelector('.tab-content.active');
-            let fItem = document.querySelector('.bottom-nav .nav-item:first-child');
+            let bv = document.getElementById('billingView'); if (bv && bv.style.display === 'block') { goBackToTables(true); return; }
+            let activeTab = document.querySelector('.tab-content.active'); let fItem = document.querySelector('.bottom-nav .nav-item:first-child');
             if (activeTab && activeTab.id !== 'tableDashboard' && fItem) { switchMainTab('tableDashboard', fItem, true); return; }
         };
 
-        function hideSplashScreen() { const splash = document.getElementById('splashScreen'); if(splash) { splash.style.opacity = '0'; setTimeout(() => { splash.style.display = 'none'; }, 300); } }
+        // Failsafe hiding
+        function hideSplashScreen() { 
+            const splash = document.getElementById('splashScreen'); 
+            if(splash) { 
+                splash.style.opacity = '0'; splash.style.pointerEvents = 'none'; 
+                setTimeout(() => { splash.style.display = 'none'; }, 300); 
+            } 
+        }
+        setTimeout(hideSplashScreen, 3000); // Absolute fallback
 
         let lp = document.getElementById('loginPass');
         if(lp) lp.addEventListener('keypress', function (e) { if (e.key === 'Enter') attemptLogin(); });
@@ -971,7 +888,6 @@
             haptic();
             let mobile = document.getElementById('loginMobile').value.trim(); let pass = document.getElementById('loginPass').value.trim();
             let btn = document.getElementById('btnLogin'); let err = document.getElementById('loginError');
-
             if(!mobile || !pass) { err.innerText = "Enter Number and Password."; return; }
             btn.innerText = "Verifying..."; btn.disabled = true;
 
@@ -980,19 +896,14 @@
                 if(ADMIN_NUMBERS.includes(mobile) || pass === 'admin') isValid = true; 
                 else if(userPermissions[mobile] && userPermissions[mobile].password === pass) isValid = true;
 
-                if(isValid) { 
-                    localStorage.setItem('viraasat_user', mobile); localStorage.setItem('viraasat_pass', pass); window.location.reload(true); 
-                } else { 
-                    btn.innerText = "Secure Login"; btn.disabled = false; showCustomAlert("Invalid Credentials!"); 
-                }
+                if(isValid) { localStorage.setItem('viraasat_user', mobile); localStorage.setItem('viraasat_pass', pass); window.location.reload(true); } 
+                else { btn.innerText = "Secure Login"; btn.disabled = false; showCustomAlert("Invalid Credentials!"); }
             }, 500);
         }
 
         function applyAdminRights(mobile) {
             let isAdmin = ADMIN_NUMBERS.includes(mobile) || localStorage.getItem('viraasat_pass') === 'admin';
-            let perms = userPermissions[mobile] || { orders: false, analytics: false, expenses: false };
-            window.isUserAdmin = isAdmin; window.userPerms = perms;
-
+            let perms = userPermissions[mobile] || { orders: false, analytics: false, expenses: false }; window.isUserAdmin = isAdmin; window.userPerms = perms;
             let hr = new Date().getHours(); let tod = hr < 12 ? 'Morning' : (hr < 17 ? 'Afternoon' : 'Evening'); 
             let gt = document.getElementById('greetText'); if(gt) gt.innerText = `Good ${tod} 👋`;
 
@@ -1005,12 +916,156 @@
             if(isAdmin) { renderStaffList(); fetchApprovals(); }
         }
 
+        function saveUserPermissions() {
+            haptic();
+            let mobile = document.getElementById('staffMobile').value.trim(); let pass = document.getElementById('staffPass').value.trim();
+            if(mobile.length < 10 || pass.length < 4) { showCustomAlert("Enter valid 10 digit number and minimum 4 char password"); return; }
+            userPermissions[mobile] = { password: pass, orders: document.getElementById('chkOrders').checked, analytics: document.getElementById('chkAnalytics').checked, expenses: document.getElementById('chkExpenses').checked };
+            localStorage.setItem('viraasat_permissions', JSON.stringify(userPermissions)); renderStaffList();
+            fetch(`${API_BASE}/staff`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: mobile, mobile: mobile, role: "User", is_active: 1 }) }).catch(e=>console.log(e));
+            showCustomAlert("User Registered successfully!");
+            document.getElementById('staffMobile').value = ""; document.getElementById('staffPass').value = ""; document.getElementById('chkOrders').checked = false; document.getElementById('chkAnalytics').checked = false; document.getElementById('chkExpenses').checked = false; 
+        }
+
+        window.removeUserConf = function() {
+            let mobile = window.tempMobileToRemove; delete userPermissions[mobile]; localStorage.setItem('viraasat_permissions', JSON.stringify(userPermissions));
+            renderStaffList(); 
+        }
+
+        function removeUser(mobile) { haptic(); window.tempMobileToRemove = mobile; showCustomConfirm("Remove user " + mobile + "?", "removeUserConf", null); }
+
+        function renderStaffList() {
+             let list = document.getElementById('staffList'); if(!list) return; list.innerHTML = ""; let count = 0;
+             for(let mobile in userPermissions) {
+                 count++; let p = userPermissions[mobile];
+                 list.innerHTML += `<div class="card" style="margin-bottom:0; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--border); padding:16px;"><div><div style="font-weight:700; font-size:1rem; color:var(--text-dark);">${mobile}</div><div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Orders: ${p.orders?'✅':'❌'} | Analytics: ${p.analytics?'✅':'❌'} | Expenses: ${p.expenses?'✅':'❌'}</div></div><button class="delete-btn" style="color:var(--danger); border:1px solid var(--danger); padding:6px 12px; border-radius:6px; background:transparent;" onclick="removeUser('${mobile}')">Revoke</button></div>`;
+             }
+             if (count === 0) { list.innerHTML = "<p style='color:var(--text-muted); font-size:0.85rem;'>No extra POS users registered.</p>"; }
+        }
+
+        window.reqEmpDelConf = function() {
+            let empId = window.tempEmpId; let empName = window.tempEmpName; let reason = window.tempEmpReason;
+            fetch(`${API_BASE}/orders/request-delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_id: `EMP-${empId}`, reason: reason, requested_by: localStorage.getItem('viraasat_user') || 'Terminal' }) })
+            .then(r=>r.json()).then(data => { showCustomAlert(`Removal request for ${empName} sent to Admin approval.`); fetchData(); }).catch(e=> { showCustomAlert("Error requesting deletion."); });
+        }
+
+        function requestEmployeeDeletion(empId, empName) {
+            haptic(); let reason = prompt(`Enter reason for removing employee ${empName}:`);
+            if(!reason) return; window.tempEmpId = empId; window.tempEmpName = empName; window.tempEmpReason = reason;
+            showCustomConfirm(`Send removal request for ${empName}?`, "reqEmpDelConf", null);
+        }
+
+        function renderEmployeeList() {
+            let elList = document.getElementById('employeeList'); if(!elList) return; elList.innerHTML = "";
+            if(staffData.length === 0) { elList.innerHTML = "<p style='font-size:0.85rem; color:var(--text-muted);'>No staff onboarded yet.</p>"; return; }
+            staffData.forEach(s => {
+                let sId = getVal(s, ['empid', 'employeeid', 'id']) || 'N/A'; let sName = getVal(s, ['name']) || 'Unknown'; let sRole = getVal(s, ['role']) || "Staff"; let sMobile = getVal(s, ['mobile', 'phone']) || "N/A"; let sSal = parseAmount(getVal(s, ['monthlysalary', 'salary'])); let sDate = getVal(s, ['dateofjoining', 'joindate', 'date', 'doj', 'join_date']) || 'N/A'; let formattedDate = sDate !== 'N/A' ? cleanDisplayDate(sDate) : 'N/A';
+                if(s.is_active === 0 || s.is_active === false) return; // Hide removed staff
+                elList.innerHTML += `
+                <div class="card" style="padding:16px; margin-bottom:0; display:flex; flex-direction:column; gap:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div style="display:flex; flex-direction:column; gap:6px;">
+                            <div style="font-weight:800; font-size:1.1rem; color:var(--text-dark);">${sName}</div>
+                            <div style="display:inline-block; background:#FFEAD6; color:#D97706; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:700; width:max-content;">${sRole}</div>
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <div style="background:#F4EFEA; color:var(--text-muted); font-size:0.75rem; font-weight:700; padding:6px 10px; border-radius:6px; display:flex; align-items:center;">#${sId}</div>
+                            <button onclick="requestEmployeeDeletion('${sId}', '${sName}')" style="background:#FEE2E2; color:var(--danger); border:none; padding:6px 10px; border-radius:6px; font-weight:700; cursor:pointer;">Req Remove</button>
+                        </div>
+                    </div>
+                    <div style="border-top:1px dashed var(--border); margin:4px 0;"></div>
+                    <div style="display:flex; flex-direction:column; gap:8px; font-size:0.85rem; font-weight:600; color:var(--text-muted);">
+                        <div style="display:flex; align-items:center; gap:6px;">📱 <span>Mobile: <span style="color:var(--text-dark);">${sMobile}</span></span></div>
+                        <div style="display:flex; align-items:center; gap:6px;">💰 <span>Monthly Salary: <span style="color:var(--success);">₹${sSal.toLocaleString('en-IN')}</span></span></div>
+                        <div style="display:flex; align-items:center; gap:6px;">🗓️ <span>Date of Joining: <span style="color:var(--text-dark);">${formattedDate}</span></span></div>
+                    </div>
+                </div>`;
+            });
+        }
+
+        function updateStockAdmin() {
+            haptic();
+            let item = document.getElementById('adminStockItem').value.trim(); let qty = parseInt(document.getElementById('adminStockQty').value);
+            if(!item || isNaN(qty)) { showCustomAlert("Please enter valid item and quantity."); return; }
+            stockData[item] = qty; renderStockDashboard(); checkStockDisplay(); showCustomAlert("Stock updated to " + qty + " for " + item);
+            document.getElementById('adminStockItem').value = ""; document.getElementById('adminStockQty').value = "";
+            fetch(`${API_BASE}/stock`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: item, quantity: qty }) }).catch(e => console.log("Stock update sync failed"));
+        }
+
+        function addMenuItemUI() {
+            haptic();
+            let cat = document.getElementById('newMenuCategory').value; let name = document.getElementById('newMenuName').value.trim(); let price = parseInt(document.getElementById('newMenuPrice').value);
+            if(!name || isNaN(price) || price <= 0) { showCustomAlert("Please enter valid item name and price."); return; }
+            let existing = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === name.toLowerCase());
+            if(existing) { showCustomAlert("Item already exists!"); return; }
+            let newItem = { name: name, price: price, category: cat }; menuData.push(newItem); populateDropdown(); 
+            fetch(`${API_BASE}/menu`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: cat, name: name, price: price }) }).catch(e => console.log("Menu addition failed"));
+            showCustomAlert(name + " added successfully!"); document.getElementById('newMenuName').value = ""; document.getElementById('newMenuPrice').value = "";
+        }
+
+        function populateStaffDropdown() {
+            let sel = document.getElementById('payStaffSelect'); if(!sel) return; sel.innerHTML = "<option value=''>Select Employee</option>";
+            staffData.forEach(s => { let sId = getVal(s, ['empid', 'employeeid', 'id']); let sName = getVal(s, ['name']); if(sId && sName && s.is_active !== 0) { sel.innerHTML += `<option value="${sId}">${sName} (${sId})</option>`; } });
+        }
+
+        function addStaffUI() {
+            haptic();
+            let name = document.getElementById('newStaffName').value.trim(); let mobile = document.getElementById('newStaffMobile').value.trim(); let role = document.getElementById('newStaffRole').value; let salary = parseInt(document.getElementById('newStaffSalary').value); let joinDate = document.getElementById('newStaffDate').value; 
+            if(!name || mobile.length < 10 || isNaN(salary)) { showCustomAlert("Please fill all details correctly."); return; }
+            fetch(`${API_BASE}/staff`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name, mobile: mobile, role: role, salary: salary, join_date: joinDate }) })
+            .then(res => res.json()).then(data => { showCustomAlert(`${name} added successfully!`); document.getElementById('newStaffName').value = ""; document.getElementById('newStaffMobile').value = ""; document.getElementById('newStaffSalary').value = ""; document.getElementById('newStaffDate').value = ""; fetchData(); });
+        }
+
+        function calculateStaffBalance() {
+            let empId = document.getElementById('payStaffSelect').value; let infoDiv = document.getElementById('staffBalanceInfo');
+            if(!empId) { infoDiv.innerHTML = ''; return; }
+            let staff = staffData.find(s => getVal(s, ['empid', 'employeeid', 'id']) == empId); 
+            let monthlySal = parseAmount(getVal(staff, ['monthlysalary', 'salary'])); let d = new Date(); let currentMonthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; let advTaken = 0;
+
+            expenseHistory.forEach(exp => {
+                let eCat = getVal(exp, ['category']); let eDesc = getVal(exp, ['description', 'note']) || ''; let eDate = getVal(exp, ['date', 'isodate']) || '';
+                let eMonthStr = ""; let parsedDate = new Date(eDate);
+                if(!isNaN(parsedDate.getTime())) { eMonthStr = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}`; } else { eMonthStr = eDate.substring(0, 7); }
+                if(eCat === 'Staff Salary' && eDesc.includes(`[${empId}]`) && eMonthStr === currentMonthStr) { advTaken += parseAmount(getVal(exp, ['amount'])); }
+            });
+            let balance = monthlySal - advTaken;
+            infoDiv.innerHTML = `<b>Base Salary:</b> ₹${monthlySal}<br><b>Taken This Month:</b> <span style="color:var(--danger)">-₹${advTaken}</span><br><b style="font-size:1.1rem; color:var(--success)">Pending Balance: ₹${balance}</b>`;
+        }
+
+        function submitStaffPayout() {
+            haptic();
+            let empId = document.getElementById('payStaffSelect').value; let amount = document.getElementById('payStaffAmount').value; let type = document.getElementById('payStaffType').value;
+            if(!empId || !amount || amount <= 0) { showCustomAlert("Please select staff and enter valid amount."); return; }
+            let staff = staffData.find(s => getVal(s, ['empid', 'employeeid', 'id']) == empId); let sName = getVal(staff, ['name']); let sPhone = getVal(staff, ['mobile']); let desc = `[${empId}] ${sName} - ${type}`; 
+            
+            fetch(`${API_BASE}/expenses`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: 'Staff Salary', amount: amount, description: desc }) })
+            .then(res => res.json()).then(data => {
+                document.getElementById('payStaffAmount').value = "";
+                document.getElementById('salaryActionButtons').innerHTML = `<button class="btn" onclick="printSalarySlip('${sName}', '${empId}', '${amount}', '${type}'); document.getElementById('salaryActionModal').style.display='none';">🖨️ Print Slip</button><button class="btn" style="background:#10B981;" onclick="sendWASalarySlip('${sName}', '${empId}', '${amount}', '${type}', '${sPhone}'); document.getElementById('salaryActionModal').style.display='none';">📱 WhatsApp Slip</button><button class="btn btn-outline" onclick="document.getElementById('salaryActionModal').style.display='none';">Close</button>`;
+                document.getElementById('salaryActionModal').style.display = 'flex';
+                fetchData();
+            });
+        }
+
+        function printSalarySlip(sName, empId, amount, type) {
+            let printSec = document.getElementById('printSection'); let d = new Date(); let dStr = d.toLocaleDateString('en-IN') + ' ' + d.toLocaleTimeString('en-IN');
+            printSec.innerHTML = `<div style="text-align:center; margin-bottom:10px;"><h2 style="margin:0; font-size:1.5rem; font-weight:bold;">SALARY SLIP</h2><h3 style="margin:5px 0 2px 0;">VIRAASAT UDAIPUR</h3><p style="margin:0; font-size:0.8rem;">Date: ${dStr}</p></div><div style="border-top:2px dashed #000; padding:10px 0;"><p style="margin:4px 0;"><b>Name:</b> ${sName}</p><p style="margin:4px 0;"><b>Emp ID:</b> ${empId}</p><p style="margin:4px 0;"><b>Type:</b> ${type}</p></div><div style="border-top:2px dashed #000; border-bottom:2px dashed #000; padding:10px 0; margin-bottom:10px;"><h3 style="margin:0; font-size:1.3rem;">Amount Paid: ₹${amount}</h3></div><div style="text-align:center; font-size:0.8rem; margin-top:20px;">Generated by Viraasat ERP</div>`;
+            printSec.offsetHeight; window.print();
+        }
+
+        function sendWASalarySlip(sName, empId, amount, type, sPhone) {
+            let d = new Date(); let dStr = d.toLocaleDateString('en-IN') + ' ' + d.toLocaleTimeString('en-IN');
+            let slipText = `*VIRAASAT UDAIPUR - SALARY SLIP*\n\n*Name:* ${sName}\n*Emp ID:* ${empId}\n*Date:* ${dStr}\n-----------------------\n*Transaction Type:* ${type}\n*Amount Paid:* ₹${amount}\n-----------------------\n_Recorded automatically by Viraasat ERP._`;
+            window.open(`https://wa.me/91${sPhone}?text=${encodeURIComponent(slipText)}`, '_blank');
+        }
+
         function logoutUser() {
-            localStorage.removeItem('viraasat_user'); localStorage.removeItem('viraasat_pass'); window.location.reload(true);
+            localStorage.removeItem('viraasat_user'); localStorage.removeItem('viraasat_pass');
+            window.location.reload(true);
         }
 
         // ==========================================
-        // FETCH DATA (D1 API)
+        // FETCH DATA
         // ==========================================
         async function fetchData() {
             let loader = document.getElementById('loader');
@@ -1071,8 +1126,7 @@
 
                 salesHistory.forEach(sale => { 
                     if(sale.status === 'deleted' || sale.status === 'deletion_pending' || sale.status === 'cancelled') return;
-                    let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); 
-                    let sDate = String(getVal(sale, ['date', 'isodate']) || '').trim();
+                    let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sDate = String(getVal(sale, ['date', 'isodate']) || '').trim();
                     totalSalesAmount += sTotal; 
                     
                     if(sDate) {
@@ -1101,12 +1155,11 @@
                 });
                 
                 expenseHistory.forEach(exp => { 
-                    let sAmount = parseAmount(getVal(exp, ['amount', 'total'])); totalExpensesAmount += sAmount; 
-                    let sDate = getVal(exp, ['date', 'isodate']) || ''; let eCat = getVal(exp, ['category']) || 'Other'; let eDesc = getVal(exp, ['description', 'note']) || '';
+                    let sAmount = parseAmount(getVal(exp, ['amount', 'total'])); let sDate = getVal(exp, ['date', 'isodate']) || ''; let eCat = getVal(exp, ['category']) || 'Other'; let eDesc = getVal(exp, ['description', 'note']) || '';
                     if(sDate) { 
                         let dateStrKey = sDate.split("T")[0].split(" ")[0]; let parsedDate = new Date(sDate);
                         if (!isNaN(parsedDate.getTime())) { dateStrKey = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')}`; }
-                        rawChartExpenseData[dateStrKey] = (rawChartExpenseData[dateStrKey] || 0) + sAmount;  
+                        rawChartExpenseData[dateStrKey] = (rawChartExpenseData[dateStrKey] || 0) + sAmount; totalExpensesAmount += sAmount; 
                         if(eCat === 'Staff Salary' || eCat === 'Payroll') { totalSalaryPaid += sAmount; let match = eDesc.match(/\[(.*?)\] (.*?) -/); let staffName = match ? match[2] : eDesc; staffExpenseMap[staffName] = (staffExpenseMap[staffName] || 0) + sAmount; } else { expenseCategories[eCat] = (expenseCategories[eCat] || 0) + sAmount; }
                     }
                 });
@@ -1172,9 +1225,9 @@
                 let avgToday = ordersToday > 0 ? Math.floor(revenueToday / ordersToday) : 0;
                 let hasSalesAccess = true; if (typeof window.isUserAdmin !== 'undefined') { hasSalesAccess = window.isUserAdmin || (window.userPerms && window.userPerms.orders); }
 
-                let ht = document.getElementById('homeTodaySale'); if(ht) { ht.innerText = hasSalesAccess ? `₹${revenueToday.toLocaleString('en-IN')}` : "No Access"; ht.style.fontSize = hasSalesAccess ? "1.6rem" : "1.1rem"; }
-                let ha = document.getElementById('homeAvgOrder'); if(ha) { ha.innerText = hasSalesAccess ? `₹${avgToday.toLocaleString('en-IN')}` : "No Access"; ha.style.fontSize = hasSalesAccess ? "1.6rem" : "1.1rem"; }
-                let ho = document.getElementById('homeOverallSale'); if(ho) { ho.innerText = hasSalesAccess ? `₹${totalSalesAmount.toLocaleString('en-IN')}` : "No Access"; ho.style.fontSize = hasSalesAccess ? "1.6rem" : "1.1rem"; }
+                let ht = document.getElementById('homeTodaySale'); if(ht) { ht.innerText = hasSalesAccess ? `₹${revenueToday.toLocaleString('en-IN')}` : "No Access"; }
+                let ha = document.getElementById('homeAvgOrder'); if(ha) { ha.innerText = hasSalesAccess ? `₹${avgToday.toLocaleString('en-IN')}` : "No Access"; }
+                let ho = document.getElementById('homeOverallSale'); if(ho) { ho.innerText = hasSalesAccess ? `₹${totalSalesAmount.toLocaleString('en-IN')}` : "No Access"; }
                 
                 renderPNLChart('daily');
             } catch(e) { console.error("Trends Error", e); }
@@ -1270,6 +1323,7 @@
                 return true; 
             });
 
+            // Progress Bar
             let catTotals = {}; let grandTotal = 0;
             filtered.forEach(e => { let c = getVal(e,['category'])||'Other'; let a = parseAmount(getVal(e,['amount','total'])); catTotals[c]=(catTotals[c]||0)+a; grandTotal+=a; });
             let pBar = document.getElementById('expenseProgressBar'); let pLeg = document.getElementById('expenseProgressLegend');
@@ -1338,7 +1392,7 @@
             .then(r=>r.json()).then(data => {
                 showCustomAlert("Cancellation flagged. Awaiting Admin clearance.");
                 closeModal('orderDetailsModal'); fetchData();
-            }).catch(e=> { showCustomAlert("Request Sent Locally (Demo)."); closeModal('orderDetailsModal'); });
+            }).catch(e=> { showCustomAlert("Error sending request."); closeModal('orderDetailsModal'); });
         }
 
         function requestOrderDeletion() {
@@ -1356,7 +1410,7 @@
             .then(r=>r.json()).then(data => {
                 showCustomAlert(`Removal request for ${empName} sent to Admin approval.`);
                 fetchData();
-            }).catch(e=> { showCustomAlert("Request Sent Locally (Demo)."); });
+            }).catch(e=> { showCustomAlert("Error sending request."); });
         }
 
         function requestEmployeeDeletion(empId, empName) {
@@ -1507,7 +1561,7 @@
 
         function switchMainTab(tabName, btnElement, skipHistory = false) {
             haptic();
-            let htmlMap = { 'tableDashboard': `Premium POS`, 'salesDashboard': `Live sale`, 'trendView': `P&L Dashboard`, 'expenses': `Expenses`, 'usersManager': `Admin` };
+            let htmlMap = { 'tableDashboard': `Premium POS`, 'salesDashboard': `Live sale`, 'trendView': `P&L Dashboard`, 'expenses': `Expenses`, 'usersManager': `Admin`, 'logsDashboard': `Audit Logs` };
             if(!skipHistory) { try { history.pushState({view: tabName}, '', '#' + tabName); } catch(e){} }
             
             document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display = 'none'; tab.classList.remove('active'); });
@@ -1539,6 +1593,7 @@
 
             if(tabName === 'trendView') setTimeout(generateTrends, 100);
             if(tabName === 'expenses') renderExpensesListUI();
+            if(tabName === 'logsDashboard') renderLogs();
         }
 
         function openTable(num) {
@@ -1638,6 +1693,7 @@
             let cp = document.getElementById('customerPhone'); let phone = cp ? cp.value || "NA" : "NA"; 
             let dab = document.getElementById('deliveryAddressBox'); let da = document.getElementById('deliveryAddress'); let address = (dab && dab.style.display === 'flex' && da) ? da.value : "";
             let dv = document.getElementById('discountValue'); let discount = dv ? parseInt(dv.value) || 0 : 0; 
+            let orderId = "ORD" + Math.floor(Math.random() * 900000000 + 100000000);
             
             let itemsString = currentBill.map(i => `${i.name} (x${i.qty}) ₹${i.total}`).join(", ");
             if (discount > 0) itemsString += `, [Discount Applied: -₹${discount}]`; 
@@ -1649,7 +1705,7 @@
             fetch(`${API_BASE}/orders/checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table_number: activeTableNumber, customer_phone: phone, items_string: itemsString, rawItems: currentBill, total: grandTotal, discount: discount, payment_method: selectedPaymentMode }) })
             .then(res => res.json()).then(data => {
                 delete runningTables[activeTableNumber]; 
-                let orderId = data.orderId || data.id || "ORD" + Math.floor(Math.random() * 900000000 + 100000000);
+                currentBill.forEach(item => { let foundKey = Object.keys(stockData).find(key => key.trim().toLowerCase() === item.name.trim().toLowerCase()); if(foundKey) stockData[foundKey] -= item.qty; });
                 let now = new Date(); let fDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
                 salesHistory.unshift({ date: fDate, isodate: fDate, time: now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), orderid: orderId, items: itemsString, total: grandTotal, table: activeTableNumber });
                 
@@ -1681,10 +1737,7 @@
             parsedItemsArr.forEach(i => {
                 let total = i.total;
                 if (total === null || isNaN(total)) { 
-                    let menuItem = menuData.find(m => {
-                        let mn = m.name || m.itemname;
-                        return mn && i.name && mn.toLowerCase() === i.name.toLowerCase();
-                    }); 
+                    let menuItem = menuData.find(m => { let mn = m.name || m.itemname; return mn && i.name && mn.toLowerCase() === i.name.toLowerCase(); }); 
                     if (menuItem) total = parseInt(menuItem.price || 0) * i.qty; 
                 }
                 let totalStr = (total !== null && !isNaN(total)) ? `₹${total}` : "-"; 
@@ -1792,12 +1845,12 @@
             let phone = document.getElementById('modalCustomerPhone').value.trim();
             if (!phone || phone.length < 10) { showCustomAlert("Please enter a valid 10-digit customer phone number."); return; }
             
-            let sOrderId = sale.orderid || sale.id || 'N/A'; let sTable = sale.table || sale.tablename || 'Table'; let sDate = sale.date || sale.isodate || ''; let sTime = sale.time || ''; let sTotal = parseAmount(sale.totalamount || sale.total || sale.amount); let sItems = sale.items || sale.itemsstring || sale.items_string; let histDiscount = 0; 
+            let sOrderId = sale.orderid || sale.id || 'N/A'; let sTable = sale.table || sale.tablename || 'Table'; let sDate = sale.date || sale.isodate || ''; let sTime = sale.time || ''; let sTotal = parseAmount(sale.totalamount || sale.total || sale.amount); let sItems = getSaleItemsText(sale); let histDiscount = 0; 
             let text = `*VIRAASAT UDAIPUR*\n_A Taste Of Royal Mewar_\n\n*Invoice No:* ${sOrderId}\n*Table:* ${sTable}\n*Date:* ${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}\n----------------------------------------\n*ITEMS*\n`;
             
             if (typeof sItems === 'string') { let dMatch = sItems.match(/\[Discount Applied:\s*-?₹?(\d+)\]/); if(dMatch) histDiscount = parseInt(dMatch[1]); }
             
-            let parsedItemsArr = extractItemsList(sItems);
+            let parsedItemsArr = extractItemsList(sale.items || sale.itemsstring || sale.items_string);
             parsedItemsArr.forEach(i => {
                 let totalVal = i.total; 
                 if (totalVal === null || isNaN(totalVal)) { let menuItem = menuData.find(m => { let mn = m.name || m.itemname; return mn && i.name && mn.toLowerCase() === i.name.toLowerCase(); }); if (menuItem) { totalVal = parseInt(menuItem.price || 0) * i.qty; } } 
