@@ -138,7 +138,7 @@
         .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; padding: 10px 4px calc(10px + env(safe-area-inset-bottom)) 4px; border-top: 1px solid var(--border); z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.03); border-radius: 20px 20px 0 0; }
         .nav-item { background: transparent; border: none; color: #6B7280; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: inherit; font-size: 0.6rem; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; padding: 6px 0; }
         .nav-item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: 0.2s; }
-        .nav-item.active { color: var(--btn-pink); font-weight: 800; }
+        .nav-item.active { color: var(--btn-pink); font-weight: 700; }
         .nav-item.active .icon-container { background: #FDE8D7; width: 50px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
         .nav-item.active svg { stroke: var(--btn-pink); stroke-width: 2.2; }
 
@@ -155,7 +155,6 @@
         .btn:active { transform: scale(0.97); }
         .btn-outline { background: var(--surface); border: 1px solid var(--border); color: var(--text-dark); }
         .btn-outline:active { background: var(--bg-color); }
-        .action-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px; }
 
         .cart-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
         .cart-summary { background: var(--surface); border-radius: 14px; padding: 20px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 12px; border: 1px solid var(--border); }
@@ -198,15 +197,11 @@
         @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .sheet-handle { width: 36px; height: 4px; background: #E0E0E0; border-radius: 2px; margin: 0 auto 20px auto; }
         
-        /* Loader Fix */
-        #loader { text-align: center; color: var(--text-muted); font-weight: 600; font-size: 0.9rem; margin: 40px 0; display: none; align-items: center; justify-content: center; gap: 10px;}
-        .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--text-dark); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        #loader { position: fixed; inset: 0; background: rgba(251,249,245,0.9); z-index: 99999; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 16px; color: var(--text-dark); font-weight: 600; font-size: 0.9rem; pointer-events: auto; }
+        .spinner { width: 30px; height: 30px; border: 3px solid var(--border); border-top-color: var(--text-dark); border-radius: 50%; animation: spin 0.8s linear infinite; }
 
         #splashScreen { position: fixed; inset: 0; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.4s; pointer-events: auto; }
-        .splash-logo { font-family: 'Playfair Display', serif; font-size: 2.8rem; font-weight: 700; color: var(--text-dark); }
-        .splash-subtitle { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); letter-spacing: 2px; margin-top: 6px; margin-bottom: 40px; text-transform: uppercase;}
-        @keyframes spin { to { transform: rotate(360deg); } }
-
+        
         @media screen { #printSection { display: none !important; } }
         @media print {
             body { background-color: white; margin: 0; padding: 0; display: block; height: auto; overflow: visible; max-width: none; box-shadow: none;}
@@ -228,6 +223,8 @@
         <div class="splash-subtitle" style="margin-top: 20px; font-family: 'Poppins', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase;">Premium POS</div>
         <div class="spinner" style="margin-top: 20px;"></div>
     </div>
+    
+    <div id="loader"><div class="spinner"></div><div id="loaderText">Syncing...</div></div>
 
     <!-- LOGIN SCREEN -->
     <div id="loginScreen" style="display: none; position: absolute; inset: 0; background: var(--bg-color); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
@@ -311,11 +308,11 @@
                 <button class="btn btn-outline" onclick="printHistoricalBill()">Print</button>
                 <button class="btn" style="background:#10B981; border:none;" onclick="sendWA_HistoricalBill()">WhatsApp</button>
             </div>
-            <button class="btn btn-danger" style="width:100%; margin-top: 12px; background:var(--occ-bg); color:var(--danger); border:1px solid var(--occ-border);" id="btnRequestDelete" onclick="requestOrderDeletion()">Request Deletion (Admin Approval)</button>
+            <button class="btn btn-danger" style="width:100%; margin-top:12px; background:var(--occ-bg); color:var(--danger); border:1px solid var(--occ-border);" id="btnRequestDelete" onclick="requestOrderDeletion()">Request Deletion (Admin Approval)</button>
         </div>
     </div>
 
-    <!-- CUSTOM THREE BUTTON MODAL (For Salary Print) -->
+    <!-- CUSTOM THREE BUTTON MODAL -->
     <div id="salaryActionModal" class="modal-overlay" style="z-index: 100000; align-items: center;">
         <div class="bottom-sheet" style="max-width: 320px; border-radius: 16px; padding: 24px; text-align: center; margin: 0 20px; transform: none; animation: fadeIn 0.2s ease-out; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
             <h3 id="salaryActionMessage" style="font-size:1.1rem; font-weight:700; margin-bottom: 24px; color: var(--text-dark); line-height: 1.5;">Payout Recorded!</h3>
@@ -323,7 +320,7 @@
         </div>
     </div>
 
-    <!-- CUSTOM SECURE ALERT & CONFIRM MODALS -->
+    <!-- CUSTOM SECURE ALERT MODAL -->
     <div id="customAlertModal" class="modal-overlay" style="z-index: 100000; align-items: center;">
         <div class="bottom-sheet" style="max-width: 320px; border-radius: 16px; padding: 24px; text-align: center; margin: 0 20px; transform: none; animation: fadeIn 0.2s ease-out; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
             <h3 id="customAlertMessage" style="font-size:1rem; font-weight:600; margin-bottom: 24px; color: var(--text-dark); line-height: 1.5;">Message</h3>
@@ -351,8 +348,7 @@
     </header>
 
     <main id="appMain" style="display: none;">
-        <div id="loader"><div class="spinner"></div> <span>Syncing...</span></div>
-
+        
         <!-- TAB 1: DASHBOARD VIEW (HUB) -->
         <div id="tableDashboard" class="tab-content active" style="padding-top: 10px;">
             <div class="greeting-sec">
@@ -363,20 +359,20 @@
                 <div class="date-badge" id="currentDateStr">Today</div>
             </div>
 
-            <!-- TAKEAWAY AND DELIVERY (Top Row) -->
+            <!-- TAKEAWAY AND DELIVERY -->
             <div class="quick-action-grid">
                 <div class="quick-card bg-mint" id="cardTakeaway" onclick="openTable('Takeaway')">
                     <div class="qc-icon" style="background:rgba(255,255,255,0.5); border:none;">🛍️</div>
                     <div class="qc-info">
                         <h4>Takeaway</h4>
-                        <span class="status-dot" id="takeawayStatus" style="color:var(--success);">● READY</span>
+                        <span class="status-dot" id="takeawayStatus" style="color:var(--text-dark);">● READY</span>
                     </div>
                 </div>
                 <div class="quick-card bg-blue" id="cardDelivery" onclick="openTable('Home Delivery')">
                     <div class="qc-icon" style="background:rgba(255,255,255,0.5); border:none;">🛵</div>
                     <div class="qc-info">
                         <h4>Delivery</h4>
-                        <span class="status-dot" id="deliveryStatus" style="color:var(--success);">● READY</span>
+                        <span class="status-dot" id="deliveryStatus" style="color:var(--text-dark);">● READY</span>
                     </div>
                 </div>
             </div>
@@ -385,7 +381,7 @@
             
             <div id="tableGrid"></div>
 
-            <!-- TODAY'S SALE & AVG VALUE (Bottom Row) -->
+            <!-- TODAY'S SALE & AVG VALUE -->
             <div class="home-kpi-grid" id="homeKpiGrid">
                 <div class="hkpi-card bg-purple">
                     <div class="hkpi-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path></svg> Today's Sale</div>
@@ -409,7 +405,7 @@
                 </div>
             </div>
 
-            <button class="btn btn-outline" onclick="showAddTableModal()" style="margin: 20px 0; font-weight:600; width:100%; border-radius:10px;">+ Deploy New Table</button>
+            <button class="btn btn-outline" onclick="openModal('addTableModal')" style="margin: 20px 0; font-weight:600; width:100%; border-radius:10px;">+ Deploy New Table</button>
 
             <div class="section-header"><h4>Recent Orders</h4> <span id="btnViewAllOrders" onclick="switchMainTab('salesDashboard', document.getElementById('navOrders'))">View All ›</span></div>
             <div id="homeRecentOrders"></div>
@@ -480,7 +476,6 @@
                 <div id="staffExpenseList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
             </div>
 
-            <!-- Employee Advance Log in P&L -->
             <div class="card" style="border:1px solid var(--border); box-shadow:none;">
                 <div class="section-header" style="margin-top:0;"><h4>Staff Advance Details</h4></div>
                 <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px;">Staff advance and salary details.</p>
@@ -493,7 +488,7 @@
             </div>
         </div>
 
-        <!-- EXPENSES VIEW -->
+        <!-- TAB 4: EXPENSES VIEW -->
         <div id="expenses" class="tab-content" style="padding-top: 10px;">
             <div class="greeting-sec"><h2 style="font-size:1.4rem;">Expenditure Log</h2><p>Track operational costs.</p></div>
             <div class="card" style="border:1px solid var(--border); box-shadow:none;">
@@ -501,7 +496,6 @@
                     <div class="input-box"><label>Category</label><select id="expCategory"><option>Raw Material</option><option>Electricity</option><option>Payroll</option><option>Maintenance</option><option>Other</option></select></div>
                     <div class="input-box"><label>Amount (₹)</label><input type="number" id="expAmount" placeholder="0" inputmode="numeric"></div>
                     <div class="input-box"><label>Note (Optional)</label><input type="text" id="expDescription" placeholder="Add details"></div>
-                    <!-- Image Upload -->
                     <div class="input-box" style="margin-top: 8px;">
                         <label>Attach Receipt (Optional)</label>
                         <input type="file" id="expImage" accept="image/*" style="padding: 10px; border: 1px dashed var(--text-muted); cursor: pointer; border-radius:8px; font-size:0.8rem;" onchange="handleExpenseImage(event)">
@@ -513,7 +507,6 @@
 
             <div class="section-header" style="margin-bottom:16px;"><h4>Expense Ledger</h4> <span onclick="exportExpensesTable()">Export ›</span></div>
             
-            <!-- Date Filter Dropdown -->
             <div class="input-box" style="margin-bottom: 16px;">
                 <label>Filter Expenses By Date</label>
                 <select id="expenseDateFilter" onchange="renderExpensesListUI()">
@@ -527,14 +520,12 @@
                 </select>
             </div>
 
-            <!-- Progress Bar -->
             <div class="card" style="padding: 16px; border:1px solid var(--border); box-shadow:none; margin-bottom: 20px;">
                 <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-dark); margin-bottom: 8px;">Category Breakdown</div>
                 <div id="expenseProgressBar" style="width: 100%; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; display: flex; margin-top: 8px;"></div>
                 <div id="expenseProgressLegend" style="display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; font-size:0.75rem; font-weight:600;"></div>
             </div>
 
-            <!-- Expense Filters -->
             <div class="swipe-filters" id="expenseFilters">
                 <button class="filter-chip active" onclick="renderExpensesListUI(this, 'All')">All</button>
                 <button class="filter-chip" onclick="renderExpensesListUI(this, 'Raw Material')">Raw Material</button>
@@ -745,7 +736,7 @@
                 <button class="btn btn-outline" onclick="haptic(); printBill('final')">Print Final Bill</button>
                 <button class="btn btn-outline" style="border-color:#10B981; color:#10B981;" onclick="sendWA_Customer()">WhatsApp Bill</button>
                 <button class="btn btn-outline" onclick="clearTableWithoutCheckout()" style="color:var(--danger); border-color:var(--danger);">Clear Table (Cancel)</button>
-                <button class="btn" style="margin-top:8px; height: 60px; font-size:1.1rem; background:var(--btn-pink);" onclick="openPaymentModal()">Checkout</button>
+                <button class="btn" style="margin-top:8px; height: 60px; font-size:1.1rem; background:var(--btn-pink);" onclick="openModal('paymentModal')">Checkout</button>
             </div>
         </div>
     </main>
@@ -787,72 +778,34 @@
     <script>
         const API_BASE = '/api'; 
         
-        const APP_VERSION = "D1 API Stable V4.1"; 
+        const APP_VERSION = "D1 API Mapped V5.0"; 
         
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
-        let menuData = []; 
-        let stockData = {}; 
-        let runningTables = {}; 
-        let salesHistory = []; 
-        let expenseHistory = []; 
-        let currentBill = []; 
-        let staffData = [];
-        let activeTableNumber = ""; 
-        let trendChartInstance = null; 
-        let donutChartInstance = null;
-        let selectedPaymentMode = "Cash";
-        let rawChartSalesData = {}; 
-        let rawChartExpenseData = {};
+        let menuData = []; let stockData = {}; let runningTables = {}; 
+        let salesHistory = []; let expenseHistory = []; let currentBill = []; let staffData = [];
+        let activeTableNumber = ""; let trendChartInstance = null; let donutChartInstance = null; let selectedPaymentMode = "Cash";
+        let rawChartSalesData = {}; let rawChartExpenseData = {};
         
-        let currentViewingSale = null;
-        let expenseImageBase64 = null;
+        let currentViewingSale = null; let expenseImageBase64 = null;
 
-        function haptic() {
-            try { if (navigator.vibrate) navigator.vibrate(40); } catch(e){}
-        }
+        function haptic() { try { if (navigator.vibrate) navigator.vibrate(40); } catch(e){} }
 
-        const royalTaglines = [
-            "A Taste of Royal Mewar",
-            "Mewar Ki Shaan, Swaad Mein Jaan",
-            "Swaad Humari Sabse Badi Pehchaan",
-            "Authentic Rajputana Spices",
-            "Premium POS"
-        ];
+        const royalTaglines = ["A Taste of Royal Mewar", "Mewar Ki Shaan, Swaad Mein Jaan", "Swaad Humari Sabse Badi Pehchaan", "Authentic Rajputana Spices", "Premium POS"];
         let tickerIndex = 0;
 
         function rotateTicker() {
             const activeTab = document.querySelector('.tab-content.active');
             if (!activeTab || activeTab.id !== 'tableDashboard') return;
-            
-            const tickerEl = document.getElementById('pageMainTitle');
-            if (!tickerEl) return;
-            
+            const tickerEl = document.getElementById('pageMainTitle'); if (!tickerEl) return;
             tickerEl.style.opacity = 0;
-            
-            setTimeout(() => {
-                tickerIndex = (tickerIndex + 1) % royalTaglines.length;
-                tickerEl.innerText = royalTaglines[tickerIndex];
-                tickerEl.style.opacity = 1;
-            }, 500); 
+            setTimeout(() => { tickerIndex = (tickerIndex + 1) % royalTaglines.length; tickerEl.innerText = royalTaglines[tickerIndex]; tickerEl.style.opacity = 1; }, 500); 
         }
-
         setInterval(rotateTicker, 4000);
 
         let tableSections;
-        try {
-            tableSections = JSON.parse(localStorage.getItem('viraasat_table_sections')) || [
-                { title: "Hut Seating", tables: ["1", "2", "3", "4"] },
-                { title: "Ground Seating", tables: ["5", "6", "7"] },
-                { title: "Terrace Seating", tables: ["8", "9", "10"] }
-            ];
-        } catch(e) {
-            tableSections = [
-                { title: "Hut Seating", tables: ["1", "2", "3", "4"] },
-                { title: "Ground Seating", tables: ["5", "6", "7"] },
-                { title: "Terrace Seating", tables: ["8", "9", "10"] }
-            ];
-        }
+        try { tableSections = JSON.parse(localStorage.getItem('viraasat_table_sections')) || [{ title: "Hut Seating", tables: ["1", "2", "3", "4"] }, { title: "Ground Seating", tables: ["5", "6", "7"] }, { title: "Terrace Seating", tables: ["8", "9", "10"] }]; } 
+        catch(e) { tableSections = [{ title: "Hut Seating", tables: ["1", "2", "3", "4"] }, { title: "Ground Seating", tables: ["5", "6", "7"] }, { title: "Terrace Seating", tables: ["8", "9", "10"] }]; }
 
         let userPermissions;
         try { userPermissions = JSON.parse(localStorage.getItem('viraasat_permissions')) || {}; } catch(e) { userPermissions = {}; }
@@ -862,16 +815,11 @@
         if(dt) dt.innerText = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         
         function getVal(obj, possibleKeys) {
-            if (!obj) return '';
-            let normalizedObj = {};
-            for (let k in obj) { 
-                normalizedObj[k.toLowerCase().replace(/[^a-z0-9]/g, '')] = obj[k]; 
-            }
+            if (!obj) return ''; let normalizedObj = {};
+            for (let k in obj) { normalizedObj[k.toLowerCase().replace(/[^a-z0-9]/g, '')] = obj[k]; }
             for (let k of possibleKeys) {
                 let normK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
-                if (normalizedObj[normK] !== undefined && normalizedObj[normK] !== null && normalizedObj[normK] !== '') { 
-                    return normalizedObj[normK]; 
-                }
+                if (normalizedObj[normK] !== undefined && normalizedObj[normK] !== null && normalizedObj[normK] !== '') { return normalizedObj[normK]; }
             }
             return '';
         }
@@ -879,9 +827,7 @@
         function parseAmount(val) {
             if (val === undefined || val === null || val === '') return 0;
             if (typeof val === 'number') return Math.round(val);
-            let str = String(val).replace(/[^0-9.]/g, ''); 
-            let parsed = parseFloat(str);
-            return isNaN(parsed) ? 0 : Math.round(parsed);
+            let str = String(val).replace(/[^0-9.-]/g, ''); let parsed = parseFloat(str); return isNaN(parsed) ? 0 : Math.round(parsed);
         }
 
         // SMART ITEM PARSER
@@ -891,30 +837,22 @@
             
             try {
                 let arr = typeof sItems === 'string' ? JSON.parse(sItems) : sItems;
-                if (Array.isArray(arr)) {
-                    return arr.map(i => ({ name: i.name || i.itemname || "Item", qty: parseInt(i.qty) || 1, total: parseFloat(i.total || i.price) || 0 }));
-                }
+                if (Array.isArray(arr)) { return arr.map(i => ({ name: i.name || i.itemname || "Item", qty: parseInt(i.qty) || 1, total: parseFloat(i.total || i.price) || 0 })); }
             } catch(e) {}
             
             let cleanStr = String(sItems).replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
             cleanStr.split(',').forEach(str => {
-                str = str.trim();
-                if(!str) return;
+                str = str.trim(); if(!str) return;
                 let match = str.match(/(.+?)\s*\(x(\d+)\)(?:\s*₹?(\d+(?:\.\d+)?))?/);
-                if(match) {
-                    parsedItems.push({ name: match[1].trim(), qty: parseInt(match[2]), total: match[3] ? parseFloat(match[3]) : null });
-                } else {
-                    parsedItems.push({ name: str, qty: 1, total: null });
-                }
+                if(match) { parsedItems.push({ name: match[1].trim(), qty: parseInt(match[2]), total: match[3] ? parseFloat(match[3]) : null }); } 
+                else { parsedItems.push({ name: str, qty: 1, total: null }); }
             });
             return parsedItems;
         }
 
         function getSaleItemsText(sale) {
             let itemsArr = extractItemsList(sale.itemsstring || sale.items_string || sale.items);
-            if(itemsArr.length > 0) {
-                return itemsArr.map(i => `${i.name} (x${i.qty}) ₹${i.total || ''}`).join(', ');
-            }
+            if(itemsArr.length > 0) { return itemsArr.map(i => `${i.name} (x${i.qty}) ₹${i.total || ''}`).join(', '); }
             return sale.itemsstring || sale.items_string || sale.items || '';
         }
 
@@ -956,14 +894,12 @@
 
         // FILTERS
         function setActiveFilterBtn(id) { 
-            document.querySelectorAll('.filter-btn').forEach(btn => btn.style.background = 'transparent'); 
-            document.querySelectorAll('.filter-btn').forEach(btn => btn.style.color = 'var(--text-dark)'); 
-            
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.style.background = 'transparent';
+                btn.style.color = (btn.id === 'btnFilterClear') ? 'var(--danger)' : 'var(--text-dark)';
+            }); 
             let btn = document.getElementById(id);
-            if(btn && id !== 'btnFilterClear') {
-                btn.style.background = 'var(--text-dark)';
-                btn.style.color = '#FFF';
-            }
+            if(btn && id !== 'btnFilterClear') { btn.style.background = 'var(--text-dark)'; btn.style.color = '#FFF'; }
         }
         
         function setTodayFilter() { 
@@ -990,14 +926,51 @@
             renderLiveSales(); 
         }
 
-        // DOWNLOAD TEMPLATE
+        // DOWNLOAD TEMPLATE (Creates Full Excel Sheet)
         function downloadTemplate() {
-            let csv = "Order_Number,Order_Type,Table_Number,Customer_Phone,Subtotal,Discount,Grand_Total,Payment_Method,Payment_Status,Order_Status,Items_String,Created_At\n";
-            csv += "ORD123456,Takeaway,,9999999999,500,0,500,Cash,paid,completed,\"Paneer Tikka (x2) ₹500\",2026-08-17\n";
-            const blob = new Blob(['\ufeff'+csv], {type: 'text/csv;charset=utf-8;'});
-            const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'Viraasat_Import_Template.csv'; a.click();
-            setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+            let wb = XLSX.utils.book_new();
+            
+            let salesData = [["Date", "Time", "Order_ID", "Phone", "Items", "Total_Amount", "Table_Number", "Discount", "Payment_Method", "Order_Status"]];
+            salesData.push(["2026-08-17", "14:30:00", "ORD12345", "9999999999", "Paneer Tikka (x2) ₹500", "500", "Table 1", "0", "Cash", "completed"]);
+            
+            let menuData = [["Item_ID", "Category", "Item_Name", "Price", "is_available"]];
+            menuData.push(["V001", "Starters", "Paneer Tikka", "250", "1"]);
+
+            let staffData = [["Employee ID", "Name", "Mobile", "Role", "Monthly Salary", "Join Date", "is_active"]];
+            staffData.push(["EMP01", "Raju", "8888888888", "Waiter", "15000", "2026-01-01", "1"]);
+
+            let stockData = [["Item_Name", "Current_Stock"]];
+            stockData.push(["Water Bottle", "100"]);
+
+            let expData = [["Date", "Time", "Amount", "Category", "Description"]];
+            expData.push(["2026-08-17", "10:00:00", "500", "Raw Material", "Vegetables"]);
+
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(menuData), "Menu");
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(salesData), "Sales");
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(staffData), "Staff");
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(stockData), "Stock");
+            XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(expData), "Expenses");
+            
+            XLSX.writeFile(wb, "Viraasat_Master_Template.xlsx");
         }
+
+        window.showCustomAlert = function(message) {
+            haptic();
+            let msgEl = document.getElementById('customAlertMessage'); if(msgEl) msgEl.innerText = message;
+            let btnEl = document.getElementById('customAlertButtons'); if(btnEl) btnEl.innerHTML = `<button class="btn" onclick="closeModal('customAlertModal')">OK</button>`;
+            openModal('customAlertModal');
+        };
+
+        window.showCustomConfirm = function(message, callbackName, cancelCallbackName) {
+            haptic();
+            let btnCancel = cancelCallbackName ? `closeModal('customAlertModal'); ${cancelCallbackName}();` : "closeModal('customAlertModal');";
+            let btnConfirm = callbackName ? `closeModal('customAlertModal'); ${callbackName}();` : "closeModal('customAlertModal');";
+            let msgEl = document.getElementById('customAlertMessage'); if(msgEl) msgEl.innerText = message;
+            let btnEl = document.getElementById('customAlertButtons'); if(btnEl) btnEl.innerHTML = `<button class="btn btn-outline" onclick="${btnCancel}" style="flex:1;">Cancel</button><button class="btn" onclick="${btnConfirm}" style="flex:1; background:var(--danger); color:#FFF; border:none;">Confirm</button>`;
+            openModal('customAlertModal');
+        };
+
+        function enforceBackTrap() { try { history.pushState(null, null, location.href); } catch(e) {} }
 
         // MAIN INITIALIZATION (Fail-safe)
         function initApp() {
@@ -1029,6 +1002,21 @@
             } 
         }
         setTimeout(hideSplashScreen, 3000); 
+
+        window.onpopstate = function () {
+            enforceBackTrap();
+            let modals = ['customAlertModal', 'paymentModal', 'conflictModal', 'orderDetailsModal', 'addTableModal', 'salaryActionModal', 'imagePreviewModal'];
+            let modalClosed = false;
+            for(let id of modals) { let m = document.getElementById(id); if(m && m.style.display === 'flex') { m.style.display = 'none'; modalClosed = true; } }
+            if(modalClosed) return;
+
+            let bv = document.getElementById('billingView');
+            if (bv && bv.style.display === 'block') { goBackToTables(true); return; }
+
+            let activeTab = document.querySelector('.tab-content.active');
+            let fItem = document.querySelector('.bottom-nav .nav-item:first-child');
+            if (activeTab && activeTab.id !== 'tableDashboard' && fItem) { switchMainTab('tableDashboard', fItem, true); return; }
+        };
 
         // LOGIN
         let lp = document.getElementById('loginPass');
@@ -1073,11 +1061,11 @@
         }
 
         // ==========================================
-        // FETCH DATA (D1 API - No ScriptURL)
+        // FETCH DATA (Universal Mapped)
         // ==========================================
         async function fetchData() {
             let loader = document.getElementById('loader');
-            if(loader) loader.style.display = 'flex';
+            if(loader) { loader.style.display = 'flex'; document.getElementById('loaderText').innerText = "Syncing..."; }
             try {
                 const [menuRes, stockRes, tablesRes, ordersRes, expRes, staffRes] = await Promise.all([
                     fetch(`${API_BASE}/menu`).then(r => r.json()),
@@ -1088,47 +1076,87 @@
                     fetch(`${API_BASE}/staff`).then(r => r.json())
                 ]);
 
-                menuData = menuRes.items || [];
-                stockData = {}; (stockRes.stock || []).forEach(s => { stockData[s.name] = s.quantity; });
-                runningTables = {}; (tablesRes.tables || []).forEach(t => { if (t.status === 'occupied') { runningTables[`Table ${t.table_number}`] = []; } });
+                // Map Menu
+                menuData = (menuRes.items || menuRes.menu || []).map(m => ({
+                    name: m.name || m.Item_Name || m.itemname, price: m.price || m.Price, category: m.category || m.Category
+                }));
 
-                salesHistory = (ordersRes.orders || []).filter(o => o.order_status !== 'deleted').map(o => {
-                    let d = new Date(o.created_at);
+                // Map Stock
+                stockData = {}; 
+                (stockRes.stock || []).forEach(s => { stockData[s.name || s.Item_Name] = s.quantity || s.Current_Stock; });
+                
+                // Map Tables
+                runningTables = {}; 
+                (tablesRes.tables || []).forEach(t => { if (t.status === 'occupied') { runningTables[`Table ${t.table_number || t.Table_Number}`] = []; } });
+
+                // Map Orders (Safe Date Mappings)
+                salesHistory = (ordersRes.orders || ordersRes.sales || []).filter(o => o.order_status !== 'deleted' && o.status !== 'deleted').map(o => {
+                    let dStr = o.created_at || o.Date || o.isodate || new Date().toISOString();
+                    let d;
+                    if(String(dStr).includes('/')) {
+                        let parts = String(dStr).split(' ')[0].split('/');
+                        if(parts.length===3) { if(parts[2].length===4) d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`); else d = new Date(dStr); } else d = new Date(dStr);
+                    } else { d = new Date(dStr); }
+                    if(isNaN(d.getTime())) d = new Date();
+
                     return {
-                        id: o.id, orderid: o.order_number, table: o.table_number ? `Table ${o.table_number}` : o.order_type,
+                        id: o.id || o.Order_ID, 
+                        orderid: o.order_number || o.Order_ID || o.id, 
+                        table: o.table_number ? `Table ${o.table_number}` : (o.order_type || o.Table_Number || 'Table'),
                         date: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,
-                        isodate: o.created_at, time: d.toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit', hour12: true}),
-                        totalamount: o.grand_total, total: o.grand_total, amount: o.grand_total,
-                        items: o.items_string || o.items, itemsstring: o.items_string || o.items, discount: o.discount, payment_method: o.payment_method, status: o.order_status
+                        isodate: dStr, 
+                        time: o.time || o.Time || d.toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit', hour12: true}),
+                        totalamount: o.grand_total || o.Total_Amount || o.amount || o.total, 
+                        total: o.grand_total || o.Total_Amount || o.amount || o.total,
+                        items: o.items_string || o.items || o.Items, 
+                        itemsstring: o.items_string || o.items || o.Items, 
+                        discount: o.discount || o.Discount || 0, 
+                        payment_method: o.payment_method || o.Mode || "Cash", 
+                        status: o.order_status || o.status || "completed"
                     };
                 });
 
-                expenseHistory = (expRes.expenses || []).map(e => ({
-                    id: e.id, date: e.expense_date || e.created_at, isodate: e.expense_date || e.created_at,
-                    category: e.category, amount: e.amount, description: e.description, image: e.receipt_image
+                // Map Expenses
+                expenseHistory = (expRes.expenses || []).map(e => {
+                    let dStr = e.expense_date || e.created_at || e.Date;
+                    return {
+                        id: e.id, date: dStr, isodate: dStr,
+                        category: e.category || e.Category, amount: e.amount || e.Amount, 
+                        description: e.description || e.Description, image: e.receipt_image
+                    };
+                });
+
+                // Map Staff
+                staffData = (staffRes.staff || []).map(s => ({
+                    id: s.id || s['Employee ID'] || s.empid, name: s.name || s.Name,
+                    mobile: s.mobile || s.Mobile, role: s.role || s.Role,
+                    salary: s.salary || s['Monthly Salary'], join_date: s.join_date || s['Join Date'],
+                    is_active: s.is_active !== undefined ? s.is_active : 1
                 }));
 
-                staffData = staffRes.staff || [];
-
-                populateDropdown(); populateStaffDropdown(); renderEmployeeList(); renderTableGrid(); renderStockDashboard(); checkStockDisplay(); renderLiveSales(); generateTrends(); renderExpensesListUI();
+                populateDropdown(); populateStaffDropdown(); renderEmployeeList(); renderTableGrid(); renderStockDashboard(); checkStockDisplay(); renderLiveSales(); generateOverview(); renderExpensesListUI();
                 if(window.isUserAdmin) fetchApprovals();
                 
             } catch(err) { 
                 console.error("Fetch Error:", err); 
+            } finally {
+                hideSplashScreen();
+                if(loader) loader.style.display = 'none';
             }
-            hideSplashScreen();
-            if(loader) loader.style.display = 'none';
         }
 
         // =====================================
         // SMART OVERVIEW & ANALYTICS
         // =====================================
-        function generateTrends() {
+        function generateOverview() {
             try {
                 let totalSalesAmount = 0; let totalExpensesAmount = 0; let totalSalaryPaid = 0;
-                let tDate = new Date(); let todayIso = `${tDate.getFullYear()}-${String(tDate.getMonth() + 1).padStart(2, '0')}-${String(tDate.getDate()).padStart(2, '0')}`; let todayGb = tDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-                let revenueToday = 0; let ordersToday = 0; let expenseCategories = {}; let staffExpenseMap = {};
+                let revenueToday = 0; let ordersToday = 0; let staffExpenseMap = {};
                 let itemStats = {}; let catStats = {};
+                
+                let tDate = new Date();
+                let todayIso = `${tDate.getFullYear()}-${String(tDate.getMonth() + 1).padStart(2, '0')}-${String(tDate.getDate()).padStart(2, '0')}`;
+                
                 rawChartSalesData = {}; rawChartExpenseData = {};
 
                 salesHistory.forEach(sale => { 
@@ -1152,7 +1180,8 @@
                         if(m) { 
                             let name = m[1].trim(); let qty = parseInt(m[2]); let rev = m[3] ? parseInt(m[3]) : 0;
                             if(rev === 0) { let mi = menuData.find(x=>getVal(x,['itemname','name']).toLowerCase()===name.toLowerCase()); if(mi) rev = parseAmount(getVal(mi,['price']))*qty; }
-                            
+                            rev = isNaN(rev) ? 0 : rev;
+
                             if(!itemStats[name]) itemStats[name] = {qty:0, revenue:0, category: 'Uncategorized'};
                             itemStats[name].qty += qty; itemStats[name].revenue += rev;
 
@@ -1173,17 +1202,20 @@
                         let dateStrKey = sDate.split("T")[0].split(" ")[0]; let parsedDate = new Date(sDate);
                         if (!isNaN(parsedDate.getTime())) { dateStrKey = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')}`; }
                         rawChartExpenseData[dateStrKey] = (rawChartExpenseData[dateStrKey] || 0) + sAmount; 
-                        let eCat = getVal(exp, ['category']) || 'Other'; let eDesc = getVal(exp, ['description', 'note']) || '';
-                        if(eCat === 'Staff Salary' || eCat === 'Payroll') { totalSalaryPaid += sAmount; let match = eDesc.match(/\[(.*?)\] (.*?) -/); let staffName = match ? match[2] : eDesc; staffExpenseMap[staffName] = (staffExpenseMap[staffName] || 0) + sAmount; } else { expenseCategories[eCat] = (expenseCategories[eCat] || 0) + sAmount; }
                     }
+                    let eCat = getVal(exp, ['category']) || 'Other'; let eDesc = getVal(exp, ['description', 'note']) || '';
+                    if(eCat === 'Staff Salary' || eCat === 'Payroll') { totalSalaryPaid += sAmount; }
                 });
                 
-                let netProfit = totalSalesAmount - totalExpensesAmount;
+                document.getElementById('homeTodaySale').innerText = `₹${revenueToday.toLocaleString('en-IN')}`; 
+                document.getElementById('homeAvgOrder').innerText = `₹${ordersToday > 0 ? Math.floor(revenueToday / ordersToday) : 0}`; 
+                document.getElementById('homeOverallSale').innerText = `₹${totalSalesAmount.toLocaleString('en-IN')}`; 
+
+                let npEl = document.getElementById('kpiNetProfit'); if(npEl) npEl.innerText = `₹ ${(totalSalesAmount - totalExpensesAmount).toLocaleString('en-IN')}`; 
                 let tsEl = document.getElementById('kpiTotalSales'); if(tsEl) tsEl.innerText = `₹ ${totalSalesAmount.toLocaleString('en-IN')}`;
                 let teEl = document.getElementById('kpiTotalExpenses'); if(teEl) teEl.innerText = `₹ ${totalExpensesAmount.toLocaleString('en-IN')}`;
-                let npEl = document.getElementById('kpiNetProfit'); if(npEl) npEl.innerText = `₹ ${netProfit.toLocaleString('en-IN')}`;
-                let salEl = document.getElementById('kpiTotalSalary'); if(salEl) salEl.innerText = `₹ ${totalSalaryPaid.toLocaleString('en-IN')}`;
-                let stfEl = document.getElementById('kpiTotalStaff'); if(stfEl) stfEl.innerText = staffData.filter(s=>s.is_active!==0).length;
+                let saEl = document.getElementById('kpiTotalSalary'); if(saEl) saEl.innerText = `₹ ${totalSalaryPaid.toLocaleString('en-IN')}`;
+                let sfEl = document.getElementById('kpiTotalStaff'); if(sfEl) sfEl.innerText = staffData.filter(s=>s.is_active!==0).length;
 
                 // Donut Chart
                 const dCtx = document.getElementById('categoryDonut');
@@ -1217,7 +1249,7 @@
                             ${badge}
                         </div>
                         <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:12px;">
-                            <span style="font-size:0.8rem; color:var(--text-muted); font-weight:500;">Sold: <b style="color:var(--text-dark); font-size:0.95rem;">${data.qty}</b></span>
+                            <span style="font-size:0.8rem; color:var(--text-muted); font-weight:500;">Sold: <b style="color:var(--text-dark); font-size:0.95rem;">${data.qty}</b> units</span>
                             <span style="font-size:1.1rem; font-weight:700; color:var(--text-dark);">₹${data.revenue.toLocaleString('en-IN')}</span>
                         </div>
                     </div>`;
@@ -1237,15 +1269,8 @@
                 });
                 let saList = document.getElementById('staffAdvanceList'); if(saList) saList.innerHTML = advanceHtml || "<span style='color:var(--text-muted); font-size:0.85rem;'>No staff payments recorded.</span>";
 
-                let avgToday = ordersToday > 0 ? Math.floor(revenueToday / ordersToday) : 0;
-                let hasSalesAccess = true; if (typeof window.isUserAdmin !== 'undefined') { hasSalesAccess = window.isUserAdmin || (window.userPerms && window.userPerms.orders); }
-
-                let ht = document.getElementById('homeTodaySale'); if(ht) { ht.innerText = hasSalesAccess ? `₹${revenueToday.toLocaleString('en-IN')}` : "No Access"; }
-                let ha = document.getElementById('homeAvgOrder'); if(ha) { ha.innerText = hasSalesAccess ? `₹${avgToday.toLocaleString('en-IN')}` : "No Access"; }
-                let ho = document.getElementById('homeOverallSale'); if(ho) { ho.innerText = hasSalesAccess ? `₹${totalSalesAmount.toLocaleString('en-IN')}` : "No Access"; }
-                
                 renderPNLChart('daily');
-            } catch(e) { console.error("Trends Error", e); }
+            } catch(e) { console.error("Overview Error", e); }
         }
 
         function renderPNLChart(viewType) {
@@ -1480,7 +1505,7 @@
         }
 
         // =====================================
-        // LIVE SALES & FILTERS FIXED (DIRECT DATE STRING MATCHING)
+        // LIVE SALES & FILTERS FIXED (DIRECT DATE MATCHING)
         // =====================================
         function renderLiveSales() {
             const salesGrid = document.getElementById('salesGrid'); if(salesGrid) salesGrid.innerHTML = ""; 
@@ -1909,13 +1934,28 @@
             haptic();
             let fileInput = document.getElementById('fullImportInput'); 
             if(!fileInput.files.length) { showCustomAlert("Select full Excel workbook."); return; }
-            let file = fileInput.files[0]; let data = await file.arrayBuffer(); let wb = XLSX.read(data, { type: 'array' });
-            let getSheet = (name) => wb.Sheets[name] ? XLSX.utils.sheet_to_json(wb.Sheets[name], {defval:'', raw:false}) : [];
-            let payload = { sales: getSheet('Sales'), menu: getSheet('Menu').map(m => ({ Name: m.Item_Name || m.Name, Category: m.Category, Price: m.Price, Active: 1 })), staff: getSheet('Staff').map(s => ({ Name: s.Name, Mobile: s.Mobile, Role: s.Role, Monthly_Salary: s['Monthly Salary']||s.Monthly_Salary, Date_of_Joining: s['Join Date']||s.Date_of_Joining })), stock: getSheet('Stock').map(st => ({ Name: st.Item_Name || st.Name, Quantity: st.Current_Stock || st.Quantity })), expenses: getSheet('Expenses') };
-            fetch(`${API_BASE}/import/full`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) }).then(r=>r.json()).then(res => { 
-                logAction(`Executed Master Import`, localStorage.getItem('viraasat_user'));
-                showCustomAlert("Import Complete!"); fetchData(); 
-            }).catch(e=>console.log(e));
+            
+            let loader = document.getElementById('loader');
+            if(loader) { loader.style.display = 'flex'; document.getElementById('loaderText').innerText = "Importing Database..."; }
+            
+            try {
+                let file = fileInput.files[0]; let data = await file.arrayBuffer(); let wb = XLSX.read(data, { type: 'array' });
+                let getSheet = (name) => wb.Sheets[name] ? XLSX.utils.sheet_to_json(wb.Sheets[name], {defval:'', raw:false}) : [];
+                
+                let menu = getSheet('Menu'); let stock = getSheet('Stock'); let staff = getSheet('Staff'); let expenses = getSheet('Expenses');
+                
+                for(let m of menu) { if(m.Item_Name) await fetch(`${API_BASE}/menu`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ category: m.Category, name: m.Item_Name, price: m.Price }) }); }
+                for(let s of stock) { if(s.Item_Name) await fetch(`${API_BASE}/stock`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name: s.Item_Name, quantity: s.Current_Stock }) }); }
+                for(let st of staff) { if(st.Name) await fetch(`${API_BASE}/staff`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name: st.Name, mobile: st.Mobile, role: st.Role, salary: st['Monthly Salary'], join_date: st['Join Date'] }) }); }
+                for(let e of expenses) { if(e.Amount) await fetch(`${API_BASE}/expenses`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ category: e.Category, amount: e.Amount, description: e.Description, expense_date: e.Date }) }); }
+                
+                logAction(`Executed Master Excel Import`, localStorage.getItem('viraasat_user'));
+                showCustomAlert("Database Import Complete! Sales must be synced manually."); fetchData(); 
+            } catch(e) {
+                console.error(e); showCustomAlert("Import Error: " + e.message);
+            } finally {
+                if(loader) loader.style.display = 'none'; document.getElementById('loaderText').innerText = "Syncing...";
+            }
         }
 
     </script>
