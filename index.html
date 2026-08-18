@@ -14,8 +14,8 @@
     <link rel="icon" type="image/png" href="icon.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script async src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script async src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <style>
         :root {
@@ -824,7 +824,7 @@
         const D1_API_BASE = '/api';
         const API_TIMEOUT_MS = 10000;
         
-const APP_VERSION = "D1-ENTERPRISE-FIX-6.0"; 
+const APP_VERSION = "D1-ENTERPRISE-FIX-6.1"; 
         
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
@@ -949,36 +949,54 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-6.0";
             try{ history.pushState({guard:true}, '', location.href); }catch(e){}
         }
 
-        window.onload = function() { 
-            let savedMobile = localStorage.getItem('viraasat_user'); 
-            let savedPass = localStorage.getItem('viraasat_pass');
-            let savedVer = localStorage.getItem('app_version');
+        // Startup must NOT depend on window.onload: external CDN assets can delay it indefinitely.
+        let appStarted = false;
+        function startApp() {
+            if (appStarted) return;
+            appStarted = true;
+            try {
+                let savedMobile = localStorage.getItem('viraasat_user');
+                let savedPass = localStorage.getItem('viraasat_pass');
+                let savedVer = localStorage.getItem('app_version');
 
-            if(savedVer !== APP_VERSION) {
-                localStorage.clear();
-                if(savedMobile && savedPass) { 
-                    localStorage.setItem('viraasat_user', savedMobile); 
-                    localStorage.setItem('viraasat_pass', savedPass); 
+                if(savedVer !== APP_VERSION) {
+                    localStorage.clear();
+                    if(savedMobile && savedPass) {
+                        localStorage.setItem('viraasat_user', savedMobile);
+                        localStorage.setItem('viraasat_pass', savedPass);
+                    }
+                    localStorage.setItem('app_version', APP_VERSION);
+                    // Do not hard-reload during startup. Continue with the current document.
+                    savedMobile = localStorage.getItem('viraasat_user');
+                    savedPass = localStorage.getItem('viraasat_pass');
                 }
-                localStorage.setItem('app_version', APP_VERSION); 
-                window.location.reload(true); 
-                return;
-            }
 
-            if(savedMobile && savedPass) {
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('appHeader').style.display = 'flex';
-                document.getElementById('appMain').style.display = 'block';
-                document.getElementById('appBottomNav').style.display = 'flex';
-                applyAdminRights(savedMobile); 
-                fetchData(); 
-                switchMainTab(window.isUserAdmin ? 'premiumDashboard' : 'tableDashboard', document.getElementById(window.isUserAdmin ? 'navDashboard' : 'navTable'), true);
-                enforceBackTrap(); enforceBackTrap(); hardBlockBack(); 
-            } else { 
-                document.getElementById('loginScreen').style.display = 'flex'; 
-                hideSplashScreen(); 
+                if(savedMobile && savedPass) {
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('appHeader').style.display = 'flex';
+                    document.getElementById('appMain').style.display = 'block';
+                    document.getElementById('appBottomNav').style.display = 'flex';
+                    applyAdminRights(savedMobile);
+                    switchMainTab(window.isUserAdmin ? 'premiumDashboard' : 'tableDashboard', document.getElementById(window.isUserAdmin ? 'navDashboard' : 'navTable'), true);
+                    enforceBackTrap(); hardBlockBack();
+                    // Show the actual POS immediately; D1 sync runs in the background.
+                    hideSplashScreen();
+                    fetchData();
+                } else {
+                    document.getElementById('loginScreen').style.display = 'flex';
+                    hideSplashScreen();
+                }
+            } catch (e) {
+                console.error('POS startup error', e);
+                document.getElementById('loginScreen').style.display = 'flex';
+                hideSplashScreen();
             }
-        };
+        }
+
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startApp, { once: true });
+        else startApp();
+        // Absolute safety net: never leave the splash screen covering the POS.
+        setTimeout(() => { if (!appStarted) startApp(); hideSplashScreen(); }, 2500);
 
         window.onpopstate = function () {
             enforceBackTrap();
