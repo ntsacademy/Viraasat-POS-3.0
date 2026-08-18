@@ -33,9 +33,9 @@
             --danger: #D03B3B;
             --success: #10B981;
             
-            --occ-bg: #FFF5F7;
-            --occ-border: #FF748D;
-            --occ-gradient: linear-gradient(135deg, #FFB183 0%, #FF5F8E 100%);
+            --occ-bg: #FFF9E8;
+            --occ-border: #D6B46A;
+            --occ-gradient: linear-gradient(135deg, #F4C95D 0%, #D6B46A 100%);
             
             --shadow-soft: 0 4px 18px rgba(0,0,0,0.03); 
             --border-radius: 14px;      
@@ -203,13 +203,13 @@
         .premium-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:none;position:sticky;top:0;z-index:30;background:var(--bg-color)}
         .premium-tabs::-webkit-scrollbar{display:none}
         .premium-tab{border:1px solid var(--border);background:var(--surface);color:var(--text-muted);padding:9px 13px;border-radius:999px;white-space:nowrap;font-family:inherit;font-size:.74rem;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.025)}
-        .premium-tab.active{background:#D63C79;color:#fff;border-color:#D63C79;box-shadow:0 7px 18px rgba(214,60,121,.22)}
+        .premium-tab.active{background:#1A1A1A;color:#fff;border-color:#1A1A1A;box-shadow:0 7px 18px rgba(214,60,121,.22)}
         .premium-panel{display:none}.premium-panel.active{display:block}
         .premium-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
         .pkpi{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:var(--shadow-soft);min-width:0}
         .pkpi .label{font-size:.69rem;color:var(--text-muted);font-weight:800;text-transform:uppercase;letter-spacing:.6px}
         .pkpi .value{font-size:1.35rem;font-weight:900;color:var(--text-dark);margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .pkpi .delta{font-size:.68rem;font-weight:700;margin-top:5px;color:#D63C79}
+        .pkpi .delta{font-size:.68rem;font-weight:700;margin-top:5px;color:#1A1A1A}
         .premium-grid-2{display:grid;grid-template-columns:1.4fr .8fr;gap:16px}
         .premium-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
         .premium-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:var(--shadow-soft);margin-bottom:16px}
@@ -219,7 +219,7 @@
         .premium-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
         .premium-toolbar input,.premium-toolbar select{height:42px;min-width:145px;flex:1}
         .premium-btn{height:42px;border:0;border-radius:10px;padding:0 14px;background:#211A17;color:#fff;font-family:inherit;font-weight:800;font-size:.75rem;cursor:pointer}
-        .premium-btn.alt{background:#F8E8F0;color:#B92E67;border:1px solid #EEC6D8}
+        .premium-btn.alt{background:#F4EFEA;color:#1A1A1A;border:1px solid #EEC6D8}
         .premium-btn.light{background:#fff;color:#211A17;border:1px solid var(--border)}
         .premium-btn.danger{background:#FFF0F2;color:#C92E48;border:1px solid #F2C5CD}
         .premium-table-wrap{overflow:auto;border:1px solid var(--border);border-radius:14px}
@@ -228,9 +228,9 @@
         .premium-table td{padding:11px;border-top:1px solid #F1ECE7;font-size:.76rem;color:var(--text-dark);vertical-align:top}
         .premium-table tr:hover td{background:#FFFBF8}
         .pill{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font-size:.64rem;font-weight:800}
-        .pill.green{background:#E8F7EF;color:#0B8F55}.pill.pink{background:#FCE9F1;color:#B92E67}.pill.gold{background:#FFF4DF;color:#9A6500}.pill.gray{background:#F2F0EE;color:#6B625D}.pill.red{background:#FFF0F2;color:#C92E48}
+        .pill.green{background:#E8F7EF;color:#0B8F55}.pill.pink{background:#F4EFEA;color:#1A1A1A}.pill.gold{background:#FFF4DF;color:#9A6500}.pill.gray{background:#F2F0EE;color:#6B625D}.pill.red{background:#FFF0F2;color:#C92E48}
         .item-rank{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #F1ECE7}
-        .item-rank:last-child{border-bottom:0}.item-rank-no{width:30px;height:30px;border-radius:9px;background:#F8E8F0;color:#B92E67;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.75rem}
+        .item-rank:last-child{border-bottom:0}.item-rank-no{width:30px;height:30px;border-radius:9px;background:#F4EFEA;color:#1A1A1A;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.75rem}
         .item-rank-info{flex:1;min-width:0}.item-rank-name{font-weight:800;font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.item-rank-sub{font-size:.66rem;color:var(--text-muted);margin-top:3px}
         .item-rank-val{font-weight:900;font-size:.78rem}
         .stock-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
@@ -247,16 +247,16 @@
         .upload-drop{border:1.5px dashed #D9C6B9;border-radius:16px;padding:22px;text-align:center;background:#FFFCFA}
         .upload-drop strong{display:block;font-size:.85rem}.upload-drop span{display:block;color:var(--text-muted);font-size:.68rem;margin:5px 0 12px}
         .premium-empty{text-align:center;padding:28px 12px;color:var(--text-muted);font-size:.78rem}
-        .mini-bar{height:8px;border-radius:99px;background:#F0ECE9;overflow:hidden;margin-top:7px}.mini-bar>i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#D63C79,#F2A6BE)}
+        .mini-bar{height:8px;border-radius:99px;background:#F0ECE9;overflow:hidden;margin-top:7px}.mini-bar>i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#1A1A1A,#F2A6BE)}
         @media(max-width:800px){.premium-kpis{grid-template-columns:repeat(2,1fr)}.premium-grid-2,.premium-grid-3{grid-template-columns:1fr}.stock-grid{grid-template-columns:repeat(2,1fr)}.staff-grid{grid-template-columns:1fr 1fr}.premium-hero-row{align-items:flex-start}.premium-title{font-size:1.3rem}}
         @media(max-width:520px){.staff-grid{grid-template-columns:1fr}.premium-kpis{gap:8px}.pkpi{padding:13px}.pkpi .value{font-size:1.1rem}.premium-card{padding:14px}}
 
 
         /* ===== FINAL MOBILE ADMIN VIEW FIXES ===== */
-        html,body{width:100%;max-width:100%;overflow-x:hidden}
-        body{min-height:100dvh}
-        main{width:100%;max-width:100%;overflow-x:hidden}
-        .tab-content{width:100%;max-width:100%;min-width:0}
+        html,body{width:100%;max-width:600px!important;overflow-x:hidden;margin-left:auto;margin-right:auto}
+        body{min-height:100dvh;width:100%;max-width:600px!important;margin:0 auto}
+        main{width:100%;max-width:600px;overflow-x:hidden}
+        .tab-content{width:100%;max-width:600px;min-width:0}
         .premium-shell,.premium-panel,.premium-card{min-width:0;max-width:100%}
         .premium-hero{width:100%;box-sizing:border-box}
         .premium-hero-row{min-width:0}
@@ -283,7 +283,7 @@
         .admin-insight .ai-label{font-size:.62rem;color:var(--text-muted);font-weight:800;text-transform:uppercase;letter-spacing:.5px}
         .admin-insight .ai-value{font-size:1.08rem;font-weight:900;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .admin-insight .ai-note{font-size:.62rem;color:var(--text-muted);margin-top:3px}
-        .admin-insight.pink{background:#FFF7FA;border-color:#F3C9D8}.admin-insight.mint{background:#F2FBF7;border-color:#BFE8D7}.admin-insight.peach{background:#FFF7EF;border-color:#F0D2B7}.admin-insight.purple{background:#F7F3FF;border-color:#D9C8F5}
+        .admin-insight.pink{background:#FBF9F5;border-color:#D9D1C7}.admin-insight.mint{background:#F2FBF7;border-color:#BFE8D7}.admin-insight.peach{background:#FFF7EF;border-color:#F0D2B7}.admin-insight.purple{background:#F7F3FF;border-color:#D9C8F5}
         .admin-section-title{font-size:.72rem;font-weight:900;text-transform:uppercase;letter-spacing:.8px;color:var(--text-muted);margin:18px 0 10px}
         @media(max-width:520px){
           .tab-content{padding-left:14px;padding-right:14px}
@@ -317,7 +317,7 @@
         .admin-compact-title span{font-family:inherit;font-weight:700;color:var(--text-muted)}
         .premium-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;overflow:visible;position:static;background:transparent;padding:0}
         .premium-tab{width:100%;min-width:0;padding:8px 6px;font-size:.68rem;overflow:hidden;text-overflow:ellipsis}
-        .premium-table-wrap{overflow:hidden}
+        .premium-table-wrap{overflow:hidden;width:100%;max-width:100%}
         .premium-table{min-width:0;width:100%;table-layout:fixed}
         .premium-table th,.premium-table td{padding:7px 5px;font-size:.60rem;white-space:normal;word-break:break-word;overflow-wrap:anywhere}
         .premium-card{margin-bottom:10px}
@@ -355,6 +355,47 @@
           .premium-table th,.premium-table td{font-size:.49rem;padding:5px 2px}
           .nav-item{font-size:.49rem}.nav-item svg{width:17px;height:17px}.nav-item.active .icon-container{width:38px;height:23px}
         }
+        /* ===== FINAL MOBILE POS + HISTORICAL BILL FIX ===== */
+        .mobile-sale-list{display:none}
+        .mobile-sale-card{border:1px solid var(--border);border-radius:12px;background:#fff;padding:10px;margin-bottom:8px;box-shadow:var(--shadow-soft)}
+        .mobile-sale-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+        .mobile-sale-id{font-weight:900;font-size:.72rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .mobile-sale-total{font-weight:900;font-size:.82rem;white-space:nowrap}
+        .mobile-sale-meta{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin-top:7px;font-size:.61rem;color:var(--text-muted)}
+        .mobile-sale-items{margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:.64rem;line-height:1.45}
+        .mobile-sale-item{display:flex;justify-content:space-between;gap:8px;padding:3px 0}
+        .mobile-sale-item span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis}
+        .historical-items-box{background:#FFFCFA;border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:14px}
+        .historical-item-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #F1ECE7;font-size:.78rem}
+        .historical-item-row:last-child{border-bottom:0}
+        .historical-item-name{min-width:0;font-weight:700;overflow:hidden;text-overflow:ellipsis}
+        .historical-item-qty{color:var(--text-muted);white-space:nowrap}
+        .historical-item-total{font-weight:900;white-space:nowrap}
+        .historical-items-title{font-size:.68rem;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin-bottom:5px}
+        .top-selling-list .item-rank-no{background:#F4EFEA;color:#1A1A1A}
+        .premium-tab.active{background:#1A1A1A!important;border-color:#1A1A1A!important;color:#fff!important;box-shadow:0 5px 12px rgba(0,0,0,.12)!important}
+        .premium-btn.alt{background:#F4EFEA!important;color:#1A1A1A!important;border-color:#D9D1C7!important}
+        .pill.pink{background:#F4EFEA!important;color:#1A1A1A!important}
+        .admin-insight.pink{background:#FBF9F5!important;border-color:#D9D1C7!important}
+        @media(max-width:600px){
+          body{max-width:600px!important}
+          .premium-shell{width:100%;padding:0 10px}
+          .premium-hero{display:none!important}
+          .admin-compact-head{margin-top:2px}
+          .premium-tabs{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+          .premium-tab{font-size:.61rem;padding:7px 3px}
+          .premium-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+          .pkpi{padding:9px}.pkpi .value{font-size:.92rem}
+          .admin-insight-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+          .premium-grid-2,.premium-grid-3{grid-template-columns:1fr!important}
+          .premium-card{padding:10px}
+          .premium-table-wrap{display:none!important}
+          .mobile-sale-list{display:block}
+          #premiumPanel-sales .premium-toolbar input,#premiumPanel-sales .premium-toolbar select,#premiumPanel-sales .premium-toolbar .premium-btn{width:100%}
+          .historical-items-box{font-size:.75rem}
+        }
+        @media(min-width:601px){.mobile-sale-list{display:none!important}}
+
     </style>
 </head>
 <body>
@@ -1293,21 +1334,26 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
             const tn=o.table_number ?? o.tableNumber ?? '';
             const ot=o.order_type||o.orderType||'';
             const total=Number(o.grand_total ?? o.grandTotal ?? o.total ?? o.amount ?? 0)||0;
+            const rawString=o.items_string??o.itemsString??'';
+            const rawItems=o.items??o.Items??'';
             return {
                 id:o.id,
+                order_number:o.order_number||o.orderNumber||o.id||'',
                 orderid:o.order_number||o.orderNumber||o.id||'',
                 tablenumber:tn!==''&&tn!=null?`Table ${tn}`:(ot||'Order'),
                 table:tn!==''&&tn!=null?`Table ${tn}`:(ot||'Order'),
+                table_number:tn,
                 order_type:ot,
                 customerphone:o.customer_phone||o.customerPhone||o.phone||'',
                 phone:o.customer_phone||o.customerPhone||o.phone||'',
-                date:created,isodate:created,time:created,
-                totalamount:total,total:total,amount:total,
+                date:created,isodate:created,time:created,created_at:created,
+                grand_total:total,totalamount:total,total:total,amount:total,
                 discount:Number(o.discount||0)||0,
                 payment_method:o.payment_method||o.paymentMethod||'',
                 payment_status:o.payment_status||o.paymentStatus||'',
                 order_status:o.order_status||o.orderStatus||'',
-                items:o.items_string||o.itemsString||o.items||''
+                items_string:rawString,
+                items:rawString || rawItems || ''
             };
         }
 
@@ -1361,9 +1407,9 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
 
                 const summary=dash.summary||{};
                 const tableSummary=dash.tables||{};
-                const overall = salesHistory.reduce((a,s)=>a+parseAmount(getVal(s,['totalamount','total','amount'])),0);
+                const overall = salesHistory.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);
                 const todayKey=localISODate(new Date());
-                const todaySales=salesHistory.filter(s=>saleDateKey(s)===todayKey).reduce((a,s)=>a+parseAmount(getVal(s,['totalamount','total','amount'])),0);
+                const todaySales=salesHistory.filter(s=>saleDateKey(s)===todayKey).reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);
                 const todayOrders=salesHistory.filter(s=>saleDateKey(s)===todayKey).length;
 
                 document.getElementById('homeTodaySale').innerText=`₹${Math.round(Number(summary.today_sales ?? todaySales) || 0).toLocaleString('en-IN')}`;
@@ -1437,9 +1483,9 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
 
         function mergeSales(legacySales,d1Sales){
             const out=[...legacySales];
-            const ids=new Set(out.map(s=>String(getVal(s,['orderid','id'])).trim()).filter(Boolean));
+            const ids=new Set(out.map(s=>String(getVal(s,['orderid','order_number','id'])).trim()).filter(Boolean));
             d1Sales.forEach(s=>{
-                const id=String(getVal(s,['orderid','id'])).trim();
+                const id=String(getVal(s,['orderid','order_number','id'])).trim();
                 if(!id || !ids.has(id)) out.push(s);
             });
             out.sort((a,b)=>{
@@ -1517,10 +1563,10 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
             const panel=document.getElementById('premiumPanel-overview'); if(!panel)return;
             const today=saleDateKey({date:new Date().toISOString().slice(0,10)});
             const todaySales=salesHistory.filter(s=>saleDateKey(s)===today);
-            const todayAmount=todaySales.reduce((a,s)=>a+parseAmount(getVal(s,['totalamount','total','amount'])),0);
-            const lifetime=salesHistory.reduce((a,s)=>a+parseAmount(getVal(s,['totalamount','total','amount'])),0);
+            const todayAmount=todaySales.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);
+            const lifetime=salesHistory.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);
             const avg=todaySales.length?todayAmount/todaySales.length:0;
-            const modes={}; salesHistory.forEach(s=>{const m=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items','itemsstring']))||'Unknown';modes[m]=(modes[m]||0)+parseAmount(getVal(s,['totalamount','total','amount']));});
+            const modes={}; salesHistory.forEach(s=>{const m=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'Unknown';modes[m]=(modes[m]||0)+parseAmount(getVal(s,['grand_total','totalamount','total','amount']));});
             const recent=salesHistory.slice(0,8);
             panel.innerHTML=`
             <div class="premium-kpis">
@@ -1540,7 +1586,7 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
                 <div class="premium-card">
                     <div class="premium-card-head"><h3>Recent Sales</h3><span>Latest 8 orders</span></div>
                     <div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Order</th><th>Time</th><th>Table</th><th>Mode</th><th>Total</th></tr></thead><tbody>
-                    ${recent.map(s=>`<tr onclick="openOrderDetails('${esc(getVal(s,['orderid','id']))}')" style="cursor:pointer"><td><b>#${esc(getVal(s,['orderid','id']))}</b></td><td>${esc(saleDateKey(s))}<br>${esc(saleTimeText(s))}</td><td>${esc(getVal(s,['tablenumber','table','tablename'])||'—')}</td><td><span class="pill ${String(getVal(s,['payment_method'])||extractPaymentMode(getVal(s,['items','itemsstring']))).toLowerCase().includes('cash')?'gold':'pink'}">${esc(getVal(s,['payment_method'])||extractPaymentMode(getVal(s,['items','itemsstring']))||'—')}</span></td><td><b>${money(getVal(s,['totalamount','total','amount']))}</b></td></tr>`).join('')}
+                    ${recent.map(s=>`<tr onclick="openOrderDetails('${esc(getVal(s,['orderid','order_number','id']))}')" style="cursor:pointer"><td><b>#${esc(getVal(s,['orderid','order_number','id']))}</b></td><td>${esc(saleDateKey(s))}<br>${esc(saleTimeText(s))}</td><td>${esc(getVal(s,['tablenumber','table','tablename','table_number'])||'—')}</td><td><span class="pill ${String(getVal(s,['payment_method'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))).toLowerCase().includes('cash')?'gold':'gray'}">${esc(getVal(s,['payment_method'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—')}</span></td><td><b>${money(getVal(s,['grand_total','totalamount','total','amount']))}</b></td></tr>`).join('')}
                     </tbody></table></div>
                 </div>
                 <div>
@@ -1570,13 +1616,13 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
             return salesHistory.filter(s=>{
                 const dk=saleDateKey(s);
                 if(from&&dk<from)return false;if(to&&dk>to)return false;
-                const sm=String(getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items','itemsstring']))||'').toLowerCase();
-                const st=String(getVal(s,['tablenumber','table','tablename'])||'').toLowerCase();
+                const sm=String(getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'').toLowerCase();
+                const st=String(getVal(s,['tablenumber','table','tablename','table_number'])||'').toLowerCase();
                 if(mode&&sm!==mode)return false;
                 if(type==='dining'&&!st.includes('table'))return false;
                 if(type==='takeaway'&&!st.includes('takeaway'))return false;
                 if(type==='delivery'&&!st.includes('delivery'))return false;
-                if(q&&!`${getVal(s,['orderid','id'])} ${st} ${getVal(s,['phone','customerphone'])} ${getVal(s,['items','itemsstring'])}`.toLowerCase().includes(q))return false;
+                if(q&&!`${getVal(s,['orderid','order_number','id'])} ${st} ${getVal(s,['phone','customerphone'])} ${getVal(s,['items_string','itemsstring','items'])}`.toLowerCase().includes(q))return false;
                 return true;
             });
         }
@@ -1601,38 +1647,75 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
 
         function renderPremiumSalesRows(){
             const rows=getFilteredPremiumSales(); const body=document.getElementById('psBody');if(!body)return;
-            const total=rows.reduce((a,s)=>a+parseAmount(getVal(s,['totalamount','total','amount'])),0);
+            const total=rows.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);
             const disc=rows.reduce((a,s)=>a+parseAmount(getVal(s,['discount'])),0);
             document.getElementById('psCount').innerText=`${rows.length} orders`;
             document.getElementById('psSummary').innerHTML=`<div class="report-stat"><div class="rlabel">Orders</div><div class="rvalue">${rows.length}</div></div><div class="report-stat"><div class="rlabel">Net Sales</div><div class="rvalue">${money(total)}</div></div><div class="report-stat"><div class="rlabel">Discount</div><div class="rvalue">${money(disc)}</div></div>`;
             body.innerHTML=rows.length?rows.map(s=>{
-                const items=String(getVal(s,['items','itemsstring'])||'').replace(/,?\s*\[(?:Mode|Discount Applied):[^\]]*\]/gi,'').trim();
-                const mode=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items','itemsstring']));
-                return `<tr onclick="openOrderDetails('${esc(getVal(s,['orderid','id']))}')" style="cursor:pointer"><td>${esc(saleDateKey(s))}</td><td>${esc(saleTimeText(s))}</td><td><b>${esc(getVal(s,['orderid','id']))}</b><br><span style="font-size:.62rem;color:var(--text-muted)">${esc(getVal(s,['phone','customerphone'])||'NA')}</span></td><td>${esc(getVal(s,['tablenumber','table','tablename'])||'—')}</td><td style="max-width:340px">${esc(items)}</td><td><span class="pill ${String(mode).toLowerCase()==='cash'?'gold':'pink'}">${esc(mode||'—')}</span></td><td>${money(getVal(s,['discount']))}</td><td><b>${money(getVal(s,['totalamount','total','amount']))}</b></td></tr>`;
+                const items=String(getVal(s,['items_string','itemsstring','items'])||'').replace(/,?\s*\[(?:Mode|Discount Applied):[^\]]*\]/gi,'').trim();
+                const mode=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']));
+                return `<tr onclick="openOrderDetails('${esc(getVal(s,['orderid','order_number','id']))}')" style="cursor:pointer"><td>${esc(saleDateKey(s))}</td><td>${esc(saleTimeText(s))}</td><td><b>${esc(getVal(s,['orderid','order_number','id']))}</b><br><span style="font-size:.62rem;color:var(--text-muted)">${esc(getVal(s,['phone','customerphone'])||'NA')}</span></td><td>${esc(getVal(s,['tablenumber','table','tablename','table_number'])||'—')}</td><td style="max-width:340px">${esc(items)}</td><td><span class="pill ${String(mode).toLowerCase()==='cash'?'gold':'gray'}">${esc(mode||'—')}</span></td><td>${money(getVal(s,['discount']))}</td><td><b>${money(getVal(s,['grand_total','totalamount','total','amount']))}</b></td></tr>`;
             }).join(''):`<tr><td colspan="8"><div class="premium-empty">No sales match the selected filters.</div></td></tr>`;
         }
 
         function exportPremiumSales(){
             const rows=getFilteredPremiumSales().map(s=>({
-                Date:saleDateKey(s),Time:saleTimeText(s),Order_ID:getVal(s,['orderid','id']),
-                Phone:getVal(s,['phone','customerphone'])||'NA',Items:getVal(s,['items','itemsstring']),
-                Total_Amount:parseAmount(getVal(s,['totalamount','total','amount'])),
-                Table_Number:getVal(s,['tablenumber','table','tablename']),Discount:parseAmount(getVal(s,['discount'])),
-                Payment_Mode:getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items','itemsstring']))
+                Date:saleDateKey(s),Time:saleTimeText(s),Order_ID:getVal(s,['orderid','order_number','id']),
+                Phone:getVal(s,['phone','customerphone'])||'NA',Items:getVal(s,['items_string','itemsstring','items']),
+                Total_Amount:parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),
+                Table_Number:getVal(s,['tablenumber','table','tablename','table_number']),Discount:parseAmount(getVal(s,['discount'])),
+                Payment_Mode:getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))
             }));
             downloadCSV(rows,'Viraasat-Sales-Export.csv');
         }
 
         function parseSaleItems(s){
-            const raw=String(getVal(s,['items','itemsstring'])||'');
-            const cleaned=raw.replace(/\s*\[(?:Mode|Discount Applied):[^\]]*\]/gi,'').trim().replace(/,+$/,'');
+            const raw = getVal(s,['items_string','itemsstring','items','Items','Items_String']);
+            const out = [];
+            const menuPrice = (name) => {
+                const mi = menuData.find(x => String(getVal(x,['itemname','name'])).trim().toLowerCase() === String(name).trim().toLowerCase());
+                return mi ? parseAmount(getVal(mi,['price','sellingprice','rate'])) : 0;
+            };
+            const pushItem = (obj) => {
+                if(!obj) return;
+                const name = String(obj.name ?? obj.item_name ?? obj.itemName ?? obj.title ?? '').trim();
+                if(!name) return;
+                const qty = Math.max(1, Number(obj.qty ?? obj.quantity ?? 1) || 1);
+                let amount = obj.total ?? obj.amount ?? obj.line_total ?? obj.lineTotal;
+                amount = (amount === null || amount === undefined || amount === '') ? null : parseAmount(amount);
+                let price = obj.price ?? obj.unit_price ?? obj.unitPrice ?? null;
+                price = (price === null || price === undefined || price === '') ? null : parseAmount(price);
+                if(amount === null || amount === 0){
+                    if(price !== null && price > 0) amount = price * qty;
+                    else amount = menuPrice(name) * qty;
+                }
+                if((price === null || price === 0) && qty > 0 && amount > 0) price = Math.round(amount/qty);
+                out.push({name,qty,amount:Number(amount)||0,price:Number(price)||0});
+            };
+            if(Array.isArray(raw)){ raw.forEach(pushItem); return out; }
+            const text = String(raw ?? '').trim();
+            if(!text) return out;
+            try{
+                const parsed = JSON.parse(text);
+                if(Array.isArray(parsed)){ parsed.forEach(pushItem); return out; }
+                if(parsed && Array.isArray(parsed.items)){ parsed.items.forEach(pushItem); return out; }
+            }catch(_){}
+            const cleaned=text.replace(/\s*\[(?:Mode|Discount Applied|Address):[^\]]*\]/gi,'').trim().replace(/,+$/,'');
             const chunks=cleaned.split(/\s*,\s*(?=[^,]+?\s*\(x\d+\))/i);
-            const out=[];
             chunks.forEach(ch=>{
                 const m=ch.trim().match(/^(.*?)\s*\(x(\d+)\)\s*(?:₹\s*([\d,]+(?:\.\d+)?))?\s*$/i);
-                if(m){const name=m[1].trim(),qty=Number(m[2])||0;let amount=m[3]?Number(String(m[3]).replace(/,/g,'')):0;if(!amount){const mi=menuData.find(x=>String(getVal(x,['itemname','name'])).trim().toLowerCase()===name.toLowerCase());amount=mi?parseAmount(getVal(mi,['price']))*qty:0;}out.push({name,qty,amount});}
+                if(!m)return;
+                const name=m[1].trim(),qty=Math.max(1,Number(m[2])||1);
+                let amount=m[3]?Number(String(m[3]).replace(/,/g,'')):null;
+                const base=menuPrice(name);
+                if(amount===null || amount===0) amount=base*qty;
+                out.push({name,qty,amount:Number(amount)||0,price:base || (amount?Math.round(amount/qty):0)});
             });
             return out;
+        }
+        function saleItemsText(s){
+            const items=parseSaleItems(s);
+            return items.length ? items.map(x=>`${x.name} (x${x.qty}) ${x.amount?`₹${x.amount}`:''}`.trim()).join(', ') : String(getVal(s,['items_string','itemsstring','items'])||'');
         }
 
         function buildItemSales(){
@@ -1757,13 +1840,13 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
 
         function renderPremiumReports(){
             const panel=document.getElementById('premiumPanel-reports');if(!panel)return;
-            const byDate={};salesHistory.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!byDate[d])byDate[d]={orders:0,sales:0};byDate[d].orders++;byDate[d].sales+=parseAmount(getVal(s,['totalamount','total','amount']));});
+            const byDate={};salesHistory.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!byDate[d])byDate[d]={orders:0,sales:0};byDate[d].orders++;byDate[d].sales+=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));});
             const days=Object.entries(byDate).sort((a,b)=>b[0].localeCompare(a[0]));
             const best=[...buildItemSales()].slice(0,10);
             panel.innerHTML=`<div class="premium-grid-2"><div class="premium-card"><div class="premium-card-head"><h3>Daily Business Report</h3><button class="premium-btn alt" onclick="exportDailyReport()">Export</button></div><div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Orders</th><th>Sales</th><th>AOV</th></tr></thead><tbody>${days.map(([d,x])=>`<tr><td>${d}</td><td>${x.orders}</td><td><b>${money(x.sales)}</b></td><td>${money(x.sales/x.orders)}</td></tr>`).join('')||'<tr><td colspan="4"><div class="premium-empty">No sales.</div></td></tr>'}</tbody></table></div></div>
             <div class="premium-card"><div class="premium-card-head"><h3>Top 10 Items</h3><span>By sales value</span></div>${best.map((x,i)=>`<div class="item-rank"><div class="item-rank-no">${i+1}</div><div class="item-rank-info"><div class="item-rank-name">${esc(x.name)}</div><div class="item-rank-sub">${x.qty} units • ${x.orders} orders</div></div><div class="item-rank-val">${money(x.sales)}</div></div>`).join('')||'<div class="premium-empty">No item sales.</div>'}</div></div>`;
         }
-        function exportDailyReport(){const by={};salesHistory.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!by[d])by[d]={orders:0,sales:0};by[d].orders++;by[d].sales+=parseAmount(getVal(s,['totalamount','total','amount']));});downloadCSV(Object.entries(by).sort((a,b)=>a[0].localeCompare(b[0])).map(([Date,x])=>({Date,Orders:x.orders,Sales:Math.round(x.sales),AOV:Math.round(x.sales/x.orders)})),'Viraasat-Daily-Report.csv');}
+        function exportDailyReport(){const by={};salesHistory.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!by[d])by[d]={orders:0,sales:0};by[d].orders++;by[d].sales+=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));});downloadCSV(Object.entries(by).sort((a,b)=>a[0].localeCompare(b[0])).map(([Date,x])=>({Date,Orders:x.orders,Sales:Math.round(x.sales),AOV:Math.round(x.sales/x.orders)})),'Viraasat-Daily-Report.csv');}
 
         function auditLog(action, details=''){
             try{
@@ -1790,7 +1873,7 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
                     <div class="report-stat"><div class="rlabel">Menu Items</div><div class="rvalue">${menuData.length}</div></div>
                 </div>
 
-                <div class="premium-card" style="margin-top:16px;background:#FFF8FB;border:1px solid rgba(255,95,142,.18)">
+                <div class="premium-card" style="margin-top:16px;background:#FBF9F5;border:1px solid rgba(255,95,142,.18)">
                     <div class="premium-card-head"><h3>🚀 One-Time Full Database Import</h3><span>Recommended</span></div>
                     <p style="font-size:.78rem;color:var(--text-muted);line-height:1.55;margin:0 0 14px">
                         Download the Excel template, fill the <b>Sales</b>, <b>Menu</b>, <b>Staff</b>, <b>Stock</b> and <b>Expenses</b> sheets, then upload the single workbook. Existing orders are matched by Order ID, so the same file can be uploaded again without creating duplicate orders.
@@ -1814,7 +1897,7 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
                     </div>
                 </div>
 
-                <div class="premium-card" style="margin-top:16px;background:#FFF7FA;border-color:#F3C9D8">
+                <div class="premium-card" style="margin-top:16px;background:#FBF9F5;border-color:#D9D1C7">
                     <div class="premium-card-head"><h3>Pending Approvals</h3><span>Order deletion requests</span></div>
                     <div id="pendingApprovalsBox" class="premium-empty">Checking approvals...</div>
                 </div>
@@ -1964,7 +2047,7 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
             if(typeof XLSX==='undefined'){showCustomAlert('Excel engine is not loaded. Refresh the POS and try again.');return;}
             const wb=XLSX.utils.book_new();
             const sales=getFilteredPremiumSales().map(s=>({
-                Date:saleDateKey(s),Time:saleTimeText(s),Order_ID:getVal(s,['orderid','id']),Phone:getVal(s,['phone','customerphone'])||'NA',Items:getVal(s,['items','itemsstring']),Total_Amount:parseAmount(getVal(s,['totalamount','total','amount'])),Table_Number:getVal(s,['tablenumber','table','tablename']),Discount:parseAmount(getVal(s,['discount'])),Payment_Mode:getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items','itemsstring']))
+                Date:saleDateKey(s),Time:saleTimeText(s),Order_ID:getVal(s,['orderid','order_number','id']),Phone:getVal(s,['phone','customerphone'])||'NA',Items:getVal(s,['items_string','itemsstring','items']),Total_Amount:parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),Table_Number:getVal(s,['tablenumber','table','tablename','table_number']),Discount:parseAmount(getVal(s,['discount'])),Payment_Mode:getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))
             }));
             const menu=menuData.map(m=>({Name:getVal(m,['itemname','name']),Category:getVal(m,['category','cat']),Price:parseAmount(getVal(m,['price'])),Active:getVal(m,['active','status'])||'Yes',Stock:stockData[getVal(m,['itemname','name'])]??''}));
             const staff=staffData.map(s=>({Emp_ID:getVal(s,['empid','employeeid']),Name:getVal(s,['name']),Role:getVal(s,['role']),Mobile:getVal(s,['mobile','phone']),Monthly_Salary:parseAmount(getVal(s,['monthlysalary','salary'])),Date_of_Joining:getVal(s,['dateofjoining','joindate','date','doj']),Status:getStaffStatus(s)}));
@@ -2046,7 +2129,7 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
             finalLabels.forEach(lbl => { finalSales.push(aggSales[lbl] || 0); finalExp.push(aggExp[lbl] || 0); });
 
             const canvas = document.getElementById('trendChart'); if(!canvas) return; const ctx = canvas.getContext('2d'); if(typeof Chart === 'undefined') return; if(trendChartInstance) trendChartInstance.destroy();
-            trendChartInstance = new Chart(ctx, { type: 'line', data: { labels: finalLabels, datasets: [ { label: 'Sales (₹)', data: finalSales, borderColor: '#07CDAE', backgroundColor: 'rgba(7, 205, 174, 0.15)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#07CDAE', pointRadius: 4 }, { label: 'Expenses (₹)', data: finalExp, borderColor: '#FE7096', backgroundColor: 'rgba(254, 112, 150, 0.15)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#FE7096', pointRadius: 4 } ] }, options: { responsive: true, maintainAspectRatio: false } });
+            trendChartInstance = new Chart(ctx, { type: 'line', data: { labels: finalLabels, datasets: [ { label: 'Sales (₹)', data: finalSales, borderColor: '#07CDAE', backgroundColor: 'rgba(7, 205, 174, 0.15)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#07CDAE', pointRadius: 4 }, { label: 'Expenses (₹)', data: finalExp, borderColor: '#10B981', backgroundColor: 'rgba(254, 112, 150, 0.15)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#10B981', pointRadius: 4 } ] }, options: { responsive: true, maintainAspectRatio: false } });
         }
 
         function populateDropdown() { 
@@ -2339,27 +2422,23 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
         function resetDateFilter() { setActiveFilterBtn('btnFilterClear'); document.getElementById('filterStartDate').value = ""; document.getElementById('filterEndDate').value = ""; renderLiveSales(); }
 
         function openOrderDetails(orderId) {
-            let sale = salesHistory.find(s => String(getVal(s, ['orderid', 'id'])).trim() === String(orderId).trim()); if(!sale) return; currentViewingSale = sale;
-            let sTable = getVal(sale, ['tablenumber', 'table', 'tablename']) || 'Table'; let sDate = getVal(sale, ['date', 'isodate']) || ''; let sTime = getVal(sale, ['time']) || ''; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sPhone = getVal(sale, ['phone', 'customerphone']) || ''; let sItems = getVal(sale, ['items', 'itemsstring']) || '';
-            document.getElementById('modalOrderMeta').innerHTML = `<b>Table:</b> ${sTable}<br><b>ID:</b> #${orderId}<br><b>Time:</b> ${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}`;
-            let modalItemsHtml = "";
-
-            let cleanItems = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
-
-            cleanItems.split(', ').forEach(itemStr => {
-                itemStr = itemStr.trim();
-                if(!itemStr) return;
-                
-                let match = itemStr.match(/(.+?)\s*\(x(\d+)\)(?:\s*₹(\d+))?/);
-                if(match) {
-                    let name = match[1].trim(); let qty = parseInt(match[2]); let total = match[3] ? parseInt(match[3]) : null;
-                    if (total === null) { let menuItem = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === name.toLowerCase()); if (menuItem) total = parseInt(getVal(menuItem, ['price'])) * qty; }
-                    let totalStr = total ? `₹${total}` : "-"; modalItemsHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid var(--border); padding-bottom:8px;"><span><b style="color:var(--text-dark);">${qty}x</b> ${name}</span> <span style="font-weight:600;">${totalStr}</span></div>`;
-                } else { 
-                    modalItemsHtml += `<div style="margin-bottom:8px; border-bottom:1px solid var(--border); padding-bottom:8px;">${itemStr}</div>`; 
-                }
-            });
-            document.getElementById('modalOrderItems').innerHTML = modalItemsHtml; document.getElementById('modalOrderTotal').innerText = `₹ ${sTotal}`; document.getElementById('modalCustomerPhone').value = (sPhone && sPhone !== "NA") ? sPhone : ""; document.getElementById('orderDetailsModal').style.display = 'flex';
+            const sale=salesHistory.find(s=>String(getVal(s,['orderid','order_number','id'])).trim()===String(orderId).trim());
+            if(!sale)return;
+            currentViewingSale=sale;
+            const sTable=getVal(sale,['tablenumber','table','tablename','table_number'])||'Table';
+            const sDate=getVal(sale,['date','isodate','created_at'])||'';
+            const sTime=getVal(sale,['time','created_at'])||'';
+            const sTotal=parseAmount(getVal(sale,['grand_total','totalamount','total','amount']));
+            const sPhone=getVal(sale,['phone','customerphone','customer_phone'])||'';
+            const parsed=parseSaleItems(sale);
+            document.getElementById('modalOrderMeta').innerHTML=`<b>Table:</b> ${esc(sTable)}<br><b>ID:</b> #${esc(orderId)}<br><b>Time:</b> ${esc(cleanDisplayDate(sDate))} • ${esc(cleanDisplayTime(sTime))}`;
+            let html=`<div class="historical-items-box"><div class="historical-items-title">Items & Charges</div>`;
+            html+=parsed.length?parsed.map(it=>`<div class="historical-item-row"><div class="historical-item-name">${esc(it.name)}</div><div class="historical-item-qty">×${it.qty}</div><div class="historical-item-total">${it.amount?money(it.amount):'—'}</div></div>`).join(''):`<div class="premium-empty" style="padding:10px 0">No item details were stored for this order.</div>`;
+            html+='</div>';
+            document.getElementById('modalOrderItems').innerHTML=html;
+            document.getElementById('modalOrderTotal').innerText=`₹ ${sTotal}`;
+            document.getElementById('modalCustomerPhone').value=(sPhone&&sPhone!=='NA')?sPhone:'';
+            document.getElementById('orderDetailsModal').style.display='flex';
         }
 
         // --- DIRECT PRINT / WHATSAPP COMMANDS (CRASH-PROOF) ---
@@ -2386,36 +2465,24 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
         }
 
         function printHistoricalBill() {
-            try {
-                let sale = currentViewingSale;
-                if(!sale) return;
-                let sOrderId = getVal(sale, ['orderid', 'id']) || 'N/A'; let sTable = getVal(sale, ['tablenumber', 'table', 'tablename']) || 'Table'; let sDate = getVal(sale, ['date', 'isodate']) || ''; let sTime = getVal(sale, ['time']) || ''; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getVal(sale, ['items', 'itemsstring']) || '';
-                
-                let printSec = document.getElementById('printSection'); 
-                let dStr = `${cleanDisplayDate(sDate)} ${cleanDisplayTime(sTime)}`; 
-                let itemsHtml = ""; let histDiscount = 0; let modeStr = ""; let addStr = "";
-                
-                let dMatch = sItems.match(/\[Discount Applied:\s*-?₹?(\d+)\]/); if(dMatch) histDiscount = parseInt(dMatch[1]);
-                let mMatch = sItems.match(/\[Mode:\s*(.+?)\]/); if(mMatch) modeStr = mMatch[1];
-                let aMatch = sItems.match(/\[Address:\s*(.+?)\]/); if(aMatch) addStr = aMatch[1];
-
-                let cleanItems = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
-
-                cleanItems.split(', ').forEach(itemStr => {
-                    itemStr = itemStr.trim();
-                    if(!itemStr) return;
-                    let match = itemStr.match(/(.+?)\s*\(x(\d+)\)(?:\s*₹(\d+))?/);
-                    if(match) {
-                        let name = match[1].trim(); let qty = parseInt(match[2]); let totalVal = match[3] ? parseInt(match[3]) : null; let priceVal = null;
-                        if (totalVal === null) { let menuItem = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === name.toLowerCase()); if (menuItem) { priceVal = parseInt(getVal(menuItem, ['price'])); totalVal = priceVal * qty; } } else { priceVal = totalVal / qty; }
-                        itemsHtml += `<tr><td class="col-item" style="text-align: left; width: 50%;">${name}</td><td class="col-price" style="text-align: center; width: 15%;">${priceVal?priceVal:"-"}</td><td class="col-qty" style="text-align: center; width: 15%;">${qty}</td><td class="col-amt" style="text-align: right; width: 20%;">${totalVal?totalVal:"-"}</td></tr>`;
-                    } else { itemsHtml += `<tr><td colspan="4" class="col-item">${itemStr}</td></tr>`; }
-                });
-                
-                printSec.innerHTML = `<div style="text-align: center; margin-bottom: 10px;"><h2 style="font-size: 1.2rem; margin: 0; padding: 0; font-weight: bold;">VIRAASAT UDAIPUR</h2><p style="font-size: 0.8rem; margin: 2px 0;">A Taste Of Royal Mewar</p><p style="font-size: 0.8rem; margin: 2px 0;">Contact: +91 7852041644</p><p style="font-size: 0.8rem; margin: 2px 0;">Udaipur, Rajasthan</p></div><div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; margin-bottom: 10px; font-size: 0.85rem;"><div style="display: flex; justify-content: space-between;"><span>Invoice No: #${sOrderId}</span> <span>(DUPLICATE)</span></div><div style="margin-top:2px;">Table: ${sTable}</div>${modeStr?`<div style="margin-top:2px;">Payment Mode: ${modeStr}</div>`:""}${addStr?`<div style="margin-top:2px;">Address: ${addStr}</div>`:""}</div><table style="width: 100%; font-size: 0.85rem; text-align: left; border-collapse: collapse;"><thead><tr><th class="col-item" style="text-align: left; width: 50%;">ITEM</th><th class="col-price" style="text-align: center; width: 15%;">PRICE</th><th class="col-qty" style="text-align: center; width: 15%;">QTY</th><th class="col-amt" style="text-align: right; width: 20%;">AMT</th></tr></thead><tbody>${itemsHtml}</tbody></table><div style="border-top: 1px dashed #000; margin-top: 10px; padding-top: 5px; font-size: 0.9rem;">${histDiscount > 0 ? `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Discount:</span><span>-₹${histDiscount}</span></div>` : ''}<div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;"><span>TOTAL (FOOD):</span><span>₹${sTotal}</span></div></div><div style="border-bottom: 1px dashed #000; margin-bottom: 10px; padding-bottom: 5px;"></div><div style="text-align: center; font-size: 0.85rem; font-weight: bold; margin-top: 10px;">THANK YOU FOR DINING WITH US!</div><div style="text-align: center; font-size: 0.75rem; margin-top: 5px;">Print Date: ${dStr}</div>`;
-                
-                printSec.offsetHeight; window.print();
-            } catch (e) { console.log(e); }
+            try{
+                const sale=currentViewingSale;if(!sale)return;
+                const id=getVal(sale,['orderid','order_number','id'])||'N/A';
+                const table=getVal(sale,['tablenumber','table','tablename','table_number'])||'Table';
+                const date=getVal(sale,['date','isodate','created_at'])||'';
+                const time=getVal(sale,['time','created_at'])||'';
+                const total=parseAmount(getVal(sale,['grand_total','totalamount','total','amount']));
+                const raw=String(getVal(sale,['items_string','itemsstring','items'])||'');
+                let discount=parseAmount(getVal(sale,['discount']));
+                if(!discount){const dm=raw.match(/\[Discount Applied:\s*-?₹?([\d,]+)/i);if(dm)discount=parseAmount(dm[1]);}
+                const mode=getVal(sale,['payment_method','paymentmode','mode'])||(raw.match(/\[Mode:\s*(.+?)\]/i)?.[1]||'');
+                const address=raw.match(/\[Address:\s*(.+?)\]/i)?.[1]||'';
+                const items=parseSaleItems(sale);
+                const rows=items.map(it=>`<tr><td style="text-align:left;width:50%">${esc(it.name)}</td><td style="text-align:center;width:15%">${it.price||'-'}</td><td style="text-align:center;width:15%">${it.qty}</td><td style="text-align:right;width:20%">${it.amount||'-'}</td></tr>`).join('');
+                const ps=document.getElementById('printSection');
+                ps.innerHTML=`<div style="text-align:center;margin-bottom:10px"><h2 style="font-size:1.2rem;margin:0;font-weight:bold">VIRAASAT UDAIPUR</h2><p style="font-size:.8rem;margin:2px 0">A Taste Of Royal Mewar</p><p style="font-size:.8rem;margin:2px 0">Contact: +91 7852041644</p><p style="font-size:.8rem;margin:2px 0">Udaipur, Rajasthan</p></div><div style="border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px 0;margin-bottom:10px;font-size:.85rem"><div style="display:flex;justify-content:space-between"><span>Invoice No: #${esc(id)}</span><span>(DUPLICATE)</span></div><div style="margin-top:2px">Table: ${esc(table)}</div>${mode?`<div style="margin-top:2px">Payment Mode: ${esc(mode)}</div>`:''}${address?`<div style="margin-top:2px">Address: ${esc(address)}</div>`:''}</div><table style="width:100%;font-size:.85rem;border-collapse:collapse"><thead><tr><th style="text-align:left;width:50%">ITEM</th><th style="text-align:center;width:15%">PRICE</th><th style="text-align:center;width:15%">QTY</th><th style="text-align:right;width:20%">AMT</th></tr></thead><tbody>${rows||'<tr><td colspan="4">Item details unavailable</td></tr>'}</tbody></table><div style="border-top:1px dashed #000;margin-top:10px;padding-top:5px;font-size:.9rem">${discount>0?`<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span>Discount:</span><span>-₹${discount}</span></div>`:''}<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:1.1rem"><span>TOTAL:</span><span>₹${total}</span></div></div><div style="text-align:center;font-size:.85rem;font-weight:bold;margin-top:18px">THANK YOU FOR DINING WITH US!</div><div style="text-align:center;font-size:.7rem;margin-top:5px">Print Date: ${cleanDisplayDate(date)} ${cleanDisplayTime(time)}</div>`;
+                ps.offsetHeight;window.print();
+            }catch(e){console.log(e);showCustomAlert('Historical bill print failed: '+e.message);}
         }
 
         function sendWA_Customer() {
@@ -2439,34 +2506,21 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
         }
 
         function sendWA_HistoricalBill() {
-            let sale = currentViewingSale;
-            if(!sale) return;
-            let phone = document.getElementById('modalCustomerPhone').value.trim();
-            if (!phone || phone.length < 10) { showCustomAlert("Please enter a valid 10-digit customer phone number."); return; }
-            
-            let sOrderId = getVal(sale, ['orderid', 'id']) || 'N/A'; let sTable = getVal(sale, ['tablenumber', 'table', 'tablename']) || 'Table'; let sDate = getVal(sale, ['date', 'isodate']) || ''; let sTime = getVal(sale, ['time']) || ''; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getVal(sale, ['items', 'itemsstring']) || ''; let histDiscount = 0; 
-            let text = `*VIRAASAT UDAIPUR*\n_A Taste Of Royal Mewar_\n\n*Invoice No:* ${sOrderId}\n*Table:* ${sTable}\n*Date:* ${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}\n----------------------------------------\n*ITEMS*\n`;
-            
-            let dMatch = sItems.match(/\[Discount Applied:\s*-?₹?(\d+)\]/); if(dMatch) histDiscount = parseInt(dMatch[1]);
-            let cleanItems = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
-
-            cleanItems.split(', ').forEach(itemStr => {
-                itemStr = itemStr.trim();
-                if(!itemStr) return;
-                let match = itemStr.match(/(.+?)\s*\(x(\d+)\)(?:\s*₹(\d+))?/);
-                if(match) {
-                    let name = match[1].trim(); let qty = parseInt(match[2]); let totalVal = match[3] ? parseInt(match[3]) : null; 
-                    if (totalVal === null) { let menuItem = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === name.toLowerCase()); if (menuItem) { totalVal = parseInt(getVal(menuItem, ['price'])) * qty; } } 
-                    text += `▪ ${name} (x${qty})  ~  *₹${totalVal || '-' }*\n`;
-                } else if (itemStr.trim()) { text += `▪ ${itemStr.trim()}\n`; }
-            });
-            text += `----------------------------------------\n`;
-            if (histDiscount > 0) { text += `*Discount:*  -₹${histDiscount}\n`; }
-            text += `*TOTAL AMOUNT:  ₹${sTotal}*\n----------------------------------------\n\nThank you for dining with us! 🙏\n\n⭐ *We would love to hear your feedback:*\nhttps://g.page/r/CSJLAggbIn1JEBM/review`;
-            
-            let waLink = `https://wa.me/91${phone}?text=${encodeURIComponent(text)}`; 
-            window.open(waLink, '_blank');
+            const sale=currentViewingSale;if(!sale)return;
+            const phone=document.getElementById('modalCustomerPhone').value.trim();
+            if(!phone||phone.length<10){showCustomAlert('Please enter a valid 10-digit customer phone number.');return;}
+            const id=getVal(sale,['orderid','order_number','id'])||'N/A', table=getVal(sale,['tablenumber','table','tablename','table_number'])||'Table';
+            const date=getVal(sale,['date','isodate','created_at'])||'', time=getVal(sale,['time','created_at'])||'';
+            const total=parseAmount(getVal(sale,['grand_total','totalamount','total','amount']));
+            const raw=String(getVal(sale,['items_string','itemsstring','items'])||'');
+            let discount=parseAmount(getVal(sale,['discount']));if(!discount){const dm=raw.match(/\[Discount Applied:\s*-?₹?([\d,]+)/i);if(dm)discount=parseAmount(dm[1]);}
+            const items=parseSaleItems(sale);
+            let text=`*VIRAASAT UDAIPUR*\n_A Taste Of Royal Mewar_\n\n*Invoice No:* ${id}\n*Table:* ${table}\n*Date:* ${cleanDisplayDate(date)} • ${cleanDisplayTime(time)}\n----------------------------------------\n*ITEMS*\n`;
+            if(items.length)items.forEach(it=>text+=`▪ ${it.name} (x${it.qty}) ~ *₹${it.amount||'-'}*\n`);else text+='▪ Item details unavailable\n';
+            text+='----------------------------------------\n';if(discount>0)text+=`*Discount:* -₹${discount}\n`;text+=`*TOTAL AMOUNT: ₹${total}*\n----------------------------------------\n\nThank you for dining with us! 🙏`;
+            window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(text)}`,'_blank');
         }
+
 
 
         // Lightweight mobile haptic feedback for primary UI actions.
