@@ -1033,6 +1033,83 @@ async function fullDatabaseImport(db, body) {
   return result;
 }
 
+
+async function replaceOrderItems(db, orderId, items) {
+  if (!(await tableExists(db, "order_items"))) return;
+  await db.prepare("DELETE FROM order_items WHERE order_id=?").bind(orderId).run();
+  const itemCols = await getColumns(db, "order_items");
+  for (const item of (Array.isArray(items) ? items : [])) {
+    const itemValues = {};
+    const addItem = (column, value) => {
+      if (itemCols.includes(column)) itemValues[column] = value;
+    };
+    const resolvedMenuItemId = await resolveMenuItemId(db, item);
+    addItem("order_id", orderId);
+    addItem("menu_item_id", resolvedMenuItemId);
+    addItem("item_name", clean(item.name));
+    addItem("name", clean(item.name));
+    addItem("quantity", num(item.qty, 1));
+    addItem("qty", num(item.qty, 1));
+    addItem("price", num(item.price));
+    addItem("unit_price", num(item.price));
+    addItem("gst_percent", num(item.gst_percent ?? item.gst, 0));
+    addItem("total", num(item.total, num(item.price) * num(item.qty, 1)));
+    const fields = Object.keys(itemValues);
+    if (!fields.length) continue;
+    await db.prepare(`INSERT INTO order_items (${fields.join(",")}) VALUES (${fields.map(() => "?").join(",")})`)
+      .bind(...fields.map(field => itemValues[field])).run();
+  }
+}
+
+async function saveKot(db, body) {
+  const tableNumber = clean(body.table_number || body.tableNumber);
+  const items = Array.isArray(body.items) ? body.items : [];
+  if (!items.length) throw new Error("KOT items are required");
+  const subtotal = num(body.subtotal, items.reduce((sum, item) => sum + num(item.total, num(item.price) * num(item.qty, 1)), 0));
+  const cols = await getColumns(db, "orders");
+  let existing = null;
+  if (tableNumber && cols.includes("table_number") && cols.includes("order_status")) {
+    existing = await db.prepare(`SELECT id, order_number FROM orders WHERE CAST(table_number AS TEXT)=? AND LOWER(COALESCE(order_status,'')) IN ('open','kot','pending') ORDER BY id DESC LIMIT 1`).bind(tableNumber).first();
+  }
+  if (existing?.id) {
+    const fields = []; const values = [];
+    const add = (c, v) => { if (cols.includes(c)) { fields.push(`${c}=?`); values.push(v); } };
+    add("subtotal", subtotal); add("discount", 0); add("grand_total", subtotal); add("total", subtotal); add("payment_status", "unpaid"); add("payment_method", "Cash"); add("order_status", "open"); add("items", JSON.stringify(items)); add("items_string", items.map(i => `${clean(i.name)} (x${num(i.qty,1)}) ₹${num(i.total, num(i.price)*num(i.qty,1))}`).join(", ")); add("updated_at", new Date().toISOString());
+    if (fields.length) await db.prepare(`UPDATE orders SET ${fields.join(",")} WHERE id=?`).bind(...values, existing.id).run();
+    await replaceOrderItems(db, existing.id, items);
+    if (tableNumber) await updateTable(db, tableNumber, "occupied", existing.id);
+    return { orderId: existing.id, orderNumber: existing.order_number, grandTotal: subtotal, updated: true };
+  }
+  const result = await createOrder(db, { ...body, table_number: tableNumber || null, order_type: tableNumber ? "Dine-in" : "Takeaway", items, subtotal, discount: 0, grand_total: subtotal, payment_method: "Cash", payment_status: "unpaid", order_status: "open" });
+  if (tableNumber) await updateTable(db, tableNumber, "occupied", result.orderId);
+  return result;
+}
+
+async function checkoutOrder(db, body) {
+  const tableNumber = clean(body.table_number || body.tableNumber);
+  const items = Array.isArray(body.items) ? body.items : [];
+  const subtotal = num(body.subtotal, items.reduce((sum, item) => sum + num(item.total, num(item.price) * num(item.qty,1)), 0));
+  const discount = num(body.discount);
+  const grandTotal = num(body.grand_total ?? body.total, Math.max(subtotal - discount, 0));
+  const cols = await getColumns(db, "orders");
+  let existing = null;
+  if (tableNumber && cols.includes("table_number")) {
+    existing = await db.prepare(`SELECT id, order_number FROM orders WHERE CAST(table_number AS TEXT)=? AND LOWER(COALESCE(order_status,'')) IN ('open','kot','pending') ORDER BY id DESC LIMIT 1`).bind(tableNumber).first();
+  }
+  if (existing?.id) {
+    const fields = []; const values = [];
+    const add = (c, v) => { if (cols.includes(c)) { fields.push(`${c}=?`); values.push(v); } };
+    add("subtotal", subtotal); add("discount", discount); add("grand_total", grandTotal); add("total", grandTotal); add("payment_method", clean(body.payment_method || body.paymentMethod) || "Cash"); add("payment_status", "paid"); add("order_status", "completed"); add("customer_phone", clean(body.customer_phone || body.phone)); add("items", JSON.stringify(items)); add("items_string", items.map(i => `${clean(i.name)} (x${num(i.qty,1)}) ₹${num(i.total, num(i.price)*num(i.qty,1))}`).join(", ")); add("updated_at", new Date().toISOString());
+    if (fields.length) await db.prepare(`UPDATE orders SET ${fields.join(",")} WHERE id=?`).bind(...values, existing.id).run();
+    await replaceOrderItems(db, existing.id, items);
+    if (tableNumber) await updateTable(db, tableNumber, "available", null);
+    return { orderId: existing.id, orderNumber: existing.order_number, grandTotal, reused: true };
+  }
+  const result = await createOrder(db, { ...body, table_number: tableNumber || null, items, subtotal, discount, grand_total: grandTotal, payment_status: "paid", order_status: "completed" });
+  if (tableNumber) await updateTable(db, tableNumber, "available", null);
+  return result;
+}
+
 // ============================================================
 // MAIN WORKER
 // ============================================================
@@ -1084,6 +1161,19 @@ export default {
             }
           }
         );
+      }
+
+      // ------------------------------------------------------
+      // HEALTH
+      // ------------------------------------------------------
+      if (path === "/api/health" && method === "GET") {
+        return json({
+          success: true,
+          application: "Viraasat POS Enterprise",
+          status: "online",
+          database: "connected",
+          binding: !!env.DB
+        });
       }
 
       // ------------------------------------------------------
@@ -1346,36 +1436,19 @@ export default {
         path === "/api/orders" &&
         method === "POST"
       ) {
+        const body = await request.json();
+        const result = await createOrder(db, body);
+        const tableNumber = clean(body.table_number || body.tableNumber);
+        if (tableNumber) await updateTable(db, tableNumber, "occupied", result.orderId);
+        return json({ success: true, ...result });
+      }
 
-        const body =
-          await request.json();
-
-        const result =
-          await createOrder(
-            db,
-            body
-          );
-
-        const tableNumber =
-          clean(
-            body.table_number ||
-            body.tableNumber
-          );
-
-        if (tableNumber) {
-
-          await updateTable(
-            db,
-            tableNumber,
-            "occupied",
-            result.orderId
-          );
-        }
-
-        return json({
-          success: true,
-          ...result
-        });
+      // ------------------------------------------------------
+      // KOT UPSERT
+      // ------------------------------------------------------
+      if (path === "/api/orders/kot" && method === "POST") {
+        const body = await request.json();
+        return json({ success: true, ...(await saveKot(db, body)) });
       }
 
       // ------------------------------------------------------
@@ -1386,39 +1459,8 @@ export default {
         path === "/api/orders/checkout" &&
         method === "POST"
       ) {
-
-        const body =
-          await request.json();
-
-        body.payment_status = "paid";
-        body.order_status = "completed";
-
-        const result =
-          await createOrder(
-            db,
-            body
-          );
-
-        const tableNumber =
-          clean(
-            body.table_number ||
-            body.tableNumber
-          );
-
-        if (tableNumber) {
-
-          await updateTable(
-            db,
-            tableNumber,
-            "available",
-            null
-          );
-        }
-
-        return json({
-          success: true,
-          ...result
-        });
+        const body = await request.json();
+        return json({ success: true, ...(await checkoutOrder(db, body)) });
       }
 
       // ------------------------------------------------------
