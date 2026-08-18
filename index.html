@@ -310,6 +310,51 @@
           .premium-grid-3{grid-template-columns:repeat(2,minmax(0,1fr))}
         }
 
+
+        /* ===== ADMIN VIEW MOBILE-FIRST FINAL PASS ===== */
+        .admin-compact-head{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px 12px;box-shadow:var(--shadow-soft);min-width:0}
+        .admin-compact-title{font-family:'Playfair Display',serif;font-size:1.08rem;font-weight:900;color:var(--text-dark);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .admin-compact-title span{font-family:inherit;font-weight:700;color:var(--text-muted)}
+        .premium-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;overflow:visible;position:static;background:transparent;padding:0}
+        .premium-tab{width:100%;min-width:0;padding:8px 6px;font-size:.68rem;overflow:hidden;text-overflow:ellipsis}
+        .premium-table-wrap{overflow:hidden}
+        .premium-table{min-width:0;width:100%;table-layout:fixed}
+        .premium-table th,.premium-table td{padding:7px 5px;font-size:.60rem;white-space:normal;word-break:break-word;overflow-wrap:anywhere}
+        .premium-card{margin-bottom:10px}
+        .premium-kpis{gap:7px;margin-bottom:10px}
+        .pkpi{padding:10px;border-radius:13px}
+        .pkpi .label{font-size:.57rem}.pkpi .value{font-size:.98rem;margin-top:5px}.pkpi .delta{font-size:.58rem}
+        .admin-insight-grid{gap:7px;margin-bottom:10px}
+        .admin-insight{padding:10px;border-radius:12px}
+        .admin-insight .ai-label{font-size:.54rem}.admin-insight .ai-value{font-size:.92rem}.admin-insight .ai-note{font-size:.54rem}
+        .premium-card-head{margin-bottom:9px;gap:6px}.premium-card-head h3{font-size:.78rem}.premium-card-head span{font-size:.58rem}
+        .premium-toolbar{gap:6px;margin-bottom:9px}.premium-toolbar .premium-btn,.premium-toolbar label{height:36px;font-size:.64rem;padding:0 9px}
+        .stock-grid{gap:7px}.stock-box{padding:9px;border-radius:11px}.stock-box-name{font-size:.63rem}.stock-box-qty{font-size:1rem;margin-top:5px}.stock-box small{font-size:.55rem}
+        .bottom-nav{height:66px;padding:5px 4px 4px;gap:1px}
+        .nav-item{font-size:.54rem;gap:2px;padding:3px 0;min-width:0}
+        .nav-item svg{width:18px;height:18px}.nav-item.active .icon-container{width:42px;height:25px;border-radius:13px}
+        @media(max-width:600px){
+          #premiumDashboard{padding-top:4px!important}
+          .premium-shell{gap:8px}
+          .premium-tabs{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+          .premium-tab{padding:7px 4px;font-size:.62rem;border-radius:10px;box-shadow:none}
+          .admin-compact-head{padding:9px 10px;border-radius:12px}
+          .admin-compact-title{font-size:.94rem}
+          .premium-live{font-size:.52rem;padding:6px 7px;gap:4px}
+          .premium-live i{width:6px;height:6px}
+          .premium-grid-2,.premium-grid-3{grid-template-columns:1fr}
+          .premium-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+          .premium-table th,.premium-table td{font-size:.54rem;padding:6px 3px}
+          .premium-table th{letter-spacing:.1px}
+          .premium-card{padding:10px;border-radius:13px}
+          .premium-empty{padding:18px 8px;font-size:.65rem}
+        }
+        @media(max-width:380px){
+          .premium-tabs{gap:5px}.premium-tab{font-size:.57rem;padding:6px 3px}
+          .admin-compact-title{font-size:.86rem}.premium-live{font-size:.48rem}
+          .premium-table th,.premium-table td{font-size:.49rem;padding:5px 2px}
+          .nav-item{font-size:.49rem}.nav-item svg{width:17px;height:17px}.nav-item.active .icon-container{width:38px;height:23px}
+        }
     </style>
 </head>
 <body>
@@ -443,22 +488,16 @@
         <!-- PREMIUM COMMAND CENTER -->
         <div id="premiumDashboard" class="tab-content" style="padding-top:10px;">
             <div class="premium-shell">
-                <div class="premium-hero">
-                    <div class="premium-hero-row">
-                        <div>
-                            <div class="premium-title">VIRAASAT Admin View</div>
-                            <div class="premium-sub">Premium restaurant operations • sales • inventory • people</div>
-                        </div>
-                        <div class="premium-live"><i></i> LIVE DATA</div>
-                    </div>
+                <div class="admin-compact-head">
+                    <div class="admin-compact-title">VIRAASAT <span>Admin View</span></div>
+                    <div class="premium-live"><i></i> LIVE DATA</div>
                 </div>
                 <div class="premium-tabs" id="premiumTabs">
                     <button class="premium-tab active" onclick="showPremiumTab('overview',this)">Overview</button>
                     <button class="premium-tab" onclick="showPremiumTab('sales',this)">Sales</button>
                     <button class="premium-tab" onclick="showPremiumTab('items',this)">Item Sales</button>
                     <button class="premium-tab" onclick="showPremiumTab('inventory',this)">Inventory</button>
-                                        <button class="premium-tab" onclick="showPremiumTab('staff',this)">Staff</button>
-                    <button class="premium-tab" onclick="showPremiumTab('menu',this)">Menu</button>
+                                        <button class="premium-tab" onclick="showPremiumTab('menu',this)">Menu</button>
                     <button class="premium-tab" onclick="showPremiumTab('expenses',this)">Expenses</button>
                     <button class="premium-tab" onclick="showPremiumTab('reports',this)">Insights</button>
                     <button class="premium-tab" onclick="showPremiumTab('settings',this)">Admin</button>
@@ -468,8 +507,6 @@
                 <section id="premiumPanel-sales" class="premium-panel"></section>
                 <section id="premiumPanel-items" class="premium-panel"></section>
                 <section id="premiumPanel-inventory" class="premium-panel"></section>
-                <section id="premiumPanel-tables" class="premium-panel"></section>
-                <section id="premiumPanel-staff" class="premium-panel"></section>
                 <section id="premiumPanel-menu" class="premium-panel"></section>
                 <section id="premiumPanel-expenses" class="premium-panel"></section>
                 <section id="premiumPanel-reports" class="premium-panel"></section>
@@ -700,9 +737,6 @@
                 </div>
             </div>
 
-            <div class="section-header" style="margin-top:24px;"><h4>Active Staff Directory</h4></div>
-            <div id="employeeList" style="display:flex; flex-direction:column; gap:12px;"></div>
-
             <div class="section-header" style="margin-top:24px;"><h4>Registered POS App Users</h4></div>
             <div id="staffList" style="display:flex; flex-direction:column; gap:10px; margin-bottom: 24px;"></div>
         </div>
@@ -783,10 +817,6 @@
 
     <!-- BOTTOM NAV -->
     <nav class="bottom-nav" id="appBottomNav" style="display: none;">
-        <button class="nav-item active" id="navDashboard" onclick="switchMainTab('premiumDashboard', this)">
-            <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg></div>
-            <span>Admin View</span>
-        </button>
         <button class="nav-item" id="navTable" onclick="switchMainTab('tableDashboard', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></div>
             <span>Table</span>
@@ -802,6 +832,10 @@
         <button class="nav-item" id="navExpenses" onclick="switchMainTab('expenses', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></div>
             <span>Expenses</span>
+        </button>
+        <button class="nav-item active" id="navDashboard" onclick="switchMainTab('premiumDashboard', this)">
+            <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg></div>
+            <span>Admin View</span>
         </button>
         <button class="nav-item" id="navUsers" onclick="switchMainTab('usersManager', this)" style="display:none;">
             <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
