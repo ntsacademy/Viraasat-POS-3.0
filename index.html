@@ -32,9 +32,9 @@
             --danger: #D03B3B;
             --success: #10B981;
             
-            --occ-bg: #FFF9E8;
-            --occ-border: #D6B46A;
-            --occ-gradient: linear-gradient(135deg, #F4C95D 0%, #D6B46A 100%);
+            --occ-bg: #FFF4F6;
+            --occ-border: #FF5F8E;
+            --occ-gradient: linear-gradient(135deg, #FF9A7A 0%, #FF5F8E 100%);
             
             --shadow-soft: 0 4px 18px rgba(0,0,0,0.03); 
             --border-radius: 14px;      
@@ -89,7 +89,7 @@
         .table-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
         .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px 10px; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.15s; }
         .table-card:active { transform: scale(0.96); }
-        .table-card.occupied { background: var(--occ-bg) !important; border: 1.5px solid var(--occ-border) !important; }
+        .table-card.occupied { background: var(--occ-bg) !important; border: 1.5px solid var(--occ-border) !important; box-shadow: 0 5px 16px rgba(255,95,142,.10); }
         .tc-name { font-size: 0.95rem; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; }
         .tc-sub { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; margin-bottom: 8px;}
         
@@ -106,7 +106,6 @@
 
         .h-order-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.1s; }
         .h-order-card:active { transform: scale(0.98); }
-         .recent-order-value{display:inline-flex;align-items:center;background:#FFF4E8;color:#C45A00;border:1px solid #F2C28F;border-radius:10px;padding:5px 9px;font-weight:900;white-space:nowrap;}
         .ho-icon { width: 42px; height: 42px; border-radius: 12px; background: #F8F6F0; display: flex; align-items: center; justify-content: center; color: var(--text-dark); flex-shrink: 0; }
         .ho-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
         .ho-title { font-size: 0.92rem; font-weight: 700; color: var(--text-dark); }
@@ -397,14 +396,6 @@
         @media(min-width:601px){.mobile-sale-list{display:none!important}}
 
 
-        /* ===== SELECTED INVENTORY + LEGACY TABLE OCCUPIED STYLE ===== */
-        .inventory-add-row{display:flex;justify-content:flex-end;margin-top:8px}
-        .inventory-add-btn{height:38px;border:1px solid #D6B46A;background:#FFF9E8;color:#1A1A1A;border-radius:10px;padding:0 13px;font-family:inherit;font-size:.72rem;font-weight:800;cursor:pointer}
-        .inventory-add-btn:active{transform:scale(.97)}
-        .inventory-selected-note{font-size:.62rem;color:var(--text-muted);line-height:1.45;margin-top:7px}
-        .status-occ{background:var(--occ-gradient)!important;color:#FFFFFF!important;box-shadow:0 3px 8px rgba(214,180,106,.30)!important;border:none!important}
-        .table-card.occupied{background:var(--occ-bg)!important;border:1.5px solid var(--occ-border)!important}
-
         /* ===== FINAL MOBILE ADMIN / ANALYTICS SYSTEM ===== */
 
         .admin-module-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -426,6 +417,15 @@
         .date-filter-row{display:grid;grid-template-columns:1fr 1fr;gap:6px}.date-filter-row input{height:36px!important;font-size:.68rem}
         @media(max-width:600px){.admin-module-grid{gap:6px}.admin-form-grid{grid-template-columns:1fr 1fr}.compact-toolbar{grid-template-columns:1fr 70px}.compact-toolbar .premium-btn{padding:0 7px}.admin-staff-row{align-items:center}.admin-staff-row .status-toggle{padding:5px 7px;font-size:.54rem}.sales-summary-grid{grid-template-columns:repeat(3,1fr)}.premium-tabs{grid-template-columns:repeat(3,minmax(0,1fr));overflow:hidden}.premium-tab{font-size:.59rem}.premium-card-head h3{font-size:.74rem}}
         @media(max-width:380px){.admin-form-grid{grid-template-columns:1fr}.compact-toolbar{grid-template-columns:1fr 64px}.sales-summary-grid .rvalue{font-size:.82rem}}
+
+        /* ===== VIRAASAT 6.2 REPAIR PASS ===== */
+        .filter-btn.active{background:#1A1A1A!important;color:#fff!important;border-color:#1A1A1A!important}
+        .table-card.occupied .tc-sub{color:#C92E48}
+        .status-dot.occ{color:#E11D48!important}
+        .approval-missing{background:#FFF8F9;border:1px solid #F2C5CD;border-radius:10px;padding:12px;color:#C92E48;font-size:.68rem;line-height:1.45}
+        .approval-row{background:#fff}
+        .repair-ok{background:#F2FBF7;border:1px solid #BFE8D7;border-radius:10px;padding:10px;color:#0B8F55;font-size:.68rem}
+
     </style>
 </head>
 <body>
@@ -468,26 +468,6 @@
             <div class="input-row">
                 <button class="btn btn-outline" onclick="document.getElementById('addTableModal').style.display='none'">Cancel</button>
                 <button class="btn" onclick="confirmAddTable()">Save Table</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ADD INVENTORY ITEM MODAL -->
-    <div id="addInventoryItemModal" class="modal-overlay">
-        <div class="bottom-sheet">
-            <div class="sheet-handle"></div>
-            <h3 style="font-size:1.2rem;font-weight:700;margin-bottom:16px;">Add Inventory Item</h3>
-            <div class="form-group">
-                <div class="input-box"><label>Item Name</label><input id="newInvItemName" placeholder="e.g. Lemon Soda"></div>
-                <div class="input-row">
-                    <div class="input-box"><label>Selling Price</label><input id="newInvItemPrice" type="number" min="1" inputmode="decimal" placeholder="₹ Price"></div>
-                    <div class="input-box"><label>Opening QTY</label><input id="newInvItemQty" type="number" min="0" inputmode="numeric" placeholder="0"></div>
-                </div>
-                <div class="input-box"><label>Category</label><input id="newInvItemCategory" placeholder="Other" value="Other"></div>
-            </div>
-            <div class="input-row">
-                <button class="btn btn-outline" onclick="closeAddInventoryItemModal()">Cancel</button>
-                <button class="btn" onclick="addInventoryMenuItem()">Add Item</button>
             </div>
         </div>
     </div>
@@ -820,7 +800,7 @@
 
     <!-- BOTTOM NAV -->
     <nav class="bottom-nav" id="appBottomNav" style="display: none;">
-        <button class="nav-item active" id="navTable" onclick="switchMainTab('tableDashboard', this)">
+        <button class="nav-item" id="navTable" onclick="switchMainTab('tableDashboard', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></div>
             <span>Table</span>
         </button>
@@ -836,7 +816,7 @@
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></div>
             <span>Expenses</span>
         </button>
-        <button class="nav-item" id="navAdmin" onclick="switchMainTab('premiumDashboard', this)">
+        <button class="nav-item active" id="navAdmin" onclick="switchMainTab('premiumDashboard', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg></div>
             <span>Admin View</span>
         </button>
@@ -853,7 +833,7 @@
         const D1_API_BASE = '/api';
         const API_TIMEOUT_MS = 10000;
         
-const APP_VERSION = "D1-ENTERPRISE-FIX-6.1"; 
+const APP_VERSION = "D1-ENTERPRISE-FIX-6.2"; 
         
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
@@ -1006,7 +986,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-6.1";
                     document.getElementById('appMain').style.display = 'block';
                     document.getElementById('appBottomNav').style.display = 'flex';
                     applyAdminRights(savedMobile);
-                    switchMainTab('tableDashboard', document.getElementById('navTable'), true);
+                    switchMainTab(window.isUserAdmin ? 'premiumDashboard' : 'tableDashboard', document.getElementById(window.isUserAdmin ? 'navDashboard' : 'navTable'), true);
                     enforceBackTrap(); hardBlockBack();
                     // Show the actual POS immediately; D1 sync runs in the background.
                     hideSplashScreen();
@@ -1030,7 +1010,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-6.1";
         window.onpopstate = function () {
             enforceBackTrap();
 
-            let modals = ['customAlertModal', 'paymentModal', 'conflictModal', 'orderDetailsModal', 'addTableModal', 'addInventoryItemModal', 'salaryActionModal'];
+            let modals = ['customAlertModal', 'paymentModal', 'conflictModal', 'orderDetailsModal', 'addTableModal', 'salaryActionModal'];
             let modalClosed = false;
             for(let id of modals) { 
                 let m = document.getElementById(id); 
@@ -1047,8 +1027,8 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-6.1";
             }
 
             let activeTab = document.querySelector('.tab-content.active');
-            if (activeTab && activeTab.id !== 'tableDashboard') { 
-                switchMainTab('tableDashboard', document.getElementById('navTable'), true); 
+            if (activeTab && activeTab.id !== 'premiumDashboard') { 
+                switchMainTab('premiumDashboard', document.getElementById('navAdmin'), true); 
                 return; 
             }
         };
@@ -1345,14 +1325,22 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-6.1";
             try{
                 if(results[0].status==='fulfilled'){const dash=results[0].value||{};const summary=dash.summary||{},ts=dash.tables||{};document.getElementById('homeTodaySale').innerText=`₹${Math.round(Number(summary.today_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeAvgOrder').innerText=`₹${Math.round(Number(summary.average_order)||0).toLocaleString('en-IN')}`;document.getElementById('homeOverallSale').innerText=`₹${Math.round(Number(summary.overall_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeActiveTables').innerText=`${Number(ts.occupied)||0} / ${Number(ts.total)||tableSections.reduce((a,x)=>a+x.tables.length,0)}`;}else failed.push(['/dashboard',results[0].reason]);
                 if(results[1].status==='fulfilled')menuData=normalizeArray(results[1].value,['items','menu','data','result']);else failed.push(['/menu',results[1].reason]);
-                if(results[2].status==='fulfilled'){const ts=normalizeArray(results[2].value,['tables','data','result']);tableSections=[{title:'Hut Seating',tables:[]},{title:'Ground Seating',tables:[]},{title:'Terrace Seating',tables:[]}];const amap={'Hut Seating':0,'Ground Seating':1,'Terrace Seating':2};runningTables={};const globalSeenTables=new Set();ts.forEach(t=>{const n=String(t.table_number??t.tableNumber??'').trim();if(!n)return;const key=n.toLowerCase();if(globalSeenTables.has(key))return;globalSeenTables.add(key);const i=amap[String(t.seating_area||t.seatingArea||'').trim()]??1;if(!tableSections[i].tables.includes(n))tableSections[i].tables.push(n);runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied'?[{__d1Occupied:true,orderId:t.current_order_id||t.currentOrderId}]:[];});tableSections.forEach(sec=>{sec.tables=uniqueItemNames(sec.tables);});if(!ts.length)tableSections=[{title:'Hut Seating',tables:['1','2','3','4']},{title:'Ground Seating',tables:['5','6','7']},{title:'Terrace Seating',tables:['8','9','10']}];}else failed.push(['/tables',results[2].reason]);
+                if(results[2].status==='fulfilled'){const ts=normalizeArray(results[2].value,['tables','data','result']);tableSections=[{title:'Hut Seating',tables:[]},{title:'Ground Seating',tables:[]},{title:'Terrace Seating',tables:[]}];const amap={'Hut Seating':0,'Ground Seating':1,'Terrace Seating':2};runningTables={};ts.forEach(t=>{const n=String(t.table_number??t.tableNumber??'').trim();if(!n)return;const i=amap[String(t.seating_area||t.seatingArea||'').trim()]??1;if(!tableSections[i].tables.includes(n))tableSections[i].tables.push(n);runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied'?[{__d1Occupied:true,orderId:t.current_order_id||t.currentOrderId}]:[];});if(!ts.length)tableSections=[{title:'Hut Seating',tables:['1','2','3','4']},{title:'Ground Seating',tables:['5','6','7']},{title:'Terrace Seating',tables:['8','9','10']}];}else failed.push(['/tables',results[2].reason]);
                 if(results[3].status==='fulfilled')salesHistory=normalizeArray(results[3].value,['orders','sales','data','result']).map(mapD1Order).filter(Boolean).filter(o=>!['kot','cancelled','deleted'].includes(String(o.order_status||'').toLowerCase()));else failed.push(['/orders',results[3].reason]);
                 Object.keys(runningTables).forEach(key=>{const arr=runningTables[key];if(Array.isArray(arr)&&arr[0]?.__d1Occupied){const oid=String(arr[0].orderId||'');const order=salesHistory.find(o=>String(o.id||'')===oid||String(o.orderid||'')===oid);runningTables[key]=order?parseSaleItems(order):[];}});
                 if(results[4].status==='fulfilled')expenseHistory=normalizeArray(results[4].value,['expenses','data','result']);else failed.push(['/expenses',results[4].reason]);
                 if(results[5].status==='fulfilled'){const raw=normalizeArray(results[5].value,['stock','items','data','result']);stockData={};stockMeta={};raw.forEach(x=>{const name=String(getVal(x,['name','itemname','item','stockname'])||'').trim();if(!name)return;stockData[name]=Number(getVal(x,['quantity','qty','stock','currentstock','currentquantity']))||0;stockMeta[name]={id:getVal(x,['id']),name,unit:getVal(x,['unit'])||'pcs',low_stock_level:Number(getVal(x,['low_stock_level','lowstocklevel']))||5,created_at:getVal(x,['created_at'])||'',updated_at:getVal(x,['updated_at'])||''};});}else failed.push(['/stock',results[5].reason]);
                 if(results[6].status==='fulfilled')staffData=normalizeArray(results[6].value,['staff','employees','data','result']);else failed.push(['/staff',results[6].reason]);
                 if(results[7].status==='fulfilled')stockHistory=normalizeArray(results[7].value,['history','stock_history','data','result']);else stockHistory=[];
-                applyLocalStaffState();populateDropdown();populateStaffDropdown();renderEmployeeList();renderTableGrid();renderStockDashboard();checkStockDisplay();renderLiveSales();generateTrends();renderPremiumDashboard();renderExpenseHistoryList();hideSplashScreen();
+                applyLocalStaffState();
+                const renderSteps=[
+                    ['dropdown',populateDropdown],['staff dropdown',populateStaffDropdown],['employee list',renderEmployeeList],
+                    ['tables',renderTableGrid],['stock dashboard',renderStockDashboard],['stock status',checkStockDisplay],
+                    ['live sales',renderLiveSales],['trends',generateTrends],['premium dashboard',renderPremiumDashboard],
+                    ['expense history',renderExpenseHistoryList]
+                ];
+                renderSteps.forEach(([name,fn])=>{try{if(typeof fn==='function')fn();}catch(err){console.error(`UI render failed: ${name}`,err);}});
+                hideSplashScreen();
                 if(failed.length){const messages=failed.map(([path,e])=>`${path}: ${e?.message||e}`).join(' | ');console.warn('Partial D1 sync',failed);try{await d1Get('/test-db',5000);}catch(he){console.error('D1 health',he);}showCustomAlert(`Some D1 endpoints failed.
 
 ${messages}
@@ -1454,61 +1442,7 @@ Tables, billing and existing local UI remain visible.`);}
 
         function money(v){return `₹${Math.round(Number(v)||0).toLocaleString('en-IN')}`;}
         function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-        // ===== STAFF STATE HELPERS (required by Overview + Admin) =====
-        // Staff status is intentionally kept in localStorage because the current D1 /staff
-        // payload does not expose an editable status field. D1 remains the source of truth
-        // for employee records; these helpers only manage the UI's active/inactive state.
-        function getStaffKey(staff){
-            return String(getVal(staff,['empid','employeeid','mobile','phone','name'])||'').trim();
-        }
-        function getStaffStatus(staff){
-            return String(staff?.__status||'active').toLowerCase()==='inactive'?'inactive':'active';
-        }
-        function readStaffStatusMap(){
-            try{
-                const raw=JSON.parse(localStorage.getItem('viraasat_staff_status')||'{}');
-                return raw && typeof raw==='object' && !Array.isArray(raw) ? raw : {};
-            }catch(e){return {};}
-        }
-        function writeStaffStatusMap(map){
-            try{localStorage.setItem('viraasat_staff_status',JSON.stringify(map||{}));}catch(e){}
-        }
-        function activeStaffCount(){
-            return Array.isArray(staffData) ? staffData.filter(s=>getStaffStatus(s)==='active').length : 0;
-        }
-        function toggleStaffStatus(key){
-            if(!window.isUserAdmin){showCustomAlert('Only Admin can change employee status.');return;}
-            const wanted=String(key||'').trim();
-            const staff=staffData.find(s=>getStaffKey(s)===wanted);
-            if(!staff){showCustomAlert('Employee record not found. Refresh data and try again.');return;}
-            const next=getStaffStatus(staff)==='active'?'inactive':'active';
-            const state=readStaffStatusMap();
-            state[wanted]=next;
-            writeStaffStatusMap(state);
-            staff.__status=next;
-            auditLog('Employee Status Changed',`${getVal(staff,['name'])||wanted}: ${next.toUpperCase()}`);
-            renderAdminStaffRows();
-            renderPremiumAdmin();
-        }
-        function removeStaffRecord(key){
-            if(!window.isUserAdmin){showCustomAlert('Only Admin can remove employees.');return;}
-            const wanted=String(key||'').trim();
-            const staff=staffData.find(s=>getStaffKey(s)===wanted);
-            if(!staff){showCustomAlert('Employee record not found. Refresh data and try again.');return;}
-            showCustomConfirm(`Remove ${getVal(staff,['name'])||wanted} from the POS staff list?`,()=>{
-                let removed=[];
-                try{removed=JSON.parse(localStorage.getItem('viraasat_removed_staff')||'[]');if(!Array.isArray(removed))removed=[];}catch(e){removed=[];}
-                if(!removed.map(String).includes(wanted))removed.push(wanted);
-                try{localStorage.setItem('viraasat_removed_staff',JSON.stringify(removed));}catch(e){}
-                const state=readStaffStatusMap();delete state[wanted];writeStaffStatusMap(state);
-                staffData=staffData.filter(s=>getStaffKey(s)!==wanted);
-                auditLog('Employee Removed',`${getVal(staff,['name'])||wanted} (${wanted})`);
-                renderAdminStaffRows();
-                renderPremiumAdmin();
-                populateStaffDropdown();
-                showCustomAlert('Employee removed from the POS staff list.');
-            },null);
-        }
+        function activeStaffCount(){return staffData.filter(s=>getStaffStatus(s)==='active').length;}
 
         function showPremiumTab(tab,btn){
             premiumActiveTab=tab;
@@ -1592,37 +1526,97 @@ Tables, billing and existing local UI remain visible.`);}
             const from=document.getElementById('psFrom')?.value||'';
             const to=document.getElementById('psTo')?.value||'';
             const q=(document.getElementById('psSearch')?.value||'').toLowerCase().trim();
-            return sortSalesNewestFirst(salesHistory.filter(s=>{
+            return salesHistory.filter(s=>{
                 const dk=saleDateKey(s);
-                if(from&&dk<from)return false;if(to&&dk>to)return false;
-                const order=String(getVal(s,['orderid','order_number','id'])||'').toLowerCase();
-                const table=String(getVal(s,['tablenumber','table','tablename','table_number'])||'').toLowerCase();
-                const phone=String(getVal(s,['phone','customerphone','customer_phone'])||'').toLowerCase();
-                if(q&&!`${order} ${table} ${phone}`.includes(q))return false;
+                if(from&&dk<from)return false;
+                if(to&&dk>to)return false;
+                if(q){
+                    const haystack=[
+                        getVal(s,['orderid','order_number','id']),
+                        getVal(s,['phone','customerphone','customer_phone']),
+                        getVal(s,['items_string','itemsstring','items']),
+                        getVal(s,['tablenumber','table','tablename','table_number'])
+                    ].join(' ').toLowerCase();
+                    if(!haystack.includes(q))return false;
+                }
                 return true;
-            }));
+            });
         }
+
+        function setPremiumSalesRange(range){
+            const f=document.getElementById('psFrom'),t=document.getElementById('psTo');
+            if(!f||!t)return;
+            const now=new Date(),key=localISODate(now);
+            document.querySelectorAll('#premiumPanel-sales .sales-filter-chips .filter-btn').forEach(b=>b.classList.remove('active'));
+            const activeMap={today:0,yesterday:1,'7d':2,'30d':3,all:4};
+            const btn=document.querySelectorAll('#premiumPanel-sales .sales-filter-chips .filter-btn')[activeMap[range]];
+            if(btn)btn.classList.add('active');
+
+            if(range==='all'){f.value='';t.value='';}
+            else if(range==='today'){f.value=key;t.value=key;}
+            else if(range==='yesterday'){
+                const y=new Date(now);y.setDate(y.getDate()-1);
+                const k=localISODate(y);f.value=k;t.value=k;
+            }else{
+                const days=range==='7d'?6:29;
+                const d=new Date(now);d.setDate(d.getDate()-days);
+                f.value=localISODate(d);t.value=key;
+            }
+            renderPremiumSalesRows();
+        }
+
         function renderPremiumSales(){
             const panel=document.getElementById('premiumPanel-sales');if(!panel)return;
             panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Sales Register</h3><span id="psCount">0 orders</span></div>
-            <div class="sales-filter-chips"><button class="filter-btn" onclick="setPremiumSalesRange('today')">Today</button><button class="filter-btn" onclick="setPremiumSalesRange('yesterday')">Yesterday</button><button class="filter-btn" onclick="setPremiumSalesRange('7d')">7 Days</button><button class="filter-btn" onclick="setPremiumSalesRange('30d')">30 Days</button><button class="filter-btn active" onclick="setPremiumSalesRange('all')">All</button></div>
-            <div class="date-filter-row"><input type="date" id="psFrom" onchange="renderPremiumSalesRows()"><input type="date" id="psTo" onchange="renderPremiumSalesRows()"></div>
-            <div class="premium-toolbar compact-toolbar" style="margin-top:7px"><input id="psSearch" placeholder="Search order / phone" oninput="renderPremiumSalesRows()"><button class="premium-btn light" onclick="exportPremiumSales()">Export</button></div>
+            <div class="sales-filter-chips">
+                <button class="filter-btn" onclick="setPremiumSalesRange('today')">Today</button>
+                <button class="filter-btn" onclick="setPremiumSalesRange('yesterday')">Yesterday</button>
+                <button class="filter-btn" onclick="setPremiumSalesRange('7d')">7 Days</button>
+                <button class="filter-btn" onclick="setPremiumSalesRange('30d')">30 Days</button>
+                <button class="filter-btn active" onclick="setPremiumSalesRange('all')">All</button>
+            </div>
+            <div class="date-filter-row">
+                <input type="date" id="psFrom" onchange="renderPremiumSalesRows()">
+                <input type="date" id="psTo" onchange="renderPremiumSalesRows()">
+            </div>
+            <div class="premium-toolbar compact-toolbar" style="margin-top:7px">
+                <input id="psSearch" placeholder="Search order / item / phone / table" oninput="renderPremiumSalesRows()">
+                <button class="premium-btn light" onclick="exportPremiumSales()">Export</button>
+            </div>
             <div id="psSummary" class="sales-summary-grid"></div>
             <div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Time</th><th>Order</th><th>Table</th><th>Items</th><th>Mode</th><th>Discount</th><th>Total</th></tr></thead><tbody id="psBody"></tbody></table></div>
             <div id="psMobileList" class="mobile-sale-list"></div></div>`;
             renderPremiumSalesRows();
         }
-        function setPremiumSalesRange(range){
-            const f=document.getElementById('psFrom'),t=document.getElementById('psTo'); if(!f||!t)return; const now=new Date(); const key=localISODate(now);
-            if(range==='all'){f.value='';t.value='';} else if(range==='today'){f.value=key;t.value=key;} else if(range==='yesterday'){const y=new Date(now);y.setDate(y.getDate()-1);const k=localISODate(y);f.value=k;t.value=k;} else {const days=range==='7d'?6:29;const d=new Date(now);d.setDate(d.getDate()-days);f.value=localISODate(d);t.value=key;} renderPremiumSalesRows();
-        }
+
         function renderPremiumSalesRows(){
-            const rows=sortSalesNewestFirst(getFilteredPremiumSales()); const body=document.getElementById('psBody');if(!body)return;
-            const total=rows.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0); const disc=rows.reduce((a,s)=>a+parseAmount(getVal(s,['discount'])),0); const aov=rows.length?total/rows.length:0;
-            document.getElementById('psCount').innerText=`${rows.length} orders`;document.getElementById('psSummary').innerHTML=`<div class="report-stat"><div class="rlabel">Orders</div><div class="rvalue">${rows.length}</div></div><div class="report-stat"><div class="rlabel">Sale</div><div class="rvalue">${money(total)}</div></div><div class="report-stat"><div class="rlabel">AOV</div><div class="rvalue">${money(aov)}</div></div>`;
-            body.innerHTML=rows.length?rows.map(s=>{const items=saleItemsText(s);const mode=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']));return `<tr onclick="openOrderDetails('${esc(getVal(s,['orderid','order_number','id']))}')" style="cursor:pointer"><td>${esc(saleDateKey(s))}</td><td>${esc(saleTimeText(s))}</td><td><b>${esc(getVal(s,['orderid','order_number','id']))}</b></td><td>${esc(getVal(s,['tablenumber','table','tablename','table_number'])||'—')}</td><td>${esc(items)}</td><td>${esc(mode||'—')}</td><td>${money(getVal(s,['discount']))}</td><td><b>${money(getVal(s,['grand_total','totalamount','total','amount']))}</b></td></tr>`}).join(''):`<tr><td colspan="8"><div class="premium-empty">No sales match the selected filters.</div></td></tr>`;
-            const mob=document.getElementById('psMobileList');if(mob)mob.innerHTML=rows.map(s=>`<div class="mobile-sale-card" onclick="openOrderDetails('${esc(getVal(s,['orderid','order_number','id']))}')"><div class="mobile-sale-top"><div class="mobile-sale-id">#${esc(getVal(s,['orderid','order_number','id']))}</div><div class="mobile-sale-total">${money(getVal(s,['grand_total','totalamount','total','amount']))}</div></div><div class="mobile-sale-meta"><span>${esc(saleDateKey(s))}</span><span>${esc(saleTimeText(s))}</span><span>${esc(getVal(s,['tablenumber','table','table_number'])||'—')}</span><span>${esc(getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—')}</span></div><div class="mobile-sale-items">${parseSaleItems(s).slice(0,4).map(it=>`<div class="mobile-sale-item"><span>${esc(it.name)} ×${it.qty}</span><b>${money(it.amount)}</b></div>`).join('')||'<span>No item details</span>'}</div></div>`).join('')||'<div class="premium-empty">No sales.</div>';
+            const rows=getFilteredPremiumSales();
+            const body=document.getElementById('psBody');if(!body)return;
+            const total=rows.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);
+            const aov=rows.length?total/rows.length:0;
+            const count=document.getElementById('psCount');
+            const summary=document.getElementById('psSummary');
+            if(count)count.innerText=`${rows.length} orders`;
+            if(summary)summary.innerHTML=`<div class="report-stat"><div class="rlabel">Orders</div><div class="rvalue">${rows.length}</div></div><div class="report-stat"><div class="rlabel">Sale</div><div class="rvalue">${money(total)}</div></div><div class="report-stat"><div class="rlabel">AOV</div><div class="rvalue">${money(aov)}</div></div>`;
+            body.innerHTML=rows.length?rows.map(s=>{
+                const items=saleItemsText(s);
+                const mode=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']));
+                return `<tr onclick="openOrderDetails('${esc(getVal(s,['orderid','order_number','id']))}')" style="cursor:pointer">
+                    <td>${esc(saleDateKey(s))}</td><td>${esc(saleTimeText(s))}</td>
+                    <td><b>${esc(getVal(s,['orderid','order_number','id']))}</b></td>
+                    <td>${esc(getVal(s,['tablenumber','table','tablename','table_number'])||'—')}</td>
+                    <td>${esc(items)}</td><td>${esc(mode||'—')}</td>
+                    <td>${money(getVal(s,['discount']))}</td>
+                    <td><b>${money(getVal(s,['grand_total','totalamount','total','amount']))}</b></td>
+                </tr>`;
+            }).join(''):`<tr><td colspan="8"><div class="premium-empty">No sales match the selected filters.</div></td></tr>`;
+
+            const mob=document.getElementById('psMobileList');
+            if(mob)mob.innerHTML=rows.map(s=>`<div class="mobile-sale-card" onclick="openOrderDetails('${esc(getVal(s,['orderid','order_number','id']))}')">
+                <div class="mobile-sale-top"><div class="mobile-sale-id">#${esc(getVal(s,['orderid','order_number','id']))}</div><div class="mobile-sale-total">${money(getVal(s,['grand_total','totalamount','total','amount']))}</div></div>
+                <div class="mobile-sale-meta"><span>${esc(saleDateKey(s))}</span><span>${esc(saleTimeText(s))}</span><span>${esc(getVal(s,['tablenumber','table','table_number'])||'—')}</span><span>${esc(getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—')}</span></div>
+                <div class="mobile-sale-items">${parseSaleItems(s).slice(0,4).map(it=>`<div class="mobile-sale-item"><span>${esc(it.name)} ×${it.qty}</span><b>${money(it.amount)}</b></div>`).join('')||'<span>No item details</span>'}</div>
+            </div>`).join('')||'<div class="premium-empty">No sales.</div>';
         }
 
         function exportPremiumSales(){
@@ -1671,50 +1665,34 @@ Tables, billing and existing local UI remain visible.`);}
         }
         function requireAdmin(action='this action'){ if(!window.isUserAdmin){showCustomAlert(`Only Admin can perform ${action}.`);return false;}return true; }
         function stockOptionHtml(selected=''){const names=Object.keys(stockData).sort((a,b)=>a.localeCompare(b));return `<option value="">Select stock item</option>${names.map(n=>`<option value="${esc(n)}" ${String(n).toLowerCase()===String(selected).toLowerCase()?'selected':''}>${esc(n)}</option>`).join('')}`;}
-        const DEFAULT_SELECTED_INVENTORY_ITEMS = [
-            'Advance', 'All season quater', 'Carlsberg Elephant', 'Classic mild',
-            'Coca-Cola Can', 'Connect', 'Gold Flake', 'Gold Flake Light',
-            'King Fisher', 'King Fisher Ultra', 'Mountain Dew 750ml', 'Soda',
-            'Sprite 750ml', 'Tuborg', 'Water Bottle'
-        ];
-        function normalizeItemName(v){return String(v??'').trim().replace(/\s+/g,' ');}
-        function itemKey(v){return normalizeItemName(v).toLowerCase();}
-        function uniqueItemNames(list){const out=[],seen=new Set();(list||[]).forEach(v=>{const n=normalizeItemName(v),k=itemKey(n);if(n&&!seen.has(k)){seen.add(k);out.push(n);}});return out;}
-        function getSelectedInventoryItems(){let saved=[];try{saved=JSON.parse(localStorage.getItem('viraasat_selected_inventory_items')||'[]');}catch(e){saved=[];}if(!Array.isArray(saved)||!saved.length){saved=DEFAULT_SELECTED_INVENTORY_ITEMS.slice();localStorage.setItem('viraasat_selected_inventory_items',JSON.stringify(saved));}return uniqueItemNames(saved);}
-        function saveSelectedInventoryItems(list){localStorage.setItem('viraasat_selected_inventory_items',JSON.stringify(uniqueItemNames(list)));}
-        function findMenuItemByName(name){const k=itemKey(name);return (menuData||[]).find(m=>itemKey(getVal(m,['name','itemname','item']))===k)||null;}
-        function findStockKeyByName(name){const k=itemKey(name);return Object.keys(stockData||{}).find(x=>itemKey(x)===k)||normalizeItemName(name);}
-        function getInventoryMenuRows(){
-            const selected=getSelectedInventoryItems(),rows=[];
-            selected.forEach(selectedName=>{const menu=findMenuItemByName(selectedName);const displayName=normalizeItemName(menu?getVal(menu,['name','itemname','item']):selectedName)||selectedName;const stockKey=findStockKeyByName(displayName);const meta=stockMeta[stockKey]||{};rows.push({name:displayName,stockKey,qty:Number(stockData[stockKey]??0),meta,menu});});
-            return rows;
-        }
-        function inventoryMenuOptionsHtml(){return `<option value="">Select menu item</option>`+getInventoryMenuRows().map(r=>`<option value="${esc(r.stockKey)}">${esc(r.name)} — QTY ${Number(r.qty)||0}</option>`).join('');}
-        function selectInventoryMenu(stockKey){const row=getInventoryMenuRows().find(r=>String(r.stockKey)===String(stockKey));const current=document.getElementById('invCurrentQty'),input=document.getElementById('invQtyInput');if(!row){if(current)current.innerHTML='Select a menu item';if(input)input.value='';return;}if(current)current.innerHTML=`Current QTY: <b>${Number(row.qty)||0}</b> ${esc(row.meta.unit||'pcs')}`;if(input)input.value=Number(row.qty)||0;}
-        async function updateInventoryQtyFromMenu(){
-            if(!requireAdmin('inventory update'))return;const stockKey=document.getElementById('invMenuSelect')?.value||'';const row=getInventoryMenuRows().find(r=>String(r.stockKey)===String(stockKey));const qty=Number(document.getElementById('invQtyInput')?.value);
-            if(!row){showCustomAlert('Please select a menu item.');return;}if(!Number.isFinite(qty)||qty<0){showCustomAlert('Enter a valid QTY.');return;}
-            const old=Number(stockData[row.stockKey]??0),meta=row.meta||{};try{await d1Post('/stock',{name:row.stockKey,quantity:qty,unit:meta.unit||'pcs',low_stock_level:Number(meta.low_stock_level??5),note:'Inventory QTY update',updated_by:localStorage.getItem('viraasat_user')||'Admin'});stockData[row.stockKey]=qty;stockMeta[row.stockKey]={...meta,name:row.stockKey,unit:meta.unit||'pcs',low_stock_level:Number(meta.low_stock_level??5),updated_at:new Date().toISOString()};stockHistory.unshift({item_name:row.stockKey,old_quantity:old,new_quantity:qty,change_quantity:qty-old,action:'UPDATE',note:'Inventory QTY update',updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});auditLog('Inventory QTY Updated',`${row.name}: ${old} → ${qty}`);renderStockDashboard();renderPremiumInventory();renderPremiumAdmin();showCustomAlert(`${row.name} QTY updated to ${qty}.`);}catch(e){showCustomAlert('Inventory update failed: '+e.message);}
-        }
-        function openAddInventoryItemModal(){if(!requireAdmin('add inventory item'))return;['newInvItemName','newInvItemPrice','newInvItemQty'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});const cat=document.getElementById('newInvItemCategory');if(cat)cat.value='Other';document.getElementById('addInventoryItemModal').style.display='flex';}
-        function closeAddInventoryItemModal(){const e=document.getElementById('addInventoryItemModal');if(e)e.style.display='none';}
-        async function addInventoryMenuItem(){
-            if(!requireAdmin('add inventory item'))return;const name=normalizeItemName(document.getElementById('newInvItemName')?.value);const price=Number(document.getElementById('newInvItemPrice')?.value);const qty=Number(document.getElementById('newInvItemQty')?.value||0);const category=normalizeItemName(document.getElementById('newInvItemCategory')?.value)||'Other';
-            if(!name){showCustomAlert('Enter item name.');return;}if(!Number.isFinite(price)||price<=0){showCustomAlert('Enter a valid selling price.');return;}if(!Number.isFinite(qty)||qty<0){showCustomAlert('Enter a valid opening QTY.');return;}
-            const existing=findMenuItemByName(name);try{let menuItem=existing;if(!menuItem){const r=await d1Post('/menu',{name,category,price,is_available:true});menuItem={id:Number(r.id||0),name,itemname:name,category,price,is_available:1};menuData.push(menuItem);}const stockKey=findStockKeyByName(name);const old=Number(stockData[stockKey]??0);await d1Post('/stock',{name:stockKey,quantity:qty,unit:'pcs',low_stock_level:5,note:'Added from Inventory',updated_by:localStorage.getItem('viraasat_user')||'Admin'});stockData[stockKey]=qty;stockMeta[stockKey]={...(stockMeta[stockKey]||{}),name:stockKey,unit:'pcs',low_stock_level:5,updated_at:new Date().toISOString()};stockHistory.unshift({item_name:stockKey,old_quantity:old,new_quantity:qty,change_quantity:qty-old,action:'ADD',note:'Added from Inventory',updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});const selected=getSelectedInventoryItems();selected.push(name);saveSelectedInventoryItems(selected);populateDropdown();auditLog(existing?'Inventory Item Selected':'Inventory Item Added',`${name} ₹${price}, QTY ${qty}`);closeAddInventoryItemModal();renderStockDashboard();renderPremiumInventory();renderPremiumAdmin();showCustomAlert(existing?`${name} added to selected inventory.`:`${name} added to Menu and Inventory.`);}catch(e){showCustomAlert('Item add failed: '+e.message);}
-        }
         function renderPremiumInventory(){
             const panel=document.getElementById('premiumPanel-inventory');if(!panel)return;if(!window.isUserAdmin){panel.innerHTML='<div class="premium-card"><div class="premium-empty">Inventory control is restricted to Admin.</div></div>';return;}
-            const rows=getInventoryMenuRows(),low=rows.filter(r=>Number(r.qty)<=Number(r.meta?.low_stock_level??5)),out=rows.filter(r=>Number(r.qty)<=0),totalUnits=rows.reduce((a,r)=>a+Number(r.qty||0),0);
-            panel.innerHTML=`<div class="premium-grid-3" style="margin-bottom:14px"><div class="report-stat"><div class="rlabel">Selected Items</div><div class="rvalue">${rows.length}</div></div><div class="report-stat"><div class="rlabel">Low Stock</div><div class="rvalue" style="color:#B45309">${low.length}</div></div><div class="report-stat"><div class="rlabel">Total QTY</div><div class="rvalue">${Math.round(totalUnits)}</div></div></div>
-            <div class="premium-card" style="margin-bottom:14px"><div class="premium-card-head"><h3>Update Inventory QTY</h3><span>Admin only</span></div><div class="admin-form-grid"><select id="invMenuSelect" onchange="selectInventoryMenu(this.value)">${inventoryMenuOptionsHtml()}</select><input id="invQtyInput" type="number" min="0" inputmode="numeric" placeholder="New QTY"><div id="invCurrentQty" class="admin-help" style="display:flex;align-items:center;padding:0 10px;border:1px solid var(--border);border-radius:10px;background:#FAFAFA;min-height:40px;">Select a menu item</div><button class="premium-btn" onclick="updateInventoryQtyFromMenu()">Update QTY</button></div><div class="inventory-add-row"><button class="inventory-add-btn" onclick="openAddInventoryItemModal()">＋ Add Item</button></div><div class="inventory-selected-note">Only selected inventory items are shown here. Add Item will also add the item to the billing Menu list automatically.</div></div>
-            <div class="premium-card"><div class="premium-card-head"><h3>Current Inventory</h3><span>${out.length?`${out.length} out of stock`:'Live QTY'}</span></div><div class="premium-toolbar"><input id="pStockSearch" placeholder="Search selected inventory..." oninput="renderPremiumInventoryRows()"></div><div id="pStockGrid" class="stock-grid"></div></div>`;renderPremiumInventoryRows();
+            const entries=Object.entries(stockData).sort((a,b)=>Number(a[1])-Number(b[1]));const low=entries.filter(([k,v])=>Number(v)<=Number(stockMeta[k]?.low_stock_level??5));const out=entries.filter(([k,v])=>Number(v)<=0);const totalUnits=entries.reduce((a,[k,v])=>a+Number(v||0),0);const last=entries.map(([k])=>stockMeta[k]?.updated_at||'').filter(Boolean).sort().pop();
+            panel.innerHTML=`<div class="premium-grid-3" style="margin-bottom:14px"><div class="report-stat"><div class="rlabel">Tracked Items</div><div class="rvalue">${entries.length}</div></div><div class="report-stat"><div class="rlabel">Low Stock</div><div class="rvalue" style="color:#B45309">${low.length}</div></div><div class="report-stat"><div class="rlabel">Total Units</div><div class="rvalue">${Math.round(totalUnits)}</div></div></div>
+            <div class="premium-card" style="margin-bottom:14px"><div class="premium-card-head"><h3>Inventory Control</h3><span>Admin only</span></div><div class="admin-form-grid"><select id="invItemSelect" onchange="loadStockEditor(this.value)">${stockOptionHtml()}</select><input id="invItemName" placeholder="New item name"><input id="invItemQty" type="number" min="0" placeholder="Current quantity"><input id="invItemUnit" placeholder="Unit" value="pcs"><input id="invItemLow" type="number" min="0" placeholder="Low stock level" value="5"><input id="invItemNote" placeholder="Correction note / reason"><button class="premium-btn" onclick="saveInventoryItem()">Save / Update Stock</button><button class="premium-btn light" onclick="resetInventoryEditor()">Add New Item</button></div><div class="admin-help" style="margin-top:8px">Last stock update: <b>${last?esc(cleanDisplayDate(last)+' '+cleanDisplayTime(last)):'No stock update recorded yet'}</b>${out.length?` • <span style="color:#B91C1C">${out.length} item(s) out of stock</span>`:''}</div></div>
+            <div class="premium-card"><div class="premium-card-head"><h3>Inventory Insights</h3><span>Latest corrections first</span></div><div id="inventoryInsightRows"></div></div>
+            <div class="premium-card" style="margin-top:14px"><div class="premium-card-head"><h3>All Stock Items</h3><span>${entries.length} items</span></div><div class="premium-toolbar"><input id="pStockSearch" placeholder="Search stock..." oninput="renderPremiumInventoryRows()"></div><div id="pStockGrid" class="stock-grid"></div></div>`;
+            renderPremiumInventoryRows();renderInventoryInsights();
         }
-        function renderPremiumInventoryRows(){const el=document.getElementById('pStockGrid');if(!el)return;const q=(document.getElementById('pStockSearch')?.value||'').toLowerCase().trim();const e=getInventoryMenuRows().filter(r=>r.name.toLowerCase().includes(q));el.innerHTML=e.map(r=>{const low=Number(r.meta?.low_stock_level??5);return `<div class="stock-box ${Number(r.qty)<=low?'low':''}"><div class="stock-box-name">${esc(r.name)}</div><div class="stock-box-qty">${Number(r.qty)||0}</div><small>${Number(r.qty)<=0?'OUT OF STOCK':Number(r.qty)<=low?'LOW STOCK':'Available'} • ${esc(r.meta?.unit||'pcs')}</small></div>`}).join('')||'<div class="premium-empty" style="grid-column:1/-1">No selected inventory items found.</div>';}
         function loadStockEditor(name){if(!name){resetInventoryEditor(false);return;}const meta=stockMeta[name]||{};document.getElementById('invItemName').value=name;document.getElementById('invItemQty').value=Number(stockData[name]||0);document.getElementById('invItemUnit').value=meta.unit||'pcs';document.getElementById('invItemLow').value=Number(meta.low_stock_level??5);document.getElementById('invItemNote').value='';}
         function resetInventoryEditor(clearSelect=true){if(clearSelect&&document.getElementById('invItemSelect'))document.getElementById('invItemSelect').value='';['invItemName','invItemQty','invItemNote'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});document.getElementById('invItemUnit').value='pcs';document.getElementById('invItemLow').value=5;}
         async function saveInventoryItem(){if(!requireAdmin('inventory update'))return;const name=document.getElementById('invItemName')?.value.trim();const qty=Number(document.getElementById('invItemQty')?.value);const unit=document.getElementById('invItemUnit')?.value.trim()||'pcs';const low=Number(document.getElementById('invItemLow')?.value??5);const note=document.getElementById('invItemNote')?.value.trim()||'Admin stock update';if(!name||!Number.isFinite(qty)||qty<0||!Number.isFinite(low)||low<0){showCustomAlert('Enter valid item, quantity and low-stock level.');return;}const old=Number(stockData[name]??0);const exists=Object.prototype.hasOwnProperty.call(stockData,name);try{await d1Post('/stock',{name,quantity:qty,unit,low_stock_level:low,note,updated_by:localStorage.getItem('viraasat_user')||'Admin'});stockData[name]=qty;stockMeta[name]={...(stockMeta[name]||{}),name,unit,low_stock_level:low,updated_at:new Date().toISOString()};stockHistory.unshift({item_name:name,old_quantity:old,new_quantity:qty,change_quantity:qty-old,action:exists?'UPDATE':'ADD',note,updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});auditLog(exists?'Stock Corrected':'Inventory Item Added',`${name}: ${old} → ${qty} (${note})`);renderStockDashboard();renderPremiumInventory();resetInventoryEditor();showCustomAlert('Inventory saved successfully.');}catch(e){showCustomAlert('Inventory save failed: '+e.message);}}
         function renderInventoryInsights(){const el=document.getElementById('inventoryInsightRows');if(!el)return;const rows=(stockHistory||[]).slice(0,10);el.innerHTML=rows.length?rows.map(r=>`<div class="admin-mini-row"><div><b>${esc(r.item_name||r.name)}</b><small>${esc(r.action||'UPDATE')} • ${esc(r.note||'Stock change')} • ${esc(r.updated_by||'Admin')}</small></div><strong>${Number(r.new_quantity??r.quantity??0)}</strong><small style="display:block;color:var(--text-muted)">${r.created_at?esc(cleanDisplayDate(r.created_at)+' '+cleanDisplayTime(r.created_at)):''}</small></div>`).join(''):'<div class="premium-empty">No stock update history available yet.</div>';}
+        function renderPremiumInventoryRows(){const el=document.getElementById('pStockGrid');if(!el)return;const q=(document.getElementById('pStockSearch')?.value||'').toLowerCase();const e=Object.entries(stockData).filter(([k])=>k.toLowerCase().includes(q)).sort((a,b)=>Number(a[1])-Number(b[1]));el.innerHTML=e.map(([k,v])=>{const m=stockMeta[k]||{};const low=Number(m.low_stock_level??5);return `<div class="stock-box ${Number(v)<=low?'low':''}"><div class="stock-box-name">${esc(k)}</div><div class="stock-box-qty">${Number(v)||0}</div><small>${Number(v)<=0?'OUT OF STOCK':Number(v)<=low?'LOW STOCK':'Available'} • ${esc(m.unit||'pcs')}</small><button class="premium-btn light" style="margin-top:8px;width:100%" onclick="loadStockEditor('${esc(k)}')">Edit / Correct</button></div>`}).join('')||'<div class="premium-empty" style="grid-column:1/-1">No stock data received from source.</div>';}
+        async function removeStaffRecord(key){
+            const staff=staffData.find(s=>getStaffKey(s)===key);
+            if(!staff)return;
+            showCustomConfirm('Remove this staff member from the POS directory?',async()=>{
+                const id=Number(getVal(staff,['id','empid','employeeid']));
+                if(!id){showCustomAlert('This staff record has no D1 ID.');return;}
+                try{
+                    await d1Post('/staff/remove',{id:id});
+                    staffData=staffData.filter(s=>getStaffKey(s)!==key);
+                    renderAdminStaffRows();renderEmployeeList();generateTrends();renderPremiumAdmin();
+                    showCustomAlert('Staff member marked inactive in D1.');
+                }catch(e){showCustomAlert('Staff removal failed: '+(e?.message||e)+'\n\nIf this says "API route not found", apply the Worker patch supplied with this build.');}
+            },null);
+        }
         function exportStaff(){downloadCSV(staffData.map(s=>({Emp_ID:getVal(s,['empid','employeeid']),Name:getVal(s,['name']),Role:getVal(s,['role']),Mobile:getVal(s,['mobile','phone']),Monthly_Salary:parseAmount(getVal(s,['monthlysalary','salary'])),Date_of_Joining:getVal(s,['dateofjoining','joindate','date','doj']),Status:getStaffStatus(s)})),'Viraasat-Staff.csv');}
 
         function downloadMenuSample(){downloadCSV([{Name:'Paneer Butter Masala',Category:'Main Course',Price:170,Active:'Yes',Stock:20},{Name:'Tea',Category:'Beverage',Price:20,Active:'Yes',Stock:50},{Name:'Aloo Paratha',Category:'Breakfast',Price:60,Active:'Yes',Stock:15}],'Viraasat-Menu-Sample.csv');}
@@ -1769,7 +1747,10 @@ Tables, billing and existing local UI remain visible.`);}
         }
         function getAuditLogs(){try{return JSON.parse(localStorage.getItem('viraasat_audit_logs')||'[]')}catch(e){return[]}}
         function clearAuditLogs(){localStorage.removeItem('viraasat_audit_logs');renderPremiumAdmin();}
-        async function loadPendingApprovals(){try{return (await d1Get('/approvals')).requests||[]}catch(e){return[]}}
+        async function loadPendingApprovals(){
+            try{return (await d1Get('/approvals')).requests||[]}
+            catch(e){return {error:e.message||String(e)}}
+        }
         async function resolveApproval(requestId,orderId,status){
             try{ await d1Post('/approvals/resolve',{request_id:requestId,order_id:orderId,status,reviewed_by:localStorage.getItem('viraasat_user')||'Admin'}); auditLog('Approval '+status,orderId); renderPremiumAdmin(); fetchData(); }
             catch(e){showCustomAlert('Approval failed: '+e.message)}
@@ -1777,34 +1758,26 @@ Tables, billing and existing local UI remain visible.`);}
 
         function renderPremiumAdmin(){
             const panel=document.getElementById('premiumPanel-settings'); if(!panel)return;
-            if(!window.isUserAdmin){panel.innerHTML='<div class="premium-card"><div class="premium-empty">Admin access only.</div></div>';return;}
-            const logs=getAuditLogs(), active=activeStaffCount(), pendingPromise=loadPendingApprovals();
+            const logs=getAuditLogs();
+            const active=activeStaffCount();
+            const pendingPromise=loadPendingApprovals();
             panel.innerHTML=`
             <div class="premium-card admin-card">
-                <div class="premium-card-head"><h3>Admin Control</h3><span>Secure management</span></div>
+                <div class="premium-card-head"><h3>Admin Control</h3><span>All management in one place</span></div>
                 <div class="admin-module-grid">
-                    <button class="admin-module" onclick="showPremiumTab('inventory')"><b>Inventory</b><span>Update menu QTY only</span></button>
-                    <button class="admin-module" onclick="document.getElementById('userMobile').focus()"><b>POS Users</b><span>Register & revoke access</span></button>
+                    <button class="admin-module" onclick="document.getElementById('adminStockSearch').focus()"><b>Inventory</b><span>Update stock & thresholds</span></button>
                     <button class="admin-module" onclick="document.getElementById('adminStaffSearch').focus()"><b>Employees</b><span>${active} active staff</span></button>
-                    <button class="admin-module" onclick="document.getElementById('fullImportInput').click()"><b>Import</b><span>Master workbook to D1</span></button>
-                    <button class="admin-module" onclick="exportFullDatabaseWorkbook()"><b>Export</b><span>Download current database</span></button>
-                    <button class="admin-module" onclick="document.getElementById('pendingApprovalsBox').scrollIntoView({behavior:'smooth'})"><b>Approvals</b><span>Review protected requests</span></button>
+                    <button class="admin-module" onclick="document.getElementById('userMobile').focus()"><b>Users</b><span>Register / revoke access</span></button>
+                    <button class="admin-module" onclick="document.getElementById('adminMenuName').focus()"><b>Menu</b><span>Add & export menu</span></button>
+                    <button class="admin-module" onclick="document.getElementById('fullImportInput').click()"><b>Import</b><span>Master Excel to D1</span></button>
+                    <button class="admin-module" onclick="exportFullDatabaseWorkbook()"><b>Export</b><span>Download complete workbook</span></button>
                 </div>
             </div>
 
             <div class="premium-card admin-card">
-                <div class="premium-card-head"><h3>POS User Registration</h3><span>Access control</span></div>
-                <div class="admin-form-grid">
-                    <input id="userMobile" inputmode="numeric" placeholder="10 digit mobile">
-                    <input id="userPass" type="password" placeholder="Password (min 4)">
-                    <select id="userRole"><option value="cashier">Cashier</option><option value="manager">Manager</option><option value="waiter">Waiter</option><option value="kitchen">Kitchen</option></select>
-                    <label class="check-row"><input type="checkbox" id="userAllowSales" checked> Live Sale</label>
-                    <label class="check-row"><input type="checkbox" id="userAllowAnalytics"> P&L</label>
-                    <label class="check-row"><input type="checkbox" id="userAllowExpenses"> Expenses</label>
-                    <button class="premium-btn" onclick="registerPOSUser()">Register User</button>
-                </div>
-                <div class="admin-help" style="margin-top:8px">Create a POS login and choose exactly which modules the user can access.</div>
-                <div id="adminUsersRows" class="admin-user-list"></div>
+                <div class="premium-card-head"><h3>Stock Management</h3><span>${Object.keys(stockData).length} items • Admin only</span></div>
+                <div class="admin-form-grid"><select id="adminStockSelect" onchange="loadAdminStockSelect(this.value)">${stockOptionHtml()}</select><input id="adminStockSearch" placeholder="New item name / search" oninput="syncAdminStockSearch(this.value)"><input id="adminStockQty" type="number" min="0" inputmode="numeric" placeholder="Current Qty"><input id="adminStockLow" type="number" min="0" inputmode="numeric" value="5" placeholder="Low Stock"><button class="premium-btn" onclick="adminUpdateStockUnified()">Save / Correct</button><button class="premium-btn light" onclick="resetAdminStockForm()">Add New Item</button></div>
+                <div class="admin-help">Use the dropdown to select an existing item. Quantity correction and new stock-item creation are restricted to Admin.</div><div id="adminStockMiniList" class="admin-mini-list"></div>
             </div>
 
             <div class="premium-card admin-card">
@@ -1826,8 +1799,37 @@ Tables, billing and existing local UI remain visible.`);}
             </div>
 
             <div class="premium-card admin-card">
-                <div class="premium-card-head"><h3>Database Tools</h3><span>Admin only</span></div>
-                <p class="admin-help">Use the master workbook only when you intentionally need a bulk import. Existing order IDs are skipped by the importer.</p>
+                <div class="premium-card-head"><h3>POS User Registration</h3><span>Access control</span></div>
+                <div class="admin-form-grid">
+                    <input id="userMobile" inputmode="numeric" placeholder="10 digit mobile">
+                    <input id="userPass" type="password" placeholder="Password (min 4)">
+                    <select id="userRole"><option value="cashier">Cashier</option><option value="manager">Manager</option><option value="waiter">Waiter</option><option value="kitchen">Kitchen</option></select>
+                    <label class="check-row"><input type="checkbox" id="userAllowSales" checked> Live Sale</label>
+                    <label class="check-row"><input type="checkbox" id="userAllowAnalytics"> P&L</label>
+                    <label class="check-row"><input type="checkbox" id="userAllowExpenses"> Expenses</label>
+                    <button class="premium-btn" onclick="registerPOSUser()">Register User</button>
+                </div>
+                <div id="adminUsersRows" class="admin-user-list"></div>
+            </div>
+
+            <div class="premium-card admin-card">
+                <div class="premium-card-head"><h3>Menu Management</h3><span>${menuData.length} items</span></div>
+                <div class="admin-form-grid">
+                    <input id="adminMenuName" placeholder="Item name">
+                    <input id="adminMenuPrice" type="number" inputmode="numeric" placeholder="Price ₹">
+                    <input id="adminMenuCategory" placeholder="Category" value="Main Course">
+                    <button class="premium-btn" onclick="adminAddMenuUnified()">Add Menu Item</button>
+                </div>
+                <div class="premium-toolbar compact-toolbar" style="margin-top:8px">
+                    <button class="premium-btn light" onclick="downloadMenuSample()">Menu Sample</button>
+                    <label class="premium-btn alt upload-label">Upload Menu<input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleMenuUpload(this.files[0])"></label>
+                    <button class="premium-btn light" onclick="exportMenu()">Export Menu</button>
+                </div>
+            </div>
+
+            <div class="premium-card admin-card">
+                <div class="premium-card-head"><h3>Master Database Import</h3><span>One workbook</span></div>
+                <p class="admin-help">Upload one Excel workbook containing Sales, Menu, Staff, Stock and Expenses. Existing Order IDs are skipped to prevent duplicates.</p>
                 <div class="premium-toolbar compact-toolbar">
                     <button class="premium-btn" onclick="downloadFullImportSample()">Download Sample</button>
                     <label class="premium-btn alt upload-label">Upload Excel<input type="file" id="fullImportInput" accept=".xlsx,.xls" style="display:none" onchange="handleFullDatabaseImport(this.files[0])"></label>
@@ -1844,28 +1846,21 @@ Tables, billing and existing local UI remain visible.`);}
             <div class="premium-card admin-card">
                 <div class="premium-card-head"><h3>Audit Logs</h3><button class="premium-btn light" onclick="clearAuditLogs();renderPremiumAdmin()">Clear</button></div>
                 <div id="auditLogsBox"></div>
-            </div>`;
-            renderAdminStaffRows(); renderAdminUsersRows();
-            pendingPromise.then(requests=>{
+            </div>
+            `;
+            renderAdminStockRows(); renderAdminStaffRows(); renderAdminUsersRows();
+            pendingPromise.then(result=>{
                 const box=document.getElementById('pendingApprovalsBox'); if(!box)return;
-                box.innerHTML=requests.length?requests.map(r=>`<div class="approval-row"><div><b>${esc(r.order_id)}</b><small>${esc(r.reason||'Deletion requested')} • ${esc(r.requested_by||'Unknown')}</small></div><div class="approval-actions"><button class="premium-btn" onclick="resolveApproval(${Number(r.id)},'${esc(r.order_id)}','approved')">Approve</button><button class="premium-btn danger" onclick="resolveApproval(${Number(r.id)},'${esc(r.order_id)}','rejected')">Reject</button></div></div>`).join(''):'<div class="premium-empty">No pending approvals.</div>';
+                if(result&&result.error){
+                    box.innerHTML=`<div class="approval-missing"><b>Approval API unavailable.</b><br>${esc(result.error)}<br><br>Apply the Worker approval/staff patch supplied with this build, then refresh.</div>`;
+                    return;
+                }
+                const requests=Array.isArray(result)?result:[];
+                box.innerHTML=requests.length?requests.map(r=>`<div class="approval-row"><div><b>${esc(r.order_id)}</b><small>${esc(r.reason||'Protected action')} • ${esc(r.requested_by||'Unknown')}</small></div><div class="approval-actions"><button class="premium-btn" onclick="resolveApproval(${Number(r.id)},'${esc(r.order_id)}','approved')">Approve</button><button class="premium-btn danger" onclick="resolveApproval(${Number(r.id)},'${esc(r.order_id)}','rejected')">Reject</button></div></div>`).join(''):'<div class="premium-empty">No pending approvals.</div>';
             });
             const logBox=document.getElementById('auditLogsBox');
             if(logBox)logBox.innerHTML=logs.length?logs.slice(0,40).map(l=>`<div class="audit-row"><b>${esc(l.action)}</b><span>${esc(l.details)} • ${esc(l.user)} • ${new Date(l.timestamp).toLocaleString('en-IN')}</span></div>`).join(''):'<div class="premium-empty">No activity logged yet.</div>';
         }
-        // Admin render safety: show the module even if one non-critical section fails.
-        // The underlying error is logged instead of being silently swallowed.
-        const _renderPremiumAdminOriginal=renderPremiumAdmin;
-        renderPremiumAdmin=function(){
-            const panel=document.getElementById('premiumPanel-settings');
-            if(!panel)return;
-            try{
-                _renderPremiumAdminOriginal();
-            }catch(e){
-                console.error('Admin view error',e);
-                panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Admin Control</h3><span>Secure management</span></div><div class="admin-help">Admin controls are available, but one data block could not be loaded.</div><button class="premium-btn" onclick="renderPremiumAdmin()">Retry Admin</button></div>`;
-            }
-        };
 
         function renderAdminStockRows(){const el=document.getElementById('adminStockMiniList');if(!el)return;const rows=Object.entries(stockData).sort((a,b)=>Number(a[1])-Number(b[1])).slice(0,15);el.innerHTML=rows.map(([name,qty])=>{const low=Number(stockMeta[name]?.low_stock_level??5);return `<div class="admin-mini-row" onclick="loadAdminStockSelect('${esc(name)}')" style="cursor:pointer"><div><b>${esc(name)}</b><small>${Number(qty)<=0?'OUT OF STOCK':Number(qty)<=low?'Low stock':'Available'} • Last update ${stockMeta[name]?.updated_at?esc(cleanDisplayDate(stockMeta[name].updated_at)):'—'}</small></div><strong>${Number(qty)||0}</strong></div>`}).join('')||'<div class="premium-empty">No stock data.</div>';}
         function loadAdminStockSelect(name){if(!name){resetAdminStockForm(false);return;}const m=stockMeta[name]||{};document.getElementById('adminStockSearch').value=name;document.getElementById('adminStockQty').value=Number(stockData[name]||0);document.getElementById('adminStockLow').value=Number(m.low_stock_level??5);}
@@ -1983,14 +1978,53 @@ Tables, billing and existing local UI remain visible.`);}
                     inserted.expenses++;
                 }
                 if(status)status.innerHTML='Importing Sales...';
+                const existingOrderIds=new Set(salesHistory.map(s=>String(getVal(s,['orderid','order_number','id'])||'').trim()).filter(Boolean));
+                const importedOrderIds=new Set();
                 for(const r of salesRows){
                     const order=normalizeImportSales([r])[0];
                     if(!order)continue;
+                    const oid=String(order.order_id||'').trim();
+                    if(!oid || existingOrderIds.has(oid) || importedOrderIds.has(oid)) continue;
+
                     let items=parseSaleItems({items: order.items});
                     const prepared=[];
-                    for(const item of items){ const copy={...item}; copy.id=Number(copy.id||0); if(!copy.id){ const found=menuData.find(m=>String(getVal(m,['itemname','name'])).trim().toLowerCase()===String(copy.name).trim().toLowerCase()); if(found) copy.id=Number(getVal(found,['id','menu_item_id']))||0; } if(!copy.id){ const made=await d1Post('/menu',{name:copy.name,category:'Imported',price:copy.price,is_available:true}); copy.id=Number(made.id||0); } if(!copy.id) throw new Error(`Menu item ID missing for ${copy.name}`); prepared.push(copy); }
-                    await d1Post('/orders/checkout',{order_number:order.order_id,order_type:order.table_number?(/^Table\s/.test(order.table_number)?'Dine-in':'Dine-in'):'Takeaway',table_number:order.table_number.replace(/^Table\s+/i,'' )||null,customer_phone:order.phone,items:prepared,items_string:order.items,subtotal:order.total_amount+order.discount,discount:order.discount,grand_total:order.total_amount,total:order.total_amount,payment_method:order.payment_method||'Cash',payment_status:'paid',order_status:'completed',created_at:new Date(`${order.date} ${order.time||'00:00'}`).toISOString()});
-                    inserted.sales++;
+                    for(const item of items){
+                        const copy={...item};
+                        copy.id=Number(copy.id||0);
+                        if(!copy.id){
+                            const found=menuData.find(m=>String(getVal(m,['itemname','name'])).trim().toLowerCase()===String(copy.name).trim().toLowerCase());
+                            if(found) copy.id=Number(getVal(found,['id','menu_item_id']))||0;
+                        }
+                        if(!copy.id){
+                            const made=await d1Post('/menu',{name:copy.name,category:'Imported',price:copy.price,is_available:true});
+                            copy.id=Number(made.id||0);
+                        }
+                        if(!copy.id) throw new Error(`Menu item ID missing for ${copy.name}`);
+                        prepared.push(copy);
+                    }
+                    try{
+                        await d1Post('/orders/checkout',{
+                            order_number:oid,
+                            order_type:order.table_number? 'Dine-in':'Takeaway',
+                            table_number:order.table_number.replace(/^Table\s+/i,'')||null,
+                            customer_phone:order.phone,items:prepared,items_string:order.items,
+                            subtotal:order.total_amount+order.discount,discount:order.discount,
+                            grand_total:order.total_amount,total:order.total_amount,
+                            payment_method:order.payment_method||'Cash',payment_status:'paid',
+                            order_status:'completed',
+                            created_at:new Date(`${order.date} ${order.time||'00:00'}`).toISOString()
+                        });
+                        inserted.sales++;
+                        importedOrderIds.add(oid);
+                    }catch(err){
+                        const msg=String(err?.message||err);
+                        if(/unique|order_number|constraint/i.test(msg)){
+                            console.warn('Skipped duplicate order during import:',oid);
+                            importedOrderIds.add(oid);
+                            continue;
+                        }
+                        throw err;
+                    }
                 }
                 if(status)status.innerHTML=`<b style="color:#10B981">Import complete.</b> Sales ${inserted.sales}, Menu ${inserted.menu}, Staff ${inserted.staff}, Stock ${inserted.stock}, Expenses ${inserted.expenses}.`;
                 await fetchData();
@@ -2105,14 +2139,12 @@ Tables, billing and existing local UI remain visible.`);}
             finalLabels.forEach(lbl => { finalSales.push(aggSales[lbl] || 0); finalExp.push(aggExp[lbl] || 0); });
 
             const canvas = document.getElementById('trendChart'); if(!canvas) return; const ctx = canvas.getContext('2d'); if(typeof Chart === 'undefined') return; if(trendChartInstance) trendChartInstance.destroy();
-            trendChartInstance = new Chart(ctx, { type: 'line', data: { labels: finalLabels, datasets: [ { label: 'Sales (₹)', data: finalSales, borderColor: '#07CDAE', backgroundColor: 'rgba(7, 205, 174, 0.15)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#07CDAE', pointRadius: 4 }, { label: 'Expenses (₹)', data: finalExp, borderColor: '#10B981', backgroundColor: 'rgba(16, 185, 129, 0.12)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#10B981', pointRadius: 4 } ] }, options: { responsive: true, maintainAspectRatio: false } });
+            trendChartInstance = new Chart(ctx, { type: 'line', data: { labels: finalLabels, datasets: [ { label: 'Sales (₹)', data: finalSales, borderColor: '#07CDAE', backgroundColor: 'rgba(7, 205, 174, 0.15)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#07CDAE', pointRadius: 4 }, { label: 'Expenses (₹)', data: finalExp, borderColor: '#FF5F8E', backgroundColor: 'rgba(255, 95, 142, 0.12)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#FF5F8E', pointRadius: 4 } ] }, options: { responsive: true, maintainAspectRatio: false } });
         }
 
-        function populateDropdown() {
-            const datalist=document.getElementById('menuItemsList');if(!datalist)return;datalist.innerHTML='';
-            const names=[];getSelectedInventoryItems().forEach(n=>{const m=findMenuItemByName(n);names.push(normalizeItemName(m?getVal(m,['itemname','name','item']):n));});
-            (menuData||[]).forEach(item=>names.push(normalizeItemName(getVal(item,['itemname','name','item']))));
-            uniqueItemNames(names).forEach(itemName=>{const option=document.createElement('option');option.value=itemName;datalist.appendChild(option);});
+        function populateDropdown() { 
+            const datalist = document.getElementById('menuItemsList'); datalist.innerHTML = ""; 
+            menuData.forEach(item => { let itemName = getVal(item, ['itemname', 'name']); if(itemName) { let option = document.createElement('option'); option.value = itemName; datalist.appendChild(option); } }); 
         }
 
         function renderStockDashboard() { 
@@ -2122,7 +2154,7 @@ Tables, billing and existing local UI remain visible.`);}
         }
 
         function checkStockDisplay() { 
-            let itemName = document.getElementById('itemInput').value; let statusDiv = document.getElementById('stockStatus'); let foundStockKey = Object.keys(stockData).find(key => key.trim().toLowerCase() === itemName.trim().toLowerCase()); 
+            const itemInput=document.getElementById('itemInput'), statusDiv=document.getElementById('stockStatus'); if(!itemInput||!statusDiv)return; let itemName = itemInput.value; let foundStockKey = Object.keys(stockData).find(key => key.trim().toLowerCase() === itemName.trim().toLowerCase()); 
             if(foundStockKey !== undefined) { let currentQty = parseInt(stockData[foundStockKey]); statusDiv.style.color = ""; statusDiv.style.backgroundColor = ""; statusDiv.style.border = ""; statusDiv.className = currentQty > 5 ? "stock-tag" : "stock-tag low"; statusDiv.innerHTML = currentQty > 5 ? `Available: <span>${currentQty}</span>` : `Low Stock: <span>${currentQty}</span>`; statusDiv.style.display = "inline-flex"; statusDiv.style.marginTop = "8px"; } else { statusDiv.style.display = "none"; statusDiv.innerHTML = ""; } 
         }
 
@@ -2134,46 +2166,9 @@ Tables, billing and existing local UI remain visible.`);}
             if (!tStr) return ""; try { let d = new Date(tStr); if (!isNaN(d.getTime())) return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); return tStr; } catch(e) { return tStr; } 
         }
 
-        function saleTimestamp(s){
-            const raw=String(getVal(s,['created_at','createdAt'])||'').trim();
-            if(raw){const t=Date.parse(raw);if(!isNaN(t))return t;}
-            const combined=`${saleDateKey(s)} ${saleTimeText(s)}`.trim();
-            const t=Date.parse(combined);
-            return isNaN(t)?0:t;
-        }
-        function sortSalesNewestFirst(rows){return rows.slice().sort((a,b)=>saleTimestamp(b)-saleTimestamp(a));}
-
-        function renderLiveSales(){
-            const salesGrid=document.getElementById('salesGrid'),homeRecent=document.getElementById('homeRecentOrders');
-            if(!salesGrid)return;
-            salesGrid.innerHTML=''; if(homeRecent)homeRecent.innerHTML='';
-            const start=document.getElementById('filterStartDate')?.value||'',end=document.getElementById('filterEndDate')?.value||'';
-            const filtered=salesHistory.filter(s=>{const d=saleDateKey(s);return (!start||d>=start)&&(!end||d<=end);});
-            const newestFirst=sortSalesNewestFirst(filtered);
-            const total=newestFirst.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);
-            const box=document.getElementById('totalSalesBox');if(box)box.innerText=`Total Sales: ₹ ${total.toLocaleString('en-IN')}`;
-            if(!newestFirst.length){salesGrid.innerHTML='<div class="premium-empty">No orders found.</div>';return;}
-            newestFirst.forEach(s=>{
-                const id=getVal(s,['orderid','order_number','id'])||'N/A',
-                    table=getVal(s,['tablenumber','table','tablename','table_number'])||'Order',
-                    grand=parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),
-                    items=parseSaleItems(s),
-                    mode=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—';
-                const itemHtml=items.length?items.map(it=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px dashed var(--border)"><span><b>${esc(it.name)}</b> ×${it.qty}</span><span>${money(it.amount)}</span></div>`).join(''):'<div style="color:var(--text-muted)">Item details unavailable</div>';
-                salesGrid.innerHTML+=`<div class="card" style="padding:16px;margin-bottom:12px;cursor:pointer" onclick="openOrderDetails('${esc(id)}')"><div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:10px"><div><h4 style="margin:0;font-weight:800">${esc(table)}</h4><span style="font-size:.72rem;color:var(--text-muted)">#${esc(id)} • ${esc(mode)}</span></div><span class="recent-order-value">${money(grand)}</span></div><div style="font-size:.84rem;line-height:1.5">${itemHtml}</div><div style="font-size:.72rem;color:var(--text-muted);margin-top:10px">${esc(cleanDisplayDate(saleDateKey(s)))} • ${esc(saleTimeText(s))}</div></div>`;
-            });
-            if(homeRecent)newestFirst.slice(0,5).forEach(s=>{
-                const id=getVal(s,['orderid','order_number','id'])||'N/A',
-                    table=getVal(s,['tablenumber','table','tablename','table_number'])||'Order',
-                    grand=parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),
-                    items=parseSaleItems(s);
-                homeRecent.innerHTML+=`<div class="h-order-card" onclick="openOrderDetails('${esc(id)}')"><div class="ho-icon">🍽️</div><div class="ho-info"><div class="ho-title">Order #${esc(id)}</div><div class="ho-sub">${esc(table)} • ${esc(saleTimeText(s))}</div><div class="ho-sub" style="font-weight:700;color:var(--text-dark);margin-top:2px">${items.length?items.map(i=>`${esc(i.name)} ×${i.qty}`).join(', '):'Item details unavailable'}</div></div><span class="recent-order-value">${money(grand)}</span><div class="ho-badge" style="background:#E6F4EA;color:#10B981">COMPLETED</div><div>›</div></div>`;
-            });
-        }
-        function normalizeTableSections(){const seen=new Set();(tableSections||[]).forEach(sec=>{sec.tables=uniqueItemNames((sec.tables||[]).filter(n=>{const k=String(n).trim().toLowerCase();if(seen.has(k))return false;seen.add(k);return true;}));});try{localStorage.setItem('viraasat_table_sections',JSON.stringify(tableSections));}catch(e){}}
+        function renderLiveSales(){const salesGrid=document.getElementById('salesGrid'),homeRecent=document.getElementById('homeRecentOrders');if(!salesGrid)return;salesGrid.innerHTML='';if(homeRecent)homeRecent.innerHTML='';const start=document.getElementById('filterStartDate')?.value||'',end=document.getElementById('filterEndDate')?.value||'';const filtered=salesHistory.filter(s=>{const d=saleDateKey(s);return (!start||d>=start)&&(!end||d<=end);});const total=filtered.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);const box=document.getElementById('totalSalesBox');if(box)box.innerText=`Total Sales: ₹ ${total.toLocaleString('en-IN')}`;if(!filtered.length){salesGrid.innerHTML='<div class="premium-empty">No orders found.</div>';return;}filtered.slice().reverse().forEach(s=>{const id=getVal(s,['orderid','order_number','id'])||'N/A',table=getVal(s,['tablenumber','table','tablename','table_number'])||'Order',grand=parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),items=parseSaleItems(s),mode=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—';const itemHtml=items.length?items.map(it=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px dashed var(--border)"><span><b>${esc(it.name)}</b> ×${it.qty}</span><span>${money(it.amount)}</span></div>`).join(''):'<div style="color:var(--text-muted)">Item details unavailable</div>';salesGrid.innerHTML+=`<div class="card" style="padding:16px;margin-bottom:12px;cursor:pointer" onclick="openOrderDetails('${esc(id)}')"><div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:10px"><div><h4 style="margin:0;font-weight:800">${esc(table)}</h4><span style="font-size:.72rem;color:var(--text-muted)">#${esc(id)} • ${esc(mode)}</span></div><span style="font-weight:800;color:#B45309">${money(grand)}</span></div><div style="font-size:.84rem;line-height:1.5">${itemHtml}</div><div style="font-size:.72rem;color:var(--text-muted);margin-top:10px">${esc(cleanDisplayDate(saleDateKey(s)))} • ${esc(saleTimeText(s))}</div></div>`;});if(homeRecent)filtered.slice(0,5).forEach(s=>{const id=getVal(s,['orderid','order_number','id'])||'N/A',table=getVal(s,['tablenumber','table','tablename','table_number'])||'Order',grand=parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),items=parseSaleItems(s);homeRecent.innerHTML+=`<div class="h-order-card" onclick="openOrderDetails('${esc(id)}')"><div class="ho-icon">🍽️</div><div class="ho-info"><div class="ho-title">Order #${esc(id)}</div><div class="ho-sub">${esc(table)} • ${esc(saleTimeText(s))}</div><div class="ho-sub" style="font-weight:700;color:var(--text-dark);margin-top:2px">${items.length?items.map(i=>`${esc(i.name)} ×${i.qty}`).join(', '):'Item details unavailable'} • ${money(grand)}</div></div><div class="ho-badge" style="background:#E6F4EA;color:#10B981">COMPLETED</div><div>›</div></div>`;});}
 
         function renderTableGrid() {
-            normalizeTableSections();
             const gridContainer = document.getElementById('tableGrid'); gridContainer.innerHTML = ""; let activeCount = 0; let totalCount = 0;
             tableSections.forEach((section) => {
                 gridContainer.innerHTML += `<div class="section-header"><h4>${section.title}</h4></div>`; let gridHTML = '<div class="table-grid" style="margin-bottom:24px;">'; 
@@ -2198,10 +2193,9 @@ Tables, billing and existing local UI remain visible.`);}
         function confirmAddTable() { 
             let catIdx = document.getElementById('newTableCategory').value; let tNum = document.getElementById('newTableNumber').value.trim(); 
             if(!tNum) { showCustomAlert("Please enter a table number."); return; } 
-            const tableKey=String(tNum).trim().toLowerCase();
-            const isDuplicate=tableSections.some(sec=>(sec.tables||[]).some(n=>String(n).trim().toLowerCase()===tableKey));
-            if(isDuplicate) { showCustomAlert("Table " + tNum + " already exists!"); return; }
-            tableSections[catIdx].tables.push(tNum);tableSections.forEach(sec=>{sec.tables=uniqueItemNames(sec.tables);});localStorage.setItem('viraasat_table_sections', JSON.stringify(tableSections));document.getElementById('addTableModal').style.display = 'none';renderTableGrid(); 
+            let isDuplicate = false; tableSections.forEach(sec => { if(sec.tables.includes(tNum)) isDuplicate = true; }); 
+            if(isDuplicate) { showCustomAlert("Table " + tNum + " already exists!"); return; } 
+            tableSections[catIdx].tables.push(tNum); localStorage.setItem('viraasat_table_sections', JSON.stringify(tableSections)); document.getElementById('addTableModal').style.display = 'none'; renderTableGrid(); 
         }
 
         function switchMainTab(tabName, btnElement, skipHistory = false) {
@@ -2443,8 +2437,27 @@ Tables, billing and existing local UI remain visible.`);}
         }
 
         async function requestHistoricalOrderDeletion(){
-            const sale=currentViewingSale;if(!sale)return; const id=getVal(sale,['orderid','order_number','id'])||''; if(!id)return;
-            showCustomConfirm('Send this order for Admin approval before deletion?',async()=>{try{await d1Post('/orders/request-delete',{order_id:id,reason:'Deletion requested from POS',requested_by:localStorage.getItem('viraasat_user')||'Admin'});auditLog('Order Delete Requested',id);document.getElementById('orderDetailsModal').style.display='none';showCustomAlert('Deletion request submitted for Admin approval.');}catch(e){showCustomAlert('Deletion request failed: '+e.message);}},null);
+            const sale=currentViewingSale;if(!sale)return;
+            const id=getVal(sale,['orderid','order_number','id'])||'';if(!id)return;
+            showCustomConfirm('Send this order for Admin approval before deletion?',async()=>{
+                try{
+                    await d1Post('/orders/request-delete',{
+                        order_id:id,
+                        reason:'Deletion requested from POS',
+                        requested_by:localStorage.getItem('viraasat_user')||'Admin'
+                    });
+                    auditLog('Order Delete Requested',id);
+                    document.getElementById('orderDetailsModal').style.display='none';
+                    showCustomAlert('Deletion request submitted for Admin approval.');
+                }catch(e){
+                    const msg=String(e?.message||e);
+                    if(/unique|already|pending/i.test(msg)){
+                        showCustomAlert('This order already has a pending deletion request.');
+                    }else{
+                        showCustomAlert('Deletion request failed: '+msg+'\n\nIf this says "API route not found", apply the Worker patch supplied with this build.');
+                    }
+                }
+            },null);
         }
 
         function printHistoricalBill() {
