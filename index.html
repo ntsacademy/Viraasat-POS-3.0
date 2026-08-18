@@ -106,6 +106,7 @@
 
         .h-order-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.1s; }
         .h-order-card:active { transform: scale(0.98); }
+         .recent-order-value{display:inline-flex;align-items:center;background:#FFF4E8;color:#C45A00;border:1px solid #F2C28F;border-radius:10px;padding:5px 9px;font-weight:900;white-space:nowrap;}
         .ho-icon { width: 42px; height: 42px; border-radius: 12px; background: #F8F6F0; display: flex; align-items: center; justify-content: center; color: var(--text-dark); flex-shrink: 0; }
         .ho-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
         .ho-title { font-size: 0.92rem; font-weight: 700; color: var(--text-dark); }
@@ -791,7 +792,7 @@
 
     <!-- BOTTOM NAV -->
     <nav class="bottom-nav" id="appBottomNav" style="display: none;">
-        <button class="nav-item" id="navTable" onclick="switchMainTab('tableDashboard', this)">
+        <button class="nav-item active" id="navTable" onclick="switchMainTab('tableDashboard', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></div>
             <span>Table</span>
         </button>
@@ -807,7 +808,7 @@
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></div>
             <span>Expenses</span>
         </button>
-        <button class="nav-item active" id="navAdmin" onclick="switchMainTab('premiumDashboard', this)">
+        <button class="nav-item" id="navAdmin" onclick="switchMainTab('premiumDashboard', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg></div>
             <span>Admin View</span>
         </button>
@@ -977,7 +978,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-6.1";
                     document.getElementById('appMain').style.display = 'block';
                     document.getElementById('appBottomNav').style.display = 'flex';
                     applyAdminRights(savedMobile);
-                    switchMainTab(window.isUserAdmin ? 'premiumDashboard' : 'tableDashboard', document.getElementById(window.isUserAdmin ? 'navDashboard' : 'navTable'), true);
+                    switchMainTab('tableDashboard', document.getElementById('navTable'), true);
                     enforceBackTrap(); hardBlockBack();
                     // Show the actual POS immediately; D1 sync runs in the background.
                     hideSplashScreen();
@@ -1018,8 +1019,8 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-6.1";
             }
 
             let activeTab = document.querySelector('.tab-content.active');
-            if (activeTab && activeTab.id !== 'premiumDashboard') { 
-                switchMainTab('premiumDashboard', document.getElementById('navAdmin'), true); 
+            if (activeTab && activeTab.id !== 'tableDashboard') { 
+                switchMainTab('tableDashboard', document.getElementById('navTable'), true); 
                 return; 
             }
         };
@@ -1508,29 +1509,23 @@ Tables, billing and existing local UI remain visible.`);}
         function getFilteredPremiumSales(){
             const from=document.getElementById('psFrom')?.value||'';
             const to=document.getElementById('psTo')?.value||'';
-            const mode=(document.getElementById('psMode')?.value||'').toLowerCase();
-            const type=(document.getElementById('psType')?.value||'').toLowerCase();
             const q=(document.getElementById('psSearch')?.value||'').toLowerCase().trim();
-            return salesHistory.filter(s=>{
+            return sortSalesNewestFirst(salesHistory.filter(s=>{
                 const dk=saleDateKey(s);
                 if(from&&dk<from)return false;if(to&&dk>to)return false;
-                const sm=String(getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'').toLowerCase();
-                const st=String(getVal(s,['tablenumber','table','tablename','table_number'])||'').toLowerCase();
-                if(mode&&sm!==mode)return false;
-                if(type==='dining'&&!st.includes('table'))return false;
-                if(type==='takeaway'&&!st.includes('takeaway'))return false;
-                if(type==='delivery'&&!st.includes('delivery'))return false;
-                if(q&&!`${getVal(s,['orderid','order_number','id'])} ${st} ${getVal(s,['phone','customerphone'])} ${getVal(s,['items_string','itemsstring','items'])}`.toLowerCase().includes(q))return false;
+                const order=String(getVal(s,['orderid','order_number','id'])||'').toLowerCase();
+                const table=String(getVal(s,['tablenumber','table','tablename','table_number'])||'').toLowerCase();
+                const phone=String(getVal(s,['phone','customerphone','customer_phone'])||'').toLowerCase();
+                if(q&&!`${order} ${table} ${phone}`.includes(q))return false;
                 return true;
-            });
+            }));
         }
-
         function renderPremiumSales(){
             const panel=document.getElementById('premiumPanel-sales');if(!panel)return;
             panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Sales Register</h3><span id="psCount">0 orders</span></div>
             <div class="sales-filter-chips"><button class="filter-btn" onclick="setPremiumSalesRange('today')">Today</button><button class="filter-btn" onclick="setPremiumSalesRange('yesterday')">Yesterday</button><button class="filter-btn" onclick="setPremiumSalesRange('7d')">7 Days</button><button class="filter-btn" onclick="setPremiumSalesRange('30d')">30 Days</button><button class="filter-btn active" onclick="setPremiumSalesRange('all')">All</button></div>
             <div class="date-filter-row"><input type="date" id="psFrom" onchange="renderPremiumSalesRows()"><input type="date" id="psTo" onchange="renderPremiumSalesRows()"></div>
-            <div class="premium-toolbar compact-toolbar" style="margin-top:7px"><select id="psMode" onchange="renderPremiumSalesRows()"><option value="">All Payments</option><option value="cash">Cash</option><option value="upi">UPI</option><option value="card">Card</option></select><select id="psType" onchange="renderPremiumSalesRows()"><option value="">All Types</option><option value="dining">Dining</option><option value="takeaway">Takeaway</option><option value="delivery">Delivery</option></select><input id="psSearch" placeholder="Search order / item / phone" oninput="renderPremiumSalesRows()"><button class="premium-btn light" onclick="exportPremiumSales()">Export</button></div>
+            <div class="premium-toolbar compact-toolbar" style="margin-top:7px"><input id="psSearch" placeholder="Search order / phone" oninput="renderPremiumSalesRows()"><button class="premium-btn light" onclick="exportPremiumSales()">Export</button></div>
             <div id="psSummary" class="sales-summary-grid"></div>
             <div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Time</th><th>Order</th><th>Table</th><th>Items</th><th>Mode</th><th>Discount</th><th>Total</th></tr></thead><tbody id="psBody"></tbody></table></div>
             <div id="psMobileList" class="mobile-sale-list"></div></div>`;
@@ -1541,7 +1536,7 @@ Tables, billing and existing local UI remain visible.`);}
             if(range==='all'){f.value='';t.value='';} else if(range==='today'){f.value=key;t.value=key;} else if(range==='yesterday'){const y=new Date(now);y.setDate(y.getDate()-1);const k=localISODate(y);f.value=k;t.value=k;} else {const days=range==='7d'?6:29;const d=new Date(now);d.setDate(d.getDate()-days);f.value=localISODate(d);t.value=key;} renderPremiumSalesRows();
         }
         function renderPremiumSalesRows(){
-            const rows=getFilteredPremiumSales(); const body=document.getElementById('psBody');if(!body)return;
+            const rows=sortSalesNewestFirst(getFilteredPremiumSales()); const body=document.getElementById('psBody');if(!body)return;
             const total=rows.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0); const disc=rows.reduce((a,s)=>a+parseAmount(getVal(s,['discount'])),0); const aov=rows.length?total/rows.length:0;
             document.getElementById('psCount').innerText=`${rows.length} orders`;document.getElementById('psSummary').innerHTML=`<div class="report-stat"><div class="rlabel">Orders</div><div class="rvalue">${rows.length}</div></div><div class="report-stat"><div class="rlabel">Sale</div><div class="rvalue">${money(total)}</div></div><div class="report-stat"><div class="rlabel">AOV</div><div class="rvalue">${money(aov)}</div></div>`;
             body.innerHTML=rows.length?rows.map(s=>{const items=saleItemsText(s);const mode=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']));return `<tr onclick="openOrderDetails('${esc(getVal(s,['orderid','order_number','id']))}')" style="cursor:pointer"><td>${esc(saleDateKey(s))}</td><td>${esc(saleTimeText(s))}</td><td><b>${esc(getVal(s,['orderid','order_number','id']))}</b></td><td>${esc(getVal(s,['tablenumber','table','tablename','table_number'])||'—')}</td><td>${esc(items)}</td><td>${esc(mode||'—')}</td><td>${money(getVal(s,['discount']))}</td><td><b>${money(getVal(s,['grand_total','totalamount','total','amount']))}</b></td></tr>`}).join(''):`<tr><td colspan="8"><div class="premium-empty">No sales match the selected filters.</div></td></tr>`;
@@ -1594,33 +1589,90 @@ Tables, billing and existing local UI remain visible.`);}
         }
         function requireAdmin(action='this action'){ if(!window.isUserAdmin){showCustomAlert(`Only Admin can perform ${action}.`);return false;}return true; }
         function stockOptionHtml(selected=''){const names=Object.keys(stockData).sort((a,b)=>a.localeCompare(b));return `<option value="">Select stock item</option>${names.map(n=>`<option value="${esc(n)}" ${String(n).toLowerCase()===String(selected).toLowerCase()?'selected':''}>${esc(n)}</option>`).join('')}`;}
+        function getInventoryMenuRows(){
+            const stockKeys=Object.keys(stockData||{});
+            const byName={};
+            stockKeys.forEach(k=>byName[String(k).trim().toLowerCase()]=k);
+            const seen=new Set();
+            const rows=[];
+            (menuData||[]).forEach(m=>{
+                const name=String(getVal(m,['name','itemname','item'])||'').trim();
+                if(!name)return;
+                const key=name.toLowerCase(); if(seen.has(key))return; seen.add(key);
+                const stockKey=byName[key]||name;
+                rows.push({name,stockKey,qty:Number(stockData[stockKey]??0),meta:stockMeta[stockKey]||{}});
+            });
+            return rows.sort((a,b)=>a.name.localeCompare(b.name));
+        }
+        function inventoryMenuOptionsHtml(){
+            return `<option value="">Select menu item</option>`+getInventoryMenuRows().map(r=>`<option value="${esc(r.stockKey)}">${esc(r.name)} — QTY ${Number(r.qty)||0}</option>`).join('');
+        }
+        function selectInventoryMenu(stockKey){
+            const row=getInventoryMenuRows().find(r=>String(r.stockKey)===String(stockKey));
+            const current=document.getElementById('invCurrentQty');
+            const input=document.getElementById('invQtyInput');
+            if(!row){if(current)current.innerHTML='Select a menu item';if(input)input.value='';return;}
+            if(current)current.innerHTML=`Current QTY: <b>${Number(row.qty)||0}</b> ${esc(row.meta.unit||'pcs')}`;
+            if(input)input.value=Number(row.qty)||0;
+        }
+        async function updateInventoryQtyFromMenu(){
+            if(!requireAdmin('inventory update'))return;
+            const select=document.getElementById('invMenuSelect');
+            const stockKey=select?.value||'';
+            const row=getInventoryMenuRows().find(r=>String(r.stockKey)===String(stockKey));
+            const qty=Number(document.getElementById('invQtyInput')?.value);
+            if(!row){showCustomAlert('Please select a menu item.');return;}
+            if(!Number.isFinite(qty)||qty<0){showCustomAlert('Enter a valid QTY.');return;}
+            const old=Number(stockData[row.stockKey]??0);
+            const meta=row.meta||{};
+            try{
+                await d1Post('/stock',{name:row.stockKey,quantity:qty,unit:meta.unit||'pcs',low_stock_level:Number(meta.low_stock_level??5),note:'Inventory QTY update',updated_by:localStorage.getItem('viraasat_user')||'Admin'});
+                stockData[row.stockKey]=qty;
+                stockMeta[row.stockKey]={...meta,name:row.stockKey,unit:meta.unit||'pcs',low_stock_level:Number(meta.low_stock_level??5),updated_at:new Date().toISOString()};
+                stockHistory.unshift({item_name:row.stockKey,old_quantity:old,new_quantity:qty,change_quantity:qty-old,action:'UPDATE',note:'Inventory QTY update',updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});
+                auditLog('Inventory QTY Updated',`${row.name}: ${old} → ${qty}`);
+                renderStockDashboard(); renderPremiumInventory();
+                showCustomAlert(`${row.name} QTY updated to ${qty}.`);
+            }catch(e){showCustomAlert('Inventory update failed: '+e.message);}
+        }
         function renderPremiumInventory(){
-            const panel=document.getElementById('premiumPanel-inventory');if(!panel)return;if(!window.isUserAdmin){panel.innerHTML='<div class="premium-card"><div class="premium-empty">Inventory control is restricted to Admin.</div></div>';return;}
-            const entries=Object.entries(stockData).sort((a,b)=>Number(a[1])-Number(b[1]));const low=entries.filter(([k,v])=>Number(v)<=Number(stockMeta[k]?.low_stock_level??5));const out=entries.filter(([k,v])=>Number(v)<=0);const totalUnits=entries.reduce((a,[k,v])=>a+Number(v||0),0);const last=entries.map(([k])=>stockMeta[k]?.updated_at||'').filter(Boolean).sort().pop();
-            panel.innerHTML=`<div class="premium-grid-3" style="margin-bottom:14px"><div class="report-stat"><div class="rlabel">Tracked Items</div><div class="rvalue">${entries.length}</div></div><div class="report-stat"><div class="rlabel">Low Stock</div><div class="rvalue" style="color:#B45309">${low.length}</div></div><div class="report-stat"><div class="rlabel">Total Units</div><div class="rvalue">${Math.round(totalUnits)}</div></div></div>
-            <div class="premium-card" style="margin-bottom:14px"><div class="premium-card-head"><h3>Inventory Control</h3><span>Admin only</span></div><div class="admin-form-grid"><select id="invItemSelect" onchange="loadStockEditor(this.value)">${stockOptionHtml()}</select><input id="invItemName" placeholder="New item name"><input id="invItemQty" type="number" min="0" placeholder="Current quantity"><input id="invItemUnit" placeholder="Unit" value="pcs"><input id="invItemLow" type="number" min="0" placeholder="Low stock level" value="5"><input id="invItemNote" placeholder="Correction note / reason"><button class="premium-btn" onclick="saveInventoryItem()">Save / Update Stock</button><button class="premium-btn light" onclick="resetInventoryEditor()">Add New Item</button></div><div class="admin-help" style="margin-top:8px">Last stock update: <b>${last?esc(cleanDisplayDate(last)+' '+cleanDisplayTime(last)):'No stock update recorded yet'}</b>${out.length?` • <span style="color:#B91C1C">${out.length} item(s) out of stock</span>`:''}</div></div>
-            <div class="premium-card"><div class="premium-card-head"><h3>Inventory Insights</h3><span>Latest corrections first</span></div><div id="inventoryInsightRows"></div></div>
-            <div class="premium-card" style="margin-top:14px"><div class="premium-card-head"><h3>All Stock Items</h3><span>${entries.length} items</span></div><div class="premium-toolbar"><input id="pStockSearch" placeholder="Search stock..." oninput="renderPremiumInventoryRows()"></div><div id="pStockGrid" class="stock-grid"></div></div>`;
-            renderPremiumInventoryRows();renderInventoryInsights();
+            const panel=document.getElementById('premiumPanel-inventory');if(!panel)return;
+            if(!window.isUserAdmin){panel.innerHTML='<div class="premium-card"><div class="premium-empty">Inventory control is restricted to Admin.</div></div>';return;}
+            const rows=getInventoryMenuRows();
+            const low=rows.filter(r=>Number(r.qty)<=Number(r.meta?.low_stock_level??5));
+            const out=rows.filter(r=>Number(r.qty)<=0);
+            const totalUnits=rows.reduce((a,r)=>a+Number(r.qty||0),0);
+            panel.innerHTML=`<div class="premium-grid-3" style="margin-bottom:14px">
+                <div class="report-stat"><div class="rlabel">Menu Items</div><div class="rvalue">${rows.length}</div></div>
+                <div class="report-stat"><div class="rlabel">Low Stock</div><div class="rvalue" style="color:#B45309">${low.length}</div></div>
+                <div class="report-stat"><div class="rlabel">Total QTY</div><div class="rvalue">${Math.round(totalUnits)}</div></div>
+            </div>
+            <div class="premium-card" style="margin-bottom:14px">
+                <div class="premium-card-head"><h3>Update Inventory QTY</h3><span>Admin only</span></div>
+                <div class="admin-form-grid">
+                    <select id="invMenuSelect" onchange="selectInventoryMenu(this.value)">${inventoryMenuOptionsHtml()}</select>
+                    <input id="invQtyInput" type="number" min="0" inputmode="numeric" placeholder="New QTY">
+                    <div id="invCurrentQty" class="admin-help" style="display:flex;align-items:center;padding:0 10px;border:1px solid var(--border);border-radius:10px;background:#FAFAFA;min-height:40px;">Select a menu item</div>
+                    <button class="premium-btn" onclick="updateInventoryQtyFromMenu()">Update QTY</button>
+                </div>
+                <div class="admin-help" style="margin-top:8px">Select a menu item, check the current QTY, enter the new QTY and update. No item creation or menu editing is available here.</div>
+            </div>
+            <div class="premium-card">
+                <div class="premium-card-head"><h3>Current Inventory</h3><span>${out.length?`${out.length} out of stock`:'Live QTY'}</span></div>
+                <div class="premium-toolbar"><input id="pStockSearch" placeholder="Search inventory..." oninput="renderPremiumInventoryRows()"></div>
+                <div id="pStockGrid" class="stock-grid"></div>
+            </div>`;
+            renderPremiumInventoryRows();
         }
         function loadStockEditor(name){if(!name){resetInventoryEditor(false);return;}const meta=stockMeta[name]||{};document.getElementById('invItemName').value=name;document.getElementById('invItemQty').value=Number(stockData[name]||0);document.getElementById('invItemUnit').value=meta.unit||'pcs';document.getElementById('invItemLow').value=Number(meta.low_stock_level??5);document.getElementById('invItemNote').value='';}
         function resetInventoryEditor(clearSelect=true){if(clearSelect&&document.getElementById('invItemSelect'))document.getElementById('invItemSelect').value='';['invItemName','invItemQty','invItemNote'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});document.getElementById('invItemUnit').value='pcs';document.getElementById('invItemLow').value=5;}
         async function saveInventoryItem(){if(!requireAdmin('inventory update'))return;const name=document.getElementById('invItemName')?.value.trim();const qty=Number(document.getElementById('invItemQty')?.value);const unit=document.getElementById('invItemUnit')?.value.trim()||'pcs';const low=Number(document.getElementById('invItemLow')?.value??5);const note=document.getElementById('invItemNote')?.value.trim()||'Admin stock update';if(!name||!Number.isFinite(qty)||qty<0||!Number.isFinite(low)||low<0){showCustomAlert('Enter valid item, quantity and low-stock level.');return;}const old=Number(stockData[name]??0);const exists=Object.prototype.hasOwnProperty.call(stockData,name);try{await d1Post('/stock',{name,quantity:qty,unit,low_stock_level:low,note,updated_by:localStorage.getItem('viraasat_user')||'Admin'});stockData[name]=qty;stockMeta[name]={...(stockMeta[name]||{}),name,unit,low_stock_level:low,updated_at:new Date().toISOString()};stockHistory.unshift({item_name:name,old_quantity:old,new_quantity:qty,change_quantity:qty-old,action:exists?'UPDATE':'ADD',note,updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});auditLog(exists?'Stock Corrected':'Inventory Item Added',`${name}: ${old} → ${qty} (${note})`);renderStockDashboard();renderPremiumInventory();resetInventoryEditor();showCustomAlert('Inventory saved successfully.');}catch(e){showCustomAlert('Inventory save failed: '+e.message);}}
         function renderInventoryInsights(){const el=document.getElementById('inventoryInsightRows');if(!el)return;const rows=(stockHistory||[]).slice(0,10);el.innerHTML=rows.length?rows.map(r=>`<div class="admin-mini-row"><div><b>${esc(r.item_name||r.name)}</b><small>${esc(r.action||'UPDATE')} • ${esc(r.note||'Stock change')} • ${esc(r.updated_by||'Admin')}</small></div><strong>${Number(r.new_quantity??r.quantity??0)}</strong><small style="display:block;color:var(--text-muted)">${r.created_at?esc(cleanDisplayDate(r.created_at)+' '+cleanDisplayTime(r.created_at)):''}</small></div>`).join(''):'<div class="premium-empty">No stock update history available yet.</div>';}
-        function renderPremiumInventoryRows(){const el=document.getElementById('pStockGrid');if(!el)return;const q=(document.getElementById('pStockSearch')?.value||'').toLowerCase();const e=Object.entries(stockData).filter(([k])=>k.toLowerCase().includes(q)).sort((a,b)=>Number(a[1])-Number(b[1]));el.innerHTML=e.map(([k,v])=>{const m=stockMeta[k]||{};const low=Number(m.low_stock_level??5);return `<div class="stock-box ${Number(v)<=low?'low':''}"><div class="stock-box-name">${esc(k)}</div><div class="stock-box-qty">${Number(v)||0}</div><small>${Number(v)<=0?'OUT OF STOCK':Number(v)<=low?'LOW STOCK':'Available'} • ${esc(m.unit||'pcs')}</small><button class="premium-btn light" style="margin-top:8px;width:100%" onclick="loadStockEditor('${esc(k)}')">Edit / Correct</button></div>`}).join('')||'<div class="premium-empty" style="grid-column:1/-1">No stock data received from source.</div>';}
-        async function removeStaffRecord(key){
-            const staff=staffData.find(s=>getStaffKey(s)===key);
-            if(!staff)return;
-            showCustomConfirm('Remove this staff member from the POS directory?',async()=>{
-                const id=Number(getVal(staff,['id','empid','employeeid']));
-                if(!id){showCustomAlert('This staff record has no D1 ID.');return;}
-                try{
-                    await d1Post('/staff/remove',{id:id});
-                    staffData=staffData.filter(s=>getStaffKey(s)!==key);
-                    renderAdminStaffRows();renderEmployeeList();generateTrends();renderPremiumAdmin();
-                    showCustomAlert('Staff member marked inactive in D1.');
-                }catch(e){showCustomAlert('Staff removal failed: '+e.message);}
-            },null);
+        function renderPremiumInventoryRows(){
+            const el=document.getElementById('pStockGrid');if(!el)return;
+            const q=(document.getElementById('pStockSearch')?.value||'').toLowerCase();
+            const e=getInventoryMenuRows().filter(r=>r.name.toLowerCase().includes(q)).sort((a,b)=>Number(a.qty)-Number(b.qty));
+            el.innerHTML=e.map(r=>{const low=Number(r.meta?.low_stock_level??5);return `<div class="stock-box ${Number(r.qty)<=low?'low':''}"><div class="stock-box-name">${esc(r.name)}</div><div class="stock-box-qty">${Number(r.qty)||0}</div><small>${Number(r.qty)<=0?'OUT OF STOCK':Number(r.qty)<=low?'LOW STOCK':'Available'} • ${esc(r.meta?.unit||'pcs')}</small></div>`}).join('')||'<div class="premium-empty" style="grid-column:1/-1">No menu inventory found.</div>';
         }
         function exportStaff(){downloadCSV(staffData.map(s=>({Emp_ID:getVal(s,['empid','employeeid']),Name:getVal(s,['name']),Role:getVal(s,['role']),Mobile:getVal(s,['mobile','phone']),Monthly_Salary:parseAmount(getVal(s,['monthlysalary','salary'])),Date_of_Joining:getVal(s,['dateofjoining','joindate','date','doj']),Status:getStaffStatus(s)})),'Viraasat-Staff.csv');}
 
@@ -1684,26 +1736,34 @@ Tables, billing and existing local UI remain visible.`);}
 
         function renderPremiumAdmin(){
             const panel=document.getElementById('premiumPanel-settings'); if(!panel)return;
-            const logs=getAuditLogs();
-            const active=activeStaffCount();
-            const pendingPromise=loadPendingApprovals();
+            if(!window.isUserAdmin){panel.innerHTML='<div class="premium-card"><div class="premium-empty">Admin access only.</div></div>';return;}
+            const logs=getAuditLogs(), active=activeStaffCount(), pendingPromise=loadPendingApprovals();
             panel.innerHTML=`
             <div class="premium-card admin-card">
-                <div class="premium-card-head"><h3>Admin Control</h3><span>All management in one place</span></div>
+                <div class="premium-card-head"><h3>Admin Control</h3><span>Secure management</span></div>
                 <div class="admin-module-grid">
-                    <button class="admin-module" onclick="document.getElementById('adminStockSearch').focus()"><b>Inventory</b><span>Update stock & thresholds</span></button>
+                    <button class="admin-module" onclick="showPremiumTab('inventory')"><b>Inventory</b><span>Update menu QTY only</span></button>
+                    <button class="admin-module" onclick="document.getElementById('userMobile').focus()"><b>POS Users</b><span>Register & revoke access</span></button>
                     <button class="admin-module" onclick="document.getElementById('adminStaffSearch').focus()"><b>Employees</b><span>${active} active staff</span></button>
-                    <button class="admin-module" onclick="document.getElementById('userMobile').focus()"><b>Users</b><span>Register / revoke access</span></button>
-                    <button class="admin-module" onclick="document.getElementById('adminMenuName').focus()"><b>Menu</b><span>Add & export menu</span></button>
-                    <button class="admin-module" onclick="document.getElementById('fullImportInput').click()"><b>Import</b><span>Master Excel to D1</span></button>
-                    <button class="admin-module" onclick="exportFullDatabaseWorkbook()"><b>Export</b><span>Download complete workbook</span></button>
+                    <button class="admin-module" onclick="document.getElementById('fullImportInput').click()"><b>Import</b><span>Master workbook to D1</span></button>
+                    <button class="admin-module" onclick="exportFullDatabaseWorkbook()"><b>Export</b><span>Download current database</span></button>
+                    <button class="admin-module" onclick="document.getElementById('pendingApprovalsBox').scrollIntoView({behavior:'smooth'})"><b>Approvals</b><span>Review protected requests</span></button>
                 </div>
             </div>
 
             <div class="premium-card admin-card">
-                <div class="premium-card-head"><h3>Stock Management</h3><span>${Object.keys(stockData).length} items • Admin only</span></div>
-                <div class="admin-form-grid"><select id="adminStockSelect" onchange="loadAdminStockSelect(this.value)">${stockOptionHtml()}</select><input id="adminStockSearch" placeholder="New item name / search" oninput="syncAdminStockSearch(this.value)"><input id="adminStockQty" type="number" min="0" inputmode="numeric" placeholder="Current Qty"><input id="adminStockLow" type="number" min="0" inputmode="numeric" value="5" placeholder="Low Stock"><button class="premium-btn" onclick="adminUpdateStockUnified()">Save / Correct</button><button class="premium-btn light" onclick="resetAdminStockForm()">Add New Item</button></div>
-                <div class="admin-help">Use the dropdown to select an existing item. Quantity correction and new stock-item creation are restricted to Admin.</div><div id="adminStockMiniList" class="admin-mini-list"></div>
+                <div class="premium-card-head"><h3>POS User Registration</h3><span>Access control</span></div>
+                <div class="admin-form-grid">
+                    <input id="userMobile" inputmode="numeric" placeholder="10 digit mobile">
+                    <input id="userPass" type="password" placeholder="Password (min 4)">
+                    <select id="userRole"><option value="cashier">Cashier</option><option value="manager">Manager</option><option value="waiter">Waiter</option><option value="kitchen">Kitchen</option></select>
+                    <label class="check-row"><input type="checkbox" id="userAllowSales" checked> Live Sale</label>
+                    <label class="check-row"><input type="checkbox" id="userAllowAnalytics"> P&L</label>
+                    <label class="check-row"><input type="checkbox" id="userAllowExpenses"> Expenses</label>
+                    <button class="premium-btn" onclick="registerPOSUser()">Register User</button>
+                </div>
+                <div class="admin-help" style="margin-top:8px">Create a POS login and choose exactly which modules the user can access.</div>
+                <div id="adminUsersRows" class="admin-user-list"></div>
             </div>
 
             <div class="premium-card admin-card">
@@ -1725,37 +1785,8 @@ Tables, billing and existing local UI remain visible.`);}
             </div>
 
             <div class="premium-card admin-card">
-                <div class="premium-card-head"><h3>POS User Registration</h3><span>Access control</span></div>
-                <div class="admin-form-grid">
-                    <input id="userMobile" inputmode="numeric" placeholder="10 digit mobile">
-                    <input id="userPass" type="password" placeholder="Password (min 4)">
-                    <select id="userRole"><option value="cashier">Cashier</option><option value="manager">Manager</option><option value="waiter">Waiter</option><option value="kitchen">Kitchen</option></select>
-                    <label class="check-row"><input type="checkbox" id="userAllowSales" checked> Live Sale</label>
-                    <label class="check-row"><input type="checkbox" id="userAllowAnalytics"> P&L</label>
-                    <label class="check-row"><input type="checkbox" id="userAllowExpenses"> Expenses</label>
-                    <button class="premium-btn" onclick="registerPOSUser()">Register User</button>
-                </div>
-                <div id="adminUsersRows" class="admin-user-list"></div>
-            </div>
-
-            <div class="premium-card admin-card">
-                <div class="premium-card-head"><h3>Menu Management</h3><span>${menuData.length} items</span></div>
-                <div class="admin-form-grid">
-                    <input id="adminMenuName" placeholder="Item name">
-                    <input id="adminMenuPrice" type="number" inputmode="numeric" placeholder="Price ₹">
-                    <input id="adminMenuCategory" placeholder="Category" value="Main Course">
-                    <button class="premium-btn" onclick="adminAddMenuUnified()">Add Menu Item</button>
-                </div>
-                <div class="premium-toolbar compact-toolbar" style="margin-top:8px">
-                    <button class="premium-btn light" onclick="downloadMenuSample()">Menu Sample</button>
-                    <label class="premium-btn alt upload-label">Upload Menu<input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleMenuUpload(this.files[0])"></label>
-                    <button class="premium-btn light" onclick="exportMenu()">Export Menu</button>
-                </div>
-            </div>
-
-            <div class="premium-card admin-card">
-                <div class="premium-card-head"><h3>Master Database Import</h3><span>One workbook</span></div>
-                <p class="admin-help">Upload one Excel workbook containing Sales, Menu, Staff, Stock and Expenses. Existing Order IDs are skipped to prevent duplicates.</p>
+                <div class="premium-card-head"><h3>Database Tools</h3><span>Admin only</span></div>
+                <p class="admin-help">Use the master workbook only when you intentionally need a bulk import. Existing order IDs are skipped by the importer.</p>
                 <div class="premium-toolbar compact-toolbar">
                     <button class="premium-btn" onclick="downloadFullImportSample()">Download Sample</button>
                     <label class="premium-btn alt upload-label">Upload Excel<input type="file" id="fullImportInput" accept=".xlsx,.xls" style="display:none" onchange="handleFullDatabaseImport(this.files[0])"></label>
@@ -1772,9 +1803,8 @@ Tables, billing and existing local UI remain visible.`);}
             <div class="premium-card admin-card">
                 <div class="premium-card-head"><h3>Audit Logs</h3><button class="premium-btn light" onclick="clearAuditLogs();renderPremiumAdmin()">Clear</button></div>
                 <div id="auditLogsBox"></div>
-            </div>
-            `;
-            renderAdminStockRows(); renderAdminStaffRows(); renderAdminUsersRows();
+            </div>`;
+            renderAdminStaffRows(); renderAdminUsersRows();
             pendingPromise.then(requests=>{
                 const box=document.getElementById('pendingApprovalsBox'); if(!box)return;
                 box.innerHTML=requests.length?requests.map(r=>`<div class="approval-row"><div><b>${esc(r.order_id)}</b><small>${esc(r.reason||'Deletion requested')} • ${esc(r.requested_by||'Unknown')}</small></div><div class="approval-actions"><button class="premium-btn" onclick="resolveApproval(${Number(r.id)},'${esc(r.order_id)}','approved')">Approve</button><button class="premium-btn danger" onclick="resolveApproval(${Number(r.id)},'${esc(r.order_id)}','rejected')">Reject</button></div></div>`).join(''):'<div class="premium-empty">No pending approvals.</div>';
@@ -1782,7 +1812,6 @@ Tables, billing and existing local UI remain visible.`);}
             const logBox=document.getElementById('auditLogsBox');
             if(logBox)logBox.innerHTML=logs.length?logs.slice(0,40).map(l=>`<div class="audit-row"><b>${esc(l.action)}</b><span>${esc(l.details)} • ${esc(l.user)} • ${new Date(l.timestamp).toLocaleString('en-IN')}</span></div>`).join(''):'<div class="premium-empty">No activity logged yet.</div>';
         }
-
         function renderAdminStockRows(){const el=document.getElementById('adminStockMiniList');if(!el)return;const rows=Object.entries(stockData).sort((a,b)=>Number(a[1])-Number(b[1])).slice(0,15);el.innerHTML=rows.map(([name,qty])=>{const low=Number(stockMeta[name]?.low_stock_level??5);return `<div class="admin-mini-row" onclick="loadAdminStockSelect('${esc(name)}')" style="cursor:pointer"><div><b>${esc(name)}</b><small>${Number(qty)<=0?'OUT OF STOCK':Number(qty)<=low?'Low stock':'Available'} • Last update ${stockMeta[name]?.updated_at?esc(cleanDisplayDate(stockMeta[name].updated_at)):'—'}</small></div><strong>${Number(qty)||0}</strong></div>`}).join('')||'<div class="premium-empty">No stock data.</div>';}
         function loadAdminStockSelect(name){if(!name){resetAdminStockForm(false);return;}const m=stockMeta[name]||{};document.getElementById('adminStockSearch').value=name;document.getElementById('adminStockQty').value=Number(stockData[name]||0);document.getElementById('adminStockLow').value=Number(m.low_stock_level??5);}
         function syncAdminStockSearch(v){const sel=document.getElementById('adminStockSelect');if(sel){const opt=[...sel.options].find(o=>o.value.toLowerCase()===String(v).trim().toLowerCase());sel.value=opt?opt.value:'';}}
@@ -2048,8 +2077,42 @@ Tables, billing and existing local UI remain visible.`);}
             if (!tStr) return ""; try { let d = new Date(tStr); if (!isNaN(d.getTime())) return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); return tStr; } catch(e) { return tStr; } 
         }
 
-        function renderLiveSales(){const salesGrid=document.getElementById('salesGrid'),homeRecent=document.getElementById('homeRecentOrders');if(!salesGrid)return;salesGrid.innerHTML='';if(homeRecent)homeRecent.innerHTML='';const start=document.getElementById('filterStartDate')?.value||'',end=document.getElementById('filterEndDate')?.value||'';const filtered=salesHistory.filter(s=>{const d=saleDateKey(s);return (!start||d>=start)&&(!end||d<=end);});const total=filtered.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);const box=document.getElementById('totalSalesBox');if(box)box.innerText=`Total Sales: ₹ ${total.toLocaleString('en-IN')}`;if(!filtered.length){salesGrid.innerHTML='<div class="premium-empty">No orders found.</div>';return;}filtered.slice().reverse().forEach(s=>{const id=getVal(s,['orderid','order_number','id'])||'N/A',table=getVal(s,['tablenumber','table','tablename','table_number'])||'Order',grand=parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),items=parseSaleItems(s),mode=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—';const itemHtml=items.length?items.map(it=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px dashed var(--border)"><span><b>${esc(it.name)}</b> ×${it.qty}</span><span>${money(it.amount)}</span></div>`).join(''):'<div style="color:var(--text-muted)">Item details unavailable</div>';salesGrid.innerHTML+=`<div class="card" style="padding:16px;margin-bottom:12px;cursor:pointer" onclick="openOrderDetails('${esc(id)}')"><div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:10px"><div><h4 style="margin:0;font-weight:800">${esc(table)}</h4><span style="font-size:.72rem;color:var(--text-muted)">#${esc(id)} • ${esc(mode)}</span></div><span style="font-weight:800;color:#B45309">${money(grand)}</span></div><div style="font-size:.84rem;line-height:1.5">${itemHtml}</div><div style="font-size:.72rem;color:var(--text-muted);margin-top:10px">${esc(cleanDisplayDate(saleDateKey(s)))} • ${esc(saleTimeText(s))}</div></div>`;});if(homeRecent)filtered.slice(0,5).forEach(s=>{const id=getVal(s,['orderid','order_number','id'])||'N/A',table=getVal(s,['tablenumber','table','tablename','table_number'])||'Order',grand=parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),items=parseSaleItems(s);homeRecent.innerHTML+=`<div class="h-order-card" onclick="openOrderDetails('${esc(id)}')"><div class="ho-icon">🍽️</div><div class="ho-info"><div class="ho-title">Order #${esc(id)}</div><div class="ho-sub">${esc(table)} • ${esc(saleTimeText(s))}</div><div class="ho-sub" style="font-weight:700;color:var(--text-dark);margin-top:2px">${items.length?items.map(i=>`${esc(i.name)} ×${i.qty}`).join(', '):'Item details unavailable'} • ${money(grand)}</div></div><div class="ho-badge" style="background:#E6F4EA;color:#10B981">COMPLETED</div><div>›</div></div>`;});}
+        function saleTimestamp(s){
+            const raw=String(getVal(s,['created_at','createdAt'])||'').trim();
+            if(raw){const t=Date.parse(raw);if(!isNaN(t))return t;}
+            const combined=`${saleDateKey(s)} ${saleTimeText(s)}`.trim();
+            const t=Date.parse(combined);
+            return isNaN(t)?0:t;
+        }
+        function sortSalesNewestFirst(rows){return rows.slice().sort((a,b)=>saleTimestamp(b)-saleTimestamp(a));}
 
+        function renderLiveSales(){
+            const salesGrid=document.getElementById('salesGrid'),homeRecent=document.getElementById('homeRecentOrders');
+            if(!salesGrid)return;
+            salesGrid.innerHTML=''; if(homeRecent)homeRecent.innerHTML='';
+            const start=document.getElementById('filterStartDate')?.value||'',end=document.getElementById('filterEndDate')?.value||'';
+            const filtered=salesHistory.filter(s=>{const d=saleDateKey(s);return (!start||d>=start)&&(!end||d<=end);});
+            const newestFirst=sortSalesNewestFirst(filtered);
+            const total=newestFirst.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);
+            const box=document.getElementById('totalSalesBox');if(box)box.innerText=`Total Sales: ₹ ${total.toLocaleString('en-IN')}`;
+            if(!newestFirst.length){salesGrid.innerHTML='<div class="premium-empty">No orders found.</div>';return;}
+            newestFirst.forEach(s=>{
+                const id=getVal(s,['orderid','order_number','id'])||'N/A',
+                    table=getVal(s,['tablenumber','table','tablename','table_number'])||'Order',
+                    grand=parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),
+                    items=parseSaleItems(s),
+                    mode=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—';
+                const itemHtml=items.length?items.map(it=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px dashed var(--border)"><span><b>${esc(it.name)}</b> ×${it.qty}</span><span>${money(it.amount)}</span></div>`).join(''):'<div style="color:var(--text-muted)">Item details unavailable</div>';
+                salesGrid.innerHTML+=`<div class="card" style="padding:16px;margin-bottom:12px;cursor:pointer" onclick="openOrderDetails('${esc(id)}')"><div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:10px"><div><h4 style="margin:0;font-weight:800">${esc(table)}</h4><span style="font-size:.72rem;color:var(--text-muted)">#${esc(id)} • ${esc(mode)}</span></div><span class="recent-order-value">${money(grand)}</span></div><div style="font-size:.84rem;line-height:1.5">${itemHtml}</div><div style="font-size:.72rem;color:var(--text-muted);margin-top:10px">${esc(cleanDisplayDate(saleDateKey(s)))} • ${esc(saleTimeText(s))}</div></div>`;
+            });
+            if(homeRecent)newestFirst.slice(0,5).forEach(s=>{
+                const id=getVal(s,['orderid','order_number','id'])||'N/A',
+                    table=getVal(s,['tablenumber','table','tablename','table_number'])||'Order',
+                    grand=parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),
+                    items=parseSaleItems(s);
+                homeRecent.innerHTML+=`<div class="h-order-card" onclick="openOrderDetails('${esc(id)}')"><div class="ho-icon">🍽️</div><div class="ho-info"><div class="ho-title">Order #${esc(id)}</div><div class="ho-sub">${esc(table)} • ${esc(saleTimeText(s))}</div><div class="ho-sub" style="font-weight:700;color:var(--text-dark);margin-top:2px">${items.length?items.map(i=>`${esc(i.name)} ×${i.qty}`).join(', '):'Item details unavailable'}</div></div><span class="recent-order-value">${money(grand)}</span><div class="ho-badge" style="background:#E6F4EA;color:#10B981">COMPLETED</div><div>›</div></div>`;
+            });
+        }
         function renderTableGrid() {
             const gridContainer = document.getElementById('tableGrid'); gridContainer.innerHTML = ""; let activeCount = 0; let totalCount = 0;
             tableSections.forEach((section) => {
