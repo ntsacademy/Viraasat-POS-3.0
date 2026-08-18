@@ -693,12 +693,23 @@
         <!-- EXPENSES VIEW -->
         <div id="expenses" class="tab-content" style="padding-top: 10px;">
             <div class="card">
+                <div class="section-header" style="margin-top:0;"><h4>Add / Update Expense</h4><span>Receipt optional</span></div>
                 <div class="form-group">
-                    <div class="input-box"><label>Category</label><select id="expCategory"><option>Raw Material</option><option>Electricity</option><option>Maintenance</option><option>Other</option></select></div>
-                    <div class="input-box"><label>Amount (₹)</label><input type="number" id="expAmount" placeholder="0" inputmode="numeric"></div>
+                    <div class="input-box"><label>Category</label><select id="expCategory"><option>Raw Material</option><option>Electricity</option><option>Maintenance</option><option>Rent</option><option>Staff Salary</option><option>Transport</option><option>Other</option></select></div>
+                    <div class="input-box"><label>Amount (₹)</label><input type="number" id="expAmount" placeholder="0" inputmode="numeric" min="1"></div>
+                    <div class="input-box"><label>Date</label><input type="date" id="expDate"></div>
                     <div class="input-box"><label>Note (Optional)</label><input type="text" id="expDescription" placeholder="Add details"></div>
+                    <div class="input-box"><label>Receipt / Expense Image</label><input type="file" id="expReceipt" accept="image/*" capture="environment" onchange="previewExpenseReceipt(this)"><div id="expReceiptPreview" style="display:none;margin-top:8px;"></div></div>
                 </div>
                 <button class="btn" onclick="submitExpense()">Save Expense</button>
+            </div>
+            <div class="card" style="margin-top:14px;">
+                <div class="section-header" style="margin-top:0;"><h4>Expense History</h4><span id="expenseListCount">0 entries</span></div>
+                <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px;">
+                    <button class="filter-btn active" id="expFilterToday" onclick="setExpenseQuickFilter('today')">Today</button><button class="filter-btn" id="expFilterYesterday" onclick="setExpenseQuickFilter('yesterday')">Yesterday</button><button class="filter-btn" id="expFilter15" onclick="setExpenseQuickFilter('15')">Last 15 Days</button><button class="filter-btn" id="expFilter30" onclick="setExpenseQuickFilter('30')">Last 1 Month</button><button class="filter-btn" id="expFilterAll" onclick="setExpenseQuickFilter('all')">All</button>
+                </div>
+                <div class="input-row" style="margin-bottom:12px;"><div class="input-box"><label>From</label><input type="date" id="expFilterFrom" onchange="renderExpenseHistoryList()"></div><div class="input-box"><label>To</label><input type="date" id="expFilterTo" onchange="renderExpenseHistoryList()"></div></div>
+                <div id="expenseHistoryList"></div>
             </div>
         </div>
 
@@ -813,12 +824,14 @@
         const D1_API_BASE = '/api';
         const API_TIMEOUT_MS = 10000;
         
-const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1"; 
+const APP_VERSION = "D1-ENTERPRISE-FIX-6.0"; 
         
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
         let menuData = []; 
-        let stockData = {}; 
+        let stockData = {};
+        let stockMeta = {};
+        let stockHistory = []; 
         let runningTables = {}; 
         let salesHistory = []; 
         let expenseHistory = []; 
@@ -1256,6 +1269,7 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
             const total=Number(o.grand_total ?? o.grandTotal ?? o.total ?? o.amount ?? 0)||0;
             const rawString=o.items_string??o.itemsString??'';
             const rawItems=o.items??o.Items??'';
+             const detailItems=o.item_details??o.itemDetails??o.order_items??o.orderItems??null;
             return {
                 id:o.id,
                 order_number:o.order_number||o.orderNumber||o.id||'',
@@ -1272,85 +1286,32 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
                 payment_method:o.payment_method||o.paymentMethod||'',
                 payment_status:o.payment_status||o.paymentStatus||'',
                 order_status:o.order_status||o.orderStatus||'',
-                items_string:rawString,
-                items:rawString || rawItems || ''
+                items_string:rawString || (Array.isArray(detailItems)?detailItems.map(i=>`${i.name||i.item_name} (x${i.qty||i.quantity||1}) ₹${i.total||0}`).join(', '):''),
+                item_details:Array.isArray(detailItems)?detailItems:[],
+                items:rawItems || (Array.isArray(detailItems)?detailItems:rawString) || ''
             };
         }
 
-        async function fetchData() {
-            const loader=document.getElementById('loader');
-            loader.style.display='flex';
-            loader.innerHTML='<div class="spinner"></div> <span>Syncing Viraasat D1...</span>';
-            try {
-                const results = await Promise.all([
-                    d1Get('/dashboard'),
-                    d1Get('/menu'),
-                    d1Get('/tables'),
-                    d1Get('/orders?limit=5000'),
-                    d1Get('/expenses?limit=5000'),
-                    d1Get('/stock'),
-                    d1Get('/staff')
-                ]);
-                const [dash,menu,tables,orders,expenses,stock,staff] = results;
+        async function fetchData(){
+            const loader=document.getElementById('loader');const expDate=document.getElementById('expDate');if(expDate&&!expDate.value)expDate.value=localISODate(new Date());const ef=document.getElementById('expFilterFrom'),et=document.getElementById('expFilterTo');if(ef&&et&&!ef.value&&!et.value){ef.value=localISODate(new Date());et.value=localISODate(new Date());}loader.style.display='flex';loader.innerHTML='<div class="spinner"></div> <span>Syncing Viraasat D1...</span>';
+            const defs=[['/dashboard',d1Get('/dashboard')],['/menu',d1Get('/menu')],['/tables',d1Get('/tables')],['/orders',d1Get('/orders?limit=1000')],['/expenses',d1Get('/expenses?limit=2000')],['/stock',d1Get('/stock')],['/staff',d1Get('/staff')],['/stock/history',d1Get('/stock/history?limit=100')]];const results=await Promise.allSettled(defs.map(x=>x[1]));const failed=[];
+            try{
+                if(results[0].status==='fulfilled'){const dash=results[0].value||{};const summary=dash.summary||{},ts=dash.tables||{};document.getElementById('homeTodaySale').innerText=`₹${Math.round(Number(summary.today_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeAvgOrder').innerText=`₹${Math.round(Number(summary.average_order)||0).toLocaleString('en-IN')}`;document.getElementById('homeOverallSale').innerText=`₹${Math.round(Number(summary.overall_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeActiveTables').innerText=`${Number(ts.occupied)||0} / ${Number(ts.total)||tableSections.reduce((a,x)=>a+x.tables.length,0)}`;}else failed.push(['/dashboard',results[0].reason]);
+                if(results[1].status==='fulfilled')menuData=normalizeArray(results[1].value,['items','menu','data','result']);else failed.push(['/menu',results[1].reason]);
+                if(results[2].status==='fulfilled'){const ts=normalizeArray(results[2].value,['tables','data','result']);tableSections=[{title:'Hut Seating',tables:[]},{title:'Ground Seating',tables:[]},{title:'Terrace Seating',tables:[]}];const amap={'Hut Seating':0,'Ground Seating':1,'Terrace Seating':2};runningTables={};ts.forEach(t=>{const n=String(t.table_number??t.tableNumber??'').trim();if(!n)return;const i=amap[String(t.seating_area||t.seatingArea||'').trim()]??1;if(!tableSections[i].tables.includes(n))tableSections[i].tables.push(n);runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied'?[{__d1Occupied:true,orderId:t.current_order_id||t.currentOrderId}]:[];});if(!ts.length)tableSections=[{title:'Hut Seating',tables:['1','2','3','4']},{title:'Ground Seating',tables:['5','6','7']},{title:'Terrace Seating',tables:['8','9','10']}];}else failed.push(['/tables',results[2].reason]);
+                if(results[3].status==='fulfilled')salesHistory=normalizeArray(results[3].value,['orders','sales','data','result']).map(mapD1Order).filter(Boolean).filter(o=>!['kot','cancelled','deleted'].includes(String(o.order_status||'').toLowerCase()));else failed.push(['/orders',results[3].reason]);
+                Object.keys(runningTables).forEach(key=>{const arr=runningTables[key];if(Array.isArray(arr)&&arr[0]?.__d1Occupied){const oid=String(arr[0].orderId||'');const order=salesHistory.find(o=>String(o.id||'')===oid||String(o.orderid||'')===oid);runningTables[key]=order?parseSaleItems(order):[];}});
+                if(results[4].status==='fulfilled')expenseHistory=normalizeArray(results[4].value,['expenses','data','result']);else failed.push(['/expenses',results[4].reason]);
+                if(results[5].status==='fulfilled'){const raw=normalizeArray(results[5].value,['stock','items','data','result']);stockData={};stockMeta={};raw.forEach(x=>{const name=String(getVal(x,['name','itemname','item','stockname'])||'').trim();if(!name)return;stockData[name]=Number(getVal(x,['quantity','qty','stock','currentstock','currentquantity']))||0;stockMeta[name]={id:getVal(x,['id']),name,unit:getVal(x,['unit'])||'pcs',low_stock_level:Number(getVal(x,['low_stock_level','lowstocklevel']))||5,created_at:getVal(x,['created_at'])||'',updated_at:getVal(x,['updated_at'])||''};});}else failed.push(['/stock',results[5].reason]);
+                if(results[6].status==='fulfilled')staffData=normalizeArray(results[6].value,['staff','employees','data','result']);else failed.push(['/staff',results[6].reason]);
+                if(results[7].status==='fulfilled')stockHistory=normalizeArray(results[7].value,['history','stock_history','data','result']);else stockHistory=[];
+                applyLocalStaffState();populateDropdown();populateStaffDropdown();renderEmployeeList();renderTableGrid();renderStockDashboard();checkStockDisplay();renderLiveSales();generateTrends();renderPremiumDashboard();renderExpenseHistoryList();hideSplashScreen();
+                if(failed.length){const messages=failed.map(([path,e])=>`${path}: ${e?.message||e}`).join(' | ');console.warn('Partial D1 sync',failed);try{await d1Get('/test-db',5000);}catch(he){console.error('D1 health',he);}showCustomAlert(`Some D1 endpoints failed.
 
-                menuData = normalizeArray(menu,['items','menu','data','result']);
-                expenseHistory = normalizeArray(expenses,['expenses','data','result']);
-                staffData = normalizeArray(staff,['staff','employees','data','result']);
-                stockData = normalizeStock(stock);
-                salesHistory = normalizeArray(orders,['orders','sales','data','result']).map(mapD1Order).filter(Boolean).filter(o => String(o.order_status||'').toLowerCase() !== 'kot' && String(o.order_status||'').toLowerCase() !== 'cancelled');
+${messages}
 
-                const d1Tables = normalizeArray(tables,['tables','data','result']);
-                tableSections=[
-                    {title:'Hut Seating',tables:[]},
-                    {title:'Ground Seating',tables:[]},
-                    {title:'Terrace Seating',tables:[]}
-                ];
-                const areaMap={'Hut Seating':0,'Ground Seating':1,'Terrace Seating':2};
-                runningTables={};
-                d1Tables.forEach(t=>{
-                    const n=String(t.table_number??t.tableNumber??'').trim();
-                    if(!n)return;
-                    const area=String(t.seating_area||t.seatingArea||'').trim();
-                    const i=areaMap[area]!==undefined?areaMap[area]:1;
-                    if(!tableSections[i].tables.includes(n)) tableSections[i].tables.push(n);
-                    runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied'
-                        ?[{__d1Occupied:true,orderId:t.current_order_id||t.currentOrderId}]
-                        :[];
-                });
-                if(!d1Tables.length){
-                    tableSections=[
-                        {title:'Hut Seating',tables:['1','2','3','4']},
-                        {title:'Ground Seating',tables:['5','6','7']},
-                        {title:'Terrace Seating',tables:['8','9','10']}
-                    ];
-                }
-
-                const summary=dash.summary||{};
-                const tableSummary=dash.tables||{};
-                const overall = salesHistory.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);
-                const todayKey=localISODate(new Date());
-                const todaySales=salesHistory.filter(s=>saleDateKey(s)===todayKey).reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);
-                const todayOrders=salesHistory.filter(s=>saleDateKey(s)===todayKey).length;
-
-                document.getElementById('homeTodaySale').innerText=`₹${Math.round(Number(summary.today_sales ?? todaySales) || 0).toLocaleString('en-IN')}`;
-                document.getElementById('homeAvgOrder').innerText=`₹${Math.round(Number(summary.average_order ?? (todayOrders?todaySales/todayOrders:0)) || 0).toLocaleString('en-IN')}`;
-                document.getElementById('homeOverallSale').innerText=`₹${Math.round(Number(summary.overall_sales ?? overall) || 0).toLocaleString('en-IN')}`;
-                const totalTables=d1Tables.length || tableSections.reduce((a,s)=>a+s.tables.length,0);
-                const occupied=Number(tableSummary.occupied ?? Object.values(runningTables).filter(v=>Array.isArray(v)&&v.length).length);
-                document.getElementById('homeActiveTables').innerText=`${occupied} / ${Number(tableSummary.total)||totalTables}`;
-
-                applyLocalStaffState();
-                populateDropdown(); populateStaffDropdown(); renderEmployeeList(); renderTableGrid();
-                renderStockDashboard(); checkStockDisplay(); renderLiveSales(); generateTrends(); renderPremiumDashboard();
-                hideSplashScreen();
-            } catch(error) {
-                console.error('D1 Sync Error:',error);
-                loader.innerHTML=`<span style="color:var(--danger)">D1 Sync Error: ${esc(error.message||error)}</span>`;
-                hideSplashScreen();
-                showCustomAlert('D1 sync failed. Check Worker + D1 binding and try again.');
-            } finally {
-                setTimeout(()=>{loader.style.display='none';loader.innerHTML='<div class="spinner"></div> <span>Syncing...</span>';},300);
-            }
+Tables, billing and existing local UI remain visible.`);}
+            }catch(error){console.error('D1 Sync Error',error);renderTableGrid();renderStockDashboard();renderLiveSales();renderPremiumDashboard();renderExpenseHistoryList();hideSplashScreen();showCustomAlert(`D1 sync failed: ${error.message||error}`);}finally{setTimeout(()=>{loader.style.display='none';},700);}
         }
 
         function normalizeSheetSale(row){
@@ -1581,19 +1542,10 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
         }
 
         function parseSaleItems(source){
-            const raw = source && typeof source==='object' ? (source.items ?? source.Items ?? source.items_string ?? source.itemsString ?? source.itemsstring ?? '') : source;
-            const out=[];
-            const menuPrice=name=>{const mi=menuData.find(x=>String(getVal(x,['itemname','name'])).trim().toLowerCase()===String(name).trim().toLowerCase());return mi?parseAmount(getVal(mi,['price','sellingprice','rate'])):0;};
-            const push=(obj)=>{if(!obj)return;const name=String(obj.name??obj.item_name??obj.itemName??obj.title??obj.product??'').trim();if(!name)return;const qty=Math.max(1,Number(obj.qty??obj.quantity??obj.count??1)||1);let amount=obj.total??obj.amount??obj.line_total??obj.lineTotal;let price=obj.price??obj.unit_price??obj.unitPrice??obj.rate;amount=(amount===null||amount===undefined||amount==='')?null:parseAmount(amount);price=(price===null||price===undefined||price==='')?null:parseAmount(price);if(amount===null||amount===0){amount=price&&price>0?price*qty:menuPrice(name)*qty;}if((price===null||price===0)&&amount>0)price=Math.round(amount/qty);out.push({name,qty,amount:Number(amount)||0,price:Number(price)||0});};
-            if(Array.isArray(raw)){raw.forEach(push);return out;}
-            if(raw&&typeof raw==='object'){if(Array.isArray(raw.items)){raw.items.forEach(push);return out;}push(raw);return out;}
-            const text=String(raw??'').trim();if(!text)return out;
-            try{const parsed=JSON.parse(text);if(Array.isArray(parsed)){parsed.forEach(push);return out;}if(parsed&&Array.isArray(parsed.items)){parsed.items.forEach(push);return out;}}catch(_){ }
-            const cleaned=text.replace(/\s*\[(?:Mode|Discount Applied|Address|Payment_Mode|Payment Mode):[^\]]*\]/gi,'').trim().replace(/,+$/,'');
-            const chunks=cleaned.split(/,\s*(?=[^,]+?\s*\(x\s*\d+(?:\.\d+)?\))/i);
-            chunks.forEach(ch=>{const m=ch.trim().match(/^(.*?)\s*\(x\s*(\d+(?:\.\d+)?)\)\s*(?:₹\s*([\d,]+(?:\.\d+)?))?\s*$/i);if(!m)return;const name=m[1].trim(),qty=Math.max(1,Number(m[2])||1);let amount=m[3]?Number(String(m[3]).replace(/,/g,'')):null;const base=menuPrice(name);if(amount===null||amount===0)amount=base*qty;out.push({name,qty,amount:Number(amount)||0,price:base||((amount||0)/qty)});});
-            return out;
+            const s=source||{};const detail=s.item_details??s.itemDetails??s.order_items??s.orderItems;const raw=getVal(s,['items_string','itemsstring','items','Items','Items_String']);const out=[];const menuPrice=name=>{const mi=menuData.find(x=>String(getVal(x,['itemname','name'])).trim().toLowerCase()===String(name).trim().toLowerCase());return mi?parseAmount(getVal(mi,['price','sellingprice','rate'])):0;};const pushItem=obj=>{if(!obj)return;const name=String(obj.name??obj.item_name??obj.itemName??obj.title??'').trim();if(!name)return;const qty=Math.max(1,Number(obj.qty??obj.quantity??1)||1);let amount=obj.total??obj.amount??obj.line_total??obj.lineTotal;amount=(amount===null||amount===undefined||amount==='')?null:parseAmount(amount);let price=obj.price??obj.unit_price??obj.unitPrice??null;price=(price===null||price===undefined||price==='')?null:parseAmount(price);if(amount===null||amount===0)amount=price>0?price*qty:menuPrice(name)*qty;if((price===null||price===0)&&amount>0)price=Math.round(amount/qty);out.push({name,qty,amount:Number(amount)||0,price:Number(price)||0});};
+            if(Array.isArray(detail)&&detail.length){detail.forEach(pushItem);if(out.length)return out;}if(Array.isArray(raw)){raw.forEach(pushItem);return out;}const text=String(raw??'').trim();if(!text)return out;try{const parsed=JSON.parse(text);if(Array.isArray(parsed)){parsed.forEach(pushItem);if(out.length)return out;}if(parsed&&Array.isArray(parsed.items)){parsed.items.forEach(pushItem);if(out.length)return out;}}catch(_){}const cleaned=text.replace(/\s*\[(?:Mode|Discount Applied|Address):[^\]]*\]/gi,'').trim().replace(/,+$/,'');const chunks=cleaned.split(/\s*,\s*(?=[^,]+?\s*\(x\s*\d+(?:\.\d+)?\))/i);chunks.forEach(ch=>{const m=ch.trim().match(/^(.*?)\s*\(x\s*(\d+(?:\.\d+)?)\)\s*(?:₹\s*([\d,]+(?:\.\d+)?))?\s*$/i);if(!m)return;const name=m[1].trim(),qty=Math.max(1,Number(m[2])||1);let amount=m[3]?Number(String(m[3]).replace(/,/g,'')):null;const base=menuPrice(name);if(amount===null||amount===0)amount=base*qty;out.push({name,qty,amount:Number(amount)||0,price:base||(amount?Math.round(amount/qty):0)});});return out;
         }
+        function parseItemsString(text){return parseSaleItems({items_string:text});}
         function saleItemsText(s){
             const items=parseSaleItems(s);
             return items.length ? items.map(x=>`${x.name} (x${x.qty}) ${x.amount?`₹${x.amount}`:''}`.trim()).join(', ') : String(getVal(s,['items_string','itemsstring','items'])||'');
@@ -1622,29 +1574,22 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
             const body=document.getElementById('piRankList');if(!body)return;const q=(document.getElementById('piSearch')?.value||'').toLowerCase().trim();const all=buildItemSales();const items=all.filter(x=>x.name.toLowerCase().includes(q));const totalSales=all.reduce((a,x)=>a+x.sales,0);const totalQty=all.reduce((a,x)=>a+x.qty,0);
             body.innerHTML=items.map((x,i)=>{const salesShare=totalSales?x.sales/totalSales*100:0;const qtyShare=totalQty?x.qty/totalQty*100:0;return `<div class="item-rank"><div class="item-rank-no">${i+1}</div><div class="item-rank-info"><div class="item-rank-name">${esc(x.name)}</div><div class="item-rank-sub">${x.qty} units • ${x.orders} orders • ${qtyShare.toFixed(1)}% qty share</div><div class="mini-bar"><i style="width:${Math.min(100,salesShare)}%"></i></div></div><div style="text-align:right"><div class="item-rank-val">${money(x.sales)}</div><small style="font-size:.6rem;color:var(--text-muted)">${salesShare.toFixed(1)}% sales</small></div></div>`}).join('')||'<div class="premium-empty">No item sales found.</div>';
         }
+        function requireAdmin(action='this action'){ if(!window.isUserAdmin){showCustomAlert(`Only Admin can perform ${action}.`);return false;}return true; }
+        function stockOptionHtml(selected=''){const names=Object.keys(stockData).sort((a,b)=>a.localeCompare(b));return `<option value="">Select stock item</option>${names.map(n=>`<option value="${esc(n)}" ${String(n).toLowerCase()===String(selected).toLowerCase()?'selected':''}>${esc(n)}</option>`).join('')}`;}
         function renderPremiumInventory(){
-            const panel=document.getElementById('premiumPanel-inventory');if(!panel)return;const entries=Object.entries(stockData).sort((a,b)=>Number(a[1])-Number(b[1]));
-            panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Inventory Control</h3><span>${entries.length} tracked items</span></div><div class="premium-toolbar"><input id="pStockSearch" placeholder="Search stock..." oninput="renderPremiumInventoryRows()"><button class="premium-btn" onclick="showPremiumTab('settings')">Stock Admin</button></div><div id="pStockGrid" class="stock-grid"></div></div>`;
-            renderPremiumInventoryRows();
+            const panel=document.getElementById('premiumPanel-inventory');if(!panel)return;if(!window.isUserAdmin){panel.innerHTML='<div class="premium-card"><div class="premium-empty">Inventory control is restricted to Admin.</div></div>';return;}
+            const entries=Object.entries(stockData).sort((a,b)=>Number(a[1])-Number(b[1]));const low=entries.filter(([k,v])=>Number(v)<=Number(stockMeta[k]?.low_stock_level??5));const out=entries.filter(([k,v])=>Number(v)<=0);const totalUnits=entries.reduce((a,[k,v])=>a+Number(v||0),0);const last=entries.map(([k])=>stockMeta[k]?.updated_at||'').filter(Boolean).sort().pop();
+            panel.innerHTML=`<div class="premium-grid-3" style="margin-bottom:14px"><div class="report-stat"><div class="rlabel">Tracked Items</div><div class="rvalue">${entries.length}</div></div><div class="report-stat"><div class="rlabel">Low Stock</div><div class="rvalue" style="color:#B45309">${low.length}</div></div><div class="report-stat"><div class="rlabel">Total Units</div><div class="rvalue">${Math.round(totalUnits)}</div></div></div>
+            <div class="premium-card" style="margin-bottom:14px"><div class="premium-card-head"><h3>Inventory Control</h3><span>Admin only</span></div><div class="admin-form-grid"><select id="invItemSelect" onchange="loadStockEditor(this.value)">${stockOptionHtml()}</select><input id="invItemName" placeholder="New item name"><input id="invItemQty" type="number" min="0" placeholder="Current quantity"><input id="invItemUnit" placeholder="Unit" value="pcs"><input id="invItemLow" type="number" min="0" placeholder="Low stock level" value="5"><input id="invItemNote" placeholder="Correction note / reason"><button class="premium-btn" onclick="saveInventoryItem()">Save / Update Stock</button><button class="premium-btn light" onclick="resetInventoryEditor()">Add New Item</button></div><div class="admin-help" style="margin-top:8px">Last stock update: <b>${last?esc(cleanDisplayDate(last)+' '+cleanDisplayTime(last)):'No stock update recorded yet'}</b>${out.length?` • <span style="color:#B91C1C">${out.length} item(s) out of stock</span>`:''}</div></div>
+            <div class="premium-card"><div class="premium-card-head"><h3>Inventory Insights</h3><span>Latest corrections first</span></div><div id="inventoryInsightRows"></div></div>
+            <div class="premium-card" style="margin-top:14px"><div class="premium-card-head"><h3>All Stock Items</h3><span>${entries.length} items</span></div><div class="premium-toolbar"><input id="pStockSearch" placeholder="Search stock..." oninput="renderPremiumInventoryRows()"></div><div id="pStockGrid" class="stock-grid"></div></div>`;
+            renderPremiumInventoryRows();renderInventoryInsights();
         }
-        function renderPremiumInventoryRows(){const el=document.getElementById('pStockGrid');if(!el)return;const q=(document.getElementById('pStockSearch')?.value||'').toLowerCase();const e=Object.entries(stockData).filter(([k])=>k.toLowerCase().includes(q)).sort((a,b)=>Number(a[1])-Number(b[1]));el.innerHTML=e.map(([k,v])=>`<div class="stock-box ${Number(v)<=5?'low':''}"><div class="stock-box-name">${esc(k)}</div><div class="stock-box-qty">${Number(v)||0}</div><small>${Number(v)<=5?'Low stock':'Available'}</small></div>`).join('')||'<div class="premium-empty" style="grid-column:1/-1">No stock data received from source.</div>';}
-
-
-        function getStaffKey(s){return String(getVal(s,['empid','employeeid','mobile','phone','name'])||'');}
-        function getStaffStatus(s){return s.__status||'active';}
-        async function toggleStaffStatus(key){
-            const staff=staffData.find(s=>getStaffKey(s)===key);
-            if(!staff){showCustomAlert('Staff record not found.');return;}
-            const id=Number(getVal(staff,['id','empid','employeeid']));
-            if(!id){showCustomAlert('This staff record has no D1 ID.');return;}
-            const active=getStaffStatus(staff)==='active';
-            try{
-                await d1Post('/staff/update',{id:id,is_active:!active});
-                staff.__status=!active?'active':'inactive';
-                const state=JSON.parse(localStorage.getItem('viraasat_staff_status')||'{}');state[key]=staff.__status;localStorage.setItem('viraasat_staff_status',JSON.stringify(state));
-                renderAdminStaffRows();renderEmployeeList();generateTrends();renderPremiumAdmin();
-            }catch(e){showCustomAlert('Staff status update failed: '+e.message);}
-        }
+        function loadStockEditor(name){if(!name){resetInventoryEditor(false);return;}const meta=stockMeta[name]||{};document.getElementById('invItemName').value=name;document.getElementById('invItemQty').value=Number(stockData[name]||0);document.getElementById('invItemUnit').value=meta.unit||'pcs';document.getElementById('invItemLow').value=Number(meta.low_stock_level??5);document.getElementById('invItemNote').value='';}
+        function resetInventoryEditor(clearSelect=true){if(clearSelect&&document.getElementById('invItemSelect'))document.getElementById('invItemSelect').value='';['invItemName','invItemQty','invItemNote'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});document.getElementById('invItemUnit').value='pcs';document.getElementById('invItemLow').value=5;}
+        async function saveInventoryItem(){if(!requireAdmin('inventory update'))return;const name=document.getElementById('invItemName')?.value.trim();const qty=Number(document.getElementById('invItemQty')?.value);const unit=document.getElementById('invItemUnit')?.value.trim()||'pcs';const low=Number(document.getElementById('invItemLow')?.value??5);const note=document.getElementById('invItemNote')?.value.trim()||'Admin stock update';if(!name||!Number.isFinite(qty)||qty<0||!Number.isFinite(low)||low<0){showCustomAlert('Enter valid item, quantity and low-stock level.');return;}const old=Number(stockData[name]??0);const exists=Object.prototype.hasOwnProperty.call(stockData,name);try{await d1Post('/stock',{name,quantity:qty,unit,low_stock_level:low,note,updated_by:localStorage.getItem('viraasat_user')||'Admin'});stockData[name]=qty;stockMeta[name]={...(stockMeta[name]||{}),name,unit,low_stock_level:low,updated_at:new Date().toISOString()};stockHistory.unshift({item_name:name,old_quantity:old,new_quantity:qty,change_quantity:qty-old,action:exists?'UPDATE':'ADD',note,updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});auditLog(exists?'Stock Corrected':'Inventory Item Added',`${name}: ${old} → ${qty} (${note})`);renderStockDashboard();renderPremiumInventory();resetInventoryEditor();showCustomAlert('Inventory saved successfully.');}catch(e){showCustomAlert('Inventory save failed: '+e.message);}}
+        function renderInventoryInsights(){const el=document.getElementById('inventoryInsightRows');if(!el)return;const rows=(stockHistory||[]).slice(0,10);el.innerHTML=rows.length?rows.map(r=>`<div class="admin-mini-row"><div><b>${esc(r.item_name||r.name)}</b><small>${esc(r.action||'UPDATE')} • ${esc(r.note||'Stock change')} • ${esc(r.updated_by||'Admin')}</small></div><strong>${Number(r.new_quantity??r.quantity??0)}</strong><small style="display:block;color:var(--text-muted)">${r.created_at?esc(cleanDisplayDate(r.created_at)+' '+cleanDisplayTime(r.created_at)):''}</small></div>`).join(''):'<div class="premium-empty">No stock update history available yet.</div>';}
+        function renderPremiumInventoryRows(){const el=document.getElementById('pStockGrid');if(!el)return;const q=(document.getElementById('pStockSearch')?.value||'').toLowerCase();const e=Object.entries(stockData).filter(([k])=>k.toLowerCase().includes(q)).sort((a,b)=>Number(a[1])-Number(b[1]));el.innerHTML=e.map(([k,v])=>{const m=stockMeta[k]||{};const low=Number(m.low_stock_level??5);return `<div class="stock-box ${Number(v)<=low?'low':''}"><div class="stock-box-name">${esc(k)}</div><div class="stock-box-qty">${Number(v)||0}</div><small>${Number(v)<=0?'OUT OF STOCK':Number(v)<=low?'LOW STOCK':'Available'} • ${esc(m.unit||'pcs')}</small><button class="premium-btn light" style="margin-top:8px;width:100%" onclick="loadStockEditor('${esc(k)}')">Edit / Correct</button></div>`}).join('')||'<div class="premium-empty" style="grid-column:1/-1">No stock data received from source.</div>';}
         async function removeStaffRecord(key){
             const staff=staffData.find(s=>getStaffKey(s)===key);
             if(!staff)return;
@@ -1738,15 +1683,9 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
             </div>
 
             <div class="premium-card admin-card">
-                <div class="premium-card-head"><h3>Stock Management</h3><span>${Object.keys(stockData).length} items</span></div>
-                <div class="premium-toolbar compact-toolbar">
-                    <input id="adminStockSearch" list="adminStockNames" placeholder="Search stock item...">
-                    <datalist id="adminStockNames">${Object.keys(stockData).map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
-                    <input id="adminStockQty" type="number" min="0" inputmode="numeric" placeholder="Qty">
-                    <input id="adminStockLow" type="number" min="0" inputmode="numeric" value="5" placeholder="Low">
-                    <button class="premium-btn" onclick="adminUpdateStockUnified()">Update</button>
-                </div>
-                <div id="adminStockMiniList" class="admin-mini-list"></div>
+                <div class="premium-card-head"><h3>Stock Management</h3><span>${Object.keys(stockData).length} items • Admin only</span></div>
+                <div class="admin-form-grid"><select id="adminStockSelect" onchange="loadAdminStockSelect(this.value)">${stockOptionHtml()}</select><input id="adminStockSearch" placeholder="New item name / search" oninput="syncAdminStockSearch(this.value)"><input id="adminStockQty" type="number" min="0" inputmode="numeric" placeholder="Current Qty"><input id="adminStockLow" type="number" min="0" inputmode="numeric" value="5" placeholder="Low Stock"><button class="premium-btn" onclick="adminUpdateStockUnified()">Save / Correct</button><button class="premium-btn light" onclick="resetAdminStockForm()">Add New Item</button></div>
+                <div class="admin-help">Use the dropdown to select an existing item. Quantity correction and new stock-item creation are restricted to Admin.</div><div id="adminStockMiniList" class="admin-mini-list"></div>
             </div>
 
             <div class="premium-card admin-card">
@@ -1826,11 +1765,10 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
             if(logBox)logBox.innerHTML=logs.length?logs.slice(0,40).map(l=>`<div class="audit-row"><b>${esc(l.action)}</b><span>${esc(l.details)} • ${esc(l.user)} • ${new Date(l.timestamp).toLocaleString('en-IN')}</span></div>`).join(''):'<div class="premium-empty">No activity logged yet.</div>';
         }
 
-        function renderAdminStockRows(){
-            const el=document.getElementById('adminStockMiniList'); if(!el)return;
-            const rows=Object.entries(stockData).sort((a,b)=>Number(a[1])-Number(b[1])).slice(0,12);
-            el.innerHTML=rows.map(([name,qty])=>`<div class="admin-mini-row"><div><b>${esc(name)}</b><small>${Number(qty)<=5?'Low stock':'Available'}</small></div><strong>${Number(qty)||0}</strong></div>`).join('')||'<div class="premium-empty">No stock data.</div>';
-        }
+        function renderAdminStockRows(){const el=document.getElementById('adminStockMiniList');if(!el)return;const rows=Object.entries(stockData).sort((a,b)=>Number(a[1])-Number(b[1])).slice(0,15);el.innerHTML=rows.map(([name,qty])=>{const low=Number(stockMeta[name]?.low_stock_level??5);return `<div class="admin-mini-row" onclick="loadAdminStockSelect('${esc(name)}')" style="cursor:pointer"><div><b>${esc(name)}</b><small>${Number(qty)<=0?'OUT OF STOCK':Number(qty)<=low?'Low stock':'Available'} • Last update ${stockMeta[name]?.updated_at?esc(cleanDisplayDate(stockMeta[name].updated_at)):'—'}</small></div><strong>${Number(qty)||0}</strong></div>`}).join('')||'<div class="premium-empty">No stock data.</div>';}
+        function loadAdminStockSelect(name){if(!name){resetAdminStockForm(false);return;}const m=stockMeta[name]||{};document.getElementById('adminStockSearch').value=name;document.getElementById('adminStockQty').value=Number(stockData[name]||0);document.getElementById('adminStockLow').value=Number(m.low_stock_level??5);}
+        function syncAdminStockSearch(v){const sel=document.getElementById('adminStockSelect');if(sel){const opt=[...sel.options].find(o=>o.value.toLowerCase()===String(v).trim().toLowerCase());sel.value=opt?opt.value:'';}}
+        function resetAdminStockForm(clear=true){if(clear&&document.getElementById('adminStockSelect'))document.getElementById('adminStockSelect').value='';['adminStockSearch','adminStockQty'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});document.getElementById('adminStockLow').value=5;}
         function renderAdminStaffRows(){
             const el=document.getElementById('adminStaffRows'); if(!el)return;
             const q=(document.getElementById('adminStaffSearch')?.value||'').toLowerCase();
@@ -1842,11 +1780,7 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
             const entries=Object.entries(userPermissions||{});
             el.innerHTML=entries.map(([mobile,p])=>`<div class="admin-user-row"><div><b>${esc(mobile)}</b><small>${esc(p.role||'cashier')} • Sales ${p.orders?'Yes':'No'} • P&L ${p.analytics?'Yes':'No'} • Expenses ${p.expenses?'Yes':'No'}</small></div><button class="premium-btn danger" onclick="removeUser('${esc(mobile)}');renderAdminUsersRows()">Remove</button></div>`).join('')||'<div class="premium-empty">No additional POS users registered.</div>';
         }
-        function adminUpdateStockUnified(){
-            const name=document.getElementById('adminStockSearch')?.value.trim(); const qty=Number(document.getElementById('adminStockQty')?.value); const low=Number(document.getElementById('adminStockLow')?.value||5);
-            if(!name||!Number.isFinite(qty)||qty<0){showCustomAlert('Enter a valid stock item and quantity.');return;}
-            d1Post('/stock',{name,quantity:qty,unit:'pcs',low_stock_level:low}).then(()=>{stockData[name]=qty;renderStockDashboard();renderPremiumInventoryRows();renderAdminStockRows();auditLog('Stock Updated',`${name} = ${qty}`);showCustomAlert('Stock updated successfully.');}).catch(e=>showCustomAlert('Stock update failed: '+e.message));
-        }
+        async function adminUpdateStockUnified(){if(!requireAdmin('inventory update'))return;const selected=document.getElementById('adminStockSelect')?.value||'',typed=document.getElementById('adminStockSearch')?.value.trim()||'',name=typed||selected,qty=Number(document.getElementById('adminStockQty')?.value),low=Number(document.getElementById('adminStockLow')?.value||5);if(!name||!Number.isFinite(qty)||qty<0){showCustomAlert('Select an item or enter a new item name, then enter a valid quantity.');return;}const old=Number(stockData[name]??0),exists=Object.prototype.hasOwnProperty.call(stockData,name);try{await d1Post('/stock',{name,quantity:qty,unit:stockMeta[name]?.unit||'pcs',low_stock_level:low,note:exists?'Admin correction':'New stock item',updated_by:localStorage.getItem('viraasat_user')||'Admin'});stockData[name]=qty;stockMeta[name]={...(stockMeta[name]||{}),name,unit:stockMeta[name]?.unit||'pcs',low_stock_level:low,updated_at:new Date().toISOString()};stockHistory.unshift({item_name:name,old_quantity:old,new_quantity:qty,change_quantity:qty-old,action:exists?'UPDATE':'ADD',note:exists?'Admin correction':'New stock item',updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});auditLog(exists?'Stock Corrected':'Stock Item Added',`${name}: ${old} → ${qty}`);renderStockDashboard();renderPremiumInventory();renderPremiumAdmin();showCustomAlert(exists?'Stock corrected successfully.':'New stock item added successfully.');}catch(e){showCustomAlert('Stock update failed: '+e.message);}}
         async function adminAddMenuUnified(){
             const name=document.getElementById('adminMenuName')?.value.trim(); const price=Number(document.getElementById('adminMenuPrice')?.value); const category=document.getElementById('adminMenuCategory')?.value.trim()||'Other';
             if(!name||!Number.isFinite(price)||price<=0){showCustomAlert('Enter item name and valid price.');return;}
@@ -2096,43 +2030,7 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
             if (!tStr) return ""; try { let d = new Date(tStr); if (!isNaN(d.getTime())) return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); return tStr; } catch(e) { return tStr; } 
         }
 
-        function renderLiveSales() {
-            const salesGrid = document.getElementById('salesGrid'); salesGrid.innerHTML = ""; const homeRecent = document.getElementById('homeRecentOrders'); homeRecent.innerHTML = "";
-            let startDateInput = document.getElementById('filterStartDate').value; let endDateInput = document.getElementById('filterEndDate').value;
-            
-            let filteredSales = salesHistory.filter(sale => {
-                if (!startDateInput && !endDateInput) return true;
-                let sDate = String(getVal(sale, ['date', 'isodate']) || '').trim();
-                let saleIsoDate = localISODate(sDate);
-                if (startDateInput && saleIsoDate < startDateInput) return false; if (endDateInput && saleIsoDate > endDateInput) return false; return true;
-            });
-            
-            let displayTotal = filteredSales.reduce((acc, curr) => acc + parseAmount(getVal(curr, ['totalamount', 'total', 'amount'])), 0);
-            document.getElementById('totalSalesBox').innerText = `Total Sales: ₹ ${displayTotal.toLocaleString('en-IN')}`;
-            
-            if(filteredSales.length === 0) { salesGrid.innerHTML = "<p style='color:var(--text-muted); font-size:0.9rem; text-align:center;'>No orders found.</p>"; return; }
-            
-            let tableCounts = {};
-            [...filteredSales].reverse().forEach(sale => { let tName = getVal(sale, ['tablenumber', 'table', 'tablename']) || "Table"; tableCounts[tName] = (tableCounts[tName] || 0) + 1; sale.sessionIndex = tableCounts[tName]; });
-            
-            filteredSales.forEach(sale => {
-                let sOrderId = getVal(sale, ['orderid', 'id']) || 'N/A'; let tName = getVal(sale, ['tablenumber', 'table', 'tablename']) || "Table"; let sessionLabel = sale.sessionIndex > 1 ? ` (S${sale.sessionIndex})` : "";
-                let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getVal(sale, ['items', 'itemsstring']) || ''; let sDate = saleDateKey(sale); let sTime = saleTimeText(sale);
-                
-                let cleanItemsView = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
-
-                salesGrid.innerHTML += `<div class="card" style="padding:16px; margin-bottom:12px; cursor:pointer;" onclick="openOrderDetails('${sOrderId}')"><div style="display:flex; justify-content:space-between; margin-bottom:12px;"><div><h4 style="margin-bottom:2px; font-weight:700; color:var(--text-dark);">${tName}${sessionLabel}</h4><span style="font-size:0.75rem; color:var(--text-muted); font-weight:600;">#${sOrderId}</span></div></div><div style="font-size:0.85rem; color:var(--text-muted); line-height:1.5; margin-bottom:16px; max-height:42px; overflow:hidden;">${cleanItemsView.replace(/ ₹\d+/g, '')}</div><div style="display:flex; justify-content:space-between; align-items:center;"><span style="background:#F4EFEA; color:var(--text-dark); padding:6px 10px; border-radius:6px; font-weight:600; font-size:0.78rem; border:1px solid var(--border); white-space:nowrap;">${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}</span><span style="color: #E65100; font-size: 1.2rem; font-weight: 800; background: #FFEDD5; padding: 6px 12px; border-radius: 8px; white-space: nowrap; border: 1px solid #FDE68A;">₹ ${sTotal}</span></div></div>`;
-            });
-            
-            filteredSales.slice(0, 3).forEach(sale => {
-                let sOrderId = getVal(sale, ['orderid', 'id']) || 'N/A'; let tName = getVal(sale, ['tablenumber', 'table', 'tablename']) || "Table"; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getVal(sale, ['items', 'itemsstring']) || ''; let sTime = getVal(sale, ['time']) || ''; let iconStr = tName.includes('Takeaway') ? '🛍️' : (tName.includes('Delivery') ? '🛵' : '🍽️'); 
-                
-                let cleanItemsView = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
-                let itemCount = parseSaleItems(sale).length || (cleanItemsView ? cleanItemsView.split(', ').length : 0);
-                
-                homeRecent.innerHTML += `<div class="h-order-card" onclick="openOrderDetails('${sOrderId}')"><div class="ho-icon">${iconStr}</div><div class="ho-info"><div class="ho-title">Order #${sOrderId}</div><div class="ho-sub">${tName} • ${cleanDisplayTime(sTime)}</div><div class="ho-sub" style="font-weight:600; color:var(--text-dark); margin-top:2px;">${itemCount} Items • ₹${sTotal}</div></div><div class="ho-badge" style="background:#E6F4EA; color:#10B981;">COMPLETED</div><div style="color:#CCC; font-size:1.3rem;">›</div></div>`;
-            });
-        }
+        function renderLiveSales(){const salesGrid=document.getElementById('salesGrid'),homeRecent=document.getElementById('homeRecentOrders');if(!salesGrid)return;salesGrid.innerHTML='';if(homeRecent)homeRecent.innerHTML='';const start=document.getElementById('filterStartDate')?.value||'',end=document.getElementById('filterEndDate')?.value||'';const filtered=salesHistory.filter(s=>{const d=saleDateKey(s);return (!start||d>=start)&&(!end||d<=end);});const total=filtered.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);const box=document.getElementById('totalSalesBox');if(box)box.innerText=`Total Sales: ₹ ${total.toLocaleString('en-IN')}`;if(!filtered.length){salesGrid.innerHTML='<div class="premium-empty">No orders found.</div>';return;}filtered.slice().reverse().forEach(s=>{const id=getVal(s,['orderid','order_number','id'])||'N/A',table=getVal(s,['tablenumber','table','tablename','table_number'])||'Order',grand=parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),items=parseSaleItems(s),mode=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—';const itemHtml=items.length?items.map(it=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px dashed var(--border)"><span><b>${esc(it.name)}</b> ×${it.qty}</span><span>${money(it.amount)}</span></div>`).join(''):'<div style="color:var(--text-muted)">Item details unavailable</div>';salesGrid.innerHTML+=`<div class="card" style="padding:16px;margin-bottom:12px;cursor:pointer" onclick="openOrderDetails('${esc(id)}')"><div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:10px"><div><h4 style="margin:0;font-weight:800">${esc(table)}</h4><span style="font-size:.72rem;color:var(--text-muted)">#${esc(id)} • ${esc(mode)}</span></div><span style="font-weight:800;color:#B45309">${money(grand)}</span></div><div style="font-size:.84rem;line-height:1.5">${itemHtml}</div><div style="font-size:.72rem;color:var(--text-muted);margin-top:10px">${esc(cleanDisplayDate(saleDateKey(s)))} • ${esc(saleTimeText(s))}</div></div>`;});if(homeRecent)filtered.slice(0,5).forEach(s=>{const id=getVal(s,['orderid','order_number','id'])||'N/A',table=getVal(s,['tablenumber','table','tablename','table_number'])||'Order',grand=parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),items=parseSaleItems(s);homeRecent.innerHTML+=`<div class="h-order-card" onclick="openOrderDetails('${esc(id)}')"><div class="ho-icon">🍽️</div><div class="ho-info"><div class="ho-title">Order #${esc(id)}</div><div class="ho-sub">${esc(table)} • ${esc(saleTimeText(s))}</div><div class="ho-sub" style="font-weight:700;color:var(--text-dark);margin-top:2px">${items.length?items.map(i=>`${esc(i.name)} ×${i.qty}`).join(', '):'Item details unavailable'} • ${money(grand)}</div></div><div class="ho-badge" style="background:#E6F4EA;color:#10B981">COMPLETED</div><div>›</div></div>`;});}
 
         function renderTableGrid() {
             const gridContainer = document.getElementById('tableGrid'); gridContainer.innerHTML = ""; let activeCount = 0; let totalCount = 0;
@@ -2345,35 +2243,33 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
             }catch(e){btn.innerText='Confirm Checkout';btn.disabled=false;showCustomAlert('Checkout failed: '+e.message);}
         }
 
-        async function submitExpense() {
-            const category=document.getElementById('expCategory').value; const amount=parseInt(document.getElementById('expAmount').value)||0;
-            if(amount<=0){showCustomAlert('Enter valid amount.');return;}
-            try{
-                const description=document.getElementById('expDescription').value||'NA';
-                await d1Post('/expenses',{category,amount,description});
-                const now=new Date();const fDate=now.toISOString();expenseHistory.unshift({date:fDate,isodate:fDate,amount,category,description});
-                auditLog('Expense Added', `${category} ₹${amount}`); showCustomAlert('Expense Saved!');document.getElementById('expAmount').value='';document.getElementById('expDescription').value='';generateTrends();renderPremiumExpenses();
-            }catch(e){showCustomAlert('Expense save failed: '+e.message);}
-        }
+        let expenseReceiptBase64='';
+        function previewExpenseReceipt(input){const file=input?.files?.[0],box=document.getElementById('expReceiptPreview');if(!box)return;if(!file){clearExpenseReceipt();return;}if(file.size>2*1024*1024){showCustomAlert('Receipt image should be under 2 MB.');input.value='';return;}const r=new FileReader();r.onload=()=>{expenseReceiptBase64=String(r.result||'');box.style.display='block';box.innerHTML=`<img src="${expenseReceiptBase64}" style="max-width:120px;max-height:120px;border:1px solid var(--border);border-radius:8px;display:block"><button class="premium-btn light" style="margin-top:6px" onclick="clearExpenseReceipt()">Remove Image</button>`;};r.readAsDataURL(file);}
+        function clearExpenseReceipt(){expenseReceiptBase64='';const i=document.getElementById('expReceipt');if(i)i.value='';const b=document.getElementById('expReceiptPreview');if(b){b.style.display='none';b.innerHTML='';}}
+        async function submitExpense(){const category=document.getElementById('expCategory').value,amount=Number(document.getElementById('expAmount').value)||0;if(amount<=0){showCustomAlert('Enter valid amount.');return;}try{const description=document.getElementById('expDescription').value||'NA',expenseDate=document.getElementById('expDate').value||localISODate(new Date());await d1Post('/expenses',{category,amount,description,expense_date:expenseDate,receipt_image:expenseReceiptBase64||''});expenseHistory.unshift({date:expenseDate,isodate:expenseDate,expense_date:expenseDate,amount,category,description,receipt_image:expenseReceiptBase64||''});auditLog('Expense Added',`${category} ₹${amount}`);document.getElementById('expAmount').value='';document.getElementById('expDescription').value='';clearExpenseReceipt();document.getElementById('expDate').value=localISODate(new Date());generateTrends();renderPremiumExpenses();renderExpenseHistoryList();showCustomAlert('Expense Saved!');}catch(e){showCustomAlert('Expense save failed: '+e.message);}}
+        function expenseDateKey(e){return localISODate(getVal(e,['expense_date','date','isodate','created_at']));}
+        function setExpenseQuickFilter(type){const today=localISODate(new Date()),from=document.getElementById('expFilterFrom'),to=document.getElementById('expFilterTo');['expFilterToday','expFilterYesterday','expFilter15','expFilter30','expFilterAll'].forEach(id=>document.getElementById(id)?.classList.remove('active'));const map={today:'expFilterToday',yesterday:'expFilterYesterday','15':'expFilter15','30':'expFilter30',all:'expFilterAll'};document.getElementById(map[type])?.classList.add('active');if(type==='today'){from.value=today;to.value=today;}else if(type==='yesterday'){const d=new Date();d.setDate(d.getDate()-1);from.value=localISODate(d);to.value=localISODate(d);}else if(type==='15'){const d=new Date();d.setDate(d.getDate()-14);from.value=localISODate(d);to.value=today;}else if(type==='30'){const d=new Date();d.setMonth(d.getMonth()-1);from.value=localISODate(d);to.value=today;}else{from.value='';to.value='';}renderExpenseHistoryList();}
+        function renderExpenseHistoryList(){const el=document.getElementById('expenseHistoryList');if(!el)return;const from=document.getElementById('expFilterFrom')?.value||'',to=document.getElementById('expFilterTo')?.value||'';const rows=expenseHistory.filter(e=>{const d=expenseDateKey(e);return(!from||d>=from)&&(!to||d<=to);});const total=rows.reduce((a,e)=>a+parseAmount(getVal(e,['amount','total'])),0);const count=document.getElementById('expenseListCount');if(count)count.innerText=`${rows.length} entries • ₹${total.toLocaleString('en-IN')}`;el.innerHTML=rows.length?rows.map(e=>{const receipt=getVal(e,['receipt_image']);return `<div class="card" style="padding:12px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;gap:10px"><div><b>${esc(getVal(e,['category'])||'Other')}</b><div style="font-size:.72rem;color:var(--text-muted)">${esc(expenseDateKey(e))} • ${esc(getVal(e,['description','note'])||'')}</div></div><strong style="color:var(--danger)">- ${money(getVal(e,['amount','total']))}</strong></div>${receipt?`<div style="margin-top:8px"><img src="${esc(receipt)}" style="width:64px;height:64px;object-fit:cover;border-radius:7px;border:1px solid var(--border)" onclick="window.open('${esc(receipt)}','_blank')"><span style="font-size:.68rem;color:var(--text-muted);margin-left:8px">Receipt attached</span></div>`:''}</div>`}).join(''):'<div class="premium-empty">No expenses for the selected period.</div>';}
 
         function setActiveFilterBtn(id) { ['btnFilterToday','btnFilterYesterday','btnFilterClear'].forEach(x=>{const b=document.getElementById(x);if(b)b.classList.remove('active');}); if(id){const b=document.getElementById(id);if(b)b.classList.add('active');} }
         function setTodayFilter() { setActiveFilterBtn('btnFilterToday'); let now = new Date(); let todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`; document.getElementById('filterStartDate').value = todayStr; document.getElementById('filterEndDate').value = todayStr; renderLiveSales(); }
         function setYesterdayFilter() { setActiveFilterBtn('btnFilterYesterday'); let yest = new Date(); yest.setDate(yest.getDate() - 1); let yestStr = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, '0')}-${String(yest.getDate()).padStart(2, '0')}`; document.getElementById('filterStartDate').value = yestStr; document.getElementById('filterEndDate').value = yestStr; renderLiveSales(); }
         function resetDateFilter() { setActiveFilterBtn('btnFilterClear'); document.getElementById('filterStartDate').value = ""; document.getElementById('filterEndDate').value = ""; renderLiveSales(); }
 
-        function openOrderDetails(orderId) {
+        function openOrderDetails(orderId){
             const sale=salesHistory.find(s=>String(getVal(s,['orderid','order_number','id'])).trim()===String(orderId).trim());
-            if(!sale)return;
-            currentViewingSale=sale;
-            const sTable=getVal(sale,['tablenumber','table','tablename','table_number'])||'Table';
+            if(!sale)return; currentViewingSale=sale;
+            const sTable=getVal(sale,['tablenumber','table','tablename','table_number'])||'Order';
             const sDate=getVal(sale,['date','isodate','created_at'])||'';
             const sTime=getVal(sale,['time','created_at'])||'';
             const sTotal=parseAmount(getVal(sale,['grand_total','totalamount','total','amount']));
             const sPhone=getVal(sale,['phone','customerphone','customer_phone'])||'';
             const parsed=parseSaleItems(sale);
-            document.getElementById('modalOrderMeta').innerHTML=`<b>Table:</b> ${esc(sTable)}<br><b>ID:</b> #${esc(orderId)}<br><b>Time:</b> ${esc(cleanDisplayDate(sDate))} • ${esc(cleanDisplayTime(sTime))}`;
+            document.getElementById('modalOrderMeta').innerHTML=`<b>Table:</b> ${esc(sTable)}<br><b>ID:</b> #${esc(orderId)}<br><b>Time:</b> ${esc(cleanDisplayDate(sDate))} • ${esc(cleanDisplayTime(sTime))}<br><b>Payment:</b> ${esc(getVal(sale,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(sale,['items_string','itemsstring','items']))||'—')}`;
             let html=`<div class="historical-items-box"><div class="historical-items-title">Items & Charges</div>`;
-            html+=parsed.length?parsed.map(it=>`<div class="historical-item-row"><div class="historical-item-name">${esc(it.name)}</div><div class="historical-item-qty">×${it.qty}</div><div class="historical-item-total">${it.amount?money(it.amount):'—'}</div></div>`).join(''):`<div class="premium-empty" style="padding:10px 0">No item details were stored for this order.</div>`;
+            html+=parsed.length?parsed.map(it=>`<div class="historical-item-row"><div class="historical-item-name">${esc(it.name)}</div><div class="historical-item-qty">×${it.qty} @ ${money(it.price)}</div><div class="historical-item-total">${money(it.amount)}</div></div>`).join(''):`<div class="premium-empty" style="padding:10px 0">No item details were stored for this order.</div>`;
+            const disc=parseAmount(getVal(sale,['discount']));
+            if(disc>0)html+=`<div class="historical-item-row"><div class="historical-item-name">Discount</div><div></div><div class="historical-item-total">- ${money(disc)}</div></div>`;
             html+='</div>';
             document.getElementById('modalOrderItems').innerHTML=html;
             document.getElementById('modalOrderTotal').innerText=`₹ ${sTotal}`;
