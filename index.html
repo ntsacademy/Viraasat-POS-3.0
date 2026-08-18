@@ -251,6 +251,65 @@
         @media(max-width:800px){.premium-kpis{grid-template-columns:repeat(2,1fr)}.premium-grid-2,.premium-grid-3{grid-template-columns:1fr}.stock-grid{grid-template-columns:repeat(2,1fr)}.staff-grid{grid-template-columns:1fr 1fr}.premium-hero-row{align-items:flex-start}.premium-title{font-size:1.3rem}}
         @media(max-width:520px){.staff-grid{grid-template-columns:1fr}.premium-kpis{gap:8px}.pkpi{padding:13px}.pkpi .value{font-size:1.1rem}.premium-card{padding:14px}}
 
+
+        /* ===== FINAL MOBILE ADMIN VIEW FIXES ===== */
+        html,body{width:100%;max-width:100%;overflow-x:hidden}
+        body{min-height:100dvh}
+        main{width:100%;max-width:100%;overflow-x:hidden}
+        .tab-content{width:100%;max-width:100%;min-width:0}
+        .premium-shell,.premium-panel,.premium-card{min-width:0;max-width:100%}
+        .premium-hero{width:100%;box-sizing:border-box}
+        .premium-hero-row{min-width:0}
+        .premium-hero-row>div:first-child{min-width:0;flex:1}
+        .premium-title{white-space:normal;line-height:1.15}
+        .premium-tabs{width:100%;max-width:100%;padding-left:0;padding-right:0}
+        .premium-tab{flex:0 0 auto}
+        .premium-toolbar{width:100%;min-width:0}
+        .premium-toolbar input,.premium-toolbar select{min-width:0;width:100%;max-width:100%}
+        .premium-table-wrap{width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+        .premium-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+        .premium-grid-2,.premium-grid-3{min-width:0}
+        .stock-grid{grid-template-columns:repeat(2,minmax(0,1fr));width:100%;min-width:0}
+        .stock-box{min-width:0;overflow:hidden}
+        .staff-grid{grid-template-columns:repeat(2,minmax(0,1fr));min-width:0}
+        .staff-card{min-width:0;overflow:hidden}
+        .staff-actions{flex-wrap:wrap}
+        .staff-actions button{min-width:0}
+        .premium-card-head{min-width:0}
+        .premium-card-head h3{min-width:0}
+        .premium-card-head span{white-space:nowrap}
+        .admin-insight-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
+        .admin-insight{border:1px solid var(--border);border-radius:14px;padding:13px;background:#fff;min-width:0}
+        .admin-insight .ai-label{font-size:.62rem;color:var(--text-muted);font-weight:800;text-transform:uppercase;letter-spacing:.5px}
+        .admin-insight .ai-value{font-size:1.08rem;font-weight:900;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .admin-insight .ai-note{font-size:.62rem;color:var(--text-muted);margin-top:3px}
+        .admin-insight.pink{background:#FFF7FA;border-color:#F3C9D8}.admin-insight.mint{background:#F2FBF7;border-color:#BFE8D7}.admin-insight.peach{background:#FFF7EF;border-color:#F0D2B7}.admin-insight.purple{background:#F7F3FF;border-color:#D9C8F5}
+        .admin-section-title{font-size:.72rem;font-weight:900;text-transform:uppercase;letter-spacing:.8px;color:var(--text-muted);margin:18px 0 10px}
+        @media(max-width:520px){
+          .tab-content{padding-left:14px;padding-right:14px}
+          .premium-hero{padding:17px;border-radius:18px}
+          .premium-hero-row{gap:8px}
+          .premium-title{font-size:1.22rem}
+          .premium-sub{font-size:.68rem}
+          .premium-live{font-size:.58rem;padding:7px 8px}
+          .premium-tabs{gap:6px}
+          .premium-tab{padding:8px 10px;font-size:.68rem}
+          .premium-card{padding:13px;border-radius:15px}
+          .premium-kpis{gap:8px}
+          .pkpi{padding:12px}
+          .pkpi .value{font-size:1.02rem}
+          .premium-grid-2,.premium-grid-3{grid-template-columns:1fr}
+          .admin-insight-grid{grid-template-columns:1fr 1fr}
+          .stock-grid{grid-template-columns:1fr 1fr}
+          .staff-grid{grid-template-columns:1fr}
+          .premium-toolbar{flex-direction:column;align-items:stretch}
+          .premium-toolbar .premium-btn,.premium-toolbar label{width:100%;justify-content:center}
+        }
+        @media(min-width:521px) and (max-width:800px){
+          .premium-grid-2{grid-template-columns:1fr}
+          .premium-grid-3{grid-template-columns:repeat(2,minmax(0,1fr))}
+        }
+
     </style>
 </head>
 <body>
@@ -387,7 +446,7 @@
                 <div class="premium-hero">
                     <div class="premium-hero-row">
                         <div>
-                            <div class="premium-title">VIRAASAT Command Center</div>
+                            <div class="premium-title">VIRAASAT Admin View</div>
                             <div class="premium-sub">Premium restaurant operations • sales • inventory • people</div>
                         </div>
                         <div class="premium-live"><i></i> LIVE DATA</div>
@@ -398,12 +457,11 @@
                     <button class="premium-tab" onclick="showPremiumTab('sales',this)">Sales</button>
                     <button class="premium-tab" onclick="showPremiumTab('items',this)">Item Sales</button>
                     <button class="premium-tab" onclick="showPremiumTab('inventory',this)">Inventory</button>
-                    <button class="premium-tab" onclick="showPremiumTab('tables',this)">Tables</button>
-                    <button class="premium-tab" onclick="showPremiumTab('staff',this)">Staff</button>
+                                        <button class="premium-tab" onclick="showPremiumTab('staff',this)">Staff</button>
                     <button class="premium-tab" onclick="showPremiumTab('menu',this)">Menu</button>
                     <button class="premium-tab" onclick="showPremiumTab('expenses',this)">Expenses</button>
-                    <button class="premium-tab" onclick="showPremiumTab('reports',this)">Reports</button>
-                    <button class="premium-tab" onclick="showPremiumTab('settings',this)">Settings</button>
+                    <button class="premium-tab" onclick="showPremiumTab('reports',this)">Insights</button>
+                    <button class="premium-tab" onclick="showPremiumTab('settings',this)">Admin</button>
                 </div>
 
                 <section id="premiumPanel-overview" class="premium-panel active"></section>
@@ -727,9 +785,9 @@
     <nav class="bottom-nav" id="appBottomNav" style="display: none;">
         <button class="nav-item active" id="navDashboard" onclick="switchMainTab('premiumDashboard', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg></div>
-            <span>Dashboard</span>
+            <span>Admin View</span>
         </button>
-        <button class="nav-item active" onclick="switchMainTab('tableDashboard', this)">
+        <button class="nav-item" id="navTable" onclick="switchMainTab('tableDashboard', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></div>
             <span>Table</span>
         </button>
@@ -762,7 +820,7 @@
         const D1_API_BASE = '/api';
         const API_TIMEOUT_MS = 10000;
         
-const APP_VERSION = "D1-FINAL-D1-Hybrid-4.1"; 
+const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1"; 
         
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
@@ -905,7 +963,7 @@ const APP_VERSION = "D1-FINAL-D1-Hybrid-4.1";
                 document.getElementById('appBottomNav').style.display = 'flex';
                 applyAdminRights(savedMobile); 
                 fetchData(); 
-                switchMainTab('premiumDashboard', document.getElementById('navDashboard'), true);
+                switchMainTab(window.isUserAdmin ? 'premiumDashboard' : 'tableDashboard', document.getElementById(window.isUserAdmin ? 'navDashboard' : 'navTable'), true);
                 enforceBackTrap(); enforceBackTrap(); 
             } else { 
                 document.getElementById('loginScreen').style.display = 'flex'; 
@@ -973,6 +1031,7 @@ const APP_VERSION = "D1-FINAL-D1-Hybrid-4.1";
             document.getElementById('navAnalytics').style.display = (isAdmin || perms.analytics) ? 'flex' : 'none'; 
             document.getElementById('navExpenses').style.display = (isAdmin || perms.expenses) ? 'flex' : 'none'; 
             document.getElementById('navUsers').style.display = isAdmin ? 'flex' : 'none';
+            document.getElementById('navDashboard').style.display = isAdmin ? 'flex' : 'none';
 
             if(isAdmin) renderStaffList();
         }
@@ -1058,14 +1117,18 @@ const APP_VERSION = "D1-FINAL-D1-Hybrid-4.1";
             d1Post('/stock', { name: item, quantity: qty, unit: 'pcs', low_stock_level: 5 }).catch(e => showCustomAlert('Stock saved locally but D1 sync failed: ' + e.message));
         }
 
-        function addMenuItemUI() {
+        async function addMenuItemUI() {
             let cat = document.getElementById('newMenuCategory').value; let name = document.getElementById('newMenuName').value.trim(); let price = parseInt(document.getElementById('newMenuPrice').value);
             if(!name || isNaN(price) || price <= 0) { showCustomAlert("Please enter valid item name and price."); return; }
             let existing = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === name.toLowerCase());
             if(existing) { showCustomAlert("Item already exists!"); return; }
-            let newItem = { name: name, price: price, category: cat }; menuData.push(newItem); populateDropdown(); 
-            d1Post('/menu', { category: cat, name: name, price: price, is_available: true }).catch(e => showCustomAlert('Menu item could not be saved to D1: ' + e.message));
-            showCustomAlert(name + " added successfully!"); document.getElementById('newMenuName').value = ""; document.getElementById('newMenuPrice').value = "";
+            try{
+                const created=await d1Post('/menu', { category: cat, name: name, price: price, is_available: true });
+                const newItem = { id:Number(created.id||0), name: name, itemname:name, price: price, category: cat, is_available:1 };
+                menuData.push(newItem); populateDropdown();
+                showCustomAlert(name + " added successfully!");
+                document.getElementById('newMenuName').value = ""; document.getElementById('newMenuPrice').value = "";
+            }catch(e){showCustomAlert('Menu item could not be saved to D1: '+e.message);}
         }
 
         function logoutUser(clearFields = true) {
@@ -1432,6 +1495,13 @@ const APP_VERSION = "D1-FINAL-D1-Hybrid-4.1";
                 <div class="pkpi"><div class="label">Lifetime Sale</div><div class="value">${money(lifetime)}</div><div class="delta">${salesHistory.length} orders</div></div>
                 <div class="pkpi"><div class="label">Active Staff</div><div class="value">${activeStaffCount()}</div><div class="delta">${staffData.length} total records</div></div>
             </div>
+            <div class="admin-section-title">Business Insights</div>
+            <div class="admin-insight-grid">
+                <div class="admin-insight purple"><div class="ai-label">Today's Orders</div><div class="ai-value">${todaySales.length}</div><div class="ai-note">Completed sales today</div></div>
+                <div class="admin-insight peach"><div class="ai-label">Discount Given</div><div class="ai-value">${money(todaySales.reduce((a,s)=>a+parseAmount(getVal(s,['discount'])),0))}</div><div class="ai-note">Today's customer discount</div></div>
+                <div class="admin-insight mint"><div class="ai-label">Best Payment</div><div class="ai-value">${esc(Object.entries(modes).sort((a,b)=>b[1]-a[1])[0]?.[0]||'—')}</div><div class="ai-note">Highest lifetime collection</div></div>
+                <div class="admin-insight pink"><div class="ai-label">Low Stock</div><div class="ai-value">${Object.values(stockData).filter(v=>Number(v)<=5).length}</div><div class="ai-note">Items at or below threshold</div></div>
+            </div>
             <div class="premium-grid-2">
                 <div class="premium-card">
                     <div class="premium-card-head"><h3>Recent Sales</h3><span>Latest 8 orders</span></div>
@@ -1525,8 +1595,8 @@ const APP_VERSION = "D1-FINAL-D1-Hybrid-4.1";
             const chunks=cleaned.split(/\s*,\s*(?=[^,]+?\s*\(x\d+\))/i);
             const out=[];
             chunks.forEach(ch=>{
-                const m=ch.trim().match(/^(.*?)\s*\(x(\d+)\)\s*₹\s*([\d,]+(?:\.\d+)?)\s*$/i);
-                if(m)out.push({name:m[1].trim(),qty:Number(m[2])||0,amount:Number(String(m[3]).replace(/,/g,''))||0});
+                const m=ch.trim().match(/^(.*?)\s*\(x(\d+)\)\s*(?:₹\s*([\d,]+(?:\.\d+)?))?\s*$/i);
+                if(m){const name=m[1].trim(),qty=Number(m[2])||0;let amount=m[3]?Number(String(m[3]).replace(/,/g,'')):0;if(!amount){const mi=menuData.find(x=>String(getVal(x,['itemname','name'])).trim().toLowerCase()===name.toLowerCase());amount=mi?parseAmount(getVal(mi,['price']))*qty:0;}out.push({name,qty,amount});}
             });
             return out;
         }
@@ -1661,10 +1731,25 @@ const APP_VERSION = "D1-FINAL-D1-Hybrid-4.1";
         }
         function exportDailyReport(){const by={};salesHistory.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!by[d])by[d]={orders:0,sales:0};by[d].orders++;by[d].sales+=parseAmount(getVal(s,['totalamount','total','amount']));});downloadCSV(Object.entries(by).sort((a,b)=>a[0].localeCompare(b[0])).map(([Date,x])=>({Date,Orders:x.orders,Sales:Math.round(x.sales),AOV:Math.round(x.sales/x.orders)})),'Viraasat-Daily-Report.csv');}
 
+        function auditLog(action, details=''){
+            try{
+                const logs=JSON.parse(localStorage.getItem('viraasat_audit_logs')||'[]');
+                logs.unshift({action:String(action),details:String(details||''),timestamp:new Date().toISOString(),user:localStorage.getItem('viraasat_user')||'Admin'});
+                localStorage.setItem('viraasat_audit_logs',JSON.stringify(logs.slice(0,500)));
+            }catch(e){}
+        }
+        function getAuditLogs(){try{return JSON.parse(localStorage.getItem('viraasat_audit_logs')||'[]')}catch(e){return[]}}
+        function clearAuditLogs(){localStorage.removeItem('viraasat_audit_logs');renderPremiumSettings();}
+        async function loadPendingApprovals(){try{return (await d1Get('/approvals')).requests||[]}catch(e){return[]}}
+        async function resolveApproval(requestId,orderId,status){
+            try{ await d1Post('/approvals/resolve',{request_id:requestId,order_id:orderId,status,reviewed_by:localStorage.getItem('viraasat_user')||'Admin'}); auditLog('Approval '+status,orderId); renderPremiumSettings(); fetchData(); }
+            catch(e){showCustomAlert('Approval failed: '+e.message)}
+        }
+
         function renderPremiumSettings(){
             const panel=document.getElementById('premiumPanel-settings');if(!panel)return;
             panel.innerHTML=`<div class="premium-card">
-                <div class="premium-card-head"><h3>System & Data Center</h3><span>Viraasat Premium POS</span></div>
+                <div class="premium-card-head"><h3>Admin Control Center</h3><span>Secure operations & approvals</span></div>
                 <div class="premium-grid-3">
                     <div class="report-stat"><div class="rlabel">Live Database</div><div class="rvalue" style="font-size:.9rem">Cloudflare D1</div></div>
                     <div class="report-stat"><div class="rlabel">Orders Loaded</div><div class="rvalue">${salesHistory.length}</div></div>
@@ -1695,17 +1780,27 @@ const APP_VERSION = "D1-FINAL-D1-Hybrid-4.1";
                     </div>
                 </div>
 
+                <div class="premium-card" style="margin-top:16px;background:#FFF7FA;border-color:#F3C9D8">
+                    <div class="premium-card-head"><h3>Pending Approvals</h3><span>Order deletion requests</span></div>
+                    <div id="pendingApprovalsBox" class="premium-empty">Checking approvals...</div>
+                </div>
+                <div class="premium-card" style="margin-top:16px;background:#F8F7FF">
+                    <div class="premium-card-head"><h3>Audit Logs</h3><button class="premium-btn light" onclick="clearAuditLogs()">Clear</button></div>
+                    <div id="auditLogsBox"></div>
+                </div>
                 <div class="premium-card" style="margin-top:16px;background:#FFFDF8">
                     <b style="font-size:.82rem">How this works</b>
                     <ol style="font-size:.72rem;color:var(--text-muted);line-height:1.65;margin:8px 0 0 18px;padding:0">
-                        <li>Export your current Google Sheet as Excel.</li>
+                        <li>Use the Viraasat Excel template for a one-time D1 import.</li>
                         <li>Put the data into the matching sheets/columns of the template.</li>
                         <li>Upload one Excel file here.</li>
                         <li>Worker imports it into D1 and skips duplicate Order IDs.</li>
-                        <li>After verification, Google Sheet can be removed from live POS completely.</li>
+                        <li>Google Sheet is not used by the live POS.</li>
                     </ol>
                 </div>
             </div>`;
+            loadPendingApprovals().then(requests=>{const box=document.getElementById('pendingApprovalsBox'); if(!box)return; box.innerHTML=requests.length?requests.map(r=>`<div style="padding:10px 0;border-bottom:1px solid var(--border);font-size:.72rem"><b>${esc(r.order_id)}</b><div style="color:var(--text-muted);margin:3px 0">${esc(r.reason||'Deletion requested')} • ${esc(r.requested_by||'Unknown')}</div><div style="display:flex;gap:7px"><button class="premium-btn" onclick="resolveApproval(${Number(r.id)},'${esc(r.order_id)}','approved')">Approve</button><button class="premium-btn danger" onclick="resolveApproval(${Number(r.id)},'${esc(r.order_id)}','rejected')">Reject</button></div></div>`).join(''):'<div class="premium-empty">No pending approvals.</div>';});
+            const logs=getAuditLogs(); const logBox=document.getElementById('auditLogsBox'); if(logBox)logBox.innerHTML=logs.length?logs.slice(0,30).map(l=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:.68rem"><b>${esc(l.action)}</b><div style="color:var(--text-muted)">${esc(l.details)} • ${esc(l.user)} • ${new Date(l.timestamp).toLocaleString('en-IN')}</div></div>`).join(''):'<div class="premium-empty">No activity logged yet.</div>';
         }
 
         function normalizeWorkbookDate(value){
@@ -1770,9 +1865,10 @@ const APP_VERSION = "D1-FINAL-D1-Hybrid-4.1";
                     const name=String(getVal(r,['name','itemname','item'])||'').trim();
                     const price=parseAmount(getVal(r,['price','rate','sellingprice']));
                     if(!name||price<=0)continue;
-                    await d1Post('/menu',{name,category:getVal(r,['category','cat'])||'Other',price,is_available:!['no','false','inactive','0'].includes(String(getVal(r,['active','status'])||'Yes').toLowerCase())});
+                    const createdMenu=await d1Post('/menu',{name,category:getVal(r,['category','cat'])||'Other',price,is_available:!['no','false','inactive','0'].includes(String(getVal(r,['active','status'])||'Yes').toLowerCase())});
                     inserted.menu++;
                 }
+                const menuRefresh=await d1Get('/menu'); menuData=normalizeArray(menuRefresh,['items','menu','data','result']);
                 if(status)status.innerHTML='Importing Staff...';
                 for(const r of staffRows){
                     const name=String(getVal(r,['name'])||'').trim();
@@ -1798,13 +1894,15 @@ const APP_VERSION = "D1-FINAL-D1-Hybrid-4.1";
                 for(const r of salesRows){
                     const order=normalizeImportSales([r])[0];
                     if(!order)continue;
-                    const items=parseItemsString(order.items);
-                    await d1Post('/orders/checkout',{order_number:order.order_id,order_type:order.table_number?(/^Table\s/.test(order.table_number)?'Dine-in':'Dine-in'):'Takeaway',table_number:order.table_number.replace(/^Table\s+/i,'' )||null,customer_phone:order.phone,items,items_string:order.items,subtotal:order.total_amount+order.discount,discount:order.discount,grand_total:order.total_amount,total:order.total_amount,payment_method:order.payment_method||'Cash',payment_status:'paid',order_status:'completed',created_at:new Date(`${order.date} ${order.time||'00:00'}`).toISOString()});
+                    let items=parseItemsString(order.items);
+                    const prepared=[];
+                    for(const item of items){ const copy={...item}; copy.id=Number(copy.id||0); if(!copy.id){ const found=menuData.find(m=>String(getVal(m,['itemname','name'])).trim().toLowerCase()===String(copy.name).trim().toLowerCase()); if(found) copy.id=Number(getVal(found,['id','menu_item_id']))||0; } if(!copy.id){ const made=await d1Post('/menu',{name:copy.name,category:'Imported',price:copy.price,is_available:true}); copy.id=Number(made.id||0); } if(!copy.id) throw new Error(`Menu item ID missing for ${copy.name}`); prepared.push(copy); }
+                    await d1Post('/orders/checkout',{order_number:order.order_id,order_type:order.table_number?(/^Table\s/.test(order.table_number)?'Dine-in':'Dine-in'):'Takeaway',table_number:order.table_number.replace(/^Table\s+/i,'' )||null,customer_phone:order.phone,items:prepared,items_string:order.items,subtotal:order.total_amount+order.discount,discount:order.discount,grand_total:order.total_amount,total:order.total_amount,payment_method:order.payment_method||'Cash',payment_status:'paid',order_status:'completed',created_at:new Date(`${order.date} ${order.time||'00:00'}`).toISOString()});
                     inserted.sales++;
                 }
                 if(status)status.innerHTML=`<b style="color:#10B981">Import complete.</b> Sales ${inserted.sales}, Menu ${inserted.menu}, Staff ${inserted.staff}, Stock ${inserted.stock}, Expenses ${inserted.expenses}.`;
                 await fetchData();
-                showCustomAlert('Full database import completed successfully.');
+                auditLog('Full Import', JSON.stringify(inserted)); showCustomAlert('Full database import completed successfully.');
             }catch(e){
                 console.error('Full import error',e);
                 if(status)status.innerHTML=`<span style="color:var(--danger)">Import failed: ${esc(e.message||e)}</span>`;
@@ -2010,7 +2108,7 @@ const APP_VERSION = "D1-FINAL-D1-Hybrid-4.1";
         }
 
         function switchMainTab(tabName, btnElement, skipHistory = false) {
-            let htmlMap = { 'premiumDashboard': `Command Center`, 'tableDashboard': `POS Tables`, 'salesDashboard': `Live sale`, 'trendView': `P&L Dashboard`, 'expenses': `Expenses`, 'usersManager': `Admin` };
+            let htmlMap = { 'premiumDashboard': `Admin View`, 'tableDashboard': `POS Tables`, 'salesDashboard': `Live sale`, 'trendView': `P&L Dashboard`, 'expenses': `Expenses`, 'usersManager': `Admin` };
             if(!skipHistory) { try { history.pushState({view: tabName}, '', '#' + tabName); } catch(e){} }
             
             document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display = 'none'; tab.classList.remove('active'); });
@@ -2066,13 +2164,16 @@ const APP_VERSION = "D1-FINAL-D1-Hybrid-4.1";
             document.getElementById('appBottomNav').style.display = 'flex'; renderTableGrid(); 
         }
 
+        function haptic(ms=12){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
+        document.addEventListener('click',e=>{const el=e.target.closest('button,[role="button"],.quick-card,.table-card,.premium-tab,.h-order-card,.stock-box'); if(el)haptic(10);},{passive:true});
+
         function addToBill() {
             let itemName = document.getElementById('itemInput').value; let qty = parseInt(document.getElementById('itemQty').value) || 1;
             if (!itemName) { showCustomAlert("Please select an item!"); return; }
             let selectedItem = menuData.find(i => getVal(i, ['itemname', 'name']).trim().toLowerCase() === itemName.trim().toLowerCase());
             if (!selectedItem) { showCustomAlert("Item not in menu. Use Custom Item box."); return; }
             let itemPrice = parseInt(getVal(selectedItem, ['price'])); let existingItem = currentBill.find(i => i.name === getVal(selectedItem, ['itemname', 'name']));
-            if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ name: getVal(selectedItem, ['itemname', 'name']), price: itemPrice, qty: qty, total: itemPrice * qty }); }
+            if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ id:Number(getVal(selectedItem,['id','menu_item_id']))||null, menu_item_id:Number(getVal(selectedItem,['id','menu_item_id']))||null, name: getVal(selectedItem, ['itemname', 'name']), price: itemPrice, qty: qty, total: itemPrice * qty }); }
             updateBillTable();
         }
 
@@ -2117,6 +2218,34 @@ const APP_VERSION = "D1-FINAL-D1-Hybrid-4.1";
             };
         }
 
+        async function ensureMenuItemId(item){
+            if(item && (item.id || item.menu_item_id)) return item.id || item.menu_item_id;
+            const name=String(item?.name||'').trim();
+            if(!name) throw new Error('Item name is missing.');
+            const existing=menuData.find(m=>String(getVal(m,['id','menu_item_id'])||'') && String(getVal(m,['itemname','name'])).trim().toLowerCase()===name.toLowerCase());
+            if(existing){ const id=Number(getVal(existing,['id','menu_item_id'])); if(id) return id; }
+            const created=await d1Post('/menu',{name,category:'Custom',price:Number(item.price)||0,is_available:true});
+            const id=Number(created.id||created.menu_item_id||0);
+            if(!id) throw new Error(`Could not create menu reference for ${name}`);
+            menuData.push({id,name,itemname:name,category:'Custom',price:Number(item.price)||0,is_available:1});
+            populateDropdown();
+            return id;
+        }
+
+        async function prepareOrderItems(){
+            const prepared=[];
+            for(const item of currentBill){
+                const copy={...item};
+                copy.id=Number(copy.id||copy.menu_item_id||await ensureMenuItemId(copy));
+                if(!copy.id) throw new Error(`Menu item ID missing for ${copy.name}`);
+                copy.qty=Number(copy.qty)||1;
+                copy.price=Number(copy.price)||0;
+                copy.total=Number(copy.total)||copy.price*copy.qty;
+                prepared.push(copy);
+            }
+            return prepared;
+        }
+
         async function saveKOT() {
             if (currentBill.length === 0) { showCustomAlert('Cart is empty!'); return; }
             const btn=document.getElementById('btnKOT'); btn.innerText='Saving...'; btn.disabled=true;
@@ -2124,8 +2253,9 @@ const APP_VERSION = "D1-FINAL-D1-Hybrid-4.1";
                 const subtotal=currentBill.reduce((a,i)=>a+Number(i.total||0),0);
                 const ctx=orderContext();
                 const orderNumber='KOT-'+Date.now();
-                const data=await d1Post('/orders',{order_number:orderNumber,...ctx,items:currentBill,items_string:currentBill.map(i=>`${i.name} (x${i.qty}) ₹${i.total}`).join(', '),subtotal,discount:0,grand_total:subtotal,total:subtotal,payment_method:'',payment_status:'unpaid',order_status:'cancelled'});
-                runningTables[activeTableNumber]=currentBill;
+                const preparedItems=await prepareOrderItems(); const data=await d1Post('/orders',{order_number:orderNumber,...ctx,items:preparedItems,items_string:preparedItems.map(i=>`${i.name} (x${i.qty}) ₹${i.total}`).join(', '),subtotal,discount:0,grand_total:subtotal,total:subtotal,payment_method:'Cash',payment_status:'unpaid',order_status:'cancelled'});
+                runningTables[activeTableNumber]=preparedItems;
+                auditLog('KOT Saved', orderNumber);
                 btn.innerText='Save KOT'; btn.disabled=false; goBackToTables();
             }catch(e){
                 btn.innerText='Save KOT'; btn.disabled=false; showCustomAlert('KOT save failed: '+e.message);
@@ -2144,9 +2274,11 @@ const APP_VERSION = "D1-FINAL-D1-Hybrid-4.1";
                 const discount=Math.max(0,parseInt(document.getElementById('discountValue').value)||0);
                 const subtotal=currentBill.reduce((a,i)=>a+Number(i.total||0),0);
                 const grandTotal=Math.max(0,subtotal-discount);
-                const itemsString=currentBill.map(i=>`${i.name} (x${i.qty}) ₹${i.total}`).join(', ');
+                const preparedItems=await prepareOrderItems();
+                const itemsString=preparedItems.map(i=>`${i.name} (x${i.qty}) ₹${i.total}`).join(', ');
                 const ctx=orderContext();
-                const data=await d1Post('/orders/checkout',{order_number:orderId,...ctx,customer_phone:phone,items:currentBill,items_string:itemsString,subtotal,discount,grand_total:grandTotal,total:grandTotal,payment_method:selectedPaymentMode,payment_status:'paid',order_status:'completed',delivery_address:address});
+                const data=await d1Post('/orders/checkout',{order_number:orderId,...ctx,customer_phone:phone,items:preparedItems,items_string:itemsString,subtotal,discount,grand_total:grandTotal,total:grandTotal,payment_method:selectedPaymentMode,payment_status:'paid',order_status:'completed',delivery_address:address});
+                auditLog('Checkout', orderId);
                 delete runningTables[activeTableNumber];
                 currentBill.forEach(item=>{const key=Object.keys(stockData).find(k=>k.trim().toLowerCase()===item.name.trim().toLowerCase());if(key!==undefined)stockData[key]=Math.max(0,Number(stockData[key])-Number(item.qty||0));});
                 const now=new Date();
@@ -2163,7 +2295,7 @@ const APP_VERSION = "D1-FINAL-D1-Hybrid-4.1";
                 const description=document.getElementById('expDescription').value||'NA';
                 await d1Post('/expenses',{category,amount,description});
                 const now=new Date();const fDate=now.toISOString();expenseHistory.unshift({date:fDate,isodate:fDate,amount,category,description});
-                showCustomAlert('Expense Saved!');document.getElementById('expAmount').value='';document.getElementById('expDescription').value='';generateTrends();renderPremiumExpenses();
+                auditLog('Expense Added', `${category} ₹${amount}`); showCustomAlert('Expense Saved!');document.getElementById('expAmount').value='';document.getElementById('expDescription').value='';generateTrends();renderPremiumExpenses();
             }catch(e){showCustomAlert('Expense save failed: '+e.message);}
         }
 
