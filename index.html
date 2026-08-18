@@ -1454,7 +1454,61 @@ Tables, billing and existing local UI remain visible.`);}
 
         function money(v){return `₹${Math.round(Number(v)||0).toLocaleString('en-IN')}`;}
         function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-        function activeStaffCount(){return staffData.filter(s=>getStaffStatus(s)==='active').length;}
+        // ===== STAFF STATE HELPERS (required by Overview + Admin) =====
+        // Staff status is intentionally kept in localStorage because the current D1 /staff
+        // payload does not expose an editable status field. D1 remains the source of truth
+        // for employee records; these helpers only manage the UI's active/inactive state.
+        function getStaffKey(staff){
+            return String(getVal(staff,['empid','employeeid','mobile','phone','name'])||'').trim();
+        }
+        function getStaffStatus(staff){
+            return String(staff?.__status||'active').toLowerCase()==='inactive'?'inactive':'active';
+        }
+        function readStaffStatusMap(){
+            try{
+                const raw=JSON.parse(localStorage.getItem('viraasat_staff_status')||'{}');
+                return raw && typeof raw==='object' && !Array.isArray(raw) ? raw : {};
+            }catch(e){return {};}
+        }
+        function writeStaffStatusMap(map){
+            try{localStorage.setItem('viraasat_staff_status',JSON.stringify(map||{}));}catch(e){}
+        }
+        function activeStaffCount(){
+            return Array.isArray(staffData) ? staffData.filter(s=>getStaffStatus(s)==='active').length : 0;
+        }
+        function toggleStaffStatus(key){
+            if(!window.isUserAdmin){showCustomAlert('Only Admin can change employee status.');return;}
+            const wanted=String(key||'').trim();
+            const staff=staffData.find(s=>getStaffKey(s)===wanted);
+            if(!staff){showCustomAlert('Employee record not found. Refresh data and try again.');return;}
+            const next=getStaffStatus(staff)==='active'?'inactive':'active';
+            const state=readStaffStatusMap();
+            state[wanted]=next;
+            writeStaffStatusMap(state);
+            staff.__status=next;
+            auditLog('Employee Status Changed',`${getVal(staff,['name'])||wanted}: ${next.toUpperCase()}`);
+            renderAdminStaffRows();
+            renderPremiumAdmin();
+        }
+        function removeStaffRecord(key){
+            if(!window.isUserAdmin){showCustomAlert('Only Admin can remove employees.');return;}
+            const wanted=String(key||'').trim();
+            const staff=staffData.find(s=>getStaffKey(s)===wanted);
+            if(!staff){showCustomAlert('Employee record not found. Refresh data and try again.');return;}
+            showCustomConfirm(`Remove ${getVal(staff,['name'])||wanted} from the POS staff list?`,()=>{
+                let removed=[];
+                try{removed=JSON.parse(localStorage.getItem('viraasat_removed_staff')||'[]');if(!Array.isArray(removed))removed=[];}catch(e){removed=[];}
+                if(!removed.map(String).includes(wanted))removed.push(wanted);
+                try{localStorage.setItem('viraasat_removed_staff',JSON.stringify(removed));}catch(e){}
+                const state=readStaffStatusMap();delete state[wanted];writeStaffStatusMap(state);
+                staffData=staffData.filter(s=>getStaffKey(s)!==wanted);
+                auditLog('Employee Removed',`${getVal(staff,['name'])||wanted} (${wanted})`);
+                renderAdminStaffRows();
+                renderPremiumAdmin();
+                populateStaffDropdown();
+                showCustomAlert('Employee removed from the POS staff list.');
+            },null);
+        }
 
         function showPremiumTab(tab,btn){
             premiumActiveTab=tab;
@@ -1799,9 +1853,19 @@ Tables, billing and existing local UI remain visible.`);}
             const logBox=document.getElementById('auditLogsBox');
             if(logBox)logBox.innerHTML=logs.length?logs.slice(0,40).map(l=>`<div class="audit-row"><b>${esc(l.action)}</b><span>${esc(l.details)} • ${esc(l.user)} • ${new Date(l.timestamp).toLocaleString('en-IN')}</span></div>`).join(''):'<div class="premium-empty">No activity logged yet.</div>';
         }
-        // Admin must never appear blank because an optional admin widget failed.
+        // Admin render safety: show the module even if one non-critical section fails.
+        // The underlying error is logged instead of being silently swallowed.
         const _renderPremiumAdminOriginal=renderPremiumAdmin;
-        renderPremiumAdmin=function(){const panel=document.getElementById('premiumPanel-settings');if(!panel)return;try{_renderPremiumAdminOriginal();}catch(e){console.error('Admin view error',e);panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Admin Control</h3><span>Secure management</span></div><div class="premium-empty" style="color:var(--danger)">Admin view failed to render. Refresh data and open Admin again.</div></div>`;}};
+        renderPremiumAdmin=function(){
+            const panel=document.getElementById('premiumPanel-settings');
+            if(!panel)return;
+            try{
+                _renderPremiumAdminOriginal();
+            }catch(e){
+                console.error('Admin view error',e);
+                panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Admin Control</h3><span>Secure management</span></div><div class="admin-help">Admin controls are available, but one data block could not be loaded.</div><button class="premium-btn" onclick="renderPremiumAdmin()">Retry Admin</button></div>`;
+            }
+        };
 
         function renderAdminStockRows(){const el=document.getElementById('adminStockMiniList');if(!el)return;const rows=Object.entries(stockData).sort((a,b)=>Number(a[1])-Number(b[1])).slice(0,15);el.innerHTML=rows.map(([name,qty])=>{const low=Number(stockMeta[name]?.low_stock_level??5);return `<div class="admin-mini-row" onclick="loadAdminStockSelect('${esc(name)}')" style="cursor:pointer"><div><b>${esc(name)}</b><small>${Number(qty)<=0?'OUT OF STOCK':Number(qty)<=low?'Low stock':'Available'} • Last update ${stockMeta[name]?.updated_at?esc(cleanDisplayDate(stockMeta[name].updated_at)):'—'}</small></div><strong>${Number(qty)||0}</strong></div>`}).join('')||'<div class="premium-empty">No stock data.</div>';}
         function loadAdminStockSelect(name){if(!name){resetAdminStockForm(false);return;}const m=stockMeta[name]||{};document.getElementById('adminStockSearch').value=name;document.getElementById('adminStockQty').value=Number(stockData[name]||0);document.getElementById('adminStockLow').value=Number(m.low_stock_level??5);}
