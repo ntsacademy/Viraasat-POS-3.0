@@ -15,7 +15,6 @@
     
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <style>
@@ -193,7 +192,7 @@
     
         /* ================= PREMIUM VIRAASAT COMMAND CENTER ================= */
         .premium-shell{display:flex;flex-direction:column;gap:16px}
-        .premium-hero{background:linear-gradient(135deg,#211A17 0%,#3A2922 48%,#8E5E38 100%);color:#fff;border-radius:22px;padding:22px;box-shadow:0 14px 40px rgba(43,31,24,.16);position:relative;overflow:hidden}
+        .premium-hero{display:none!important;background:linear-gradient(135deg,#211A17 0%,#3A2922 48%,#8E5E38 100%);color:#fff;border-radius:22px;padding:22px;box-shadow:0 14px 40px rgba(43,31,24,.16);position:relative;overflow:hidden}
         .premium-hero:after{content:"";position:absolute;width:180px;height:180px;border-radius:50%;right:-70px;top:-80px;background:rgba(255,255,255,.08)}
         .premium-hero-row{display:flex;align-items:center;justify-content:space-between;gap:16px;position:relative;z-index:1}
         .premium-title{font-family:'Playfair Display',serif;font-size:1.55rem;font-weight:800;letter-spacing:.2px}
@@ -203,7 +202,7 @@
         .premium-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:none;position:sticky;top:0;z-index:30;background:var(--bg-color)}
         .premium-tabs::-webkit-scrollbar{display:none}
         .premium-tab{border:1px solid var(--border);background:var(--surface);color:var(--text-muted);padding:9px 13px;border-radius:999px;white-space:nowrap;font-family:inherit;font-size:.74rem;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.025)}
-        .premium-tab.active{background:#1A1A1A;color:#fff;border-color:#1A1A1A;box-shadow:0 7px 18px rgba(214,60,121,.22)}
+        .premium-tab.active{background:#1A1A1A;color:#fff;border-color:#1A1A1A;box-shadow:0 7px 18px rgba(0,0,0,.12)}
         .premium-panel{display:none}.premium-panel.active{display:block}
         .premium-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
         .pkpi{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:var(--shadow-soft);min-width:0}
@@ -219,7 +218,7 @@
         .premium-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
         .premium-toolbar input,.premium-toolbar select{height:42px;min-width:145px;flex:1}
         .premium-btn{height:42px;border:0;border-radius:10px;padding:0 14px;background:#211A17;color:#fff;font-family:inherit;font-weight:800;font-size:.75rem;cursor:pointer}
-        .premium-btn.alt{background:#F4EFEA;color:#1A1A1A;border:1px solid #EEC6D8}
+        .premium-btn.alt{background:#F4EFEA;color:#1A1A1A;border:1px solid #D9D1C7}
         .premium-btn.light{background:#fff;color:#211A17;border:1px solid var(--border)}
         .premium-btn.danger{background:#FFF0F2;color:#C92E48;border:1px solid #F2C5CD}
         .premium-table-wrap{overflow:auto;border:1px solid var(--border);border-radius:14px}
@@ -228,7 +227,7 @@
         .premium-table td{padding:11px;border-top:1px solid #F1ECE7;font-size:.76rem;color:var(--text-dark);vertical-align:top}
         .premium-table tr:hover td{background:#FFFBF8}
         .pill{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font-size:.64rem;font-weight:800}
-        .pill.green{background:#E8F7EF;color:#0B8F55}.pill.pink{background:#F4EFEA;color:#1A1A1A}.pill.gold{background:#FFF4DF;color:#9A6500}.pill.gray{background:#F2F0EE;color:#6B625D}.pill.red{background:#FFF0F2;color:#C92E48}
+        .pill.green{background:#E8F7EF;color:#0B8F55}.pill.neutral{background:#F2F0EE;color:#3B3835}.pill.gold{background:#FFF4DF;color:#9A6500}.pill.gray{background:#F2F0EE;color:#6B625D}.pill.red{background:#FFF0F2;color:#C92E48}
         .item-rank{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #F1ECE7}
         .item-rank:last-child{border-bottom:0}.item-rank-no{width:30px;height:30px;border-radius:9px;background:#F4EFEA;color:#1A1A1A;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.75rem}
         .item-rank-info{flex:1;min-width:0}.item-rank-name{font-weight:800;font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.item-rank-sub{font-size:.66rem;color:var(--text-muted);margin-top:3px}
@@ -247,7 +246,7 @@
         .upload-drop{border:1.5px dashed #D9C6B9;border-radius:16px;padding:22px;text-align:center;background:#FFFCFA}
         .upload-drop strong{display:block;font-size:.85rem}.upload-drop span{display:block;color:var(--text-muted);font-size:.68rem;margin:5px 0 12px}
         .premium-empty{text-align:center;padding:28px 12px;color:var(--text-muted);font-size:.78rem}
-        .mini-bar{height:8px;border-radius:99px;background:#F0ECE9;overflow:hidden;margin-top:7px}.mini-bar>i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#1A1A1A,#F2A6BE)}
+        .mini-bar{height:8px;border-radius:99px;background:#F0ECE9;overflow:hidden;margin-top:7px}.mini-bar>i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#1A1A1A,#7A756D)}
         @media(max-width:800px){.premium-kpis{grid-template-columns:repeat(2,1fr)}.premium-grid-2,.premium-grid-3{grid-template-columns:1fr}.stock-grid{grid-template-columns:repeat(2,1fr)}.staff-grid{grid-template-columns:1fr 1fr}.premium-hero-row{align-items:flex-start}.premium-title{font-size:1.3rem}}
         @media(max-width:520px){.staff-grid{grid-template-columns:1fr}.premium-kpis{gap:8px}.pkpi{padding:13px}.pkpi .value{font-size:1.1rem}.premium-card{padding:14px}}
 
@@ -283,7 +282,7 @@
         .admin-insight .ai-label{font-size:.62rem;color:var(--text-muted);font-weight:800;text-transform:uppercase;letter-spacing:.5px}
         .admin-insight .ai-value{font-size:1.08rem;font-weight:900;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
         .admin-insight .ai-note{font-size:.62rem;color:var(--text-muted);margin-top:3px}
-        .admin-insight.pink{background:#FBF9F5;border-color:#D9D1C7}.admin-insight.mint{background:#F2FBF7;border-color:#BFE8D7}.admin-insight.peach{background:#FFF7EF;border-color:#F0D2B7}.admin-insight.purple{background:#F7F3FF;border-color:#D9C8F5}
+        .admin-insight.neutral{background:#FBF9F5;border-color:#D9D1C7}.admin-insight.mint{background:#F2FBF7;border-color:#BFE8D7}.admin-insight.peach{background:#FFF7EF;border-color:#F0D2B7}.admin-insight.purple{background:#F7F3FF;border-color:#D9C8F5}
         .admin-section-title{font-size:.72rem;font-weight:900;text-transform:uppercase;letter-spacing:.8px;color:var(--text-muted);margin:18px 0 10px}
         @media(max-width:520px){
           .tab-content{padding-left:14px;padding-right:14px}
@@ -375,8 +374,8 @@
         .top-selling-list .item-rank-no{background:#F4EFEA;color:#1A1A1A}
         .premium-tab.active{background:#1A1A1A!important;border-color:#1A1A1A!important;color:#fff!important;box-shadow:0 5px 12px rgba(0,0,0,.12)!important}
         .premium-btn.alt{background:#F4EFEA!important;color:#1A1A1A!important;border-color:#D9D1C7!important}
-        .pill.pink{background:#F4EFEA!important;color:#1A1A1A!important}
-        .admin-insight.pink{background:#FBF9F5!important;border-color:#D9D1C7!important}
+         .pill.neutral{background:#F2F0EE!important;color:#3B3835!important}
+        .admin-insight.neutral{background:#FBF9F5!important;border-color:#D9D1C7!important}
         @media(max-width:600px){
           body{max-width:600px!important}
           .premium-shell{width:100%;padding:0 10px}
@@ -396,6 +395,28 @@
         }
         @media(min-width:601px){.mobile-sale-list{display:none!important}}
 
+
+        /* ===== FINAL MOBILE ADMIN / ANALYTICS SYSTEM ===== */
+
+        .admin-module-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+        .admin-module{border:1px solid var(--border);background:#fff;border-radius:12px;padding:11px;text-align:left;font-family:inherit;cursor:pointer;min-width:0}
+        .admin-module b{display:block;font-size:.72rem;color:var(--text-dark)}.admin-module span{display:block;font-size:.58rem;color:var(--text-muted);margin-top:3px;line-height:1.35}
+        .admin-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+        .admin-form-grid input,.admin-form-grid select{height:40px;font-size:.72rem;padding:0 10px;min-width:0}
+        .check-row{height:40px;border:1px solid var(--border);border-radius:10px;padding:0 10px;display:flex;align-items:center;gap:7px;font-size:.65rem;font-weight:700;text-transform:none;letter-spacing:0;background:#fff}
+        .check-row input{width:16px;height:16px}
+        .admin-mini-list,.admin-staff-list,.admin-user-list{display:flex;flex-direction:column;gap:5px;max-height:300px;overflow:auto}
+        .admin-mini-row,.admin-staff-row,.admin-user-row,.approval-row,.audit-row{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--border);border-radius:10px;padding:8px;background:#fff;min-width:0}
+        .admin-mini-row>div,.admin-staff-main,.admin-user-row>div,.approval-row>div:first-child{min-width:0;flex:1}.admin-mini-row b,.admin-staff-main b,.admin-user-row b{display:block;font-size:.68rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.admin-mini-row small,.admin-staff-main small,.admin-user-row small,.approval-row small,.audit-row span{display:block;color:var(--text-muted);font-size:.56rem;margin-top:2px;line-height:1.35}
+        .admin-staff-row .premium-btn,.admin-user-row .premium-btn,.approval-actions .premium-btn{width:auto;height:32px;padding:0 9px;font-size:.58rem}
+        .approval-actions{display:flex;gap:5px}.audit-row{display:block}.audit-row b{font-size:.63rem}.admin-help{font-size:.62rem;color:var(--text-muted);line-height:1.5;margin:0 0 10px}
+        .compact-toolbar{display:grid!important;grid-template-columns:1fr auto;gap:6px!important;align-items:center}.compact-toolbar input,.compact-toolbar select{height:36px!important;min-width:0!important;width:100%!important}.compact-toolbar .premium-btn,.compact-toolbar .upload-label{height:36px!important;display:flex;align-items:center;justify-content:center;white-space:nowrap}
+        .upload-label{cursor:pointer}
+        .sales-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:8px}.sales-summary-grid .report-stat{padding:8px}.sales-summary-grid .rlabel{font-size:.55rem}.sales-summary-grid .rvalue{font-size:.9rem}
+        .sales-filter-chips{display:flex;gap:5px;overflow-x:auto;padding-bottom:2px;margin-bottom:7px}.sales-filter-chips .filter-btn{height:30px;padding:0 10px;font-size:.62rem;white-space:nowrap}
+        .date-filter-row{display:grid;grid-template-columns:1fr 1fr;gap:6px}.date-filter-row input{height:36px!important;font-size:.68rem}
+        @media(max-width:600px){.admin-module-grid{gap:6px}.admin-form-grid{grid-template-columns:1fr 1fr}.compact-toolbar{grid-template-columns:1fr 70px}.compact-toolbar .premium-btn{padding:0 7px}.admin-staff-row{align-items:center}.admin-staff-row .status-toggle{padding:5px 7px;font-size:.54rem}.sales-summary-grid{grid-template-columns:repeat(3,1fr)}.premium-tabs{grid-template-columns:repeat(3,minmax(0,1fr));overflow:hidden}.premium-tab{font-size:.59rem}.premium-card-head h3{font-size:.74rem}}
+        @media(max-width:380px){.admin-form-grid{grid-template-columns:1fr}.compact-toolbar{grid-template-columns:1fr 64px}.sales-summary-grid .rvalue{font-size:.82rem}}
     </style>
 </head>
 <body>
@@ -492,6 +513,7 @@
                 <button class="btn btn-outline" onclick="printHistoricalBill()">Print</button>
                 <button class="btn" style="background:#10B981; border:none;" onclick="sendWA_HistoricalBill()">WhatsApp</button>
             </div>
+            <button class="btn btn-outline" style="margin-top:10px;color:var(--danger);border-color:var(--danger)" onclick="requestHistoricalOrderDeletion()">Request Order Deletion</button>
         </div>
     </div>
 
@@ -515,7 +537,7 @@
     <header class="top-app-bar" id="appHeader" style="display: none;">
         <div class="brand-container">
             <div class="brand-name">VIRAASAT</div>
-            <div class="page-subtitle" id="pageMainTitle" style="transition: opacity 0.5s ease; font-family: 'Playfair Display', serif; font-size: 0.85rem; font-style: italic; font-weight: 700; color: #A67C52;">Premium POS</div>
+            <div class="page-subtitle" id="pageMainTitle" style="transition: opacity 0.5s ease; font-family: 'Playfair Display', serif; font-size: 0.85rem; font-style: italic; font-weight: 700; color: var(--text-dark);">Premium POS</div>
         </div>
         <button class="icon-btn" onclick="fetchData()" title="Refresh Data">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path></svg>
@@ -538,8 +560,6 @@
                     <button class="premium-tab" onclick="showPremiumTab('sales',this)">Sales</button>
                     <button class="premium-tab" onclick="showPremiumTab('items',this)">Item Sales</button>
                     <button class="premium-tab" onclick="showPremiumTab('inventory',this)">Inventory</button>
-                                        <button class="premium-tab" onclick="showPremiumTab('menu',this)">Menu</button>
-                    <button class="premium-tab" onclick="showPremiumTab('expenses',this)">Expenses</button>
                     <button class="premium-tab" onclick="showPremiumTab('reports',this)">Insights</button>
                     <button class="premium-tab" onclick="showPremiumTab('settings',this)">Admin</button>
                 </div>
@@ -548,8 +568,6 @@
                 <section id="premiumPanel-sales" class="premium-panel"></section>
                 <section id="premiumPanel-items" class="premium-panel"></section>
                 <section id="premiumPanel-inventory" class="premium-panel"></section>
-                <section id="premiumPanel-menu" class="premium-panel"></section>
-                <section id="premiumPanel-expenses" class="premium-panel"></section>
                 <section id="premiumPanel-reports" class="premium-panel"></section>
                 <section id="premiumPanel-settings" class="premium-panel"></section>
             </div>
@@ -661,6 +679,10 @@
                 <div class="section-header" style="margin-top:0;"><h4>Staff Expense Breakdown</h4></div>
                 <div id="staffExpenseList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
             </div>
+            <div class="card">
+                <div class="section-header" style="margin-top:0;"><h4>Staff Advance Details</h4></div>
+                <div id="staffAdvanceDetails" style="display:flex; flex-direction:column; gap:8px; font-size:0.78rem;"></div>
+            </div>
             
             <div class="card">
                 <div class="section-header" style="margin-top:0;"><h4>Other Expenses</h4></div>
@@ -680,107 +702,7 @@
             </div>
         </div>
 
-        <!-- ADMIN (USERS + HR) VIEW -->
-        <div id="usersManager" class="tab-content" style="padding-top: 10px;">
-            
-            <div class="card" style="border-color:#10B981;">
-                <div class="section-header" style="margin-top:0;"><h4>Staff Payroll & Advance</h4></div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <div class="input-box">
-                        <label>Select Staff</label>
-                        <select id="payStaffSelect" onchange="calculateStaffBalance()"><option value="">Select Employee</option></select>
-                    </div>
-                    <div id="staffBalanceInfo" style="margin-top:8px; font-size:0.85rem; color:var(--text-dark); line-height: 1.5; background: #F4EFEA; padding: 10px; border-radius: 8px;"></div>
-                    <div class="input-row" style="margin-top:12px;">
-                        <div class="input-box"><label>Amount (₹)</label><input type="number" id="payStaffAmount" placeholder="Amount"></div>
-                        <div class="input-box"><label>Type</label><select id="payStaffType"><option>Advance</option><option>Salary Clearance</option></select></div>
-                    </div>
-                    <button class="btn" style="margin-top:16px; background:#10B981;" onclick="submitStaffPayout()">Pay & Record</button>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Onboard New Staff</h4></div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <div class="input-row">
-                        <div class="input-box"><label>Full Name</label><input type="text" id="newStaffName" placeholder="Name"></div>
-                        <div class="input-box"><label>Mobile</label><input type="tel" id="newStaffMobile" placeholder="10 Digits" inputmode="numeric"></div>
-                    </div>
-                    <div class="input-row" style="margin-top:12px;">
-                        <div class="input-box"><label>Role</label>
-                            <select id="newStaffRole">
-                                <option>Manager</option>
-                                <option>Chef</option>
-                                <option>Cashier</option>
-                                <option>Waiter</option>
-                                <option>Cleaner</option>
-                                <option>Helper</option>
-                            </select>
-                        </div>
-                        <div class="input-box"><label>Monthly Salary (₹)</label><input type="number" id="newStaffSalary" placeholder="e.g. 15000" inputmode="numeric"></div>
-                    </div>
-                    <div class="input-box" style="margin-top:12px;">
-                        <label>Date of Joining (Optional)</label>
-                        <input type="date" id="newStaffDate">
-                    </div>
-                    <button class="btn" style="margin-top:16px;" onclick="addStaffUI()">Register Staff</button>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Quick Stock Update</h4></div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <div class="input-box">
-                        <label>Select Item</label>
-                        <input list="menuItemsList" id="adminStockItem" placeholder="Type item name...">
-                    </div>
-                    <div class="input-row" style="margin-top:12px;">
-                        <div class="input-box"><label>New Quantity</label><input type="number" id="adminStockQty" placeholder="e.g. 50" inputmode="numeric"></div>
-                        <button class="btn" style="flex:1;" onclick="updateStockAdmin()">Update</button>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Add New Menu Item</h4></div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <div class="input-box"><label>Category</label>
-                        <select id="newMenuCategory">
-                            <option>Starters</option>
-                            <option>Main Course</option>
-                            <option>Breads</option>
-                            <option>Desserts</option>
-                            <option>Beverages</option>
-                            <option>Add-ons</option>
-                        </select>
-                    </div>
-                    <div class="input-row" style="margin-top:12px;">
-                        <div class="input-box"><label>Item Name</label><input type="text" id="newMenuName" placeholder="e.g. Paneer Tikka"></div>
-                        <div class="input-box"><label>Price (₹)</label><input type="number" id="newMenuPrice" placeholder="250" inputmode="numeric"></div>
-                    </div>
-                    <button class="btn" style="margin-top:16px;" onclick="addMenuItemUI()">Save to Menu</button>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>New User Registration</h4></div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <div class="input-row">
-                        <div class="input-box"><label>Mobile No.</label><input type="tel" id="staffMobile" placeholder="10 Digits" inputmode="numeric"></div>
-                        <div class="input-box"><label>Password</label><input type="text" id="staffPass" placeholder="Set Password"></div>
-                    </div>
-                    <div style="display:flex; flex-direction:column; gap:12px; margin-top:16px; background:var(--bg-color); padding:16px; border-radius:8px; border:1px solid var(--border);">
-                        <label style="display:flex; align-items:center; gap:10px; font-weight:600; font-size:0.9rem;"><input type="checkbox" id="chkOrders" style="width:18px;height:18px; accent-color:var(--text-dark);"> Allow Live sale Tab</label>
-                        <label style="display:flex; align-items:center; gap:10px; font-weight:600; font-size:0.9rem;"><input type="checkbox" id="chkAnalytics" style="width:18px;height:18px; accent-color:var(--text-dark);"> Allow Analytics Tab</label>
-                        <label style="display:flex; align-items:center; gap:10px; font-weight:600; font-size:0.9rem;"><input type="checkbox" id="chkExpenses" style="width:18px;height:18px; accent-color:var(--text-dark);"> Allow Expenses Tab</label>
-                    </div>
-                    <button class="btn" onclick="saveUserPermissions()" style="margin-top:16px;">Register User</button>
-                </div>
-            </div>
-
-            <div class="section-header" style="margin-top:24px;"><h4>Registered POS App Users</h4></div>
-            <div id="staffList" style="display:flex; flex-direction:column; gap:10px; margin-bottom: 24px;"></div>
-        </div>
+        <!-- ADMIN MANAGEMENT IS INSIDE ADMIN VIEW -->
 
         <!-- BILLING VIEW -->
         <div id="billingView" class="tab-content" style="padding-top: 10px;">
@@ -874,13 +796,9 @@
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></div>
             <span>Expenses</span>
         </button>
-        <button class="nav-item active" id="navDashboard" onclick="switchMainTab('premiumDashboard', this)">
+        <button class="nav-item active" id="navAdmin" onclick="switchMainTab('premiumDashboard', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg></div>
             <span>Admin View</span>
-        </button>
-        <button class="nav-item" id="navUsers" onclick="switchMainTab('usersManager', this)" style="display:none;">
-            <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
-            <span>Admin</span>
         </button>
         <button class="nav-item" onclick="logoutUser()" style="color: var(--danger);">
             <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></div>
@@ -1012,7 +930,10 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
         };
 
         function enforceBackTrap() {
-            try { history.pushState(null, null, location.href); } catch(e) {}
+            try { history.pushState({guard:true}, '', location.href); } catch(e) {}
+        }
+        function hardBlockBack(){
+            try{ history.pushState({guard:true}, '', location.href); }catch(e){}
         }
 
         window.onload = function() { 
@@ -1039,7 +960,7 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
                 applyAdminRights(savedMobile); 
                 fetchData(); 
                 switchMainTab(window.isUserAdmin ? 'premiumDashboard' : 'tableDashboard', document.getElementById(window.isUserAdmin ? 'navDashboard' : 'navTable'), true);
-                enforceBackTrap(); enforceBackTrap(); 
+                enforceBackTrap(); enforceBackTrap(); hardBlockBack(); 
             } else { 
                 document.getElementById('loginScreen').style.display = 'flex'; 
                 hideSplashScreen(); 
@@ -1058,7 +979,7 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
                     modalClosed = true; 
                 } 
             }
-            if(modalClosed) return;
+            if(modalClosed){ enforceBackTrap(); return; }
 
             if (document.getElementById('billingView').style.display === 'block') { 
                 goBackToTables(true); 
@@ -1067,7 +988,7 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
 
             let activeTab = document.querySelector('.tab-content.active');
             if (activeTab && activeTab.id !== 'premiumDashboard') { 
-                switchMainTab('premiumDashboard', document.getElementById('navDashboard'), true); 
+                switchMainTab('premiumDashboard', document.getElementById('navAdmin'), true); 
                 return; 
             }
         };
@@ -1085,6 +1006,7 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
             let pass = document.getElementById('loginPass').value.trim();
             let btn = document.getElementById('btnLogin');
             if(!/^\d{10}$/.test(mobile) || pass.length < 4) { showCustomAlert("Enter a valid 10-digit mobile number and minimum 4-character password."); return; }
+            if(!ADMIN_NUMBERS.includes(mobile)){ const p=userPermissions[mobile]; if(!p || p.password!==pass){ showCustomAlert('Invalid user or password.'); return; } }
             btn.innerText = "Opening..."; btn.disabled = true;
             localStorage.setItem('viraasat_user', mobile);
             localStorage.setItem('viraasat_pass', pass);
@@ -1105,10 +1027,8 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
             document.getElementById('btnViewAllOrders').style.display = (isAdmin || perms.orders) ? 'inline' : 'none';
             document.getElementById('navAnalytics').style.display = (isAdmin || perms.analytics) ? 'flex' : 'none'; 
             document.getElementById('navExpenses').style.display = (isAdmin || perms.expenses) ? 'flex' : 'none'; 
-            document.getElementById('navUsers').style.display = isAdmin ? 'flex' : 'none';
-            document.getElementById('navDashboard').style.display = isAdmin ? 'flex' : 'none';
+            document.getElementById('navAdmin').style.display = isAdmin ? 'flex' : 'none';
 
-            if(isAdmin) renderStaffList();
         }
 
         function saveUserPermissions() {
@@ -1533,7 +1453,9 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
             document.querySelectorAll('#premiumTabs .premium-tab').forEach(x=>x.classList.remove('active'));
             if(btn) btn.classList.add('active');
             else{
-                const b=[...document.querySelectorAll('#premiumTabs .premium-tab')].find(x=>x.textContent.toLowerCase().replace(/\s/g,'').includes(tab.replace(/\s/g,'')));
+                const labelMap={overview:'overview',sales:'sales',items:'item sales',inventory:'inventory',reports:'insights',settings:'admin'};
+                const wanted=(labelMap[tab]||tab).replace(/\s/g,'');
+                const b=[...document.querySelectorAll('#premiumTabs .premium-tab')].find(x=>x.textContent.toLowerCase().replace(/\s/g,'').includes(wanted));
                 if(b)b.classList.add('active');
             }
             document.querySelectorAll('.premium-panel').forEach(x=>x.classList.remove('active'));
@@ -1551,12 +1473,8 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
             if(tab==='sales')renderPremiumSales();
             if(tab==='items')renderPremiumItems();
             if(tab==='inventory')renderPremiumInventory();
-            if(tab==='tables')renderPremiumTables();
-            if(tab==='staff')renderPremiumStaff();
-            if(tab==='menu')renderPremiumMenu();
-            if(tab==='expenses')renderPremiumExpenses();
             if(tab==='reports')renderPremiumReports();
-            if(tab==='settings')renderPremiumSettings();
+            if(tab==='settings')renderPremiumAdmin();
         }
 
         function renderPremiumOverview(){
@@ -1580,7 +1498,7 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
                 <div class="admin-insight purple"><div class="ai-label">Today's Orders</div><div class="ai-value">${todaySales.length}</div><div class="ai-note">Completed sales today</div></div>
                 <div class="admin-insight peach"><div class="ai-label">Discount Given</div><div class="ai-value">${money(todaySales.reduce((a,s)=>a+parseAmount(getVal(s,['discount'])),0))}</div><div class="ai-note">Today's customer discount</div></div>
                 <div class="admin-insight mint"><div class="ai-label">Best Payment</div><div class="ai-value">${esc(Object.entries(modes).sort((a,b)=>b[1]-a[1])[0]?.[0]||'—')}</div><div class="ai-note">Highest lifetime collection</div></div>
-                <div class="admin-insight pink"><div class="ai-label">Low Stock</div><div class="ai-value">${Object.values(stockData).filter(v=>Number(v)<=5).length}</div><div class="ai-note">Items at or below threshold</div></div>
+                <div class="admin-insight neutral"><div class="ai-label">Low Stock</div><div class="ai-value">${Object.values(stockData).filter(v=>Number(v)<=5).length}</div><div class="ai-note">Items at or below threshold</div></div>
             </div>
             <div class="premium-grid-2">
                 <div class="premium-card">
@@ -1588,6 +1506,7 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
                     <div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Order</th><th>Time</th><th>Table</th><th>Mode</th><th>Total</th></tr></thead><tbody>
                     ${recent.map(s=>`<tr onclick="openOrderDetails('${esc(getVal(s,['orderid','order_number','id']))}')" style="cursor:pointer"><td><b>#${esc(getVal(s,['orderid','order_number','id']))}</b></td><td>${esc(saleDateKey(s))}<br>${esc(saleTimeText(s))}</td><td>${esc(getVal(s,['tablenumber','table','tablename','table_number'])||'—')}</td><td><span class="pill ${String(getVal(s,['payment_method'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))).toLowerCase().includes('cash')?'gold':'gray'}">${esc(getVal(s,['payment_method'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—')}</span></td><td><b>${money(getVal(s,['grand_total','totalamount','total','amount']))}</b></td></tr>`).join('')}
                     </tbody></table></div>
+                    <div class="mobile-sale-list admin-recent-mobile">${recent.map(s=>`<div class="mobile-sale-card" onclick="openOrderDetails('${esc(getVal(s,['orderid','order_number','id']))}')"><div class="mobile-sale-top"><div class="mobile-sale-id">#${esc(getVal(s,['orderid','order_number','id']))}</div><div class="mobile-sale-total">${money(getVal(s,['grand_total','totalamount','total','amount']))}</div></div><div class="mobile-sale-meta"><span>${esc(saleDateKey(s))}</span><span>${esc(saleTimeText(s))}</span><span>${esc(getVal(s,['tablenumber','table','table_number'])||'—')}</span><span>${esc(getVal(s,['payment_method'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—')}</span></div><div class="mobile-sale-items">${parseSaleItems(s).slice(0,3).map(it=>`<div class="mobile-sale-item"><span>${esc(it.name)} ×${it.qty}</span><b>${money(it.amount)}</b></div>`).join('')||'<span>No item details</span>'}</div></div>`).join('')}</div>
                 </div>
                 <div>
                     <div class="premium-card">
@@ -1629,33 +1548,25 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
 
         function renderPremiumSales(){
             const panel=document.getElementById('premiumPanel-sales');if(!panel)return;
-            panel.innerHTML=`
-            <div class="premium-card">
-                <div class="premium-card-head"><h3>Sales Register</h3><span id="psCount">0 orders</span></div>
-                <div class="premium-toolbar">
-                    <input type="date" id="psFrom" onchange="renderPremiumSalesRows()"><input type="date" id="psTo" onchange="renderPremiumSalesRows()">
-                    <select id="psMode" onchange="renderPremiumSalesRows()"><option value="">All Payments</option><option value="cash">Cash</option><option value="upi">UPI</option><option value="card">Card</option></select>
-                    <select id="psType" onchange="renderPremiumSalesRows()"><option value="">All Types</option><option value="dining">Dining</option><option value="takeaway">Takeaway</option><option value="delivery">Delivery</option></select>
-                    <input id="psSearch" placeholder="Search order / item / phone" oninput="renderPremiumSalesRows()">
-                    <button class="premium-btn alt" onclick="exportPremiumSales()">Export CSV</button>
-                </div>
-                <div id="psSummary" class="premium-grid-3" style="margin-bottom:14px"></div>
-                <div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Time</th><th>Order ID</th><th>Table</th><th>Items</th><th>Mode</th><th>Discount</th><th>Total</th></tr></thead><tbody id="psBody"></tbody></table></div>
-            </div>`;
+            panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Sales Register</h3><span id="psCount">0 orders</span></div>
+            <div class="sales-filter-chips"><button class="filter-btn" onclick="setPremiumSalesRange('today')">Today</button><button class="filter-btn" onclick="setPremiumSalesRange('yesterday')">Yesterday</button><button class="filter-btn" onclick="setPremiumSalesRange('7d')">7 Days</button><button class="filter-btn" onclick="setPremiumSalesRange('30d')">30 Days</button><button class="filter-btn active" onclick="setPremiumSalesRange('all')">All</button></div>
+            <div class="date-filter-row"><input type="date" id="psFrom" onchange="renderPremiumSalesRows()"><input type="date" id="psTo" onchange="renderPremiumSalesRows()"></div>
+            <div class="premium-toolbar compact-toolbar" style="margin-top:7px"><select id="psMode" onchange="renderPremiumSalesRows()"><option value="">All Payments</option><option value="cash">Cash</option><option value="upi">UPI</option><option value="card">Card</option></select><select id="psType" onchange="renderPremiumSalesRows()"><option value="">All Types</option><option value="dining">Dining</option><option value="takeaway">Takeaway</option><option value="delivery">Delivery</option></select><input id="psSearch" placeholder="Search order / item / phone" oninput="renderPremiumSalesRows()"><button class="premium-btn light" onclick="exportPremiumSales()">Export</button></div>
+            <div id="psSummary" class="sales-summary-grid"></div>
+            <div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Time</th><th>Order</th><th>Table</th><th>Items</th><th>Mode</th><th>Discount</th><th>Total</th></tr></thead><tbody id="psBody"></tbody></table></div>
+            <div id="psMobileList" class="mobile-sale-list"></div></div>`;
             renderPremiumSalesRows();
         }
-
+        function setPremiumSalesRange(range){
+            const f=document.getElementById('psFrom'),t=document.getElementById('psTo'); if(!f||!t)return; const now=new Date(); const key=localISODate(now);
+            if(range==='all'){f.value='';t.value='';} else if(range==='today'){f.value=key;t.value=key;} else if(range==='yesterday'){const y=new Date(now);y.setDate(y.getDate()-1);const k=localISODate(y);f.value=k;t.value=k;} else {const days=range==='7d'?6:29;const d=new Date(now);d.setDate(d.getDate()-days);f.value=localISODate(d);t.value=key;} renderPremiumSalesRows();
+        }
         function renderPremiumSalesRows(){
             const rows=getFilteredPremiumSales(); const body=document.getElementById('psBody');if(!body)return;
-            const total=rows.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);
-            const disc=rows.reduce((a,s)=>a+parseAmount(getVal(s,['discount'])),0);
-            document.getElementById('psCount').innerText=`${rows.length} orders`;
-            document.getElementById('psSummary').innerHTML=`<div class="report-stat"><div class="rlabel">Orders</div><div class="rvalue">${rows.length}</div></div><div class="report-stat"><div class="rlabel">Net Sales</div><div class="rvalue">${money(total)}</div></div><div class="report-stat"><div class="rlabel">Discount</div><div class="rvalue">${money(disc)}</div></div>`;
-            body.innerHTML=rows.length?rows.map(s=>{
-                const items=String(getVal(s,['items_string','itemsstring','items'])||'').replace(/,?\s*\[(?:Mode|Discount Applied):[^\]]*\]/gi,'').trim();
-                const mode=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']));
-                return `<tr onclick="openOrderDetails('${esc(getVal(s,['orderid','order_number','id']))}')" style="cursor:pointer"><td>${esc(saleDateKey(s))}</td><td>${esc(saleTimeText(s))}</td><td><b>${esc(getVal(s,['orderid','order_number','id']))}</b><br><span style="font-size:.62rem;color:var(--text-muted)">${esc(getVal(s,['phone','customerphone'])||'NA')}</span></td><td>${esc(getVal(s,['tablenumber','table','tablename','table_number'])||'—')}</td><td style="max-width:340px">${esc(items)}</td><td><span class="pill ${String(mode).toLowerCase()==='cash'?'gold':'gray'}">${esc(mode||'—')}</span></td><td>${money(getVal(s,['discount']))}</td><td><b>${money(getVal(s,['grand_total','totalamount','total','amount']))}</b></td></tr>`;
-            }).join(''):`<tr><td colspan="8"><div class="premium-empty">No sales match the selected filters.</div></td></tr>`;
+            const total=rows.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0); const disc=rows.reduce((a,s)=>a+parseAmount(getVal(s,['discount'])),0); const aov=rows.length?total/rows.length:0;
+            document.getElementById('psCount').innerText=`${rows.length} orders`;document.getElementById('psSummary').innerHTML=`<div class="report-stat"><div class="rlabel">Orders</div><div class="rvalue">${rows.length}</div></div><div class="report-stat"><div class="rlabel">Sale</div><div class="rvalue">${money(total)}</div></div><div class="report-stat"><div class="rlabel">AOV</div><div class="rvalue">${money(aov)}</div></div>`;
+            body.innerHTML=rows.length?rows.map(s=>{const items=saleItemsText(s);const mode=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']));return `<tr onclick="openOrderDetails('${esc(getVal(s,['orderid','order_number','id']))}')" style="cursor:pointer"><td>${esc(saleDateKey(s))}</td><td>${esc(saleTimeText(s))}</td><td><b>${esc(getVal(s,['orderid','order_number','id']))}</b></td><td>${esc(getVal(s,['tablenumber','table','tablename','table_number'])||'—')}</td><td>${esc(items)}</td><td>${esc(mode||'—')}</td><td>${money(getVal(s,['discount']))}</td><td><b>${money(getVal(s,['grand_total','totalamount','total','amount']))}</b></td></tr>`}).join(''):`<tr><td colspan="8"><div class="premium-empty">No sales match the selected filters.</div></td></tr>`;
+            const mob=document.getElementById('psMobileList');if(mob)mob.innerHTML=rows.map(s=>`<div class="mobile-sale-card" onclick="openOrderDetails('${esc(getVal(s,['orderid','order_number','id']))}')"><div class="mobile-sale-top"><div class="mobile-sale-id">#${esc(getVal(s,['orderid','order_number','id']))}</div><div class="mobile-sale-total">${money(getVal(s,['grand_total','totalamount','total','amount']))}</div></div><div class="mobile-sale-meta"><span>${esc(saleDateKey(s))}</span><span>${esc(saleTimeText(s))}</span><span>${esc(getVal(s,['tablenumber','table','table_number'])||'—')}</span><span>${esc(getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—')}</span></div><div class="mobile-sale-items">${parseSaleItems(s).slice(0,4).map(it=>`<div class="mobile-sale-item"><span>${esc(it.name)} ×${it.qty}</span><b>${money(it.amount)}</b></div>`).join('')||'<span>No item details</span>'}</div></div>`).join('')||'<div class="premium-empty">No sales.</div>';
         }
 
         function exportPremiumSales(){
@@ -1669,48 +1580,18 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
             downloadCSV(rows,'Viraasat-Sales-Export.csv');
         }
 
-        function parseSaleItems(s){
-            const raw = getVal(s,['items_string','itemsstring','items','Items','Items_String']);
-            const out = [];
-            const menuPrice = (name) => {
-                const mi = menuData.find(x => String(getVal(x,['itemname','name'])).trim().toLowerCase() === String(name).trim().toLowerCase());
-                return mi ? parseAmount(getVal(mi,['price','sellingprice','rate'])) : 0;
-            };
-            const pushItem = (obj) => {
-                if(!obj) return;
-                const name = String(obj.name ?? obj.item_name ?? obj.itemName ?? obj.title ?? '').trim();
-                if(!name) return;
-                const qty = Math.max(1, Number(obj.qty ?? obj.quantity ?? 1) || 1);
-                let amount = obj.total ?? obj.amount ?? obj.line_total ?? obj.lineTotal;
-                amount = (amount === null || amount === undefined || amount === '') ? null : parseAmount(amount);
-                let price = obj.price ?? obj.unit_price ?? obj.unitPrice ?? null;
-                price = (price === null || price === undefined || price === '') ? null : parseAmount(price);
-                if(amount === null || amount === 0){
-                    if(price !== null && price > 0) amount = price * qty;
-                    else amount = menuPrice(name) * qty;
-                }
-                if((price === null || price === 0) && qty > 0 && amount > 0) price = Math.round(amount/qty);
-                out.push({name,qty,amount:Number(amount)||0,price:Number(price)||0});
-            };
-            if(Array.isArray(raw)){ raw.forEach(pushItem); return out; }
-            const text = String(raw ?? '').trim();
-            if(!text) return out;
-            try{
-                const parsed = JSON.parse(text);
-                if(Array.isArray(parsed)){ parsed.forEach(pushItem); return out; }
-                if(parsed && Array.isArray(parsed.items)){ parsed.items.forEach(pushItem); return out; }
-            }catch(_){}
-            const cleaned=text.replace(/\s*\[(?:Mode|Discount Applied|Address):[^\]]*\]/gi,'').trim().replace(/,+$/,'');
-            const chunks=cleaned.split(/\s*,\s*(?=[^,]+?\s*\(x\d+\))/i);
-            chunks.forEach(ch=>{
-                const m=ch.trim().match(/^(.*?)\s*\(x(\d+)\)\s*(?:₹\s*([\d,]+(?:\.\d+)?))?\s*$/i);
-                if(!m)return;
-                const name=m[1].trim(),qty=Math.max(1,Number(m[2])||1);
-                let amount=m[3]?Number(String(m[3]).replace(/,/g,'')):null;
-                const base=menuPrice(name);
-                if(amount===null || amount===0) amount=base*qty;
-                out.push({name,qty,amount:Number(amount)||0,price:base || (amount?Math.round(amount/qty):0)});
-            });
+        function parseSaleItems(source){
+            const raw = source && typeof source==='object' ? (source.items ?? source.Items ?? source.items_string ?? source.itemsString ?? source.itemsstring ?? '') : source;
+            const out=[];
+            const menuPrice=name=>{const mi=menuData.find(x=>String(getVal(x,['itemname','name'])).trim().toLowerCase()===String(name).trim().toLowerCase());return mi?parseAmount(getVal(mi,['price','sellingprice','rate'])):0;};
+            const push=(obj)=>{if(!obj)return;const name=String(obj.name??obj.item_name??obj.itemName??obj.title??obj.product??'').trim();if(!name)return;const qty=Math.max(1,Number(obj.qty??obj.quantity??obj.count??1)||1);let amount=obj.total??obj.amount??obj.line_total??obj.lineTotal;let price=obj.price??obj.unit_price??obj.unitPrice??obj.rate;amount=(amount===null||amount===undefined||amount==='')?null:parseAmount(amount);price=(price===null||price===undefined||price==='')?null:parseAmount(price);if(amount===null||amount===0){amount=price&&price>0?price*qty:menuPrice(name)*qty;}if((price===null||price===0)&&amount>0)price=Math.round(amount/qty);out.push({name,qty,amount:Number(amount)||0,price:Number(price)||0});};
+            if(Array.isArray(raw)){raw.forEach(push);return out;}
+            if(raw&&typeof raw==='object'){if(Array.isArray(raw.items)){raw.items.forEach(push);return out;}push(raw);return out;}
+            const text=String(raw??'').trim();if(!text)return out;
+            try{const parsed=JSON.parse(text);if(Array.isArray(parsed)){parsed.forEach(push);return out;}if(parsed&&Array.isArray(parsed.items)){parsed.items.forEach(push);return out;}}catch(_){ }
+            const cleaned=text.replace(/\s*\[(?:Mode|Discount Applied|Address|Payment_Mode|Payment Mode):[^\]]*\]/gi,'').trim().replace(/,+$/,'');
+            const chunks=cleaned.split(/,\s*(?=[^,]+?\s*\(x\s*\d+(?:\.\d+)?\))/i);
+            chunks.forEach(ch=>{const m=ch.trim().match(/^(.*?)\s*\(x\s*(\d+(?:\.\d+)?)\)\s*(?:₹\s*([\d,]+(?:\.\d+)?))?\s*$/i);if(!m)return;const name=m[1].trim(),qty=Math.max(1,Number(m[2])||1);let amount=m[3]?Number(String(m[3]).replace(/,/g,'')):null;const base=menuPrice(name);if(amount===null||amount===0)amount=base*qty;out.push({name,qty,amount:Number(amount)||0,price:base||((amount||0)/qty)});});
             return out;
         }
         function saleItemsText(s){
@@ -1730,35 +1611,24 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
 
         function renderPremiumItems(){
             const panel=document.getElementById('premiumPanel-items');if(!panel)return;
-            const items=buildItemSales(); const total=items.reduce((a,x)=>a+x.sales,0);
-            panel.innerHTML=`<div class="premium-card">
-                <div class="premium-card-head"><h3>Item-wise Sales</h3><span>${items.length} items</span></div>
-                <div class="premium-toolbar"><input id="piSearch" placeholder="Search item..." oninput="renderPremiumItemRows()"><button class="premium-btn alt" onclick="exportItemSales()">Export Item Report</button></div>
-                <div class="premium-grid-3" style="margin-bottom:14px"><div class="report-stat"><div class="rlabel">Items Sold</div><div class="rvalue">${items.reduce((a,x)=>a+x.qty,0)}</div></div><div class="report-stat"><div class="rlabel">Item Value</div><div class="rvalue">${money(total)}</div></div><div class="report-stat"><div class="rlabel">Unique Items</div><div class="rvalue">${items.length}</div></div></div>
-                <div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>#</th><th>Item</th><th>Qty Sold</th><th>Orders</th><th>Sales Value</th><th>Share</th></tr></thead><tbody id="piBody"></tbody></table></div>
-            </div>`;
+            const items=buildItemSales(); const totalSales=items.reduce((a,x)=>a+x.sales,0); const totalQty=items.reduce((a,x)=>a+x.qty,0);
+            panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Item Sales Ranking</h3><span>Highest sellers first</span></div>
+            <div class="premium-toolbar compact-toolbar"><input id="piSearch" placeholder="Search item..." oninput="renderPremiumItemRows()"><button class="premium-btn light" onclick="exportItemSales()">Export</button></div>
+            <div class="premium-grid-3" style="margin-bottom:10px"><div class="report-stat"><div class="rlabel">Units Sold</div><div class="rvalue">${totalQty}</div></div><div class="report-stat"><div class="rlabel">Item Sales Value</div><div class="rvalue">${money(totalSales)}</div></div><div class="report-stat"><div class="rlabel">Unique Items</div><div class="rvalue">${items.length}</div></div></div>
+            <div id="piRankList" class="top-selling-list"></div></div>`;
             renderPremiumItemRows();
         }
         function renderPremiumItemRows(){
-            const body=document.getElementById('piBody');if(!body)return;const q=(document.getElementById('piSearch')?.value||'').toLowerCase();const items=buildItemSales().filter(x=>x.name.toLowerCase().includes(q));const total=buildItemSales().reduce((a,x)=>a+x.sales,0);
-            body.innerHTML=items.map((x,i)=>`<tr><td><b>${i+1}</b></td><td><b>${esc(x.name)}</b></td><td>${x.qty}</td><td>${x.orders}</td><td><b>${money(x.sales)}</b></td><td style="min-width:130px"><span style="font-size:.65rem">${total?((x.sales/total)*100).toFixed(1):0}%</span><div class="mini-bar"><i style="width:${total?Math.min(100,(x.sales/total)*100):0}%"></i></div></td></tr>`).join('')||`<tr><td colspan="6"><div class="premium-empty">No item sales found.</div></td></tr>`;
+            const body=document.getElementById('piRankList');if(!body)return;const q=(document.getElementById('piSearch')?.value||'').toLowerCase().trim();const all=buildItemSales();const items=all.filter(x=>x.name.toLowerCase().includes(q));const totalSales=all.reduce((a,x)=>a+x.sales,0);const totalQty=all.reduce((a,x)=>a+x.qty,0);
+            body.innerHTML=items.map((x,i)=>{const salesShare=totalSales?x.sales/totalSales*100:0;const qtyShare=totalQty?x.qty/totalQty*100:0;return `<div class="item-rank"><div class="item-rank-no">${i+1}</div><div class="item-rank-info"><div class="item-rank-name">${esc(x.name)}</div><div class="item-rank-sub">${x.qty} units • ${x.orders} orders • ${qtyShare.toFixed(1)}% qty share</div><div class="mini-bar"><i style="width:${Math.min(100,salesShare)}%"></i></div></div><div style="text-align:right"><div class="item-rank-val">${money(x.sales)}</div><small style="font-size:.6rem;color:var(--text-muted)">${salesShare.toFixed(1)}% sales</small></div></div>`}).join('')||'<div class="premium-empty">No item sales found.</div>';
         }
-        function exportItemSales(){downloadCSV(buildItemSales().map(x=>({Item:x.name,Qty_Sold:x.qty,Orders:x.orders,Sales_Value:Math.round(x.sales)})),'Viraasat-Item-Wise-Sales.csv');}
-
         function renderPremiumInventory(){
             const panel=document.getElementById('premiumPanel-inventory');if(!panel)return;const entries=Object.entries(stockData).sort((a,b)=>Number(a[1])-Number(b[1]));
-            panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Inventory Control</h3><span>${entries.length} tracked items</span></div><div class="premium-toolbar"><input id="pStockSearch" placeholder="Search stock..." oninput="renderPremiumInventoryRows()"><button class="premium-btn" onclick="document.getElementById('adminStockItem').focus();switchMainTab('usersManager',document.getElementById('navUsers'))">Stock Admin</button></div><div id="pStockGrid" class="stock-grid"></div></div>`;
+            panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Inventory Control</h3><span>${entries.length} tracked items</span></div><div class="premium-toolbar"><input id="pStockSearch" placeholder="Search stock..." oninput="renderPremiumInventoryRows()"><button class="premium-btn" onclick="showPremiumTab('settings')">Stock Admin</button></div><div id="pStockGrid" class="stock-grid"></div></div>`;
             renderPremiumInventoryRows();
         }
         function renderPremiumInventoryRows(){const el=document.getElementById('pStockGrid');if(!el)return;const q=(document.getElementById('pStockSearch')?.value||'').toLowerCase();const e=Object.entries(stockData).filter(([k])=>k.toLowerCase().includes(q)).sort((a,b)=>Number(a[1])-Number(b[1]));el.innerHTML=e.map(([k,v])=>`<div class="stock-box ${Number(v)<=5?'low':''}"><div class="stock-box-name">${esc(k)}</div><div class="stock-box-qty">${Number(v)||0}</div><small>${Number(v)<=5?'Low stock':'Available'}</small></div>`).join('')||'<div class="premium-empty" style="grid-column:1/-1">No stock data received from source.</div>';}
 
-
-        function renderPremiumTables(){
-            const panel=document.getElementById('premiumPanel-tables');if(!panel)return;
-            let rows=[];tableSections.forEach(sec=>sec.tables.forEach(n=>{const key='Table '+n;const occ=Array.isArray(runningTables[key])&&runningTables[key].length>0;rows.push({name:key,area:sec.title,status:occ?'Occupied':'Available'});}));
-            ['Takeaway','Home Delivery'].forEach(key=>rows.push({name:key,area:'Quick Service',status:Array.isArray(runningTables[key])&&runningTables[key].length?'Occupied':'Available'}));
-            panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Table Control</h3><span>${rows.filter(x=>x.status==='Occupied').length} occupied / ${rows.length}</span></div><div class="stock-grid">${rows.map(x=>`<div class="stock-box ${x.status==='Occupied'?'low':''}"><div class="stock-box-name">${esc(x.name)}</div><div style="margin-top:8px"><span class="pill ${x.status==='Occupied'?'red':'green'}">${x.status}</span></div><small>${esc(x.area)}</small></div>`).join('')}</div></div>`;
-        }
 
         function getStaffKey(s){return String(getVal(s,['empid','employeeid','mobile','phone','name'])||'');}
         function getStaffStatus(s){return s.__status||'active';}
@@ -1772,7 +1642,7 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
                 await d1Post('/staff/update',{id:id,is_active:!active});
                 staff.__status=!active?'active':'inactive';
                 const state=JSON.parse(localStorage.getItem('viraasat_staff_status')||'{}');state[key]=staff.__status;localStorage.setItem('viraasat_staff_status',JSON.stringify(state));
-                renderPremiumStaff();renderEmployeeList();generateTrends();
+                renderAdminStaffRows();renderEmployeeList();generateTrends();renderPremiumAdmin();
             }catch(e){showCustomAlert('Staff status update failed: '+e.message);}
         }
         async function removeStaffRecord(key){
@@ -1784,26 +1654,13 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
                 try{
                     await d1Post('/staff/remove',{id:id});
                     staffData=staffData.filter(s=>getStaffKey(s)!==key);
-                    renderPremiumStaff();renderEmployeeList();generateTrends();
+                    renderAdminStaffRows();renderEmployeeList();generateTrends();renderPremiumAdmin();
                     showCustomAlert('Staff member marked inactive in D1.');
                 }catch(e){showCustomAlert('Staff removal failed: '+e.message);}
             },null);
         }
-        function renderPremiumStaff(){
-            const panel=document.getElementById('premiumPanel-staff');if(!panel)return;
-            panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Staff Management</h3><span>${activeStaffCount()} active / ${staffData.length} total</span></div>
-            <div class="premium-toolbar"><button class="premium-btn" onclick="switchMainTab('usersManager',document.getElementById('navUsers'))">Open Staff Register</button><button class="premium-btn alt" onclick="exportStaff()">Export Staff</button></div>
-            <div class="staff-grid">${staffData.map(s=>{const key=getStaffKey(s),active=getStaffStatus(s)==='active';return `<div class="staff-card"><div class="staff-top"><div><div class="staff-name">${esc(getVal(s,['name'])||'Unknown')}</div><div class="staff-role">${esc(getVal(s,['role'])||'Staff')}</div></div><button class="status-toggle ${active?'active':'inactive'}" onclick="toggleStaffStatus('${esc(key)}')">${active?'ACTIVE':'INACTIVE'}</button></div><div class="staff-meta"><div>Emp ID: <b>${esc(getVal(s,['empid','employeeid'])||'—')}</b></div><div>Mobile: <b>${esc(getVal(s,['mobile','phone'])||'—')}</b></div><div>Salary: <b>${money(getVal(s,['monthlysalary','salary']))}</b></div><div>Joining: <b>${esc(getVal(s,['dateofjoining','joindate','date','doj'])||'—')}</b></div></div><div class="staff-actions"><button class="premium-btn light" onclick="toggleStaffStatus('${esc(key)}')">${active?'Mark Inactive':'Mark Active'}</button><button class="premium-btn danger" onclick="removeStaffRecord('${esc(key)}')">Remove</button></div></div>`}).join('')||'<div class="premium-empty" style="grid-column:1/-1">No staff records found.</div>'}</div></div>`;
-        }
         function exportStaff(){downloadCSV(staffData.map(s=>({Emp_ID:getVal(s,['empid','employeeid']),Name:getVal(s,['name']),Role:getVal(s,['role']),Mobile:getVal(s,['mobile','phone']),Monthly_Salary:parseAmount(getVal(s,['monthlysalary','salary'])),Date_of_Joining:getVal(s,['dateofjoining','joindate','date','doj']),Status:getStaffStatus(s)})),'Viraasat-Staff.csv');}
 
-        function renderPremiumMenu(){
-            const panel=document.getElementById('premiumPanel-menu');if(!panel)return;
-            panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Menu Master</h3><span>${menuData.length} items</span></div>
-            <div class="premium-toolbar"><button class="premium-btn" onclick="downloadMenuSample()">Download Sample</button><label class="premium-btn alt" style="display:flex;align-items:center;cursor:pointer">Upload Menu<input type="file" id="menuUploadInput" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleMenuUpload(this.files[0])"></label><button class="premium-btn light" onclick="exportMenu()">Export Menu</button><button class="premium-btn light" onclick="switchMainTab('usersManager',document.getElementById('navUsers'))">Add Single Item</button></div>
-            <div class="upload-drop"><strong>Bulk Menu Import</strong><span>Use the sample columns: Name, Category, Price, Active, Stock</span><button class="premium-btn alt" onclick="downloadMenuSample()">Get Sample File</button></div>
-            <div class="premium-table-wrap" style="margin-top:14px"><table class="premium-table"><thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Active</th><th>Stock</th></tr></thead><tbody>${menuData.map(m=>`<tr><td><b>${esc(getVal(m,['itemname','name']))}</b></td><td>${esc(getVal(m,['category','cat'])||'—')}</td><td>${money(getVal(m,['price']))}</td><td><span class="pill green">ACTIVE</span></td><td>${esc(stockData[getVal(m,['itemname','name'])]??'—')}</td></tr>`).join('')||'<tr><td colspan="5"><div class="premium-empty">No menu data found.</div></td></tr>'}</tbody></table></div></div>`;
-        }
         function downloadMenuSample(){downloadCSV([{Name:'Paneer Butter Masala',Category:'Main Course',Price:170,Active:'Yes',Stock:20},{Name:'Tea',Category:'Beverage',Price:20,Active:'Yes',Stock:50},{Name:'Aloo Paratha',Category:'Breakfast',Price:60,Active:'Yes',Stock:15}],'Viraasat-Menu-Sample.csv');}
         function exportMenu(){downloadCSV(menuData.map(m=>({Name:getVal(m,['itemname','name']),Category:getVal(m,['category','cat']),Price:parseAmount(getVal(m,['price'])),Active:getVal(m,['active','status'])||'Yes',Stock:stockData[getVal(m,['itemname','name'])]??''})),'Viraasat-Menu-Export.csv');}
         async function handleMenuUpload(file){
@@ -1826,25 +1683,24 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
                     if(ix>=0)menuData[ix]={...menuData[ix],...obj};else menuData.push(obj);added++;
                     d1Post('/menu',{category,name,price,is_available:obj.active}).catch(()=>{});
                 });
-                populateDropdown();renderPremiumMenu();showCustomAlert(`${added} menu rows imported.`);
+                populateDropdown();renderPremiumAdmin();auditLog('Menu Import',`${added} rows`);showCustomAlert(`${added} menu rows imported.`);
             }catch(e){console.error(e);showCustomAlert('Could not read this file. Use the downloaded sample format.');}
         }
         function parseCSVText(text){const lines=text.split(/\r?\n/).filter(x=>x.trim());if(!lines.length)return[];const head=lines.shift().split(',').map(x=>x.trim().replace(/^"|"$/g,''));return lines.map(line=>{const vals=line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g)||[];const o={};head.forEach((h,i)=>o[h]=(vals[i]||'').trim().replace(/^"|"$/g,''));return o;});}
 
-        function renderPremiumExpenses(){
-            const panel=document.getElementById('premiumPanel-expenses');if(!panel)return;const total=expenseHistory.reduce((a,e)=>a+parseAmount(getVal(e,['amount','total'])),0);
-            const cats={};expenseHistory.forEach(e=>{const c=getVal(e,['category'])||'Other';cats[c]=(cats[c]||0)+parseAmount(getVal(e,['amount','total']));});
-            panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Expense Control</h3><span>${expenseHistory.length} entries</span></div><div class="premium-grid-3" style="margin-bottom:14px"><div class="report-stat"><div class="rlabel">Total Expenses</div><div class="rvalue">${money(total)}</div></div><div class="report-stat"><div class="rlabel">Staff Salary</div><div class="rvalue">${money(cats['Staff Salary']||0)}</div></div><div class="report-stat"><div class="rlabel">Other Expenses</div><div class="rvalue">${money(total-(cats['Staff Salary']||0))}</div></div></div><div class="premium-toolbar"><button class="premium-btn" onclick="switchMainTab('expenses',document.getElementById('navExpenses'))">Add Expense</button><button class="premium-btn alt" onclick="exportExpenses()">Export Expenses</button></div><div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th></tr></thead><tbody>${expenseHistory.map(e=>`<tr><td>${esc(getVal(e,['date','isodate']))}</td><td>${esc(getVal(e,['category'])||'Other')}</td><td>${esc(getVal(e,['description','note'])||'—')}</td><td><b>${money(getVal(e,['amount','total']))}</b></td></tr>`).join('')||'<tr><td colspan="4"><div class="premium-empty">No expenses recorded.</div></td></tr>'}</tbody></table></div></div>`;
-        }
         function exportExpenses(){downloadCSV(expenseHistory.map(e=>({Date:getVal(e,['date','isodate']),Category:getVal(e,['category']),Description:getVal(e,['description','note']),Amount:parseAmount(getVal(e,['amount','total']))})),'Viraasat-Expenses.csv');}
 
         function renderPremiumReports(){
             const panel=document.getElementById('premiumPanel-reports');if(!panel)return;
-            const byDate={};salesHistory.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!byDate[d])byDate[d]={orders:0,sales:0};byDate[d].orders++;byDate[d].sales+=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));});
+            const byDate={}; salesHistory.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!byDate[d])byDate[d]={orders:0,sales:0,discount:0};byDate[d].orders++;byDate[d].sales+=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));byDate[d].discount+=parseAmount(getVal(s,['discount']));});
             const days=Object.entries(byDate).sort((a,b)=>b[0].localeCompare(a[0]));
-            const best=[...buildItemSales()].slice(0,10);
-            panel.innerHTML=`<div class="premium-grid-2"><div class="premium-card"><div class="premium-card-head"><h3>Daily Business Report</h3><button class="premium-btn alt" onclick="exportDailyReport()">Export</button></div><div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Orders</th><th>Sales</th><th>AOV</th></tr></thead><tbody>${days.map(([d,x])=>`<tr><td>${d}</td><td>${x.orders}</td><td><b>${money(x.sales)}</b></td><td>${money(x.sales/x.orders)}</td></tr>`).join('')||'<tr><td colspan="4"><div class="premium-empty">No sales.</div></td></tr>'}</tbody></table></div></div>
-            <div class="premium-card"><div class="premium-card-head"><h3>Top 10 Items</h3><span>By sales value</span></div>${best.map((x,i)=>`<div class="item-rank"><div class="item-rank-no">${i+1}</div><div class="item-rank-info"><div class="item-rank-name">${esc(x.name)}</div><div class="item-rank-sub">${x.qty} units • ${x.orders} orders</div></div><div class="item-rank-val">${money(x.sales)}</div></div>`).join('')||'<div class="premium-empty">No item sales.</div>'}</div></div>`;
+            const items=buildItemSales(); const totalItemSales=items.reduce((a,x)=>a+x.sales,0); const totalItemQty=items.reduce((a,x)=>a+x.qty,0);
+            const top=items.slice(0,15);
+            const totalSale=salesHistory.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0); const totalDiscount=salesHistory.reduce((a,s)=>a+parseAmount(getVal(s,['discount'])),0);
+            panel.innerHTML=`
+            <div class="sales-summary-grid"><div class="report-stat"><div class="rlabel">Overall Sale</div><div class="rvalue">${money(totalSale)}</div></div><div class="report-stat"><div class="rlabel">Discount</div><div class="rvalue">${money(totalDiscount)}</div></div><div class="report-stat"><div class="rlabel">Orders</div><div class="rvalue">${salesHistory.length}</div></div></div>
+            <div class="premium-card"><div class="premium-card-head"><h3>Top Selling Items</h3><span>Sorted by sales value</span></div><div class="admin-help">Highest-selling items are shown first. Sales % = item's value ÷ total item sales. Qty % = item's quantity ÷ total units sold.</div><div class="top-selling-list">${top.map((x,i)=>{const ss=totalItemSales?x.sales/totalItemSales*100:0;const qs=totalItemQty?x.qty/totalItemQty*100:0;return `<div class="item-rank"><div class="item-rank-no">${i+1}</div><div class="item-rank-info"><div class="item-rank-name">${esc(x.name)}</div><div class="item-rank-sub">${x.qty} units • ${x.orders} orders • Qty ${qs.toFixed(1)}%</div><div class="mini-bar"><i style="width:${Math.min(100,ss)}%"></i></div></div><div style="text-align:right"><div class="item-rank-val">${money(x.sales)}</div><small style="font-size:.6rem;color:var(--text-muted)">${ss.toFixed(1)}%</small></div></div>`}).join('')||'<div class="premium-empty">No item sales found.</div>'}</div></div>
+            <div class="premium-card"><div class="premium-card-head"><h3>Daily Business Report</h3><button class="premium-btn light" onclick="exportDailyReport()">Export</button></div><div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Orders</th><th>Sales</th><th>Discount</th><th>AOV</th></tr></thead><tbody>${days.map(([d,x])=>`<tr><td>${d}</td><td>${x.orders}</td><td><b>${money(x.sales)}</b></td><td>${money(x.discount)}</td><td>${money(x.sales/x.orders)}</td></tr>`).join('')||'<tr><td colspan="5"><div class="premium-empty">No sales.</div></td></tr>'}</tbody></table></div></div>`;
         }
         function exportDailyReport(){const by={};salesHistory.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!by[d])by[d]={orders:0,sales:0};by[d].orders++;by[d].sales+=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));});downloadCSV(Object.entries(by).sort((a,b)=>a[0].localeCompare(b[0])).map(([Date,x])=>({Date,Orders:x.orders,Sales:Math.round(x.sales),AOV:Math.round(x.sales/x.orders)})),'Viraasat-Daily-Report.csv');}
 
@@ -1856,68 +1712,151 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
             }catch(e){}
         }
         function getAuditLogs(){try{return JSON.parse(localStorage.getItem('viraasat_audit_logs')||'[]')}catch(e){return[]}}
-        function clearAuditLogs(){localStorage.removeItem('viraasat_audit_logs');renderPremiumSettings();}
+        function clearAuditLogs(){localStorage.removeItem('viraasat_audit_logs');renderPremiumAdmin();}
         async function loadPendingApprovals(){try{return (await d1Get('/approvals')).requests||[]}catch(e){return[]}}
         async function resolveApproval(requestId,orderId,status){
-            try{ await d1Post('/approvals/resolve',{request_id:requestId,order_id:orderId,status,reviewed_by:localStorage.getItem('viraasat_user')||'Admin'}); auditLog('Approval '+status,orderId); renderPremiumSettings(); fetchData(); }
+            try{ await d1Post('/approvals/resolve',{request_id:requestId,order_id:orderId,status,reviewed_by:localStorage.getItem('viraasat_user')||'Admin'}); auditLog('Approval '+status,orderId); renderPremiumAdmin(); fetchData(); }
             catch(e){showCustomAlert('Approval failed: '+e.message)}
         }
 
-        function renderPremiumSettings(){
-            const panel=document.getElementById('premiumPanel-settings');if(!panel)return;
-            panel.innerHTML=`<div class="premium-card">
-                <div class="premium-card-head"><h3>Admin Control Center</h3><span>Secure operations & approvals</span></div>
-                <div class="premium-grid-3">
-                    <div class="report-stat"><div class="rlabel">Live Database</div><div class="rvalue" style="font-size:.9rem">Cloudflare D1</div></div>
-                    <div class="report-stat"><div class="rlabel">Orders Loaded</div><div class="rvalue">${salesHistory.length}</div></div>
-                    <div class="report-stat"><div class="rlabel">Menu Items</div><div class="rvalue">${menuData.length}</div></div>
+        function renderPremiumAdmin(){
+            const panel=document.getElementById('premiumPanel-settings'); if(!panel)return;
+            const logs=getAuditLogs();
+            const active=activeStaffCount();
+            const pendingPromise=loadPendingApprovals();
+            panel.innerHTML=`
+            <div class="premium-card admin-card">
+                <div class="premium-card-head"><h3>Admin Control</h3><span>All management in one place</span></div>
+                <div class="admin-module-grid">
+                    <button class="admin-module" onclick="document.getElementById('adminStockSearch').focus()"><b>Inventory</b><span>Update stock & thresholds</span></button>
+                    <button class="admin-module" onclick="document.getElementById('adminStaffSearch').focus()"><b>Employees</b><span>${active} active staff</span></button>
+                    <button class="admin-module" onclick="document.getElementById('userMobile').focus()"><b>Users</b><span>Register / revoke access</span></button>
+                    <button class="admin-module" onclick="document.getElementById('adminMenuName').focus()"><b>Menu</b><span>Add & export menu</span></button>
+                    <button class="admin-module" onclick="document.getElementById('fullImportInput').click()"><b>Import</b><span>Master Excel to D1</span></button>
+                    <button class="admin-module" onclick="exportFullDatabaseWorkbook()"><b>Export</b><span>Download complete workbook</span></button>
                 </div>
+            </div>
 
-                <div class="premium-card" style="margin-top:16px;background:#FBF9F5;border:1px solid rgba(255,95,142,.18)">
-                    <div class="premium-card-head"><h3>🚀 One-Time Full Database Import</h3><span>Recommended</span></div>
-                    <p style="font-size:.78rem;color:var(--text-muted);line-height:1.55;margin:0 0 14px">
-                        Download the Excel template, fill the <b>Sales</b>, <b>Menu</b>, <b>Staff</b>, <b>Stock</b> and <b>Expenses</b> sheets, then upload the single workbook. Existing orders are matched by Order ID, so the same file can be uploaded again without creating duplicate orders.
-                    </p>
-                    <div class="premium-toolbar">
-                        <button class="premium-btn" onclick="downloadFullImportSample()">⬇ Download Full Sample</button>
-                        <label class="premium-btn alt" style="display:flex;align-items:center;cursor:pointer">📤 Upload Full Excel
-                            <input type="file" id="fullImportInput" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleFullDatabaseImport(this.files[0])">
-                        </label>
-                        <button class="premium-btn light" onclick="exportFullDatabaseWorkbook()">⬆ Export Current Data</button>
-                    </div>
-                    <div id="fullImportStatus" style="margin-top:12px;font-size:.75rem;color:var(--text-muted)">No import running.</div>
+            <div class="premium-card admin-card">
+                <div class="premium-card-head"><h3>Stock Management</h3><span>${Object.keys(stockData).length} items</span></div>
+                <div class="premium-toolbar compact-toolbar">
+                    <input id="adminStockSearch" list="adminStockNames" placeholder="Search stock item...">
+                    <datalist id="adminStockNames">${Object.keys(stockData).map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
+                    <input id="adminStockQty" type="number" min="0" inputmode="numeric" placeholder="Qty">
+                    <input id="adminStockLow" type="number" min="0" inputmode="numeric" value="5" placeholder="Low">
+                    <button class="premium-btn" onclick="adminUpdateStockUnified()">Update</button>
                 </div>
+                <div id="adminStockMiniList" class="admin-mini-list"></div>
+            </div>
 
-                <div class="premium-card" style="margin-top:16px;background:#FFFCFA">
-                    <div class="premium-card-head"><h3>Quick Controls</h3><span>Safe operations</span></div>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap">
-                        <button class="premium-btn" onclick="fetchData()">↻ Refresh All Data</button>
-                        <button class="premium-btn alt" onclick="exportAllData()">Export CSV Reports</button>
-                        <button class="premium-btn light" onclick="downloadMenuSample()">Download Menu Sample</button>
-                    </div>
+            <div class="premium-card admin-card">
+                <div class="premium-card-head"><h3>Employee Management</h3><span>${active}/${staffData.length} active</span></div>
+                <div class="premium-toolbar compact-toolbar">
+                    <input id="adminStaffSearch" placeholder="Search employee..." oninput="renderAdminStaffRows()">
+                    <button class="premium-btn" onclick="document.getElementById('newStaffName').focus()">Add Employee</button>
+                    <button class="premium-btn light" onclick="exportStaff()">Export</button>
                 </div>
+                <div class="admin-form-grid">
+                    <input id="newStaffName" placeholder="Full name">
+                    <input id="newStaffMobile" inputmode="numeric" placeholder="Mobile">
+                    <select id="newStaffRole"><option>Manager</option><option>Chef</option><option>Cashier</option><option>Waiter</option><option>Cleaner</option><option>Helper</option></select>
+                    <input id="newStaffSalary" type="number" inputmode="numeric" placeholder="Monthly salary">
+                    <input id="newStaffDate" type="date">
+                    <button class="premium-btn" onclick="addStaffUI()">Register Employee</button>
+                </div>
+                <div id="adminStaffRows" class="admin-staff-list"></div>
+            </div>
 
-                <div class="premium-card" style="margin-top:16px;background:#FBF9F5;border-color:#D9D1C7">
-                    <div class="premium-card-head"><h3>Pending Approvals</h3><span>Order deletion requests</span></div>
-                    <div id="pendingApprovalsBox" class="premium-empty">Checking approvals...</div>
+            <div class="premium-card admin-card">
+                <div class="premium-card-head"><h3>POS User Registration</h3><span>Access control</span></div>
+                <div class="admin-form-grid">
+                    <input id="userMobile" inputmode="numeric" placeholder="10 digit mobile">
+                    <input id="userPass" type="password" placeholder="Password (min 4)">
+                    <select id="userRole"><option value="cashier">Cashier</option><option value="manager">Manager</option><option value="waiter">Waiter</option><option value="kitchen">Kitchen</option></select>
+                    <label class="check-row"><input type="checkbox" id="userAllowSales" checked> Live Sale</label>
+                    <label class="check-row"><input type="checkbox" id="userAllowAnalytics"> P&L</label>
+                    <label class="check-row"><input type="checkbox" id="userAllowExpenses"> Expenses</label>
+                    <button class="premium-btn" onclick="registerPOSUser()">Register User</button>
                 </div>
-                <div class="premium-card" style="margin-top:16px;background:#F8F7FF">
-                    <div class="premium-card-head"><h3>Audit Logs</h3><button class="premium-btn light" onclick="clearAuditLogs()">Clear</button></div>
-                    <div id="auditLogsBox"></div>
+                <div id="adminUsersRows" class="admin-user-list"></div>
+            </div>
+
+            <div class="premium-card admin-card">
+                <div class="premium-card-head"><h3>Menu Management</h3><span>${menuData.length} items</span></div>
+                <div class="admin-form-grid">
+                    <input id="adminMenuName" placeholder="Item name">
+                    <input id="adminMenuPrice" type="number" inputmode="numeric" placeholder="Price ₹">
+                    <input id="adminMenuCategory" placeholder="Category" value="Main Course">
+                    <button class="premium-btn" onclick="adminAddMenuUnified()">Add Menu Item</button>
                 </div>
-                <div class="premium-card" style="margin-top:16px;background:#FFFDF8">
-                    <b style="font-size:.82rem">How this works</b>
-                    <ol style="font-size:.72rem;color:var(--text-muted);line-height:1.65;margin:8px 0 0 18px;padding:0">
-                        <li>Use the Viraasat Excel template for a one-time D1 import.</li>
-                        <li>Put the data into the matching sheets/columns of the template.</li>
-                        <li>Upload one Excel file here.</li>
-                        <li>Worker imports it into D1 and skips duplicate Order IDs.</li>
-                        <li>Google Sheet is not used by the live POS.</li>
-                    </ol>
+                <div class="premium-toolbar compact-toolbar" style="margin-top:8px">
+                    <button class="premium-btn light" onclick="downloadMenuSample()">Menu Sample</button>
+                    <label class="premium-btn alt upload-label">Upload Menu<input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleMenuUpload(this.files[0])"></label>
+                    <button class="premium-btn light" onclick="exportMenu()">Export Menu</button>
                 </div>
-            </div>`;
-            loadPendingApprovals().then(requests=>{const box=document.getElementById('pendingApprovalsBox'); if(!box)return; box.innerHTML=requests.length?requests.map(r=>`<div style="padding:10px 0;border-bottom:1px solid var(--border);font-size:.72rem"><b>${esc(r.order_id)}</b><div style="color:var(--text-muted);margin:3px 0">${esc(r.reason||'Deletion requested')} • ${esc(r.requested_by||'Unknown')}</div><div style="display:flex;gap:7px"><button class="premium-btn" onclick="resolveApproval(${Number(r.id)},'${esc(r.order_id)}','approved')">Approve</button><button class="premium-btn danger" onclick="resolveApproval(${Number(r.id)},'${esc(r.order_id)}','rejected')">Reject</button></div></div>`).join(''):'<div class="premium-empty">No pending approvals.</div>';});
-            const logs=getAuditLogs(); const logBox=document.getElementById('auditLogsBox'); if(logBox)logBox.innerHTML=logs.length?logs.slice(0,30).map(l=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:.68rem"><b>${esc(l.action)}</b><div style="color:var(--text-muted)">${esc(l.details)} • ${esc(l.user)} • ${new Date(l.timestamp).toLocaleString('en-IN')}</div></div>`).join(''):'<div class="premium-empty">No activity logged yet.</div>';
+            </div>
+
+            <div class="premium-card admin-card">
+                <div class="premium-card-head"><h3>Master Database Import</h3><span>One workbook</span></div>
+                <p class="admin-help">Upload one Excel workbook containing Sales, Menu, Staff, Stock and Expenses. Existing Order IDs are skipped to prevent duplicates.</p>
+                <div class="premium-toolbar compact-toolbar">
+                    <button class="premium-btn" onclick="downloadFullImportSample()">Download Sample</button>
+                    <label class="premium-btn alt upload-label">Upload Excel<input type="file" id="fullImportInput" accept=".xlsx,.xls" style="display:none" onchange="handleFullDatabaseImport(this.files[0])"></label>
+                    <button class="premium-btn light" onclick="exportFullDatabaseWorkbook()">Export Current Data</button>
+                </div>
+                <div id="fullImportStatus" class="admin-help">No import running.</div>
+            </div>
+
+            <div class="premium-card admin-card">
+                <div class="premium-card-head"><h3>Pending Approvals</h3><span>Protected actions</span></div>
+                <div id="pendingApprovalsBox" class="premium-empty">Checking approvals...</div>
+            </div>
+
+            <div class="premium-card admin-card">
+                <div class="premium-card-head"><h3>Audit Logs</h3><button class="premium-btn light" onclick="clearAuditLogs();renderPremiumAdmin()">Clear</button></div>
+                <div id="auditLogsBox"></div>
+            </div>
+            `;
+            renderAdminStockRows(); renderAdminStaffRows(); renderAdminUsersRows();
+            pendingPromise.then(requests=>{
+                const box=document.getElementById('pendingApprovalsBox'); if(!box)return;
+                box.innerHTML=requests.length?requests.map(r=>`<div class="approval-row"><div><b>${esc(r.order_id)}</b><small>${esc(r.reason||'Deletion requested')} • ${esc(r.requested_by||'Unknown')}</small></div><div class="approval-actions"><button class="premium-btn" onclick="resolveApproval(${Number(r.id)},'${esc(r.order_id)}','approved')">Approve</button><button class="premium-btn danger" onclick="resolveApproval(${Number(r.id)},'${esc(r.order_id)}','rejected')">Reject</button></div></div>`).join(''):'<div class="premium-empty">No pending approvals.</div>';
+            });
+            const logBox=document.getElementById('auditLogsBox');
+            if(logBox)logBox.innerHTML=logs.length?logs.slice(0,40).map(l=>`<div class="audit-row"><b>${esc(l.action)}</b><span>${esc(l.details)} • ${esc(l.user)} • ${new Date(l.timestamp).toLocaleString('en-IN')}</span></div>`).join(''):'<div class="premium-empty">No activity logged yet.</div>';
+        }
+
+        function renderAdminStockRows(){
+            const el=document.getElementById('adminStockMiniList'); if(!el)return;
+            const rows=Object.entries(stockData).sort((a,b)=>Number(a[1])-Number(b[1])).slice(0,12);
+            el.innerHTML=rows.map(([name,qty])=>`<div class="admin-mini-row"><div><b>${esc(name)}</b><small>${Number(qty)<=5?'Low stock':'Available'}</small></div><strong>${Number(qty)||0}</strong></div>`).join('')||'<div class="premium-empty">No stock data.</div>';
+        }
+        function renderAdminStaffRows(){
+            const el=document.getElementById('adminStaffRows'); if(!el)return;
+            const q=(document.getElementById('adminStaffSearch')?.value||'').toLowerCase();
+            const rows=staffData.filter(s=>`${getVal(s,['name'])} ${getVal(s,['role'])} ${getVal(s,['mobile','phone'])}`.toLowerCase().includes(q));
+            el.innerHTML=rows.map(s=>{const key=getStaffKey(s),active=getStaffStatus(s)==='active';return `<div class="admin-staff-row"><div class="admin-staff-main"><b>${esc(getVal(s,['name'])||'Unknown')}</b><small>${esc(getVal(s,['role'])||'Staff')} • ${esc(getVal(s,['mobile','phone'])||'—')} • ₹${parseAmount(getVal(s,['monthlysalary','salary'])).toLocaleString('en-IN')}</small></div><button class="status-toggle ${active?'active':'inactive'}" onclick="toggleStaffStatus('${esc(key)}')">${active?'ACTIVE':'INACTIVE'}</button><button class="premium-btn danger" onclick="removeStaffRecord('${esc(key)}')">Remove</button></div>`}).join('')||'<div class="premium-empty">No employees found.</div>';
+        }
+        function renderAdminUsersRows(){
+            const el=document.getElementById('adminUsersRows'); if(!el)return;
+            const entries=Object.entries(userPermissions||{});
+            el.innerHTML=entries.map(([mobile,p])=>`<div class="admin-user-row"><div><b>${esc(mobile)}</b><small>${esc(p.role||'cashier')} • Sales ${p.orders?'Yes':'No'} • P&L ${p.analytics?'Yes':'No'} • Expenses ${p.expenses?'Yes':'No'}</small></div><button class="premium-btn danger" onclick="removeUser('${esc(mobile)}');renderAdminUsersRows()">Remove</button></div>`).join('')||'<div class="premium-empty">No additional POS users registered.</div>';
+        }
+        function adminUpdateStockUnified(){
+            const name=document.getElementById('adminStockSearch')?.value.trim(); const qty=Number(document.getElementById('adminStockQty')?.value); const low=Number(document.getElementById('adminStockLow')?.value||5);
+            if(!name||!Number.isFinite(qty)||qty<0){showCustomAlert('Enter a valid stock item and quantity.');return;}
+            d1Post('/stock',{name,quantity:qty,unit:'pcs',low_stock_level:low}).then(()=>{stockData[name]=qty;renderStockDashboard();renderPremiumInventoryRows();renderAdminStockRows();auditLog('Stock Updated',`${name} = ${qty}`);showCustomAlert('Stock updated successfully.');}).catch(e=>showCustomAlert('Stock update failed: '+e.message));
+        }
+        async function adminAddMenuUnified(){
+            const name=document.getElementById('adminMenuName')?.value.trim(); const price=Number(document.getElementById('adminMenuPrice')?.value); const category=document.getElementById('adminMenuCategory')?.value.trim()||'Other';
+            if(!name||!Number.isFinite(price)||price<=0){showCustomAlert('Enter item name and valid price.');return;}
+            try{const existing=menuData.find(m=>String(getVal(m,['name','itemname'])).toLowerCase()===name.toLowerCase());if(existing){showCustomAlert('Menu item already exists.');return;}const r=await d1Post('/menu',{name,category,price,is_available:true});menuData.push({id:Number(r.id||0),name,itemname:name,category,price,is_available:1});populateDropdown();auditLog('Menu Added',`${name} ₹${price}`);document.getElementById('adminMenuName').value='';document.getElementById('adminMenuPrice').value='';renderPremiumAdmin();showCustomAlert('Menu item added.');}catch(e){showCustomAlert('Menu save failed: '+e.message);}
+        }
+        function registerPOSUser(){
+            const mobile=document.getElementById('userMobile')?.value.trim(); const pass=document.getElementById('userPass')?.value.trim();
+            if(!/^\d{10}$/.test(mobile)||pass.length<4){showCustomAlert('Enter valid 10-digit mobile and minimum 4-character password.');return;}
+            userPermissions[mobile]={password:pass,role:document.getElementById('userRole').value,orders:document.getElementById('userAllowSales').checked,analytics:document.getElementById('userAllowAnalytics').checked,expenses:document.getElementById('userAllowExpenses').checked};
+            localStorage.setItem('viraasat_permissions',JSON.stringify(userPermissions)); auditLog('User Registered',mobile); renderPremiumAdmin(); showCustomAlert('POS user registered successfully.');
         }
 
         function normalizeWorkbookDate(value){
@@ -2011,7 +1950,7 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
                 for(const r of salesRows){
                     const order=normalizeImportSales([r])[0];
                     if(!order)continue;
-                    let items=parseItemsString(order.items);
+                    let items=parseSaleItems({items: order.items});
                     const prepared=[];
                     for(const item of items){ const copy={...item}; copy.id=Number(copy.id||0); if(!copy.id){ const found=menuData.find(m=>String(getVal(m,['itemname','name'])).trim().toLowerCase()===String(copy.name).trim().toLowerCase()); if(found) copy.id=Number(getVal(found,['id','menu_item_id']))||0; } if(!copy.id){ const made=await d1Post('/menu',{name:copy.name,category:'Imported',price:copy.price,is_available:true}); copy.id=Number(made.id||0); } if(!copy.id) throw new Error(`Menu item ID missing for ${copy.name}`); prepared.push(copy); }
                     await d1Post('/orders/checkout',{order_number:order.order_id,order_type:order.table_number?(/^Table\s/.test(order.table_number)?'Dine-in':'Dine-in'):'Takeaway',table_number:order.table_number.replace(/^Table\s+/i,'' )||null,customer_phone:order.phone,items:prepared,items_string:order.items,subtotal:order.total_amount+order.discount,discount:order.discount,grand_total:order.total_amount,total:order.total_amount,payment_method:order.payment_method||'Cash',payment_status:'paid',order_status:'completed',created_at:new Date(`${order.date} ${order.time||'00:00'}`).toISOString()});
@@ -2100,6 +2039,7 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
 
                 let staffHtml = ""; for(let sName in staffExpenseMap) { staffHtml += `<div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:6px;"><span>👤 ${sName}</span> <span style="font-weight:600; color:var(--danger);">- ₹${staffExpenseMap[sName].toLocaleString('en-IN')}</span></div>`; }
                 document.getElementById('staffExpenseList').innerHTML = staffHtml || "<span style='color:var(--text-muted);'>No staff payments recorded.</span>";
+                const advanceEl=document.getElementById('staffAdvanceDetails'); if(advanceEl){ const staffRows=expenseHistory.filter(exp=>['Staff Salary','Payroll'].includes(String(getVal(exp,['category'])||''))).slice(0,30); advanceEl.innerHTML=staffRows.length?staffRows.map(exp=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:6px;gap:8px"><span>${esc(getVal(exp,['date','isodate'])||'')} • ${esc(getVal(exp,['description','note'])||'Staff')}</span><b>₹${parseAmount(getVal(exp,['amount','total'])).toLocaleString('en-IN')}</b></div>`).join(''):'<span style="color:var(--text-muted)">No staff advances or payroll entries.</span>'; }
 
                 let avgToday = ordersToday > 0 ? Math.floor(revenueToday / ordersToday) : 0;
                 let hasSalesAccess = true; if (typeof window.isUserAdmin !== 'undefined') { hasSalesAccess = window.isUserAdmin || (window.userPerms && window.userPerms.orders); }
@@ -2129,7 +2069,7 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
             finalLabels.forEach(lbl => { finalSales.push(aggSales[lbl] || 0); finalExp.push(aggExp[lbl] || 0); });
 
             const canvas = document.getElementById('trendChart'); if(!canvas) return; const ctx = canvas.getContext('2d'); if(typeof Chart === 'undefined') return; if(trendChartInstance) trendChartInstance.destroy();
-            trendChartInstance = new Chart(ctx, { type: 'line', data: { labels: finalLabels, datasets: [ { label: 'Sales (₹)', data: finalSales, borderColor: '#07CDAE', backgroundColor: 'rgba(7, 205, 174, 0.15)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#07CDAE', pointRadius: 4 }, { label: 'Expenses (₹)', data: finalExp, borderColor: '#10B981', backgroundColor: 'rgba(254, 112, 150, 0.15)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#10B981', pointRadius: 4 } ] }, options: { responsive: true, maintainAspectRatio: false } });
+            trendChartInstance = new Chart(ctx, { type: 'line', data: { labels: finalLabels, datasets: [ { label: 'Sales (₹)', data: finalSales, borderColor: '#07CDAE', backgroundColor: 'rgba(7, 205, 174, 0.15)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#07CDAE', pointRadius: 4 }, { label: 'Expenses (₹)', data: finalExp, borderColor: '#10B981', backgroundColor: 'rgba(16, 185, 129, 0.12)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#10B981', pointRadius: 4 } ] }, options: { responsive: true, maintainAspectRatio: false } });
         }
 
         function populateDropdown() { 
@@ -2188,7 +2128,7 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
                 let sOrderId = getVal(sale, ['orderid', 'id']) || 'N/A'; let tName = getVal(sale, ['tablenumber', 'table', 'tablename']) || "Table"; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getVal(sale, ['items', 'itemsstring']) || ''; let sTime = getVal(sale, ['time']) || ''; let iconStr = tName.includes('Takeaway') ? '🛍️' : (tName.includes('Delivery') ? '🛵' : '🍽️'); 
                 
                 let cleanItemsView = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
-                let itemCount = cleanItemsView.split(', ').length;
+                let itemCount = parseSaleItems(sale).length || (cleanItemsView ? cleanItemsView.split(', ').length : 0);
                 
                 homeRecent.innerHTML += `<div class="h-order-card" onclick="openOrderDetails('${sOrderId}')"><div class="ho-icon">${iconStr}</div><div class="ho-info"><div class="ho-title">Order #${sOrderId}</div><div class="ho-sub">${tName} • ${cleanDisplayTime(sTime)}</div><div class="ho-sub" style="font-weight:600; color:var(--text-dark); margin-top:2px;">${itemCount} Items • ₹${sTotal}</div></div><div class="ho-badge" style="background:#E6F4EA; color:#10B981;">COMPLETED</div><div style="color:#CCC; font-size:1.3rem;">›</div></div>`;
             });
@@ -2225,7 +2165,7 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
         }
 
         function switchMainTab(tabName, btnElement, skipHistory = false) {
-            let htmlMap = { 'premiumDashboard': `Admin View`, 'tableDashboard': `POS Tables`, 'salesDashboard': `Live sale`, 'trendView': `P&L Dashboard`, 'expenses': `Expenses`, 'usersManager': `Admin` };
+            let htmlMap = { 'premiumDashboard': `Admin View`, 'tableDashboard': `POS Tables`, 'salesDashboard': `Live sale`, 'trendView': `P&L Dashboard`, 'expenses': `Expenses`, 'premiumDashboard': `Admin View` };
             if(!skipHistory) { try { history.pushState({view: tabName}, '', '#' + tabName); } catch(e){} }
             
             document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display = 'none'; tab.classList.remove('active'); });
@@ -2240,7 +2180,7 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
             let tickerEl = document.getElementById('pageMainTitle');
             if(tickerEl) {
                 if(tabName === 'tableDashboard') {
-                    tickerEl.style.color = '#A67C52';
+                    tickerEl.style.color = 'var(--text-dark)';
                     tickerEl.style.fontFamily = "'Playfair Display', serif";
                     tickerEl.style.fontStyle = 'italic';
                     tickerEl.style.fontWeight = '700';
@@ -2462,6 +2402,11 @@ const APP_VERSION = "D1-FINAL-ADMIN-VIEW-5.1";
                 
                 printSec.offsetHeight; window.print();
             } catch (e) { console.log(e); }
+        }
+
+        async function requestHistoricalOrderDeletion(){
+            const sale=currentViewingSale;if(!sale)return; const id=getVal(sale,['orderid','order_number','id'])||''; if(!id)return;
+            showCustomConfirm('Send this order for Admin approval before deletion?',async()=>{try{await d1Post('/orders/request-delete',{order_id:id,reason:'Deletion requested from POS',requested_by:localStorage.getItem('viraasat_user')||'Admin'});auditLog('Order Delete Requested',id);document.getElementById('orderDetailsModal').style.display='none';showCustomAlert('Deletion request submitted for Admin approval.');}catch(e){showCustomAlert('Deletion request failed: '+e.message);}},null);
         }
 
         function printHistoricalBill() {
