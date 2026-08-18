@@ -397,6 +397,14 @@
         @media(min-width:601px){.mobile-sale-list{display:none!important}}
 
 
+        /* ===== SELECTED INVENTORY + LEGACY TABLE OCCUPIED STYLE ===== */
+        .inventory-add-row{display:flex;justify-content:flex-end;margin-top:8px}
+        .inventory-add-btn{height:38px;border:1px solid #D6B46A;background:#FFF9E8;color:#1A1A1A;border-radius:10px;padding:0 13px;font-family:inherit;font-size:.72rem;font-weight:800;cursor:pointer}
+        .inventory-add-btn:active{transform:scale(.97)}
+        .inventory-selected-note{font-size:.62rem;color:var(--text-muted);line-height:1.45;margin-top:7px}
+        .status-occ{background:var(--occ-gradient)!important;color:#FFFFFF!important;box-shadow:0 3px 8px rgba(214,180,106,.30)!important;border:none!important}
+        .table-card.occupied{background:var(--occ-bg)!important;border:1.5px solid var(--occ-border)!important}
+
         /* ===== FINAL MOBILE ADMIN / ANALYTICS SYSTEM ===== */
 
         .admin-module-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -460,6 +468,26 @@
             <div class="input-row">
                 <button class="btn btn-outline" onclick="document.getElementById('addTableModal').style.display='none'">Cancel</button>
                 <button class="btn" onclick="confirmAddTable()">Save Table</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADD INVENTORY ITEM MODAL -->
+    <div id="addInventoryItemModal" class="modal-overlay">
+        <div class="bottom-sheet">
+            <div class="sheet-handle"></div>
+            <h3 style="font-size:1.2rem;font-weight:700;margin-bottom:16px;">Add Inventory Item</h3>
+            <div class="form-group">
+                <div class="input-box"><label>Item Name</label><input id="newInvItemName" placeholder="e.g. Lemon Soda"></div>
+                <div class="input-row">
+                    <div class="input-box"><label>Selling Price</label><input id="newInvItemPrice" type="number" min="1" inputmode="decimal" placeholder="₹ Price"></div>
+                    <div class="input-box"><label>Opening QTY</label><input id="newInvItemQty" type="number" min="0" inputmode="numeric" placeholder="0"></div>
+                </div>
+                <div class="input-box"><label>Category</label><input id="newInvItemCategory" placeholder="Other" value="Other"></div>
+            </div>
+            <div class="input-row">
+                <button class="btn btn-outline" onclick="closeAddInventoryItemModal()">Cancel</button>
+                <button class="btn" onclick="addInventoryMenuItem()">Add Item</button>
             </div>
         </div>
     </div>
@@ -1002,7 +1030,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-6.1";
         window.onpopstate = function () {
             enforceBackTrap();
 
-            let modals = ['customAlertModal', 'paymentModal', 'conflictModal', 'orderDetailsModal', 'addTableModal', 'salaryActionModal'];
+            let modals = ['customAlertModal', 'paymentModal', 'conflictModal', 'orderDetailsModal', 'addTableModal', 'addInventoryItemModal', 'salaryActionModal'];
             let modalClosed = false;
             for(let id of modals) { 
                 let m = document.getElementById(id); 
@@ -1317,7 +1345,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-6.1";
             try{
                 if(results[0].status==='fulfilled'){const dash=results[0].value||{};const summary=dash.summary||{},ts=dash.tables||{};document.getElementById('homeTodaySale').innerText=`₹${Math.round(Number(summary.today_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeAvgOrder').innerText=`₹${Math.round(Number(summary.average_order)||0).toLocaleString('en-IN')}`;document.getElementById('homeOverallSale').innerText=`₹${Math.round(Number(summary.overall_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeActiveTables').innerText=`${Number(ts.occupied)||0} / ${Number(ts.total)||tableSections.reduce((a,x)=>a+x.tables.length,0)}`;}else failed.push(['/dashboard',results[0].reason]);
                 if(results[1].status==='fulfilled')menuData=normalizeArray(results[1].value,['items','menu','data','result']);else failed.push(['/menu',results[1].reason]);
-                if(results[2].status==='fulfilled'){const ts=normalizeArray(results[2].value,['tables','data','result']);tableSections=[{title:'Hut Seating',tables:[]},{title:'Ground Seating',tables:[]},{title:'Terrace Seating',tables:[]}];const amap={'Hut Seating':0,'Ground Seating':1,'Terrace Seating':2};runningTables={};ts.forEach(t=>{const n=String(t.table_number??t.tableNumber??'').trim();if(!n)return;const i=amap[String(t.seating_area||t.seatingArea||'').trim()]??1;if(!tableSections[i].tables.includes(n))tableSections[i].tables.push(n);runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied'?[{__d1Occupied:true,orderId:t.current_order_id||t.currentOrderId}]:[];});if(!ts.length)tableSections=[{title:'Hut Seating',tables:['1','2','3','4']},{title:'Ground Seating',tables:['5','6','7']},{title:'Terrace Seating',tables:['8','9','10']}];}else failed.push(['/tables',results[2].reason]);
+                if(results[2].status==='fulfilled'){const ts=normalizeArray(results[2].value,['tables','data','result']);tableSections=[{title:'Hut Seating',tables:[]},{title:'Ground Seating',tables:[]},{title:'Terrace Seating',tables:[]}];const amap={'Hut Seating':0,'Ground Seating':1,'Terrace Seating':2};runningTables={};const globalSeenTables=new Set();ts.forEach(t=>{const n=String(t.table_number??t.tableNumber??'').trim();if(!n)return;const key=n.toLowerCase();if(globalSeenTables.has(key))return;globalSeenTables.add(key);const i=amap[String(t.seating_area||t.seatingArea||'').trim()]??1;if(!tableSections[i].tables.includes(n))tableSections[i].tables.push(n);runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied'?[{__d1Occupied:true,orderId:t.current_order_id||t.currentOrderId}]:[];});tableSections.forEach(sec=>{sec.tables=uniqueItemNames(sec.tables);});if(!ts.length)tableSections=[{title:'Hut Seating',tables:['1','2','3','4']},{title:'Ground Seating',tables:['5','6','7']},{title:'Terrace Seating',tables:['8','9','10']}];}else failed.push(['/tables',results[2].reason]);
                 if(results[3].status==='fulfilled')salesHistory=normalizeArray(results[3].value,['orders','sales','data','result']).map(mapD1Order).filter(Boolean).filter(o=>!['kot','cancelled','deleted'].includes(String(o.order_status||'').toLowerCase()));else failed.push(['/orders',results[3].reason]);
                 Object.keys(runningTables).forEach(key=>{const arr=runningTables[key];if(Array.isArray(arr)&&arr[0]?.__d1Occupied){const oid=String(arr[0].orderId||'');const order=salesHistory.find(o=>String(o.id||'')===oid||String(o.orderid||'')===oid);runningTables[key]=order?parseSaleItems(order):[];}});
                 if(results[4].status==='fulfilled')expenseHistory=normalizeArray(results[4].value,['expenses','data','result']);else failed.push(['/expenses',results[4].reason]);
@@ -1589,91 +1617,50 @@ Tables, billing and existing local UI remain visible.`);}
         }
         function requireAdmin(action='this action'){ if(!window.isUserAdmin){showCustomAlert(`Only Admin can perform ${action}.`);return false;}return true; }
         function stockOptionHtml(selected=''){const names=Object.keys(stockData).sort((a,b)=>a.localeCompare(b));return `<option value="">Select stock item</option>${names.map(n=>`<option value="${esc(n)}" ${String(n).toLowerCase()===String(selected).toLowerCase()?'selected':''}>${esc(n)}</option>`).join('')}`;}
+        const DEFAULT_SELECTED_INVENTORY_ITEMS = [
+            'Advance', 'All season quater', 'Carlsberg Elephant', 'Classic mild',
+            'Coca-Cola Can', 'Connect', 'Gold Flake', 'Gold Flake Light',
+            'King Fisher', 'King Fisher Ultra', 'Mountain Dew 750ml', 'Soda',
+            'Sprite 750ml', 'Tuborg', 'Water Bottle'
+        ];
+        function normalizeItemName(v){return String(v??'').trim().replace(/\s+/g,' ');}
+        function itemKey(v){return normalizeItemName(v).toLowerCase();}
+        function uniqueItemNames(list){const out=[],seen=new Set();(list||[]).forEach(v=>{const n=normalizeItemName(v),k=itemKey(n);if(n&&!seen.has(k)){seen.add(k);out.push(n);}});return out;}
+        function getSelectedInventoryItems(){let saved=[];try{saved=JSON.parse(localStorage.getItem('viraasat_selected_inventory_items')||'[]');}catch(e){saved=[];}if(!Array.isArray(saved)||!saved.length){saved=DEFAULT_SELECTED_INVENTORY_ITEMS.slice();localStorage.setItem('viraasat_selected_inventory_items',JSON.stringify(saved));}return uniqueItemNames(saved);}
+        function saveSelectedInventoryItems(list){localStorage.setItem('viraasat_selected_inventory_items',JSON.stringify(uniqueItemNames(list)));}
+        function findMenuItemByName(name){const k=itemKey(name);return (menuData||[]).find(m=>itemKey(getVal(m,['name','itemname','item']))===k)||null;}
+        function findStockKeyByName(name){const k=itemKey(name);return Object.keys(stockData||{}).find(x=>itemKey(x)===k)||normalizeItemName(name);}
         function getInventoryMenuRows(){
-            const stockKeys=Object.keys(stockData||{});
-            const byName={};
-            stockKeys.forEach(k=>byName[String(k).trim().toLowerCase()]=k);
-            const seen=new Set();
-            const rows=[];
-            (menuData||[]).forEach(m=>{
-                const name=String(getVal(m,['name','itemname','item'])||'').trim();
-                if(!name)return;
-                const key=name.toLowerCase(); if(seen.has(key))return; seen.add(key);
-                const stockKey=byName[key]||name;
-                rows.push({name,stockKey,qty:Number(stockData[stockKey]??0),meta:stockMeta[stockKey]||{}});
-            });
-            return rows.sort((a,b)=>a.name.localeCompare(b.name));
+            const selected=getSelectedInventoryItems(),rows=[];
+            selected.forEach(selectedName=>{const menu=findMenuItemByName(selectedName);const displayName=normalizeItemName(menu?getVal(menu,['name','itemname','item']):selectedName)||selectedName;const stockKey=findStockKeyByName(displayName);const meta=stockMeta[stockKey]||{};rows.push({name:displayName,stockKey,qty:Number(stockData[stockKey]??0),meta,menu});});
+            return rows;
         }
-        function inventoryMenuOptionsHtml(){
-            return `<option value="">Select menu item</option>`+getInventoryMenuRows().map(r=>`<option value="${esc(r.stockKey)}">${esc(r.name)} — QTY ${Number(r.qty)||0}</option>`).join('');
-        }
-        function selectInventoryMenu(stockKey){
-            const row=getInventoryMenuRows().find(r=>String(r.stockKey)===String(stockKey));
-            const current=document.getElementById('invCurrentQty');
-            const input=document.getElementById('invQtyInput');
-            if(!row){if(current)current.innerHTML='Select a menu item';if(input)input.value='';return;}
-            if(current)current.innerHTML=`Current QTY: <b>${Number(row.qty)||0}</b> ${esc(row.meta.unit||'pcs')}`;
-            if(input)input.value=Number(row.qty)||0;
-        }
+        function inventoryMenuOptionsHtml(){return `<option value="">Select menu item</option>`+getInventoryMenuRows().map(r=>`<option value="${esc(r.stockKey)}">${esc(r.name)} — QTY ${Number(r.qty)||0}</option>`).join('');}
+        function selectInventoryMenu(stockKey){const row=getInventoryMenuRows().find(r=>String(r.stockKey)===String(stockKey));const current=document.getElementById('invCurrentQty'),input=document.getElementById('invQtyInput');if(!row){if(current)current.innerHTML='Select a menu item';if(input)input.value='';return;}if(current)current.innerHTML=`Current QTY: <b>${Number(row.qty)||0}</b> ${esc(row.meta.unit||'pcs')}`;if(input)input.value=Number(row.qty)||0;}
         async function updateInventoryQtyFromMenu(){
-            if(!requireAdmin('inventory update'))return;
-            const select=document.getElementById('invMenuSelect');
-            const stockKey=select?.value||'';
-            const row=getInventoryMenuRows().find(r=>String(r.stockKey)===String(stockKey));
-            const qty=Number(document.getElementById('invQtyInput')?.value);
-            if(!row){showCustomAlert('Please select a menu item.');return;}
-            if(!Number.isFinite(qty)||qty<0){showCustomAlert('Enter a valid QTY.');return;}
-            const old=Number(stockData[row.stockKey]??0);
-            const meta=row.meta||{};
-            try{
-                await d1Post('/stock',{name:row.stockKey,quantity:qty,unit:meta.unit||'pcs',low_stock_level:Number(meta.low_stock_level??5),note:'Inventory QTY update',updated_by:localStorage.getItem('viraasat_user')||'Admin'});
-                stockData[row.stockKey]=qty;
-                stockMeta[row.stockKey]={...meta,name:row.stockKey,unit:meta.unit||'pcs',low_stock_level:Number(meta.low_stock_level??5),updated_at:new Date().toISOString()};
-                stockHistory.unshift({item_name:row.stockKey,old_quantity:old,new_quantity:qty,change_quantity:qty-old,action:'UPDATE',note:'Inventory QTY update',updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});
-                auditLog('Inventory QTY Updated',`${row.name}: ${old} → ${qty}`);
-                renderStockDashboard(); renderPremiumInventory();
-                showCustomAlert(`${row.name} QTY updated to ${qty}.`);
-            }catch(e){showCustomAlert('Inventory update failed: '+e.message);}
+            if(!requireAdmin('inventory update'))return;const stockKey=document.getElementById('invMenuSelect')?.value||'';const row=getInventoryMenuRows().find(r=>String(r.stockKey)===String(stockKey));const qty=Number(document.getElementById('invQtyInput')?.value);
+            if(!row){showCustomAlert('Please select a menu item.');return;}if(!Number.isFinite(qty)||qty<0){showCustomAlert('Enter a valid QTY.');return;}
+            const old=Number(stockData[row.stockKey]??0),meta=row.meta||{};try{await d1Post('/stock',{name:row.stockKey,quantity:qty,unit:meta.unit||'pcs',low_stock_level:Number(meta.low_stock_level??5),note:'Inventory QTY update',updated_by:localStorage.getItem('viraasat_user')||'Admin'});stockData[row.stockKey]=qty;stockMeta[row.stockKey]={...meta,name:row.stockKey,unit:meta.unit||'pcs',low_stock_level:Number(meta.low_stock_level??5),updated_at:new Date().toISOString()};stockHistory.unshift({item_name:row.stockKey,old_quantity:old,new_quantity:qty,change_quantity:qty-old,action:'UPDATE',note:'Inventory QTY update',updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});auditLog('Inventory QTY Updated',`${row.name}: ${old} → ${qty}`);renderStockDashboard();renderPremiumInventory();renderPremiumAdmin();showCustomAlert(`${row.name} QTY updated to ${qty}.`);}catch(e){showCustomAlert('Inventory update failed: '+e.message);}
+        }
+        function openAddInventoryItemModal(){if(!requireAdmin('add inventory item'))return;['newInvItemName','newInvItemPrice','newInvItemQty'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});const cat=document.getElementById('newInvItemCategory');if(cat)cat.value='Other';document.getElementById('addInventoryItemModal').style.display='flex';}
+        function closeAddInventoryItemModal(){const e=document.getElementById('addInventoryItemModal');if(e)e.style.display='none';}
+        async function addInventoryMenuItem(){
+            if(!requireAdmin('add inventory item'))return;const name=normalizeItemName(document.getElementById('newInvItemName')?.value);const price=Number(document.getElementById('newInvItemPrice')?.value);const qty=Number(document.getElementById('newInvItemQty')?.value||0);const category=normalizeItemName(document.getElementById('newInvItemCategory')?.value)||'Other';
+            if(!name){showCustomAlert('Enter item name.');return;}if(!Number.isFinite(price)||price<=0){showCustomAlert('Enter a valid selling price.');return;}if(!Number.isFinite(qty)||qty<0){showCustomAlert('Enter a valid opening QTY.');return;}
+            const existing=findMenuItemByName(name);try{let menuItem=existing;if(!menuItem){const r=await d1Post('/menu',{name,category,price,is_available:true});menuItem={id:Number(r.id||0),name,itemname:name,category,price,is_available:1};menuData.push(menuItem);}const stockKey=findStockKeyByName(name);const old=Number(stockData[stockKey]??0);await d1Post('/stock',{name:stockKey,quantity:qty,unit:'pcs',low_stock_level:5,note:'Added from Inventory',updated_by:localStorage.getItem('viraasat_user')||'Admin'});stockData[stockKey]=qty;stockMeta[stockKey]={...(stockMeta[stockKey]||{}),name:stockKey,unit:'pcs',low_stock_level:5,updated_at:new Date().toISOString()};stockHistory.unshift({item_name:stockKey,old_quantity:old,new_quantity:qty,change_quantity:qty-old,action:'ADD',note:'Added from Inventory',updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});const selected=getSelectedInventoryItems();selected.push(name);saveSelectedInventoryItems(selected);populateDropdown();auditLog(existing?'Inventory Item Selected':'Inventory Item Added',`${name} ₹${price}, QTY ${qty}`);closeAddInventoryItemModal();renderStockDashboard();renderPremiumInventory();renderPremiumAdmin();showCustomAlert(existing?`${name} added to selected inventory.`:`${name} added to Menu and Inventory.`);}catch(e){showCustomAlert('Item add failed: '+e.message);}
         }
         function renderPremiumInventory(){
-            const panel=document.getElementById('premiumPanel-inventory');if(!panel)return;
-            if(!window.isUserAdmin){panel.innerHTML='<div class="premium-card"><div class="premium-empty">Inventory control is restricted to Admin.</div></div>';return;}
-            const rows=getInventoryMenuRows();
-            const low=rows.filter(r=>Number(r.qty)<=Number(r.meta?.low_stock_level??5));
-            const out=rows.filter(r=>Number(r.qty)<=0);
-            const totalUnits=rows.reduce((a,r)=>a+Number(r.qty||0),0);
-            panel.innerHTML=`<div class="premium-grid-3" style="margin-bottom:14px">
-                <div class="report-stat"><div class="rlabel">Menu Items</div><div class="rvalue">${rows.length}</div></div>
-                <div class="report-stat"><div class="rlabel">Low Stock</div><div class="rvalue" style="color:#B45309">${low.length}</div></div>
-                <div class="report-stat"><div class="rlabel">Total QTY</div><div class="rvalue">${Math.round(totalUnits)}</div></div>
-            </div>
-            <div class="premium-card" style="margin-bottom:14px">
-                <div class="premium-card-head"><h3>Update Inventory QTY</h3><span>Admin only</span></div>
-                <div class="admin-form-grid">
-                    <select id="invMenuSelect" onchange="selectInventoryMenu(this.value)">${inventoryMenuOptionsHtml()}</select>
-                    <input id="invQtyInput" type="number" min="0" inputmode="numeric" placeholder="New QTY">
-                    <div id="invCurrentQty" class="admin-help" style="display:flex;align-items:center;padding:0 10px;border:1px solid var(--border);border-radius:10px;background:#FAFAFA;min-height:40px;">Select a menu item</div>
-                    <button class="premium-btn" onclick="updateInventoryQtyFromMenu()">Update QTY</button>
-                </div>
-                <div class="admin-help" style="margin-top:8px">Select a menu item, check the current QTY, enter the new QTY and update. No item creation or menu editing is available here.</div>
-            </div>
-            <div class="premium-card">
-                <div class="premium-card-head"><h3>Current Inventory</h3><span>${out.length?`${out.length} out of stock`:'Live QTY'}</span></div>
-                <div class="premium-toolbar"><input id="pStockSearch" placeholder="Search inventory..." oninput="renderPremiumInventoryRows()"></div>
-                <div id="pStockGrid" class="stock-grid"></div>
-            </div>`;
-            renderPremiumInventoryRows();
+            const panel=document.getElementById('premiumPanel-inventory');if(!panel)return;if(!window.isUserAdmin){panel.innerHTML='<div class="premium-card"><div class="premium-empty">Inventory control is restricted to Admin.</div></div>';return;}
+            const rows=getInventoryMenuRows(),low=rows.filter(r=>Number(r.qty)<=Number(r.meta?.low_stock_level??5)),out=rows.filter(r=>Number(r.qty)<=0),totalUnits=rows.reduce((a,r)=>a+Number(r.qty||0),0);
+            panel.innerHTML=`<div class="premium-grid-3" style="margin-bottom:14px"><div class="report-stat"><div class="rlabel">Selected Items</div><div class="rvalue">${rows.length}</div></div><div class="report-stat"><div class="rlabel">Low Stock</div><div class="rvalue" style="color:#B45309">${low.length}</div></div><div class="report-stat"><div class="rlabel">Total QTY</div><div class="rvalue">${Math.round(totalUnits)}</div></div></div>
+            <div class="premium-card" style="margin-bottom:14px"><div class="premium-card-head"><h3>Update Inventory QTY</h3><span>Admin only</span></div><div class="admin-form-grid"><select id="invMenuSelect" onchange="selectInventoryMenu(this.value)">${inventoryMenuOptionsHtml()}</select><input id="invQtyInput" type="number" min="0" inputmode="numeric" placeholder="New QTY"><div id="invCurrentQty" class="admin-help" style="display:flex;align-items:center;padding:0 10px;border:1px solid var(--border);border-radius:10px;background:#FAFAFA;min-height:40px;">Select a menu item</div><button class="premium-btn" onclick="updateInventoryQtyFromMenu()">Update QTY</button></div><div class="inventory-add-row"><button class="inventory-add-btn" onclick="openAddInventoryItemModal()">＋ Add Item</button></div><div class="inventory-selected-note">Only selected inventory items are shown here. Add Item will also add the item to the billing Menu list automatically.</div></div>
+            <div class="premium-card"><div class="premium-card-head"><h3>Current Inventory</h3><span>${out.length?`${out.length} out of stock`:'Live QTY'}</span></div><div class="premium-toolbar"><input id="pStockSearch" placeholder="Search selected inventory..." oninput="renderPremiumInventoryRows()"></div><div id="pStockGrid" class="stock-grid"></div></div>`;renderPremiumInventoryRows();
         }
+        function renderPremiumInventoryRows(){const el=document.getElementById('pStockGrid');if(!el)return;const q=(document.getElementById('pStockSearch')?.value||'').toLowerCase().trim();const e=getInventoryMenuRows().filter(r=>r.name.toLowerCase().includes(q));el.innerHTML=e.map(r=>{const low=Number(r.meta?.low_stock_level??5);return `<div class="stock-box ${Number(r.qty)<=low?'low':''}"><div class="stock-box-name">${esc(r.name)}</div><div class="stock-box-qty">${Number(r.qty)||0}</div><small>${Number(r.qty)<=0?'OUT OF STOCK':Number(r.qty)<=low?'LOW STOCK':'Available'} • ${esc(r.meta?.unit||'pcs')}</small></div>`}).join('')||'<div class="premium-empty" style="grid-column:1/-1">No selected inventory items found.</div>';}
         function loadStockEditor(name){if(!name){resetInventoryEditor(false);return;}const meta=stockMeta[name]||{};document.getElementById('invItemName').value=name;document.getElementById('invItemQty').value=Number(stockData[name]||0);document.getElementById('invItemUnit').value=meta.unit||'pcs';document.getElementById('invItemLow').value=Number(meta.low_stock_level??5);document.getElementById('invItemNote').value='';}
         function resetInventoryEditor(clearSelect=true){if(clearSelect&&document.getElementById('invItemSelect'))document.getElementById('invItemSelect').value='';['invItemName','invItemQty','invItemNote'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});document.getElementById('invItemUnit').value='pcs';document.getElementById('invItemLow').value=5;}
         async function saveInventoryItem(){if(!requireAdmin('inventory update'))return;const name=document.getElementById('invItemName')?.value.trim();const qty=Number(document.getElementById('invItemQty')?.value);const unit=document.getElementById('invItemUnit')?.value.trim()||'pcs';const low=Number(document.getElementById('invItemLow')?.value??5);const note=document.getElementById('invItemNote')?.value.trim()||'Admin stock update';if(!name||!Number.isFinite(qty)||qty<0||!Number.isFinite(low)||low<0){showCustomAlert('Enter valid item, quantity and low-stock level.');return;}const old=Number(stockData[name]??0);const exists=Object.prototype.hasOwnProperty.call(stockData,name);try{await d1Post('/stock',{name,quantity:qty,unit,low_stock_level:low,note,updated_by:localStorage.getItem('viraasat_user')||'Admin'});stockData[name]=qty;stockMeta[name]={...(stockMeta[name]||{}),name,unit,low_stock_level:low,updated_at:new Date().toISOString()};stockHistory.unshift({item_name:name,old_quantity:old,new_quantity:qty,change_quantity:qty-old,action:exists?'UPDATE':'ADD',note,updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});auditLog(exists?'Stock Corrected':'Inventory Item Added',`${name}: ${old} → ${qty} (${note})`);renderStockDashboard();renderPremiumInventory();resetInventoryEditor();showCustomAlert('Inventory saved successfully.');}catch(e){showCustomAlert('Inventory save failed: '+e.message);}}
         function renderInventoryInsights(){const el=document.getElementById('inventoryInsightRows');if(!el)return;const rows=(stockHistory||[]).slice(0,10);el.innerHTML=rows.length?rows.map(r=>`<div class="admin-mini-row"><div><b>${esc(r.item_name||r.name)}</b><small>${esc(r.action||'UPDATE')} • ${esc(r.note||'Stock change')} • ${esc(r.updated_by||'Admin')}</small></div><strong>${Number(r.new_quantity??r.quantity??0)}</strong><small style="display:block;color:var(--text-muted)">${r.created_at?esc(cleanDisplayDate(r.created_at)+' '+cleanDisplayTime(r.created_at)):''}</small></div>`).join(''):'<div class="premium-empty">No stock update history available yet.</div>';}
-        function renderPremiumInventoryRows(){
-            const el=document.getElementById('pStockGrid');if(!el)return;
-            const q=(document.getElementById('pStockSearch')?.value||'').toLowerCase();
-            const e=getInventoryMenuRows().filter(r=>r.name.toLowerCase().includes(q)).sort((a,b)=>Number(a.qty)-Number(b.qty));
-            el.innerHTML=e.map(r=>{const low=Number(r.meta?.low_stock_level??5);return `<div class="stock-box ${Number(r.qty)<=low?'low':''}"><div class="stock-box-name">${esc(r.name)}</div><div class="stock-box-qty">${Number(r.qty)||0}</div><small>${Number(r.qty)<=0?'OUT OF STOCK':Number(r.qty)<=low?'LOW STOCK':'Available'} • ${esc(r.meta?.unit||'pcs')}</small></div>`}).join('')||'<div class="premium-empty" style="grid-column:1/-1">No menu inventory found.</div>';
-        }
         function exportStaff(){downloadCSV(staffData.map(s=>({Emp_ID:getVal(s,['empid','employeeid']),Name:getVal(s,['name']),Role:getVal(s,['role']),Mobile:getVal(s,['mobile','phone']),Monthly_Salary:parseAmount(getVal(s,['monthlysalary','salary'])),Date_of_Joining:getVal(s,['dateofjoining','joindate','date','doj']),Status:getStaffStatus(s)})),'Viraasat-Staff.csv');}
 
         function downloadMenuSample(){downloadCSV([{Name:'Paneer Butter Masala',Category:'Main Course',Price:170,Active:'Yes',Stock:20},{Name:'Tea',Category:'Beverage',Price:20,Active:'Yes',Stock:50},{Name:'Aloo Paratha',Category:'Breakfast',Price:60,Active:'Yes',Stock:15}],'Viraasat-Menu-Sample.csv');}
@@ -1812,6 +1799,10 @@ Tables, billing and existing local UI remain visible.`);}
             const logBox=document.getElementById('auditLogsBox');
             if(logBox)logBox.innerHTML=logs.length?logs.slice(0,40).map(l=>`<div class="audit-row"><b>${esc(l.action)}</b><span>${esc(l.details)} • ${esc(l.user)} • ${new Date(l.timestamp).toLocaleString('en-IN')}</span></div>`).join(''):'<div class="premium-empty">No activity logged yet.</div>';
         }
+        // Admin must never appear blank because an optional admin widget failed.
+        const _renderPremiumAdminOriginal=renderPremiumAdmin;
+        renderPremiumAdmin=function(){const panel=document.getElementById('premiumPanel-settings');if(!panel)return;try{_renderPremiumAdminOriginal();}catch(e){console.error('Admin view error',e);panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Admin Control</h3><span>Secure management</span></div><div class="premium-empty" style="color:var(--danger)">Admin view failed to render. Refresh data and open Admin again.</div></div>`;}};
+
         function renderAdminStockRows(){const el=document.getElementById('adminStockMiniList');if(!el)return;const rows=Object.entries(stockData).sort((a,b)=>Number(a[1])-Number(b[1])).slice(0,15);el.innerHTML=rows.map(([name,qty])=>{const low=Number(stockMeta[name]?.low_stock_level??5);return `<div class="admin-mini-row" onclick="loadAdminStockSelect('${esc(name)}')" style="cursor:pointer"><div><b>${esc(name)}</b><small>${Number(qty)<=0?'OUT OF STOCK':Number(qty)<=low?'Low stock':'Available'} • Last update ${stockMeta[name]?.updated_at?esc(cleanDisplayDate(stockMeta[name].updated_at)):'—'}</small></div><strong>${Number(qty)||0}</strong></div>`}).join('')||'<div class="premium-empty">No stock data.</div>';}
         function loadAdminStockSelect(name){if(!name){resetAdminStockForm(false);return;}const m=stockMeta[name]||{};document.getElementById('adminStockSearch').value=name;document.getElementById('adminStockQty').value=Number(stockData[name]||0);document.getElementById('adminStockLow').value=Number(m.low_stock_level??5);}
         function syncAdminStockSearch(v){const sel=document.getElementById('adminStockSelect');if(sel){const opt=[...sel.options].find(o=>o.value.toLowerCase()===String(v).trim().toLowerCase());sel.value=opt?opt.value:'';}}
@@ -2053,9 +2044,11 @@ Tables, billing and existing local UI remain visible.`);}
             trendChartInstance = new Chart(ctx, { type: 'line', data: { labels: finalLabels, datasets: [ { label: 'Sales (₹)', data: finalSales, borderColor: '#07CDAE', backgroundColor: 'rgba(7, 205, 174, 0.15)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#07CDAE', pointRadius: 4 }, { label: 'Expenses (₹)', data: finalExp, borderColor: '#10B981', backgroundColor: 'rgba(16, 185, 129, 0.12)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#10B981', pointRadius: 4 } ] }, options: { responsive: true, maintainAspectRatio: false } });
         }
 
-        function populateDropdown() { 
-            const datalist = document.getElementById('menuItemsList'); datalist.innerHTML = ""; 
-            menuData.forEach(item => { let itemName = getVal(item, ['itemname', 'name']); if(itemName) { let option = document.createElement('option'); option.value = itemName; datalist.appendChild(option); } }); 
+        function populateDropdown() {
+            const datalist=document.getElementById('menuItemsList');if(!datalist)return;datalist.innerHTML='';
+            const names=[];getSelectedInventoryItems().forEach(n=>{const m=findMenuItemByName(n);names.push(normalizeItemName(m?getVal(m,['itemname','name','item']):n));});
+            (menuData||[]).forEach(item=>names.push(normalizeItemName(getVal(item,['itemname','name','item']))));
+            uniqueItemNames(names).forEach(itemName=>{const option=document.createElement('option');option.value=itemName;datalist.appendChild(option);});
         }
 
         function renderStockDashboard() { 
@@ -2113,7 +2106,10 @@ Tables, billing and existing local UI remain visible.`);}
                 homeRecent.innerHTML+=`<div class="h-order-card" onclick="openOrderDetails('${esc(id)}')"><div class="ho-icon">🍽️</div><div class="ho-info"><div class="ho-title">Order #${esc(id)}</div><div class="ho-sub">${esc(table)} • ${esc(saleTimeText(s))}</div><div class="ho-sub" style="font-weight:700;color:var(--text-dark);margin-top:2px">${items.length?items.map(i=>`${esc(i.name)} ×${i.qty}`).join(', '):'Item details unavailable'}</div></div><span class="recent-order-value">${money(grand)}</span><div class="ho-badge" style="background:#E6F4EA;color:#10B981">COMPLETED</div><div>›</div></div>`;
             });
         }
+        function normalizeTableSections(){const seen=new Set();(tableSections||[]).forEach(sec=>{sec.tables=uniqueItemNames((sec.tables||[]).filter(n=>{const k=String(n).trim().toLowerCase();if(seen.has(k))return false;seen.add(k);return true;}));});try{localStorage.setItem('viraasat_table_sections',JSON.stringify(tableSections));}catch(e){}}
+
         function renderTableGrid() {
+            normalizeTableSections();
             const gridContainer = document.getElementById('tableGrid'); gridContainer.innerHTML = ""; let activeCount = 0; let totalCount = 0;
             tableSections.forEach((section) => {
                 gridContainer.innerHTML += `<div class="section-header"><h4>${section.title}</h4></div>`; let gridHTML = '<div class="table-grid" style="margin-bottom:24px;">'; 
@@ -2138,9 +2134,10 @@ Tables, billing and existing local UI remain visible.`);}
         function confirmAddTable() { 
             let catIdx = document.getElementById('newTableCategory').value; let tNum = document.getElementById('newTableNumber').value.trim(); 
             if(!tNum) { showCustomAlert("Please enter a table number."); return; } 
-            let isDuplicate = false; tableSections.forEach(sec => { if(sec.tables.includes(tNum)) isDuplicate = true; }); 
-            if(isDuplicate) { showCustomAlert("Table " + tNum + " already exists!"); return; } 
-            tableSections[catIdx].tables.push(tNum); localStorage.setItem('viraasat_table_sections', JSON.stringify(tableSections)); document.getElementById('addTableModal').style.display = 'none'; renderTableGrid(); 
+            const tableKey=String(tNum).trim().toLowerCase();
+            const isDuplicate=tableSections.some(sec=>(sec.tables||[]).some(n=>String(n).trim().toLowerCase()===tableKey));
+            if(isDuplicate) { showCustomAlert("Table " + tNum + " already exists!"); return; }
+            tableSections[catIdx].tables.push(tNum);tableSections.forEach(sec=>{sec.tables=uniqueItemNames(sec.tables);});localStorage.setItem('viraasat_table_sections', JSON.stringify(tableSections));document.getElementById('addTableModal').style.display = 'none';renderTableGrid(); 
         }
 
         function switchMainTab(tabName, btnElement, skipHistory = false) {
