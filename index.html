@@ -236,7 +236,7 @@
         .stock-box{border:1px solid var(--border);border-radius:14px;padding:13px;background:#fff}
         .stock-box.low{border-color:#F1B6C1;background:#FFF8F9}.stock-box-name{font-size:.74rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.stock-box-qty{font-size:1.15rem;font-weight:900;margin-top:7px}.stock-box small{font-size:.62rem;color:var(--text-muted)}
         .admin-order-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.admin-order-card{border:1px solid var(--border);border-radius:14px;padding:14px;background:#fff;cursor:pointer;transition:.15s}.admin-order-card:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,.06)}.admin-order-title{font-size:1rem;font-weight:900}.admin-order-id{font-size:.72rem;color:#756f68;margin-top:4px}.admin-order-items{font-size:.78rem;line-height:1.45;color:#746d65;margin-top:12px;min-height:42px}.admin-order-bottom{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px}.admin-order-time{font-size:.72rem;font-weight:800;background:#f4f0ea;border:1px solid #e6dfd5;border-radius:8px;padding:8px 10px}.admin-order-total{font-size:1rem;font-weight:900;color:#f06b00;background:#fff0d7;border:1px solid #ffd27a;border-radius:9px;padding:8px 12px}.modal-overlay .modal-card{background:#fff !important;opacity:1 !important;color:var(--text-dark);border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.18);backdrop-filter:none}.expense-detail-row{background:#fff}.expense-detail-value{color:var(--text-dark)}
-.expense-click-card{cursor:pointer}.expense-detail-row{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}.expense-detail-label{font-size:.72rem;color:var(--text-muted)}.expense-detail-value{font-weight:800;text-align:right}.approval-row{display:flex;justify-content:space-between;align-items:center;gap:10px}.approval-row+.approval-row{margin-top:8px}@media(max-width:700px){.admin-order-grid{grid-template-columns:1fr}}
+.expense-click-card{cursor:pointer}.expense-detail-row{display:grid;grid-template-columns:110px 1fr;gap:18px;align-items:start;padding:14px 4px;border-bottom:1px solid #e9e3db;background:#fff !important}.expense-detail-label{font-size:.78rem;color:#817a72;font-weight:600}.expense-detail-value{font-weight:800;text-align:right;color:#211d1a !important;word-break:break-word}.approval-row{display:flex;justify-content:space-between;align-items:center;gap:10px}.approval-row+.approval-row{margin-top:8px}@media(max-width:700px){.admin-order-grid{grid-template-columns:1fr}}
         .status-toggle{border:0;border-radius:999px;padding:6px 10px;font-size:.64rem;font-weight:900;cursor:pointer}
         .status-toggle.active{background:#E8F7EF;color:#0B8F55}.status-toggle.inactive{background:#FFF0F2;color:#C92E48}
         .staff-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
@@ -529,10 +529,10 @@
     </div>
 
     <!-- CUSTOM THREE BUTTON MODAL (For Salary Print) -->
-    <div id="expenseDetailsModal" class="modal-overlay" style="z-index:100000; align-items:center;">
-        <div class="modal-card" style="max-width:520px; width:calc(100% - 28px);">
-            <div class="modal-header"><h3>Expense Details</h3><button class="icon-btn" onclick="document.getElementById('expenseDetailsModal').style.display='none'">×</button></div>
-            <div id="expenseDetailsBody"></div>
+    <div id="expenseDetailsModal" class="modal-overlay" style="z-index:100000; align-items:center; background:rgba(0,0,0,.55);">
+        <div class="modal-card expense-detail-modal-card" style="max-width:560px; width:calc(100% - 28px); background:#fff !important; opacity:1 !important; color:#211d1a !important; padding:20px; border-radius:18px;">
+            <div class="modal-header" style="margin-bottom:14px;"><h3 style="margin:0;color:#211d1a;">Expense Details</h3><button class="icon-btn" onclick="document.getElementById('expenseDetailsModal').style.display='none'">×</button></div>
+            <div id="expenseDetailsBody" style="background:#fff !important; color:#211d1a !important;"></div>
         </div>
     </div>
 
@@ -1331,7 +1331,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
         }
 
         async function fetchData(){
-            const loader=document.getElementById('loader');const expDate=document.getElementById('expDate');if(expDate&&!expDate.value)expDate.value=localISODate(new Date());const ef=document.getElementById('expFilterFrom'),et=document.getElementById('expFilterTo');if(ef&&et){ef.value='';et.value='';}loader.style.display='flex';loader.innerHTML='<div class="spinner"></div> <span>Syncing...</span>';
+            const loader=document.getElementById('loader');const expDate=document.getElementById('expDate');if(expDate&&!expDate.value)expDate.value=localISODate(new Date());const ef=document.getElementById('expFilterFrom'),et=document.getElementById('expFilterTo');if(ef&&et){ef.value='';et.value='';}loader.style.display='flex';loader.innerHTML='<div class="spinner"></div> <span>Syncing Viraasat D1...</span>';
             const defs=[['/dashboard',d1Get('/dashboard')],['/menu',d1Get('/menu')],['/tables',d1Get('/tables')],['/orders',d1Get('/orders?limit=1000')],['/expenses',d1Get('/expenses?limit=2000')],['/stock',d1Get('/stock')],['/staff',d1Get('/staff')],['/stock/history',d1Get('/stock/history?limit=100')]];const results=await Promise.allSettled(defs.map(x=>x[1]));const failed=[];
             try{
                 if(results[0].status==='fulfilled'){const dash=results[0].value||{};const summary=dash.summary||{},ts=dash.tables||{};document.getElementById('homeTodaySale').innerText=`₹${Math.round(Number(summary.today_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeAvgOrder').innerText=`₹${Math.round(Number(summary.average_order)||0).toLocaleString('en-IN')}`;document.getElementById('homeOverallSale').innerText=`₹${Math.round(Number(summary.overall_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeActiveTables').innerText=`${Number(ts.occupied)||0} / ${Number(ts.total)||tableSections.reduce((a,x)=>a+x.tables.length,0)}`;}else failed.push(['/dashboard',results[0].reason]);
@@ -1456,12 +1456,23 @@ Tables, billing and existing local UI remain visible.`);}
             try{state=JSON.parse(localStorage.getItem('viraasat_staff_status')||'{}')}catch(e){}
             try{removed=JSON.parse(localStorage.getItem('viraasat_removed_staff')||'[]')}catch(e){}
             const removedSet=new Set(removed.map(String));
+            const seenMobile=new Set(), seenName=new Set();
             staffData=staffData.filter(s=>{
-                const key=String(getVal(s,['empid','employeeid','mobile','phone','name'])||'');
-                return !removedSet.has(key);
+                const key=String(getVal(s,['id','empid','employeeid','mobile','phone','name'])||'');
+                const rawActive=getVal(s,['is_active','isactive','active','status']);
+                const d1Active=!(String(rawActive??'1').toLowerCase()==='0'||String(rawActive??'').toLowerCase()==='false'||String(rawActive??'').toLowerCase()==='inactive');
+                const mobile=String(getVal(s,['mobile','phone'])||'').replace(/\D/g,'');
+                const name=String(getVal(s,['name'])||'').trim().toLowerCase();
+                if(!d1Active || removedSet.has(key)) return false;
+                if((mobile && seenMobile.has(mobile)) || (name && seenName.has(name))) return false;
+                if(mobile) seenMobile.add(mobile);
+                if(name) seenName.add(name);
+                return true;
             }).map(s=>{
-                const key=String(getVal(s,['empid','employeeid','mobile','phone','name'])||'');
-                return {...s,__status:state[key]||'active'};
+                const key=String(getVal(s,['id','empid','employeeid','mobile','phone','name'])||'');
+                const rawActive=getVal(s,['is_active','isactive','active','status']);
+                const d1Active=!(String(rawActive??'1').toLowerCase()==='0'||String(rawActive??'').toLowerCase()==='false'||String(rawActive??'').toLowerCase()==='inactive');
+                return {...s,__status:d1Active?(state[key]||'active'):'inactive'};
             });
         }
 
@@ -2036,7 +2047,7 @@ Tables, billing and existing local UI remain visible.`);}
                     <button class="premium-btn" onclick="adminAddMenuUnified()">Add Menu Item</button>
                 </div>
                 <div class="premium-toolbar compact-toolbar" style="margin-top:8px">
-                    <button class="premium-btn light" onclick="downloadMenuSample()">Menu Sample</button>
+                    
                     <label class="premium-btn alt upload-label">Upload Menu<input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleMenuUpload(this.files[0])"></label>
                     <button class="premium-btn light" onclick="exportMenu()">Export Menu</button>
                 </div>
@@ -2277,7 +2288,7 @@ Tables, billing and existing local UI remain visible.`);}
                 {Date:'2026-08-14',Time:'1:20 PM',Order_ID:'ORD-EXAMPLE-001',Phone:'NA',Items:'Tea (x2) ₹40, Classic Mild (x1) ₹30, [Mode: UPI]',Total_Amount:70,Table_Number:'Table 1',Discount:0,Payment_Mode:'UPI'}
             ];
             const menu=[{Name:'Paneer Butter Masala',Category:'Main Course',Price:170,Active:'Yes',GST:0}];
-            const staff=[{Emp_ID:'EMP001',Name:'Sample Staff',Role:'Waiter',Mobile:'9999999999',Monthly_Salary:15000,Date_of_Joining:'2026-08-01',Status:'Active'}];
+            const staff=[];
             const stock=[{Name:'Water Bottle',Quantity:50,Unit:'pcs',Low_Stock_Level:5}];
             const expenses=[{Date:'2026-08-14',Category:'Electricity',Description:'Sample expense',Amount:1000}];
             [
