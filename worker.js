@@ -1268,6 +1268,17 @@ var worker_default = {
           WHERE id=?
         `).bind(status, reviewedBy, requestId).run();
 
+        if (String(targetOrder).startsWith("STAFF:")) {
+          const staffId = num(String(targetOrder).slice(6));
+          if (!staffId) return json({success:false,error:"Invalid staff approval target"},400);
+          const staffExists = await db.prepare(`SELECT id FROM staff WHERE id=? LIMIT 1`).bind(staffId).first();
+          if (!staffExists) return json({success:false,error:"Staff record not found"},404);
+          if (status === "approved") {
+            await db.prepare(`UPDATE staff SET is_active=0, updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(staffId).run();
+          }
+          return json({success:true,message:`Staff removal request ${status}`,staff_id:staffId,status});
+        }
+
         const orderCols = await getColumns(db,"orders");
         if (orderCols.includes("order_status")) {
           const nextStatus = status === "approved" ? "deleted" : "completed";
