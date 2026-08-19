@@ -1337,12 +1337,31 @@ var worker_default = {
         if (String(targetOrder).startsWith("STAFF:")) {
           const staffId = num(String(targetOrder).slice(6));
           if (!staffId) return json({success:false,error:"Invalid staff approval target"},400);
-          const staffExists = await db.prepare(`SELECT id FROM staff WHERE id=? LIMIT 1`).bind(staffId).first();
-          if (!staffExists) return json({success:false,error:"Staff record not found"},404);
+          const staffRow = await db.prepare(`SELECT id, name, mobile, is_active FROM staff WHERE id=? LIMIT 1`).bind(staffId).first();
+          if (!staffRow) return json({success:false,error:"Staff record not found"},404);
           if (status === "approved") {
-            await db.prepare(`UPDATE staff SET is_active=0, updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(staffId).run();
+            // Remove the selected employee and any duplicate record carrying the same
+            // mobile/name. This prevents a duplicate row from making a successful
+            // approval look like the employee was not removed.
+            const mobile = String(staffRow.mobile || '').replace(/\D/g,'');
+            const name = String(staffRow.name || '').trim().toLowerCase();
+            let result;
+            if (mobile) {
+              result = await db.prepare(`
+                UPDATE staff SET is_active=0, updated_at=CURRENT_TIMESTAMP
+                WHERE REPLACE(REPLACE(REPLACE(REPLACE(COALESCE(mobile,''),' ',''),'-',''),'+',''), '(', '') LIKE ?
+                   OR id=?
+              `).bind(`%${mobile}%`, staffId).run();
+            } else {
+              result = await db.prepare(`
+                UPDATE staff SET is_active=0, updated_at=CURRENT_TIMESTAMP
+                WHERE LOWER(TRIM(COALESCE(name,'')))=? OR id=?
+              `).bind(name, staffId).run();
+            }
+            const affected = Number(result?.meta?.changes || result?.changes || 1);
+            return json({success:true,message:`Staff removal approved. ${affected} duplicate/linked record${affected===1?'':'s'} removed.`,staff_id:staffId,status,affected});
           }
-          return json({success:true,message:`Staff removal request ${status}`,staff_id:staffId,status});
+          return json({success:true,message:`Staff removal request rejected`,staff_id:staffId,status,affected:0});
         }
 
         const orderCols = await getColumns(db,"orders");
