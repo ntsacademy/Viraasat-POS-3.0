@@ -200,6 +200,10 @@ async function ensureSupportTables(db) {
         AND COALESCE(d.created_at,'')=COALESCE(a.created_at,'')
     )
   `).run();
+  // Legacy rows are copied into the canonical deletion_requests table above.
+  // Mark legacy pending rows as migrated so the approval API never returns duplicate
+  // request IDs from two tables (which previously caused Approve/Reject to target the wrong row).
+  await db.prepare(`UPDATE approval_requests SET status='migrated' WHERE LOWER(COALESCE(status,'pending'))='pending'`).run();
 
   // Migration-safe: older Viraasat databases may already have deletion_requests
   // without the newer review/request metadata columns.
@@ -1284,20 +1288,7 @@ var worker_default = {
           WHERE LOWER(COALESCE(status,'pending'))='pending'
           ORDER BY id DESC
         `).all();
-        let rows = Array.isArray(requests.results) ? requests.results : [];
-        // Final compatibility read: surface pending rows from the legacy table too.
-        const legacy = await db.prepare(`
-          SELECT id, order_id, requested_by, reason, status, reviewed_by, reviewed_at, created_at
-          FROM approval_requests
-          WHERE LOWER(COALESCE(status,'pending'))='pending'
-          ORDER BY id DESC
-        `).all();
-        const seen = new Set(rows.map(r=>`${r.order_id}|${r.created_at||''}`));
-        for (const r of (legacy.results||[])) {
-          const key=`${r.order_id}|${r.created_at||''}`;
-          if(!seen.has(key)) rows.push(r);
-        }
-        rows.sort((a,b)=>Number(b.id||0)-Number(a.id||0));
+        const rows = Array.isArray(requests.results) ? requests.results : [];
         return json({success:true,count:rows.length,requests:rows});
       }
       if (path === "/api/approvals/debug" && method === "GET") {
