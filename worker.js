@@ -473,22 +473,31 @@ async function getStock(db) {
 __name(getStock, "getStock");
 async function getStaff(db) {
   await ensureSupportTables(db);
+  // Portal should show only active staff. Removed/inactive staff remain in D1
+  // for historical integrity but must not reappear after a refresh.
   const result = await db.prepare(`
     SELECT
-      id,
-      name,
-      mobile,
-      role,
-      salary,
-      join_date,
-      is_active,
-      created_at
+      id, name, mobile, role, salary, join_date, is_active, created_at
     FROM staff
-    ORDER BY
-      COALESCE(is_active,1) DESC,
-      name
+    WHERE COALESCE(is_active,1)=1
+      AND LOWER(TRIM(COALESCE(name,''))) NOT LIKE 'sample %'
+      AND LOWER(TRIM(COALESCE(name,''))) <> 'sample'
+    ORDER BY name, id DESC
   `).all();
-  return result.results || [];
+
+  // Defensive de-duplication: same mobile OR same normalized name is one portal record.
+  const seenMobile = new Set();
+  const seenName = new Set();
+  const out = [];
+  for (const row of (result.results || [])) {
+    const mobile = String(row.mobile || '').replace(/\D/g,'');
+    const name = String(row.name || '').trim().toLowerCase();
+    if ((mobile && seenMobile.has(mobile)) || (name && seenName.has(name))) continue;
+    if (mobile) seenMobile.add(mobile);
+    if (name) seenName.add(name);
+    out.push(row);
+  }
+  return out;
 }
 __name(getStaff, "getStaff");
 async function getDashboard(db) {
@@ -1328,11 +1337,6 @@ var worker_default = {
         }
 
         const targetOrder = orderId || clean(reqRow.order_id);
-        await db.prepare(`
-          UPDATE ${sourceTable}
-          SET status=?, reviewed_by=?, reviewed_at=CURRENT_TIMESTAMP
-          WHERE id=?
-        `).bind(status, reviewedBy, requestId).run();
 
         if (String(targetOrder).startsWith("STAFF:")) {
           const staffId = num(String(targetOrder).slice(6));
@@ -1358,11 +1362,29 @@ var worker_default = {
                 WHERE LOWER(TRIM(COALESCE(name,'')))=? OR id=?
               `).bind(name, staffId).run();
             }
-            const affected = Number(result?.meta?.changes || result?.changes || 1);
-            return json({success:true,message:`Staff removal approved. ${affected} duplicate/linked record${affected===1?'':'s'} removed.`,staff_id:staffId,status,affected});
+            const affected = Number(result?.meta?.changes || result?.changes || 0);
+            if (affected < 1) return json({success:false,error:"Staff record could not be deactivated"},500);
+          }
+
+          // Only mark the approval resolved after the protected action succeeded.
+          await db.prepare(`
+            UPDATE ${sourceTable}
+            SET status=?, reviewed_by=?, reviewed_at=CURRENT_TIMESTAMP
+            WHERE id=?
+          `).bind(status, reviewedBy, requestId).run();
+
+          if (status === "approved") {
+            return json({success:true,message:`Staff removal approved and removed from POS.`,staff_id:staffId,status,affected:1});
           }
           return json({success:true,message:`Staff removal request rejected`,staff_id:staffId,status,affected:0});
         }
+
+        // Orders: resolve the approval and then apply the order status.
+        await db.prepare(`
+          UPDATE ${sourceTable}
+          SET status=?, reviewed_by=?, reviewed_at=CURRENT_TIMESTAMP
+          WHERE id=?
+        `).bind(status, reviewedBy, requestId).run();
 
         const orderCols = await getColumns(db,"orders");
         if (orderCols.includes("order_status")) {
