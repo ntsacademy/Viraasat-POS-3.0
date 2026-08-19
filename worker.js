@@ -87,6 +87,19 @@ async function getColumns(db, table) {
   return (result.results || []).map((row) => row.name);
 }
 __name(getColumns, "getColumns");
+async function ensureColumn(db, table, column, definition) {
+  const cols = await getColumns(db, table);
+  if (!cols.includes(column)) {
+    try {
+      await db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`).run();
+    } catch (e) {
+      // If another request added it concurrently, continue; otherwise surface the error.
+      const colsAfter = await getColumns(db, table);
+      if (!colsAfter.includes(column)) throw e;
+    }
+  }
+}
+__name(ensureColumn, "ensureColumn");
 async function ensureSupportTables(db) {
   await db.prepare(`
     CREATE TABLE IF NOT EXISTS stock_items (
@@ -161,6 +174,41 @@ async function ensureSupportTables(db) {
     )
   `).run();
   await db.prepare(`CREATE INDEX IF NOT EXISTS idx_deletion_requests_pending ON deletion_requests(order_id,status)`).run();
+
+  // Legacy compatibility: an earlier approval build used approval_requests.
+  // Keep it readable and migrate any unresolved requests into the canonical table.
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS approval_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id TEXT NOT NULL,
+      reason TEXT,
+      requested_by TEXT,
+      status TEXT DEFAULT 'pending',
+      reviewed_by TEXT,
+      reviewed_at TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_approval_requests_status ON approval_requests(status)`).run();
+  await db.prepare(`
+    INSERT INTO deletion_requests (order_id, requested_by, reason, status, reviewed_by, reviewed_at, created_at)
+    SELECT a.order_id, a.requested_by, a.reason, COALESCE(a.status,'pending'), a.reviewed_by, a.reviewed_at, a.created_at
+    FROM approval_requests a
+    WHERE NOT EXISTS (
+      SELECT 1 FROM deletion_requests d
+      WHERE d.order_id=a.order_id
+        AND COALESCE(d.created_at,'')=COALESCE(a.created_at,'')
+    )
+  `).run();
+
+  // Migration-safe: older Viraasat databases may already have deletion_requests
+  // without the newer review/request metadata columns.
+  await ensureColumn(db, "deletion_requests", "requested_by", "TEXT");
+  await ensureColumn(db, "deletion_requests", "reason", "TEXT");
+  await ensureColumn(db, "deletion_requests", "status", "TEXT DEFAULT 'pending'");
+  await ensureColumn(db, "deletion_requests", "reviewed_by", "TEXT");
+  await ensureColumn(db, "deletion_requests", "reviewed_at", "TEXT");
+  await ensureColumn(db, "deletion_requests", "created_at", "TEXT DEFAULT CURRENT_TIMESTAMP");
 }
 __name(ensureSupportTables, "ensureSupportTables");
 async function getMenu(db) {
@@ -1029,7 +1077,7 @@ var worker_default = {
           routes:[
             "GET /api/health","GET /api/test-db","GET /api/dashboard","GET /api/menu","POST /api/menu",
             "GET /api/tables","POST /api/tables/clear","GET /api/orders","POST /api/orders","POST /api/orders/checkout",
-            "POST /api/orders/request-delete","GET /api/approvals","POST /api/approvals/resolve",
+            "POST /api/orders/request-delete","GET /api/approvals","GET /api/approvals/debug","POST /api/approvals/resolve",
             "GET /api/expenses","POST /api/expenses","GET /api/staff","POST /api/staff","POST /api/staff/update",
             "POST /api/staff/remove","POST /api/staff/status","POST /api/import/full"
           ]
@@ -1229,18 +1277,40 @@ var worker_default = {
         });
       }
       if (path === "/api/approvals" && method === "GET") {
-        await ensureSupportTables(
-          db
-        );
+        await ensureSupportTables(db);
         const requests = await db.prepare(`
-            SELECT *
-            FROM deletion_requests
-            WHERE status = 'pending'
-            ORDER BY id DESC
-          `).all();
+          SELECT id, order_id, requested_by, reason, status, reviewed_by, reviewed_at, created_at
+          FROM deletion_requests
+          WHERE LOWER(COALESCE(status,'pending'))='pending'
+          ORDER BY id DESC
+        `).all();
+        let rows = Array.isArray(requests.results) ? requests.results : [];
+        // Final compatibility read: surface pending rows from the legacy table too.
+        const legacy = await db.prepare(`
+          SELECT id, order_id, requested_by, reason, status, reviewed_by, reviewed_at, created_at
+          FROM approval_requests
+          WHERE LOWER(COALESCE(status,'pending'))='pending'
+          ORDER BY id DESC
+        `).all();
+        const seen = new Set(rows.map(r=>`${r.order_id}|${r.created_at||''}`));
+        for (const r of (legacy.results||[])) {
+          const key=`${r.order_id}|${r.created_at||''}`;
+          if(!seen.has(key)) rows.push(r);
+        }
+        rows.sort((a,b)=>Number(b.id||0)-Number(a.id||0));
+        return json({success:true,count:rows.length,requests:rows});
+      }
+      if (path === "/api/approvals/debug" && method === "GET") {
+        await ensureSupportTables(db);
+        const all = await db.prepare(`
+          SELECT id, order_id, requested_by, reason, status, reviewed_by, reviewed_at, created_at
+          FROM deletion_requests
+          ORDER BY id DESC LIMIT 50
+        `).all();
         return json({
-          success: true,
-          requests: requests.results || []
+          success:true,
+          count:(all.results||[]).length,
+          requests:all.results||[]
         });
       }
       if (path === "/api/approvals/resolve" && method === "POST") {
@@ -1255,7 +1325,12 @@ var worker_default = {
           return json({ success:false, error:"Valid request_id and status (approved/rejected) are required" },400);
         }
 
-        const reqRow = await db.prepare(`SELECT * FROM deletion_requests WHERE id=? LIMIT 1`).bind(requestId).first();
+        let reqRow = await db.prepare(`SELECT * FROM deletion_requests WHERE id=? LIMIT 1`).bind(requestId).first();
+        let sourceTable = 'deletion_requests';
+        if (!reqRow) {
+          reqRow = await db.prepare(`SELECT * FROM approval_requests WHERE id=? LIMIT 1`).bind(requestId).first();
+          sourceTable = 'approval_requests';
+        }
         if (!reqRow) return json({ success:false, error:"Approval request not found" },404);
         if (clean(reqRow.status).toLowerCase() !== "pending") {
           return json({ success:false, error:"Approval request is already resolved" },409);
@@ -1263,7 +1338,7 @@ var worker_default = {
 
         const targetOrder = orderId || clean(reqRow.order_id);
         await db.prepare(`
-          UPDATE deletion_requests
+          UPDATE ${sourceTable}
           SET status=?, reviewed_by=?, reviewed_at=CURRENT_TIMESTAMP
           WHERE id=?
         `).bind(status, reviewedBy, requestId).run();
@@ -1684,16 +1759,52 @@ var worker_default = {
         await ensureSupportTables(db);
         const body = await request.json();
         const id = num(body.id || body.staff_id || body.staffId);
-        if (!id) return json({ success:false, error:"Staff ID required" },400);
+        const requestedBy = clean(body.requested_by || body.requestedBy) || "Admin";
+        if (!id) return json({success:false,error:"Staff ID required"},400);
 
-        const existing = await db.prepare(`SELECT id, name, is_active FROM staff WHERE id=? LIMIT 1`).bind(id).first();
-        if (!existing) return json({ success:false, error:"Staff record not found" },404);
+        const existing = await db.prepare(
+          `SELECT id, name, is_active FROM staff WHERE id=? LIMIT 1`
+        ).bind(id).first();
+        if (!existing) return json({success:false,error:"Staff record not found"},404);
+        if (Number(existing.is_active) === 0) {
+          return json({success:true,already_removed:true,id,name:existing.name,is_active:0});
+        }
 
-        await db.prepare(`
-          UPDATE staff SET is_active=0, updated_at=CURRENT_TIMESTAMP WHERE id=?
-        `).bind(id).run();
+        const target = `STAFF:${id}`;
+        const pending = await db.prepare(`
+          SELECT id, order_id, requested_by, reason, status, created_at
+          FROM deletion_requests
+          WHERE order_id=? AND status='pending'
+          ORDER BY id DESC LIMIT 1
+        `).bind(target).first();
 
-        return json({ success:true, removed:true, id, name:existing.name, is_active:0 });
+        if (pending) {
+          return json({
+            success:true,
+            already_pending:true,
+            request_id:pending.id,
+            order_id:target,
+            message:"Staff removal request is already pending approval"
+          });
+        }
+
+        const result = await db.prepare(`
+          INSERT INTO deletion_requests
+            (order_id, requested_by, reason, status)
+          VALUES (?, ?, ?, 'pending')
+        `).bind(
+          target,
+          requestedBy,
+          `Staff removal: ${clean(existing.name) || "Staff"}`
+        ).run();
+
+        return json({
+          success:true,
+          pending:true,
+          request_id:result.meta?.last_row_id ?? result.lastInsertRowid ?? null,
+          order_id:target,
+          message:"Staff removal request submitted for Admin approval"
+        });
       }
       if (path === "/api/staff/status" && method === "POST") {
         await ensureSupportTables(db);
