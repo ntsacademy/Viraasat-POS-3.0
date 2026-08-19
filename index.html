@@ -570,6 +570,7 @@
                     <button class="premium-tab" onclick="showPremiumTab('items',this)">Item Sales</button>
                     <button class="premium-tab" onclick="showPremiumTab('inventory',this)">Inventory</button>
                     <button class="premium-tab" onclick="showPremiumTab('reports',this)">Insights</button>
+                    <button class="premium-tab" onclick="showPremiumTab('expenses',this)">Expenses</button>
                     <button class="premium-tab" onclick="showPremiumTab('settings',this)">Admin</button>
                 </div>
 
@@ -578,6 +579,7 @@
                 <section id="premiumPanel-items" class="premium-panel"></section>
                 <section id="premiumPanel-inventory" class="premium-panel"></section>
                 <section id="premiumPanel-reports" class="premium-panel"></section>
+                <section id="premiumPanel-expenses" class="premium-panel"></section>
                 <section id="premiumPanel-settings" class="premium-panel"></section>
             </div>
         </div>
@@ -833,7 +835,7 @@
         const D1_API_BASE = '/api';
         const API_TIMEOUT_MS = 10000;
         
-const APP_VERSION = "D1-ENTERPRISE-FIX-6.4"; 
+const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6"; 
         
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
@@ -1478,7 +1480,7 @@ Tables, billing and existing local UI remain visible.`);}
             document.querySelectorAll('#premiumTabs .premium-tab').forEach(x=>x.classList.remove('active'));
             if(btn) btn.classList.add('active');
             else{
-                const labelMap={overview:'overview',sales:'sales',items:'item sales',inventory:'inventory',reports:'insights',settings:'admin'};
+                const labelMap={overview:'overview',sales:'sales',items:'item sales',inventory:'inventory',reports:'insights',expenses:'expenses',settings:'admin'};
                 const wanted=(labelMap[tab]||tab).replace(/\s/g,'');
                 const b=[...document.querySelectorAll('#premiumTabs .premium-tab')].find(x=>x.textContent.toLowerCase().replace(/\s/g,'').includes(wanted));
                 if(b)b.classList.add('active');
@@ -1500,6 +1502,7 @@ Tables, billing and existing local UI remain visible.`);}
             if(tab==='inventory')renderPremiumInventory();
             if(tab==='reports')renderPremiumReports();
             if(tab==='settings')renderPremiumAdmin();
+            if(tab==='expenses')renderPremiumExpenses();
         }
 
         function renderPremiumOverview(){
@@ -1844,9 +1847,8 @@ Tables, billing and existing local UI remain visible.`);}
             if(!id){showCustomAlert('This staff record has no D1 ID.');return;}
             showCustomConfirm(`Send ${name} for approval to remove from POS?`,async()=>{
                 try{
-                    const r=await d1Post('/orders/request-delete',{
-                        order_id:`STAFF:${id}`,
-                        reason:`Staff removal: ${name}`,
+                    const r=await d1Post('/staff/remove',{
+                        id,
                         requested_by:localStorage.getItem('viraasat_user')||'Admin'
                     });
                     auditLog('Staff Removal Requested',`${name} (ID ${id})`);
@@ -1902,6 +1904,20 @@ Tables, billing and existing local UI remain visible.`);}
         }
         function exportDailyReport(){const by={};salesHistory.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!by[d])by[d]={orders:0,sales:0};by[d].orders++;by[d].sales+=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));});downloadCSV(Object.entries(by).sort((a,b)=>a[0].localeCompare(b[0])).map(([Date,x])=>({Date,Orders:x.orders,Sales:Math.round(x.sales),AOV:Math.round(x.sales/x.orders)})),'Viraasat-Daily-Report.csv');}
 
+        function renderPremiumExpenses(){
+            // Kept as a safe refresh hook because the main Expenses screen is the live expense editor.
+            // This prevents submitExpense() from failing after a successful D1 save.
+            try{
+                generateTrends();
+                renderExpenseHistoryList();
+                const panel=document.getElementById('premiumPanel-expenses');
+                if(!panel)return;
+                const rows=(expenseHistory||[]).slice().sort((a,b)=>expenseDateKey(b).localeCompare(expenseDateKey(a))).slice(0,20);
+                const total=rows.reduce((a,e)=>a+parseAmount(getVal(e,['amount','total'])),0);
+                panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Expenses</h3><span>Latest expenses</span></div><div class="report-stat" style="margin-bottom:12px"><div class="rlabel">Recent Total</div><div class="rvalue">${money(total)}</div></div><div class="admin-mini-list">${rows.map(e=>`<div class="admin-mini-row"><div><b>${esc(getVal(e,['category'])||'Other')}</b><small>${esc(expenseDateKey(e))} • ${esc(getVal(e,['description','note'])||'')}</small></div><strong style="color:var(--danger)">- ${money(getVal(e,['amount','total']))}</strong></div>`).join('')||'<div class="premium-empty">No expenses recorded.</div>'}</div></div>`;
+            }catch(e){console.error('Premium expenses render failed',e);}
+        }
+
         function auditLog(action, details=''){
             try{
                 const logs=JSON.parse(localStorage.getItem('viraasat_audit_logs')||'[]');
@@ -1912,12 +1928,29 @@ Tables, billing and existing local UI remain visible.`);}
         function getAuditLogs(){try{return JSON.parse(localStorage.getItem('viraasat_audit_logs')||'[]')}catch(e){return[]}}
         function clearAuditLogs(){localStorage.removeItem('viraasat_audit_logs');renderPremiumAdmin();}
         async function loadPendingApprovals(){
-            try{return (await d1Get('/approvals')).requests||[]}
-            catch(e){return {error:e.message||String(e)}}
+            try{
+                const data=await d1Get('/approvals');
+                if(!Array.isArray(data?.requests)) throw new Error('Approval API returned an invalid response');
+                return data.requests;
+            }catch(e){
+                return {error:e.message||String(e)};
+            }
         }
         async function resolveApproval(requestId,orderId,status){
-            try{ await d1Post('/approvals/resolve',{request_id:requestId,order_id:orderId,status,reviewed_by:localStorage.getItem('viraasat_user')||'Admin'}); auditLog('Approval '+status,orderId); renderPremiumAdmin(); fetchData(); }
-            catch(e){showCustomAlert('Approval failed: '+e.message)}
+            try{
+                const result=await d1Post('/approvals/resolve',{
+                    request_id:requestId,
+                    order_id:orderId,
+                    status,
+                    reviewed_by:localStorage.getItem('viraasat_user')||'Admin'
+                });
+                auditLog('Approval '+status,orderId);
+                renderPremiumAdmin();
+                fetchData();
+                showCustomAlert(result?.message||`Request ${status}.`);
+            }catch(e){
+                showCustomAlert('Approval failed: '+(e?.message||e));
+            }
         }
 
         function renderPremiumAdmin(){
@@ -1934,7 +1967,6 @@ Tables, billing and existing local UI remain visible.`);}
                     <button class="admin-module" onclick="document.getElementById('adminStaffSearch').focus()"><b>Employees</b><span>${active} active staff</span></button>
                     <button class="admin-module" onclick="document.getElementById('userMobile').focus()"><b>Users</b><span>Register / revoke access</span></button>
                     <button class="admin-module" onclick="document.getElementById('adminMenuName').focus()"><b>Menu</b><span>Add & export menu</span></button>
-                    <button class="admin-module" onclick="document.getElementById('fullImportInput').click()"><b>Import</b><span>Master Excel to D1</span></button>
                     <button class="admin-module" onclick="exportFullDatabaseWorkbook()"><b>Export</b><span>Download complete workbook</span></button>
                 </div>
             </div>
@@ -1993,17 +2025,6 @@ Tables, billing and existing local UI remain visible.`);}
             </div>
 
             <div class="premium-card admin-card">
-                <div class="premium-card-head"><h3>Master Database Import</h3><span>One workbook</span></div>
-                <p class="admin-help">Upload one Excel workbook containing Sales, Menu, Staff, Stock and Expenses. Existing Order IDs are skipped to prevent duplicates.</p>
-                <div class="premium-toolbar compact-toolbar">
-                    <button class="premium-btn" onclick="downloadFullImportSample()">Download Sample</button>
-                    <label class="premium-btn alt upload-label">Upload Excel<input type="file" id="fullImportInput" accept=".xlsx,.xls" style="display:none" onchange="handleFullDatabaseImport(this.files[0])"></label>
-                    <button class="premium-btn light" onclick="exportFullDatabaseWorkbook()">Export Current Data</button>
-                </div>
-                <div id="fullImportStatus" class="admin-help">No import running.</div>
-            </div>
-
-            <div class="premium-card admin-card">
                 <div class="premium-card-head"><h3>Pending Approvals</h3><span>Protected actions</span></div>
                 <div id="pendingApprovalsBox" class="premium-empty">Checking approvals...</div>
             </div>
@@ -2021,7 +2042,7 @@ Tables, billing and existing local UI remain visible.`);}
                     return;
                 }
                 const requests=Array.isArray(result?.requests)?result.requests:[];
-                box.innerHTML=requests.length?requests.map(r=>{
+                box.innerHTML=requests.length?`<div class="admin-help" style="margin-bottom:8px"><b>${requests.length}</b> pending protected action${requests.length===1?'':'s'}</div>`+requests.map(r=>{
                     const target=String(r.order_id||'');
                     const isStaff=target.startsWith('STAFF:');
                     const displayTarget=isStaff?'Staff Removal':`Order #${target}`;
@@ -2266,7 +2287,7 @@ Tables, billing and existing local UI remain visible.`);}
                 });
                 
                 expenseHistory.forEach(exp => { 
-                    let sAmount = parseAmount(getVal(exp, ['amount', 'total'])); let sDate = getVal(exp, ['date', 'isodate']) || ''; let eCat = getVal(exp, ['category']) || 'Other'; let eDesc = getVal(exp, ['description', 'note']) || '';
+                    let sAmount = parseAmount(getVal(exp, ['amount', 'total'])); let sDate = getVal(exp, ['expense_date', 'date', 'isodate', 'created_at']) || ''; let eCat = getVal(exp, ['category']) || 'Other'; let eDesc = getVal(exp, ['description', 'note']) || '';
                     if(sDate) { 
                         let dateStrKey = sDate.split("T")[0].split(" ")[0]; let parsedDate = new Date(sDate);
                         if (!isNaN(parsedDate.getTime())) { dateStrKey = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')}`; }
@@ -2350,7 +2371,28 @@ Tables, billing and existing local UI remain visible.`);}
             if (!tStr) return ""; try { let d = new Date(tStr); if (!isNaN(d.getTime())) return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); return tStr; } catch(e) { return tStr; } 
         }
 
-        function renderLiveSales(){const salesGrid=document.getElementById('salesGrid'),homeRecent=document.getElementById('homeRecentOrders');if(!salesGrid)return;salesGrid.innerHTML='';if(homeRecent)homeRecent.innerHTML='';const start=document.getElementById('filterStartDate')?.value||'',end=document.getElementById('filterEndDate')?.value||'';const filtered=salesHistory.filter(s=>{const d=saleDateKey(s);return (!start||d>=start)&&(!end||d<=end);});const total=filtered.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);const box=document.getElementById('totalSalesBox');if(box)box.innerText=`Total Sales: ₹ ${total.toLocaleString('en-IN')}`;if(!filtered.length){salesGrid.innerHTML='<div class="premium-empty">No orders found.</div>';return;}filtered.slice().sort((a,b)=>new Date(getVal(b,['date','isodate','created_at']))-new Date(getVal(a,['date','isodate','created_at']))).forEach(s=>{const id=getVal(s,['orderid','order_number','id'])||'N/A',table=getVal(s,['tablenumber','table','tablename','table_number'])||'Order',grand=parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),items=parseSaleItems(s),mode=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—';const itemHtml=items.length?items.map(it=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px dashed var(--border)"><span><b>${esc(it.name)}</b> ×${it.qty}</span><span>${money(it.amount)}</span></div>`).join(''):'<div style="color:var(--text-muted)">Item details unavailable</div>';salesGrid.innerHTML+=`<div class="card" style="padding:16px;margin-bottom:12px;cursor:pointer" onclick="openOrderDetails('${esc(id)}')"><div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:10px"><div><h4 style="margin:0;font-weight:800">${esc(table)}</h4><span style="font-size:.72rem;color:var(--text-muted)">#${esc(id)} • ${esc(mode)}</span></div><span style="font-weight:800;color:#B45309">${money(grand)}</span></div><div style="font-size:.84rem;line-height:1.5">${itemHtml}</div><div style="font-size:.72rem;color:var(--text-muted);margin-top:10px">${esc(cleanDisplayDate(saleDateKey(s)))} • ${esc(saleTimeText(s))}</div></div>`;});if(homeRecent)filtered.slice().sort((a,b)=>new Date(getVal(b,['date','isodate','created_at']))-new Date(getVal(a,['date','isodate','created_at']))).slice(0,5).forEach(s=>{const id=getVal(s,['orderid','order_number','id'])||'N/A',table=getVal(s,['tablenumber','table','tablename','table_number'])||'Order',grand=parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),items=parseSaleItems(s);homeRecent.innerHTML+=`<div class="h-order-card" onclick="openOrderDetails('${esc(id)}')"><div class="ho-icon">🍽️</div><div class="ho-info"><div class="ho-title">Order #${esc(id)}</div><div class="ho-sub">${esc(table)} • ${esc(saleTimeText(s))}</div><div class="ho-sub" style="font-weight:700;color:var(--text-dark);margin-top:2px">${items.length?items.map(i=>`${esc(i.name)} ×${i.qty}`).join(', '):'Item details unavailable'} • ${money(grand)}</div></div><div class="ho-badge" style="background:#E6F4EA;color:#10B981">COMPLETED</div><div>›</div></div>`;});}
+        function renderLiveSales(){
+            const salesGrid=document.getElementById('salesGrid'),homeRecent=document.getElementById('homeRecentOrders');
+            if(!salesGrid)return;
+            salesGrid.innerHTML='';if(homeRecent)homeRecent.innerHTML='';
+            const startDate=document.getElementById('filterStartDate')?.value||'',endDate=document.getElementById('filterEndDate')?.value||'';
+            const filtered=salesHistory.filter(s=>{const d=saleDateKey(s);return(!startDate||d>=startDate)&&(!endDate||d<=endDate);})
+                .slice().sort((a,b)=>new Date(getVal(b,['date','isodate','created_at']))-new Date(getVal(a,['date','isodate','created_at'])));
+            const total=filtered.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);
+            const box=document.getElementById('totalSalesBox');if(box)box.innerText=`Total Sales: ₹ ${total.toLocaleString('en-IN')}`;
+            if(!filtered.length){salesGrid.innerHTML='<div class="premium-empty">No orders found.</div>';return;}
+            filtered.forEach(s=>{
+                const id=getVal(s,['orderid','order_number','id'])||'N/A';
+                const table=getVal(s,['tablenumber','table','tablename','table_number'])||'Order';
+                const grand=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));
+                const mode=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—';
+                salesGrid.innerHTML+=`<div class="card" style="padding:16px;margin-bottom:12px;cursor:pointer" onclick="openOrderDetails('${esc(id)}')"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><h4 style="margin:0;font-weight:800">${esc(table)}</h4><span style="font-size:.72rem;color:var(--text-muted)">#${esc(id)} • ${esc(cleanDisplayDate(saleDateKey(s)))} • ${esc(saleTimeText(s))} • ${esc(mode)}</span></div><span style="font-weight:800;color:#F97316;background:#FFF0D9;border:1px solid #FFD18A;padding:8px 12px;border-radius:10px">${money(grand)}</span></div><div style="font-size:.7rem;color:var(--text-muted);margin-top:8px">Tap to view order details</div></div>`;
+            });
+            if(homeRecent)filtered.slice(0,5).forEach(s=>{
+                const id=getVal(s,['orderid','order_number','id'])||'N/A',table=getVal(s,['tablenumber','table','tablename','table_number'])||'Order',grand=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));
+                homeRecent.innerHTML+=`<div class="h-order-card" onclick="openOrderDetails('${esc(id)}')"><div class="ho-icon">🍽️</div><div class="ho-info"><div class="ho-title">Order #${esc(id)}</div><div class="ho-sub">${esc(table)} • ${esc(saleDateKey(s))} • ${esc(saleTimeText(s))}</div></div><div class="ho-badge" style="background:#E6F4EA;color:#10B981">COMPLETED</div><div style="font-weight:800;color:#F97316">${money(grand)}</div><div>›</div></div>`;
+            });
+        }
 
         function renderTableGrid() {
             const gridContainer = document.getElementById('tableGrid'); gridContainer.innerHTML = ""; let activeCount = 0; let totalCount = 0;
