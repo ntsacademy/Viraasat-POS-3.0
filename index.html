@@ -667,8 +667,8 @@
                 </div>
                 <div style="background:#FAFAFA; border:1px solid var(--border); padding:12px; border-radius:8px; font-weight:700; font-size:1.1rem; text-align:center; color:var(--text-dark);" id="totalSalesBox">Total Sales: ₹ 0</div>
             </div>
-            <div class="section-header"><h4>All Orders</h4></div>
-            <div id="salesGrid" class="sales-grid"></div>
+            <div class="section-header"><h4>Recent Orders</h4><span>Newest first • click for details</span></div>
+            <div id="salesGrid" class="sales-grid admin-order-grid"></div>
         </div>
 
         <!-- P&L ANALYTICS VIEW -->
@@ -1989,11 +1989,6 @@ Tables, billing and existing local UI remain visible.`);}
             </div>
 
             <div class="premium-card admin-card">
-                <div class="premium-card-head"><h3>Recent Orders</h3><span>Newest first • click for details</span></div>
-                <div id="adminRecentOrders" class="admin-order-grid"></div>
-            </div>
-
-            <div class="premium-card admin-card">
                 <div class="premium-card-head"><h3>Stock Management</h3><span>${Object.keys(stockData).length} items • Admin only</span></div>
                 <div class="admin-form-grid"><select id="adminStockSelect" onchange="loadAdminStockSelect(this.value)">${stockOptionHtml()}</select><input id="adminStockSearch" placeholder="New item name / search" oninput="syncAdminStockSearch(this.value)"><input id="adminStockQty" type="number" min="0" inputmode="numeric" placeholder="Current Qty"><button class="premium-btn" onclick="adminUpdateStockUnified()">Update Stock</button><button class="premium-btn light" onclick="resetAdminStockForm()">Add New Item</button></div>
                 <div class="admin-help">Use the dropdown to select an existing item. Quantity correction and new stock-item creation are restricted to Admin.</div><div id="adminStockMiniList" class="admin-mini-list"></div>
@@ -2056,14 +2051,14 @@ Tables, billing and existing local UI remain visible.`);}
                 <div id="auditLogsBox"></div>
             </div>
             `;
-            renderAdminStockRows(); renderAdminStaffRows(); renderAdminUsersRows(); renderAdminRecentOrders();
+            renderAdminStockRows(); renderAdminStaffRows(); renderAdminUsersRows();
             pendingPromise.then(result=>{
                 const box=document.getElementById('pendingApprovalsBox'); if(!box)return;
                 if(result&&result.error){
                     box.innerHTML=`<div class="approval-missing"><b>Approval API unavailable.</b><br>${esc(result.error)}<br><br>Apply the Worker approval/staff patch supplied with this build, then refresh.</div>`;
                     return;
                 }
-                const requests=Array.isArray(result?.requests)?result.requests:[];
+                const requests=Array.isArray(result)?result:(Array.isArray(result?.requests)?result.requests:[]);
                 box.innerHTML=requests.length?`<div class="admin-help" style="margin-bottom:8px"><b>${requests.length}</b> pending protected action${requests.length===1?'':'s'}</div>`+requests.map(r=>{
                     const target=String(r.order_id||'');
                     const isStaff=target.startsWith('STAFF:');
@@ -2417,10 +2412,11 @@ Tables, billing and existing local UI remain visible.`);}
             if(!filtered.length){salesGrid.innerHTML='<div class="premium-empty">No orders found.</div>';return;}
             filtered.forEach(s=>{
                 const id=getVal(s,['orderid','order_number','id'])||'N/A';
-                const table=getVal(s,['tablenumber','table','tablename','table_number'])||'Order';
+                const table=getVal(s,['tablenumber','table','tablename','table_number'])||'Takeaway';
                 const grand=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));
-                const mode=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—';
-                salesGrid.innerHTML+=`<div class="card" style="padding:16px;margin-bottom:12px;cursor:pointer" onclick="openOrderDetails('${esc(id)}')"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><h4 style="margin:0;font-weight:800">${esc(table)}</h4><span style="font-size:.72rem;color:var(--text-muted)">#${esc(id)} • ${esc(cleanDisplayDate(saleDateKey(s)))} • ${esc(saleTimeText(s))} • ${esc(mode)}</span></div><span style="font-weight:800;color:#F97316;background:#FFF0D9;border:1px solid #FFD18A;padding:8px 12px;border-radius:10px">${money(grand)}</span></div><div style="font-size:.7rem;color:var(--text-muted);margin-top:8px">Tap to view order details</div></div>`;
+                const items=parseSaleItems(s).map(it=>`${it.name} (x${it.qty})`).join(', ');
+                const time=cleanDisplayTime(getVal(s,['date','isodate','created_at'])||getVal(s,['time'])||saleTimeText(s));
+                salesGrid.innerHTML+=`<div class="admin-order-card" onclick="openOrderDetails('${esc(id)}')"><div class="admin-order-title">${esc(table)}</div><div class="admin-order-id">#${esc(id)}</div><div class="admin-order-items">${esc(items||'No item details')}</div><div class="admin-order-bottom"><span class="admin-order-time">${esc(time)}</span><span class="admin-order-total">${money(grand)}</span></div></div>`;
             });
             if(homeRecent)filtered.slice(0,5).forEach(s=>{
                 const id=getVal(s,['orderid','order_number','id'])||'N/A',table=getVal(s,['tablenumber','table','tablename','table_number'])||'Order',grand=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));
