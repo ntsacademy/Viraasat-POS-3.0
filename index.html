@@ -235,6 +235,7 @@
         .stock-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
         .stock-box{border:1px solid var(--border);border-radius:14px;padding:13px;background:#fff}
         .stock-box.low{border-color:#F1B6C1;background:#FFF8F9}.stock-box-name{font-size:.74rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.stock-box-qty{font-size:1.15rem;font-weight:900;margin-top:7px}.stock-box small{font-size:.62rem;color:var(--text-muted)}
+        .admin-order-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.admin-order-card{border:1px solid var(--border);border-radius:14px;padding:14px;background:#fff;cursor:pointer;transition:.15s}.admin-order-card:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,.06)}.admin-order-title{font-size:1rem;font-weight:900}.admin-order-id{font-size:.72rem;color:#756f68;margin-top:4px}.admin-order-items{font-size:.78rem;line-height:1.45;color:#746d65;margin-top:12px;min-height:42px}.admin-order-bottom{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px}.admin-order-time{font-size:.72rem;font-weight:800;background:#f4f0ea;border:1px solid #e6dfd5;border-radius:8px;padding:8px 10px}.admin-order-total{font-size:1rem;font-weight:900;color:#f06b00;background:#fff0d7;border:1px solid #ffd27a;border-radius:9px;padding:8px 12px}.expense-click-card{cursor:pointer}.expense-detail-row{display:flex;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--border)}.expense-detail-label{font-size:.72rem;color:var(--text-muted)}.expense-detail-value{font-weight:800;text-align:right}.approval-row{display:flex;justify-content:space-between;align-items:center;gap:10px}.approval-row+.approval-row{margin-top:8px}@media(max-width:700px){.admin-order-grid{grid-template-columns:1fr}}
         .status-toggle{border:0;border-radius:999px;padding:6px 10px;font-size:.64rem;font-weight:900;cursor:pointer}
         .status-toggle.active{background:#E8F7EF;color:#0B8F55}.status-toggle.inactive{background:#FFF0F2;color:#C92E48}
         .staff-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
@@ -527,6 +528,13 @@
     </div>
 
     <!-- CUSTOM THREE BUTTON MODAL (For Salary Print) -->
+    <div id="expenseDetailsModal" class="modal-overlay" style="z-index:100000; align-items:center;">
+        <div class="modal-card" style="max-width:520px; width:calc(100% - 28px);">
+            <div class="modal-header"><h3>Expense Details</h3><button class="icon-btn" onclick="document.getElementById('expenseDetailsModal').style.display='none'">×</button></div>
+            <div id="expenseDetailsBody"></div>
+        </div>
+    </div>
+
     <div id="salaryActionModal" class="modal-overlay" style="z-index: 100000; align-items: center;">
         <div class="bottom-sheet" style="max-width: 320px; border-radius: 16px; padding: 24px; text-align: center; margin: 0 20px; transform: none; animation: fadeIn 0.2s ease-out; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
             <h3 id="salaryActionMessage" style="font-size:1.1rem; font-weight:700; margin-bottom: 24px; color: var(--text-dark); line-height: 1.5;">Payout Recorded!</h3>
@@ -1012,7 +1020,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
         window.onpopstate = function () {
             enforceBackTrap();
 
-            let modals = ['customAlertModal', 'paymentModal', 'conflictModal', 'orderDetailsModal', 'addTableModal', 'salaryActionModal'];
+            let modals = ['customAlertModal', 'paymentModal', 'conflictModal', 'orderDetailsModal', 'addTableModal', 'salaryActionModal', 'expenseDetailsModal'];
             let modalClosed = false;
             for(let id of modals) { 
                 let m = document.getElementById(id); 
@@ -1398,14 +1406,23 @@ Tables, billing and existing local UI remain visible.`);}
             return localISODate(direct);
         }
 
+        function formatTime12(value){
+            if(!value)return '';
+            const raw=String(value).trim();
+            const dt=new Date(raw);
+            if(!isNaN(dt.getTime())) return dt.toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit',hour12:true}).replace('am','AM').replace('pm','PM');
+            const m=raw.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM|am|pm)?/);
+            if(m){let h=Number(m[1]),min=m[2],ap=m[3]; if(!ap){ap=h>=12?'PM':'AM';h=h%12||12;} return `${h}:${min} ${ap.toUpperCase()}`;}
+            return raw;
+        }
         function saleTimeText(s){
             const t=String(getVal(s,['time'])||'').trim();
-            if(t) return t;
-            const d=String(getVal(s,['date','isodate'])||'').trim();
-            if(d.includes('T') || /\d{1,2}:\d{2}/.test(d)){
-                const dt=new Date(d); if(!isNaN(dt.getTime())) return dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
-            }
-            return '';
+            if(t) return formatTime12(t);
+            return formatTime12(getVal(s,['date','isodate','created_at'])||'');
+        }
+        function orderTimestamp(s){
+            const raw=getVal(s,['date','isodate','created_at','updated_at','time'])||'';
+            const dt=new Date(raw); return isNaN(dt.getTime())?0:dt.getTime();
         }
 
         function mergeSales(legacySales,d1Sales){
@@ -1572,7 +1589,7 @@ Tables, billing and existing local UI remain visible.`);}
                     if(!haystack.includes(q))return false;
                 }
                 return true;
-            });
+            }).sort((a,b)=>orderTimestamp(b)-orderTimestamp(a));
         }
 
         function setPremiumSalesRange(range){
@@ -1912,9 +1929,9 @@ Tables, billing and existing local UI remain visible.`);}
                 renderExpenseHistoryList();
                 const panel=document.getElementById('premiumPanel-expenses');
                 if(!panel)return;
-                const rows=(expenseHistory||[]).slice().sort((a,b)=>expenseDateKey(b).localeCompare(expenseDateKey(a))).slice(0,20);
+                const rows=(expenseHistory||[]).slice().sort((a,b)=>expenseTimestamp(b)-expenseTimestamp(a)).slice(0,20);
                 const total=rows.reduce((a,e)=>a+parseAmount(getVal(e,['amount','total'])),0);
-                panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Expenses</h3><span>Latest expenses</span></div><div class="report-stat" style="margin-bottom:12px"><div class="rlabel">Recent Total</div><div class="rvalue">${money(total)}</div></div><div class="admin-mini-list">${rows.map(e=>`<div class="admin-mini-row"><div><b>${esc(getVal(e,['category'])||'Other')}</b><small>${esc(expenseDateKey(e))} • ${esc(getVal(e,['description','note'])||'')}</small></div><strong style="color:var(--danger)">- ${money(getVal(e,['amount','total']))}</strong></div>`).join('')||'<div class="premium-empty">No expenses recorded.</div>'}</div></div>`;
+                panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Expenses</h3><span>Latest first • click for details</span></div><div class="report-stat" style="margin-bottom:12px"><div class="rlabel">Recent Total</div><div class="rvalue">${money(total)}</div></div><div class="admin-mini-list">${rows.map(e=>{const eid=getVal(e,['id'])||`${expenseDateKey(e)}-${getVal(e,['category'])}-${getVal(e,['amount'])}`;return `<div class="admin-mini-row expense-click-card" onclick="openExpenseDetails('${esc(eid)}')"><div><b>${esc(getVal(e,['category'])||'Other')}</b><small>${esc(expenseDateKey(e))} • ${esc(expenseTimeText(e)||'')}</small></div><strong style="color:var(--danger)">- ${money(getVal(e,['amount','total']))}</strong></div>`}).join('')||'<div class="premium-empty">No expenses recorded.</div>'}</div></div>`;
             }catch(e){console.error('Premium expenses render failed',e);}
         }
 
@@ -1969,6 +1986,11 @@ Tables, billing and existing local UI remain visible.`);}
                     <button class="admin-module" onclick="document.getElementById('adminMenuName').focus()"><b>Menu</b><span>Add & export menu</span></button>
                     <button class="admin-module" onclick="exportFullDatabaseWorkbook()"><b>Export</b><span>Download complete workbook</span></button>
                 </div>
+            </div>
+
+            <div class="premium-card admin-card">
+                <div class="premium-card-head"><h3>Recent Orders</h3><span>Newest first • click for details</span></div>
+                <div id="adminRecentOrders" class="admin-order-grid"></div>
             </div>
 
             <div class="premium-card admin-card">
@@ -2034,7 +2056,7 @@ Tables, billing and existing local UI remain visible.`);}
                 <div id="auditLogsBox"></div>
             </div>
             `;
-            renderAdminStockRows(); renderAdminStaffRows(); renderAdminUsersRows();
+            renderAdminStockRows(); renderAdminStaffRows(); renderAdminUsersRows(); renderAdminRecentOrders();
             pendingPromise.then(result=>{
                 const box=document.getElementById('pendingApprovalsBox'); if(!box)return;
                 if(result&&result.error){
@@ -2055,6 +2077,18 @@ Tables, billing and existing local UI remain visible.`);}
                 console.error('Admin render failed',err);
                 panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Admin Control</h3><span>Secure management</span></div><div class="approval-missing">Admin view could not render one of its modules.<br><small>${esc(err?.message||err)}</small></div></div>`;
             }
+        }
+
+        function renderAdminRecentOrders(){
+            const el=document.getElementById('adminRecentOrders'); if(!el)return;
+            const rows=(salesHistory||[]).slice().sort((a,b)=>orderTimestamp(b)-orderTimestamp(a)).slice(0,12);
+            el.innerHTML=rows.length?rows.map(s=>{
+                const id=getVal(s,['orderid','order_number','id'])||'—';
+                const table=getVal(s,['tablenumber','table','tablename','table_number'])||'—';
+                const items=parseSaleItems(s).map(it=>`${it.name} (x${it.qty})`).join(', ');
+                const total=money(getVal(s,['grand_total','totalamount','total','amount']));
+                return `<div class="admin-order-card" onclick="openOrderDetails('${esc(id)}')"><div class="admin-order-title">${esc(table)}${table!=='—'?'':' Order'}</div><div class="admin-order-id">#${esc(id)}</div><div class="admin-order-items">${esc(items||'No item details')}</div><div class="admin-order-bottom"><span class="admin-order-time">${esc(cleanDisplayTime(getVal(s,['date','isodate','created_at'])||getVal(s,['time'])))}</span><span class="admin-order-total">${total}</span></div></div>`;
+            }).join(''):'<div class="premium-empty" style="grid-column:1/-1">No orders found.</div>';
         }
 
         function renderAdminStockRows(){const el=document.getElementById('adminStockMiniList');if(!el)return;const rows=Object.entries(stockData).sort((a,b)=>Number(a[1])-Number(b[1])).slice(0,15);el.innerHTML=rows.map(([name,qty])=>{const low=Number(stockMeta[name]?.low_stock_level??5);return `<div class="admin-mini-row" onclick="loadAdminStockSelect('${esc(name)}')" style="cursor:pointer"><div><b>${esc(name)}</b><small>${Number(qty)<=0?'OUT OF STOCK':Number(qty)<=low?'Low stock':'Available'} • Last update ${stockMeta[name]?.updated_at?esc(cleanDisplayDate(stockMeta[name].updated_at)):'—'}</small></div><strong>${Number(qty)||0}</strong></div>`}).join('')||'<div class="premium-empty">No stock data.</div>';}
@@ -2611,7 +2645,10 @@ Tables, billing and existing local UI remain visible.`);}
         async function submitExpense(){const category=document.getElementById('expCategory').value,amount=Number(document.getElementById('expAmount').value)||0;if(amount<=0){showCustomAlert('Enter valid amount.');return;}try{const description=document.getElementById('expDescription').value||'NA',expenseDate=document.getElementById('expDate').value||localISODate(new Date());await d1Post('/expenses',{category,amount,description,expense_date:expenseDate,receipt_image:expenseReceiptBase64||''});expenseHistory.unshift({date:expenseDate,isodate:expenseDate,expense_date:expenseDate,amount,category,description,receipt_image:expenseReceiptBase64||''});auditLog('Expense Added',`${category} ₹${amount}`);document.getElementById('expAmount').value='';document.getElementById('expDescription').value='';clearExpenseReceipt();document.getElementById('expDate').value=localISODate(new Date());generateTrends();renderPremiumExpenses();renderExpenseHistoryList();showCustomAlert('Expense Saved!');}catch(e){showCustomAlert('Expense save failed: '+e.message);}}
         function expenseDateKey(e){return localISODate(getVal(e,['expense_date','date','isodate','created_at']));}
         function setExpenseQuickFilter(type){const today=localISODate(new Date()),from=document.getElementById('expFilterFrom'),to=document.getElementById('expFilterTo');['expFilterToday','expFilterYesterday','expFilter15','expFilter30','expFilterAll'].forEach(id=>document.getElementById(id)?.classList.remove('active'));const map={today:'expFilterToday',yesterday:'expFilterYesterday','15':'expFilter15','30':'expFilter30',all:'expFilterAll'};document.getElementById(map[type])?.classList.add('active');if(type==='today'){from.value=today;to.value=today;}else if(type==='yesterday'){const d=new Date();d.setDate(d.getDate()-1);from.value=localISODate(d);to.value=localISODate(d);}else if(type==='15'){const d=new Date();d.setDate(d.getDate()-14);from.value=localISODate(d);to.value=today;}else if(type==='30'){const d=new Date();d.setMonth(d.getMonth()-1);from.value=localISODate(d);to.value=today;}else{from.value='';to.value='';}renderExpenseHistoryList();}
-        function renderExpenseHistoryList(){const el=document.getElementById('expenseHistoryList');if(!el)return;const from=document.getElementById('expFilterFrom')?.value||'',to=document.getElementById('expFilterTo')?.value||'';const rows=expenseHistory.filter(e=>{const d=expenseDateKey(e);return(!from||d>=from)&&(!to||d<=to);}).sort((a,b)=>expenseDateKey(b).localeCompare(expenseDateKey(a)));const total=rows.reduce((a,e)=>a+parseAmount(getVal(e,['amount','total'])),0);const count=document.getElementById('expenseListCount');if(count)count.innerText=`${rows.length} entries • ₹${total.toLocaleString('en-IN')}`;el.innerHTML=rows.length?rows.map(e=>{const receipt=getVal(e,['receipt_image']);return `<div class="card" style="padding:12px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;gap:10px"><div><b>${esc(getVal(e,['category'])||'Other')}</b><div style="font-size:.72rem;color:var(--text-muted)">${esc(expenseDateKey(e))} • ${esc(getVal(e,['description','note'])||'')}</div></div><strong style="color:var(--danger)">- ${money(getVal(e,['amount','total']))}</strong></div>${receipt?`<div style="margin-top:8px"><img src="${esc(receipt)}" style="width:64px;height:64px;object-fit:cover;border-radius:7px;border:1px solid var(--border)" onclick="window.open('${esc(receipt)}','_blank')"><span style="font-size:.68rem;color:var(--text-muted);margin-left:8px">Receipt attached</span></div>`:''}</div>`}).join(''):'<div class="premium-empty">No expenses for the selected period.</div>';}
+        function renderExpenseHistoryList(){const el=document.getElementById('expenseHistoryList');if(!el)return;const from=document.getElementById('expFilterFrom')?.value||'',to=document.getElementById('expFilterTo')?.value||'';const rows=expenseHistory.filter(e=>{const d=expenseDateKey(e);return(!from||d>=from)&&(!to||d<=to);}).sort((a,b)=>expenseTimestamp(b)-expenseTimestamp(a));const total=rows.reduce((a,e)=>a+parseAmount(getVal(e,['amount','total'])),0);const count=document.getElementById('expenseListCount');if(count)count.innerText=`${rows.length} entries • ₹${total.toLocaleString('en-IN')}`;el.innerHTML=rows.length?rows.map(e=>{const receipt=getVal(e,['receipt_image']);const eid=getVal(e,['id'])||`${expenseDateKey(e)}-${getVal(e,['category'])}-${getVal(e,['amount'])}`;return `<div class="card expense-click-card" style="padding:12px;margin-bottom:8px" onclick="openExpenseDetails('${esc(eid)}')"><div style="display:flex;justify-content:space-between;gap:10px"><div><b>${esc(getVal(e,['category'])||'Other')}</b><div style="font-size:.72rem;color:var(--text-muted)">${esc(expenseDateKey(e))} • ${esc(expenseTimeText(e))}</div></div><strong style="color:var(--danger)">- ${money(getVal(e,['amount','total']))}</strong></div>${getVal(e,['description','note'])?`<div style="font-size:.72rem;color:var(--text-muted);margin-top:7px">${esc(getVal(e,['description','note']))}</div>`:''}${receipt?`<div style="margin-top:8px"><span style="font-size:.68rem;color:var(--text-muted)">Receipt attached</span></div>`:''}</div>`}).join(''):'<div class="premium-empty">No expenses for the selected period.</div>';}
+        function expenseTimestamp(e){const raw=getVal(e,['created_at','updated_at','expense_date','date','isodate'])||'';const dt=new Date(raw);return isNaN(dt.getTime())?0:dt.getTime();}
+        function expenseTimeText(e){return formatTime12(getVal(e,['created_at','updated_at'])||'');}
+        function openExpenseDetails(id){const e=(expenseHistory||[]).find(x=>String(getVal(x,['id'])||`${expenseDateKey(x)}-${getVal(x,['category'])}-${getVal(x,['amount'])}`)===String(id));if(!e)return;const body=document.getElementById('expenseDetailsBody');if(!body)return;const receipt=getVal(e,['receipt_image']);body.innerHTML=`<div class="expense-detail-row"><span class="expense-detail-label">Category</span><span class="expense-detail-value">${esc(getVal(e,['category'])||'Other')}</span></div><div class="expense-detail-row"><span class="expense-detail-label">Amount</span><span class="expense-detail-value" style="color:var(--danger)">- ${money(getVal(e,['amount','total']))}</span></div><div class="expense-detail-row"><span class="expense-detail-label">Date</span><span class="expense-detail-value">${esc(expenseDateKey(e))}</span></div><div class="expense-detail-row"><span class="expense-detail-label">Time</span><span class="expense-detail-value">${esc(expenseTimeText(e)||'—')}</span></div><div class="expense-detail-row"><span class="expense-detail-label">Description</span><span class="expense-detail-value">${esc(getVal(e,['description','note'])||'—')}</span></div>${receipt?`<div style="margin-top:14px"><img src="${esc(receipt)}" style="max-width:100%;max-height:260px;object-fit:contain;border:1px solid var(--border);border-radius:10px"></div>`:''}`;document.getElementById('expenseDetailsModal').style.display='flex';}
 
         function setActiveFilterBtn(id) { ['btnFilterToday','btnFilterYesterday','btnFilterClear'].forEach(x=>{const b=document.getElementById(x);if(b)b.classList.remove('active');}); if(id){const b=document.getElementById(id);if(b)b.classList.add('active');} }
         function setTodayFilter() { setActiveFilterBtn('btnFilterToday'); let now = new Date(); let todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`; document.getElementById('filterStartDate').value = todayStr; document.getElementById('filterEndDate').value = todayStr; renderLiveSales(); }
