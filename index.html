@@ -713,9 +713,9 @@
                 <button class="btn" onclick="submitExpense()">Save Expense</button>
             </div>
             <div class="card" style="margin-top:14px;">
-                <div class="section-header" style="margin-top:0;"><h4>Expense History</h4><span id="expenseListCount">0 entries</span></div>
+                <div class="section-header" style="margin-top:0;"><h4>Expense History</h4><div style="display:flex;align-items:center;gap:8px"><span id="expenseListCount">0 entries</span><button class="premium-btn light" onclick="exportExpenses()">Export</button></div></div>
                 <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px;">
-                    <button class="filter-btn active" id="expFilterToday" onclick="setExpenseQuickFilter('today')">Today</button><button class="filter-btn" id="expFilterYesterday" onclick="setExpenseQuickFilter('yesterday')">Yesterday</button><button class="filter-btn" id="expFilter15" onclick="setExpenseQuickFilter('15')">Last 15 Days</button><button class="filter-btn" id="expFilter30" onclick="setExpenseQuickFilter('30')">Last 1 Month</button><button class="filter-btn" id="expFilterAll" onclick="setExpenseQuickFilter('all')">All</button>
+                    <button class="filter-btn" id="expFilterToday" onclick="setExpenseQuickFilter('today')">Today</button><button class="filter-btn" id="expFilterYesterday" onclick="setExpenseQuickFilter('yesterday')">Yesterday</button><button class="filter-btn" id="expFilter15" onclick="setExpenseQuickFilter('15')">Last 15 Days</button><button class="filter-btn" id="expFilter30" onclick="setExpenseQuickFilter('30')">Last 1 Month</button><button class="filter-btn active" id="expFilterAll" onclick="setExpenseQuickFilter('all')">All</button>
                 </div>
                 <div class="input-row" style="margin-bottom:12px;"><div class="input-box"><label>From</label><input type="date" id="expFilterFrom" onchange="renderExpenseHistoryList()"></div><div class="input-box"><label>To</label><input type="date" id="expFilterTo" onchange="renderExpenseHistoryList()"></div></div>
                 <div id="expenseHistoryList"></div>
@@ -833,7 +833,7 @@
         const D1_API_BASE = '/api';
         const API_TIMEOUT_MS = 10000;
         
-const APP_VERSION = "D1-ENTERPRISE-FIX-6.3"; 
+const APP_VERSION = "D1-ENTERPRISE-FIX-6.4"; 
         
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
@@ -1320,7 +1320,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-6.3";
         }
 
         async function fetchData(){
-            const loader=document.getElementById('loader');const expDate=document.getElementById('expDate');if(expDate&&!expDate.value)expDate.value=localISODate(new Date());const ef=document.getElementById('expFilterFrom'),et=document.getElementById('expFilterTo');if(ef&&et&&!ef.value&&!et.value){ef.value=localISODate(new Date());et.value=localISODate(new Date());}loader.style.display='flex';loader.innerHTML='<div class="spinner"></div> <span>Syncing Viraasat D1...</span>';
+            const loader=document.getElementById('loader');const expDate=document.getElementById('expDate');if(expDate&&!expDate.value)expDate.value=localISODate(new Date());const ef=document.getElementById('expFilterFrom'),et=document.getElementById('expFilterTo');if(ef&&et){ef.value='';et.value='';}loader.style.display='flex';loader.innerHTML='<div class="spinner"></div> <span>Syncing Viraasat D1...</span>';
             const defs=[['/dashboard',d1Get('/dashboard')],['/menu',d1Get('/menu')],['/tables',d1Get('/tables')],['/orders',d1Get('/orders?limit=1000')],['/expenses',d1Get('/expenses?limit=2000')],['/stock',d1Get('/stock')],['/staff',d1Get('/staff')],['/stock/history',d1Get('/stock/history?limit=100')]];const results=await Promise.allSettled(defs.map(x=>x[1]));const failed=[];
             try{
                 if(results[0].status==='fulfilled'){const dash=results[0].value||{};const summary=dash.summary||{},ts=dash.tables||{};document.getElementById('homeTodaySale').innerText=`₹${Math.round(Number(summary.today_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeAvgOrder').innerText=`₹${Math.round(Number(summary.average_order)||0).toLocaleString('en-IN')}`;document.getElementById('homeOverallSale').innerText=`₹${Math.round(Number(summary.overall_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeActiveTables').innerText=`${Number(ts.occupied)||0} / ${Number(ts.total)||tableSections.reduce((a,x)=>a+x.tables.length,0)}`;}else failed.push(['/dashboard',results[0].reason]);
@@ -1721,7 +1721,7 @@ Tables, billing and existing local UI remain visible.`);}
                 <div class="admin-form-grid">
                     <select id="invItemSelect" onchange="loadStockEditor(this.value)">${stockOptionHtml()}</select>
                     <input id="invItemQty" type="number" min="0" inputmode="numeric" placeholder="Current quantity">
-                    <input id="invItemNote" placeholder="Update note / reason">
+                    
                     <button class="premium-btn" onclick="saveInventoryItem()">Update Stock</button>
                     <button class="premium-btn light" onclick="toggleNewStockForm()">+ Add New Stock Item</button>
                 </div>
@@ -1778,7 +1778,7 @@ Tables, billing and existing local UI remain visible.`);}
             if(!requireAdmin('inventory update'))return;
             const name=document.getElementById('invItemSelect')?.value||'';
             const qty=Number(document.getElementById('invItemQty')?.value);
-            const note=document.getElementById('invItemNote')?.value.trim()||'Admin stock update';
+            const note='Admin stock update';
             if(!name||!Number.isFinite(qty)||qty<0){showCustomAlert('Select a stock item and enter a valid quantity.');return;}
             const old=Number(stockData[name]??0);
             try{
@@ -1823,19 +1823,38 @@ Tables, billing and existing local UI remain visible.`);}
         }
 
         function renderInventoryInsights(){const el=document.getElementById('inventoryInsightRows');if(!el)return;const rows=(stockHistory||[]).slice(0,10);el.innerHTML=rows.length?rows.map(r=>`<div class="admin-mini-row"><div><b>${esc(r.item_name||r.name)}</b><small>${esc(r.action||'UPDATE')} • ${esc(r.note||'Stock change')} • ${esc(r.updated_by||'Admin')}</small></div><strong>${Number(r.new_quantity??r.quantity??0)}</strong><small style="display:block;color:var(--text-muted)">${r.created_at?esc(cleanDisplayDate(r.created_at)+' '+cleanDisplayTime(r.created_at)):''}</small></div>`).join(''):'<div class="premium-empty">No stock update history available yet.</div>';}
-        function renderPremiumInventoryRows(){const el=document.getElementById('pStockGrid');if(!el)return;const q=(document.getElementById('pStockSearch')?.value||'').toLowerCase();const e=Object.entries(stockData).filter(([k])=>k.toLowerCase().includes(q)).sort((a,b)=>Number(a[1])-Number(b[1]));el.innerHTML=e.map(([k,v])=>{const m=stockMeta[k]||{};const low=Number(m.low_stock_level??5);return `<div class="stock-box ${Number(v)<=low?'low':''}"><div class="stock-box-name">${esc(k)}</div><div class="stock-box-qty">${Number(v)||0}</div><small>${Number(v)<=0?'OUT OF STOCK':Number(v)<=low?'LOW STOCK':'Available'} • ${esc(m.unit||'pcs')}</small><button class="premium-btn light" style="margin-top:8px;width:100%" onclick="loadStockEditor('${esc(k)}')">Edit / Correct</button></div>`}).join('')||'<div class="premium-empty" style="grid-column:1/-1">No stock data received from source.</div>';}
+        function renderPremiumInventoryRows(){
+            const el=document.getElementById('pStockGrid');if(!el)return;
+            const e=Object.entries(stockData).sort((a,b)=>a[0].localeCompare(b[0]));
+            el.innerHTML=e.map(([k,v])=>{
+                const m=stockMeta[k]||{},low=Number(m.low_stock_level??5);
+                return `<div class="stock-box ${Number(v)<=low?'low':''}">
+                    <div class="stock-box-name">${esc(k)}</div>
+                    <div class="stock-box-qty">${Number(v)||0}</div>
+                    <small>${Number(v)<=0?'OUT OF STOCK':Number(v)<=low?'LOW STOCK':'Available'} • PCS</small>
+                </div>`;
+            }).join('')||'<div class="premium-empty" style="grid-column:1/-1">No stock data received from source.</div>';
+        }
         async function removeStaffRecord(key){
+            if(!requireAdmin('staff removal request'))return;
             const staff=staffData.find(s=>getStaffKey(s)===key);
             if(!staff)return;
-            showCustomConfirm('Remove this staff member from the POS directory?',async()=>{
-                const id=Number(getVal(staff,['id','empid','employeeid']));
-                if(!id){showCustomAlert('This staff record has no D1 ID.');return;}
+            const id=Number(getVal(staff,['id','empid','employeeid']));
+            const name=String(getVal(staff,['name'])||'Staff');
+            if(!id){showCustomAlert('This staff record has no D1 ID.');return;}
+            showCustomConfirm(`Send ${name} for approval to remove from POS?`,async()=>{
                 try{
-                    await d1Post('/staff/remove',{id:id});
-                    staffData=staffData.filter(s=>getStaffKey(s)!==key);
-                    renderAdminStaffRows();renderEmployeeList();generateTrends();renderPremiumAdmin();
-                    showCustomAlert('Staff member marked inactive in D1.');
-                }catch(e){showCustomAlert('Staff removal failed: '+(e?.message||e)+'\n\nIf this says "API route not found", apply the Worker patch supplied with this build.');}
+                    const r=await d1Post('/orders/request-delete',{
+                        order_id:`STAFF:${id}`,
+                        reason:`Staff removal: ${name}`,
+                        requested_by:localStorage.getItem('viraasat_user')||'Admin'
+                    });
+                    auditLog('Staff Removal Requested',`${name} (ID ${id})`);
+                    renderPremiumAdmin();
+                    showCustomAlert(r?.already_pending?'Staff removal approval is already pending.':'Staff removal request sent for approval.');
+                }catch(e){
+                    showCustomAlert('Staff removal request failed: '+(e?.message||e));
+                }
             },null);
         }
         function exportStaff(){downloadCSV(staffData.map(s=>({Emp_ID:getVal(s,['empid','employeeid']),Name:getVal(s,['name']),Role:getVal(s,['role']),Mobile:getVal(s,['mobile','phone']),Monthly_Salary:parseAmount(getVal(s,['monthlysalary','salary'])),Date_of_Joining:getVal(s,['dateofjoining','joindate','date','doj']),Status:getStaffStatus(s)})),'Viraasat-Staff.csv');}
@@ -2001,8 +2020,13 @@ Tables, billing and existing local UI remain visible.`);}
                     box.innerHTML=`<div class="approval-missing"><b>Approval API unavailable.</b><br>${esc(result.error)}<br><br>Apply the Worker approval/staff patch supplied with this build, then refresh.</div>`;
                     return;
                 }
-                const requests=Array.isArray(result)?result:[];
-                box.innerHTML=requests.length?requests.map(r=>`<div class="approval-row"><div><b>${esc(r.order_id)}</b><small>${esc(r.reason||'Protected action')} • ${esc(r.requested_by||'Unknown')}</small></div><div class="approval-actions"><button class="premium-btn" onclick="resolveApproval(${Number(r.id)},'${esc(r.order_id)}','approved')">Approve</button><button class="premium-btn danger" onclick="resolveApproval(${Number(r.id)},'${esc(r.order_id)}','rejected')">Reject</button></div></div>`).join(''):'<div class="premium-empty">No pending approvals.</div>';
+                const requests=Array.isArray(result?.requests)?result.requests:[];
+                box.innerHTML=requests.length?requests.map(r=>{
+                    const target=String(r.order_id||'');
+                    const isStaff=target.startsWith('STAFF:');
+                    const displayTarget=isStaff?'Staff Removal':`Order #${target}`;
+                    return `<div class="approval-row"><div><b>${displayTarget}</b><small>${esc(r.reason||'Protected action')} • ${esc(r.requested_by||'Unknown')}</small></div><div class="approval-actions"><button class="premium-btn" onclick="resolveApproval(${Number(r.id)},'${esc(target)}','approved')">Approve</button><button class="premium-btn danger" onclick="resolveApproval(${Number(r.id)},'${esc(target)}','rejected')">Reject</button></div></div>`;
+                }).join(''):'<div class="premium-empty">No pending approvals.</div>';
             });
             const logBox=document.getElementById('auditLogsBox');
             if(logBox)logBox.innerHTML=logs.length?logs.slice(0,40).map(l=>`<div class="audit-row"><b>${esc(l.action)}</b><span>${esc(l.details)} • ${esc(l.user)} • ${new Date(l.timestamp).toLocaleString('en-IN')}</span></div>`).join(''):'<div class="premium-empty">No activity logged yet.</div>';
@@ -2545,7 +2569,7 @@ Tables, billing and existing local UI remain visible.`);}
         async function submitExpense(){const category=document.getElementById('expCategory').value,amount=Number(document.getElementById('expAmount').value)||0;if(amount<=0){showCustomAlert('Enter valid amount.');return;}try{const description=document.getElementById('expDescription').value||'NA',expenseDate=document.getElementById('expDate').value||localISODate(new Date());await d1Post('/expenses',{category,amount,description,expense_date:expenseDate,receipt_image:expenseReceiptBase64||''});expenseHistory.unshift({date:expenseDate,isodate:expenseDate,expense_date:expenseDate,amount,category,description,receipt_image:expenseReceiptBase64||''});auditLog('Expense Added',`${category} ₹${amount}`);document.getElementById('expAmount').value='';document.getElementById('expDescription').value='';clearExpenseReceipt();document.getElementById('expDate').value=localISODate(new Date());generateTrends();renderPremiumExpenses();renderExpenseHistoryList();showCustomAlert('Expense Saved!');}catch(e){showCustomAlert('Expense save failed: '+e.message);}}
         function expenseDateKey(e){return localISODate(getVal(e,['expense_date','date','isodate','created_at']));}
         function setExpenseQuickFilter(type){const today=localISODate(new Date()),from=document.getElementById('expFilterFrom'),to=document.getElementById('expFilterTo');['expFilterToday','expFilterYesterday','expFilter15','expFilter30','expFilterAll'].forEach(id=>document.getElementById(id)?.classList.remove('active'));const map={today:'expFilterToday',yesterday:'expFilterYesterday','15':'expFilter15','30':'expFilter30',all:'expFilterAll'};document.getElementById(map[type])?.classList.add('active');if(type==='today'){from.value=today;to.value=today;}else if(type==='yesterday'){const d=new Date();d.setDate(d.getDate()-1);from.value=localISODate(d);to.value=localISODate(d);}else if(type==='15'){const d=new Date();d.setDate(d.getDate()-14);from.value=localISODate(d);to.value=today;}else if(type==='30'){const d=new Date();d.setMonth(d.getMonth()-1);from.value=localISODate(d);to.value=today;}else{from.value='';to.value='';}renderExpenseHistoryList();}
-        function renderExpenseHistoryList(){const el=document.getElementById('expenseHistoryList');if(!el)return;const from=document.getElementById('expFilterFrom')?.value||'',to=document.getElementById('expFilterTo')?.value||'';const rows=expenseHistory.filter(e=>{const d=expenseDateKey(e);return(!from||d>=from)&&(!to||d<=to);});const total=rows.reduce((a,e)=>a+parseAmount(getVal(e,['amount','total'])),0);const count=document.getElementById('expenseListCount');if(count)count.innerText=`${rows.length} entries • ₹${total.toLocaleString('en-IN')}`;el.innerHTML=rows.length?rows.map(e=>{const receipt=getVal(e,['receipt_image']);return `<div class="card" style="padding:12px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;gap:10px"><div><b>${esc(getVal(e,['category'])||'Other')}</b><div style="font-size:.72rem;color:var(--text-muted)">${esc(expenseDateKey(e))} • ${esc(getVal(e,['description','note'])||'')}</div></div><strong style="color:var(--danger)">- ${money(getVal(e,['amount','total']))}</strong></div>${receipt?`<div style="margin-top:8px"><img src="${esc(receipt)}" style="width:64px;height:64px;object-fit:cover;border-radius:7px;border:1px solid var(--border)" onclick="window.open('${esc(receipt)}','_blank')"><span style="font-size:.68rem;color:var(--text-muted);margin-left:8px">Receipt attached</span></div>`:''}</div>`}).join(''):'<div class="premium-empty">No expenses for the selected period.</div>';}
+        function renderExpenseHistoryList(){const el=document.getElementById('expenseHistoryList');if(!el)return;const from=document.getElementById('expFilterFrom')?.value||'',to=document.getElementById('expFilterTo')?.value||'';const rows=expenseHistory.filter(e=>{const d=expenseDateKey(e);return(!from||d>=from)&&(!to||d<=to);}).sort((a,b)=>expenseDateKey(b).localeCompare(expenseDateKey(a)));const total=rows.reduce((a,e)=>a+parseAmount(getVal(e,['amount','total'])),0);const count=document.getElementById('expenseListCount');if(count)count.innerText=`${rows.length} entries • ₹${total.toLocaleString('en-IN')}`;el.innerHTML=rows.length?rows.map(e=>{const receipt=getVal(e,['receipt_image']);return `<div class="card" style="padding:12px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;gap:10px"><div><b>${esc(getVal(e,['category'])||'Other')}</b><div style="font-size:.72rem;color:var(--text-muted)">${esc(expenseDateKey(e))} • ${esc(getVal(e,['description','note'])||'')}</div></div><strong style="color:var(--danger)">- ${money(getVal(e,['amount','total']))}</strong></div>${receipt?`<div style="margin-top:8px"><img src="${esc(receipt)}" style="width:64px;height:64px;object-fit:cover;border-radius:7px;border:1px solid var(--border)" onclick="window.open('${esc(receipt)}','_blank')"><span style="font-size:.68rem;color:var(--text-muted);margin-left:8px">Receipt attached</span></div>`:''}</div>`}).join(''):'<div class="premium-empty">No expenses for the selected period.</div>';}
 
         function setActiveFilterBtn(id) { ['btnFilterToday','btnFilterYesterday','btnFilterClear'].forEach(x=>{const b=document.getElementById(x);if(b)b.classList.remove('active');}); if(id){const b=document.getElementById(id);if(b)b.classList.add('active');} }
         function setTodayFilter() { setActiveFilterBtn('btnFilterToday'); let now = new Date(); let todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`; document.getElementById('filterStartDate').value = todayStr; document.getElementById('filterEndDate').value = todayStr; renderLiveSales(); }
