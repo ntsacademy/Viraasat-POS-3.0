@@ -800,7 +800,7 @@
 
     <!-- BOTTOM NAV -->
     <nav class="bottom-nav" id="appBottomNav" style="display: none;">
-        <button class="nav-item" id="navTable" onclick="switchMainTab('tableDashboard', this)">
+        <button class="nav-item active" id="navTable" onclick="switchMainTab('tableDashboard', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></div>
             <span>Table</span>
         </button>
@@ -816,7 +816,7 @@
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></div>
             <span>Expenses</span>
         </button>
-        <button class="nav-item active" id="navAdmin" onclick="switchMainTab('premiumDashboard', this)">
+        <button class="nav-item" id="navAdmin" onclick="switchMainTab('premiumDashboard', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg></div>
             <span>Admin View</span>
         </button>
@@ -833,7 +833,7 @@
         const D1_API_BASE = '/api';
         const API_TIMEOUT_MS = 10000;
         
-const APP_VERSION = "D1-ENTERPRISE-FIX-6.2"; 
+const APP_VERSION = "D1-ENTERPRISE-FIX-6.3"; 
         
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
@@ -986,7 +986,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-6.2";
                     document.getElementById('appMain').style.display = 'block';
                     document.getElementById('appBottomNav').style.display = 'flex';
                     applyAdminRights(savedMobile);
-                    switchMainTab(window.isUserAdmin ? 'premiumDashboard' : 'tableDashboard', document.getElementById(window.isUserAdmin ? 'navDashboard' : 'navTable'), true);
+                    switchMainTab('tableDashboard', document.getElementById('navTable'), true);
                     enforceBackTrap(); hardBlockBack();
                     // Show the actual POS immediately; D1 sync runs in the background.
                     hideSplashScreen();
@@ -1027,9 +1027,9 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-6.2";
             }
 
             let activeTab = document.querySelector('.tab-content.active');
-            if (activeTab && activeTab.id !== 'premiumDashboard') { 
-                switchMainTab('premiumDashboard', document.getElementById('navAdmin'), true); 
-                return; 
+            if (activeTab && activeTab.id !== 'tableDashboard') {
+                switchMainTab('tableDashboard', document.getElementById('navTable'), true);
+                return;
             }
         };
 
@@ -1324,7 +1324,16 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-6.2";
             const defs=[['/dashboard',d1Get('/dashboard')],['/menu',d1Get('/menu')],['/tables',d1Get('/tables')],['/orders',d1Get('/orders?limit=1000')],['/expenses',d1Get('/expenses?limit=2000')],['/stock',d1Get('/stock')],['/staff',d1Get('/staff')],['/stock/history',d1Get('/stock/history?limit=100')]];const results=await Promise.allSettled(defs.map(x=>x[1]));const failed=[];
             try{
                 if(results[0].status==='fulfilled'){const dash=results[0].value||{};const summary=dash.summary||{},ts=dash.tables||{};document.getElementById('homeTodaySale').innerText=`₹${Math.round(Number(summary.today_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeAvgOrder').innerText=`₹${Math.round(Number(summary.average_order)||0).toLocaleString('en-IN')}`;document.getElementById('homeOverallSale').innerText=`₹${Math.round(Number(summary.overall_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeActiveTables').innerText=`${Number(ts.occupied)||0} / ${Number(ts.total)||tableSections.reduce((a,x)=>a+x.tables.length,0)}`;}else failed.push(['/dashboard',results[0].reason]);
-                if(results[1].status==='fulfilled')menuData=normalizeArray(results[1].value,['items','menu','data','result']);else failed.push(['/menu',results[1].reason]);
+                if(results[1].status==='fulfilled'){
+                    const rawMenu=normalizeArray(results[1].value,['items','menu','data','result']);
+                    const seen=new Set();
+                    menuData=rawMenu.filter(item=>{
+                        const name=String(getVal(item,['itemname','name'])||'').trim();
+                        const key=name.toLowerCase();
+                        if(!key||seen.has(key))return false;
+                        seen.add(key); return true;
+                    });
+                }else failed.push(['/menu',results[1].reason]);
                 if(results[2].status==='fulfilled'){const ts=normalizeArray(results[2].value,['tables','data','result']);tableSections=[{title:'Hut Seating',tables:[]},{title:'Ground Seating',tables:[]},{title:'Terrace Seating',tables:[]}];const amap={'Hut Seating':0,'Ground Seating':1,'Terrace Seating':2};runningTables={};ts.forEach(t=>{const n=String(t.table_number??t.tableNumber??'').trim();if(!n)return;const i=amap[String(t.seating_area||t.seatingArea||'').trim()]??1;if(!tableSections[i].tables.includes(n))tableSections[i].tables.push(n);runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied'?[{__d1Occupied:true,orderId:t.current_order_id||t.currentOrderId}]:[];});if(!ts.length)tableSections=[{title:'Hut Seating',tables:['1','2','3','4']},{title:'Ground Seating',tables:['5','6','7']},{title:'Terrace Seating',tables:['8','9','10']}];}else failed.push(['/tables',results[2].reason]);
                 if(results[3].status==='fulfilled')salesHistory=normalizeArray(results[3].value,['orders','sales','data','result']).map(mapD1Order).filter(Boolean).filter(o=>!['kot','cancelled','deleted'].includes(String(o.order_status||'').toLowerCase()));else failed.push(['/orders',results[3].reason]);
                 Object.keys(runningTables).forEach(key=>{const arr=runningTables[key];if(Array.isArray(arr)&&arr[0]?.__d1Occupied){const oid=String(arr[0].orderId||'');const order=salesHistory.find(o=>String(o.id||'')===oid||String(o.orderid||'')===oid);runningTables[key]=order?parseSaleItems(order):[];}});
@@ -1442,7 +1451,27 @@ Tables, billing and existing local UI remain visible.`);}
 
         function money(v){return `₹${Math.round(Number(v)||0).toLocaleString('en-IN')}`;}
         function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+        function getStaffKey(s){
+            return String(getVal(s,['id','empid','employeeid','mobile','phone','name'])||'').trim();
+        }
+        function getStaffStatus(s){
+            const raw=String(getVal(s,['status','is_active','isactive','active'])??'').trim().toLowerCase();
+            return (raw===''||raw==='1'||raw==='true'||raw==='active'||raw==='yes')?'active':'inactive';
+        }
         function activeStaffCount(){return staffData.filter(s=>getStaffStatus(s)==='active').length;}
+        async function toggleStaffStatus(key){
+            if(!requireAdmin('staff status change'))return;
+            const staff=staffData.find(s=>getStaffKey(s)===String(key));
+            if(!staff)return;
+            const id=Number(getVal(staff,['id','empid','employeeid']));
+            if(!id){showCustomAlert('This staff record has no D1 ID.');return;}
+            const next=getStaffStatus(staff)==='active'?'inactive':'active';
+            try{
+                await d1Post('/staff/status',{id,status:next});
+                staff.status=next; staff.is_active=next==='active'?1:0;
+                renderAdminStaffRows(); renderEmployeeList(); renderPremiumAdmin();
+            }catch(e){showCustomAlert('Staff status update failed: '+(e?.message||e));}
+        }
 
         function showPremiumTab(tab,btn){
             premiumActiveTab=tab;
@@ -1481,7 +1510,7 @@ Tables, billing and existing local UI remain visible.`);}
             const lifetime=salesHistory.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);
             const avg=todaySales.length?todayAmount/todaySales.length:0;
             const modes={}; salesHistory.forEach(s=>{const m=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'Unknown';modes[m]=(modes[m]||0)+parseAmount(getVal(s,['grand_total','totalamount','total','amount']));});
-            const recent=salesHistory.slice(0,8);
+            const recent=salesHistory.slice().sort((a,b)=>new Date(getVal(b,['date','isodate','created_at']))-new Date(getVal(a,['date','isodate','created_at']))).slice(0,8);
             panel.innerHTML=`
             <div class="premium-kpis">
                 <div class="pkpi"><div class="label">Today's Sale</div><div class="value">${money(todayAmount)}</div><div class="delta">${todaySales.length} orders</div></div>
@@ -1664,19 +1693,135 @@ Tables, billing and existing local UI remain visible.`);}
             body.innerHTML=items.map((x,i)=>{const salesShare=totalSales?x.sales/totalSales*100:0;const qtyShare=totalQty?x.qty/totalQty*100:0;return `<div class="item-rank"><div class="item-rank-no">${i+1}</div><div class="item-rank-info"><div class="item-rank-name">${esc(x.name)}</div><div class="item-rank-sub">${x.qty} units • ${x.orders} orders • ${qtyShare.toFixed(1)}% qty share</div><div class="mini-bar"><i style="width:${Math.min(100,salesShare)}%"></i></div></div><div style="text-align:right"><div class="item-rank-val">${money(x.sales)}</div><small style="font-size:.6rem;color:var(--text-muted)">${salesShare.toFixed(1)}% sales</small></div></div>`}).join('')||'<div class="premium-empty">No item sales found.</div>';
         }
         function requireAdmin(action='this action'){ if(!window.isUserAdmin){showCustomAlert(`Only Admin can perform ${action}.`);return false;}return true; }
-        function stockOptionHtml(selected=''){const names=Object.keys(stockData).sort((a,b)=>a.localeCompare(b));return `<option value="">Select stock item</option>${names.map(n=>`<option value="${esc(n)}" ${String(n).toLowerCase()===String(selected).toLowerCase()?'selected':''}>${esc(n)}</option>`).join('')}`;}
+        function stockOptionHtml(selected=''){
+            const names=Object.keys(stockData).sort((a,b)=>a.localeCompare(b));
+            return `<option value="">Select stock item</option>${names.map(n=>`<option value="${esc(n)}" ${String(n).toLowerCase()===String(selected).toLowerCase()?'selected':''}>${esc(n)}</option>`).join('')}`;
+        }
+
         function renderPremiumInventory(){
-            const panel=document.getElementById('premiumPanel-inventory');if(!panel)return;if(!window.isUserAdmin){panel.innerHTML='<div class="premium-card"><div class="premium-empty">Inventory control is restricted to Admin.</div></div>';return;}
-            const entries=Object.entries(stockData).sort((a,b)=>Number(a[1])-Number(b[1]));const low=entries.filter(([k,v])=>Number(v)<=Number(stockMeta[k]?.low_stock_level??5));const out=entries.filter(([k,v])=>Number(v)<=0);const totalUnits=entries.reduce((a,[k,v])=>a+Number(v||0),0);const last=entries.map(([k])=>stockMeta[k]?.updated_at||'').filter(Boolean).sort().pop();
-            panel.innerHTML=`<div class="premium-grid-3" style="margin-bottom:14px"><div class="report-stat"><div class="rlabel">Tracked Items</div><div class="rvalue">${entries.length}</div></div><div class="report-stat"><div class="rlabel">Low Stock</div><div class="rvalue" style="color:#B45309">${low.length}</div></div><div class="report-stat"><div class="rlabel">Total Units</div><div class="rvalue">${Math.round(totalUnits)}</div></div></div>
-            <div class="premium-card" style="margin-bottom:14px"><div class="premium-card-head"><h3>Inventory Control</h3><span>Admin only</span></div><div class="admin-form-grid"><select id="invItemSelect" onchange="loadStockEditor(this.value)">${stockOptionHtml()}</select><input id="invItemName" placeholder="New item name"><input id="invItemQty" type="number" min="0" placeholder="Current quantity"><input id="invItemUnit" placeholder="Unit" value="pcs"><input id="invItemLow" type="number" min="0" placeholder="Low stock level" value="5"><input id="invItemNote" placeholder="Correction note / reason"><button class="premium-btn" onclick="saveInventoryItem()">Save / Update Stock</button><button class="premium-btn light" onclick="resetInventoryEditor()">Add New Item</button></div><div class="admin-help" style="margin-top:8px">Last stock update: <b>${last?esc(cleanDisplayDate(last)+' '+cleanDisplayTime(last)):'No stock update recorded yet'}</b>${out.length?` • <span style="color:#B91C1C">${out.length} item(s) out of stock</span>`:''}</div></div>
-            <div class="premium-card"><div class="premium-card-head"><h3>Inventory Insights</h3><span>Latest corrections first</span></div><div id="inventoryInsightRows"></div></div>
-            <div class="premium-card" style="margin-top:14px"><div class="premium-card-head"><h3>All Stock Items</h3><span>${entries.length} items</span></div><div class="premium-toolbar"><input id="pStockSearch" placeholder="Search stock..." oninput="renderPremiumInventoryRows()"></div><div id="pStockGrid" class="stock-grid"></div></div>`;
+            const panel=document.getElementById('premiumPanel-inventory');if(!panel)return;
+            if(!window.isUserAdmin){
+                panel.innerHTML='<div class="premium-card"><div class="premium-empty">Inventory control is restricted to Admin.</div></div>';return;
+            }
+            const entries=Object.entries(stockData).sort((a,b)=>a[0].localeCompare(b[0]));
+            const low=entries.filter(([k,v])=>Number(v)<=Number(stockMeta[k]?.low_stock_level??5));
+            const out=entries.filter(([k,v])=>Number(v)<=0);
+            const totalUnits=entries.reduce((a,[k,v])=>a+Number(v||0),0);
+            const last=entries.map(([k])=>stockMeta[k]?.updated_at||'').filter(Boolean).sort().pop();
+
+            panel.innerHTML=`
+            <div class="premium-grid-3" style="margin-bottom:14px">
+                <div class="report-stat"><div class="rlabel">Tracked Items</div><div class="rvalue">${entries.length}</div></div>
+                <div class="report-stat"><div class="rlabel">Low Stock</div><div class="rvalue" style="color:#B45309">${low.length}</div></div>
+                <div class="report-stat"><div class="rlabel">Total Units</div><div class="rvalue">${Math.round(totalUnits)}</div></div>
+            </div>
+
+            <div class="premium-card" style="margin-bottom:14px">
+                <div class="premium-card-head"><h3>Inventory Control</h3><span>Admin only</span></div>
+                <div class="admin-form-grid">
+                    <select id="invItemSelect" onchange="loadStockEditor(this.value)">${stockOptionHtml()}</select>
+                    <input id="invItemQty" type="number" min="0" inputmode="numeric" placeholder="Current quantity">
+                    <input id="invItemNote" placeholder="Update note / reason">
+                    <button class="premium-btn" onclick="saveInventoryItem()">Update Stock</button>
+                    <button class="premium-btn light" onclick="toggleNewStockForm()">+ Add New Stock Item</button>
+                </div>
+
+                <div id="newStockForm" style="display:none;margin-top:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#FFFBF8">
+                    <div class="admin-form-grid">
+                        <input id="newStockName" placeholder="New stock item name">
+                        <input id="newStockQty" type="number" min="0" inputmode="numeric" placeholder="Opening quantity">
+                        <input id="newStockPrice" type="number" min="0" inputmode="numeric" placeholder="Menu price ₹ (optional)">
+                        <input id="newStockCategory" placeholder="Menu category" value="Other">
+                        <button class="premium-btn" onclick="addNewStockItem()">Save New Item</button>
+                        <button class="premium-btn light" onclick="toggleNewStockForm(false)">Cancel</button>
+                    </div>
+                    <div class="admin-help">Adding a stock item also adds it to the POS menu if it is not already present. Unit is automatically PCS.</div>
+                </div>
+
+                <div class="admin-help" style="margin-top:8px">
+                    Last stock update: <b>${last?esc(cleanDisplayDate(last)+' '+cleanDisplayTime(last)):'No stock update recorded yet'}</b>
+                    ${out.length?` • <span style="color:#B91C1C">${out.length} item(s) out of stock</span>`:''}
+                </div>
+            </div>
+
+            <div class="premium-card">
+                <div class="premium-card-head"><h3>Current Inventory</h3><span>Selected stock items only</span></div>
+                <div id="pStockGrid" class="stock-grid"></div>
+            </div>
+
+            <div class="premium-card" style="margin-top:14px">
+                <div class="premium-card-head"><h3>Inventory Insights</h3><span>Latest updates first</span></div>
+                <div id="inventoryInsightRows"></div>
+            </div>`;
+
             renderPremiumInventoryRows();renderInventoryInsights();
         }
-        function loadStockEditor(name){if(!name){resetInventoryEditor(false);return;}const meta=stockMeta[name]||{};document.getElementById('invItemName').value=name;document.getElementById('invItemQty').value=Number(stockData[name]||0);document.getElementById('invItemUnit').value=meta.unit||'pcs';document.getElementById('invItemLow').value=Number(meta.low_stock_level??5);document.getElementById('invItemNote').value='';}
-        function resetInventoryEditor(clearSelect=true){if(clearSelect&&document.getElementById('invItemSelect'))document.getElementById('invItemSelect').value='';['invItemName','invItemQty','invItemNote'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});document.getElementById('invItemUnit').value='pcs';document.getElementById('invItemLow').value=5;}
-        async function saveInventoryItem(){if(!requireAdmin('inventory update'))return;const name=document.getElementById('invItemName')?.value.trim();const qty=Number(document.getElementById('invItemQty')?.value);const unit=document.getElementById('invItemUnit')?.value.trim()||'pcs';const low=Number(document.getElementById('invItemLow')?.value??5);const note=document.getElementById('invItemNote')?.value.trim()||'Admin stock update';if(!name||!Number.isFinite(qty)||qty<0||!Number.isFinite(low)||low<0){showCustomAlert('Enter valid item, quantity and low-stock level.');return;}const old=Number(stockData[name]??0);const exists=Object.prototype.hasOwnProperty.call(stockData,name);try{await d1Post('/stock',{name,quantity:qty,unit,low_stock_level:low,note,updated_by:localStorage.getItem('viraasat_user')||'Admin'});stockData[name]=qty;stockMeta[name]={...(stockMeta[name]||{}),name,unit,low_stock_level:low,updated_at:new Date().toISOString()};stockHistory.unshift({item_name:name,old_quantity:old,new_quantity:qty,change_quantity:qty-old,action:exists?'UPDATE':'ADD',note,updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});auditLog(exists?'Stock Corrected':'Inventory Item Added',`${name}: ${old} → ${qty} (${note})`);renderStockDashboard();renderPremiumInventory();resetInventoryEditor();showCustomAlert('Inventory saved successfully.');}catch(e){showCustomAlert('Inventory save failed: '+e.message);}}
+
+        function loadStockEditor(name){
+            const qty=document.getElementById('invItemQty'),note=document.getElementById('invItemNote');
+            if(!name){if(qty)qty.value='';if(note)note.value='';return;}
+            if(qty)qty.value=Number(stockData[name]||0);
+            if(note)note.value='';
+        }
+
+        function toggleNewStockForm(force){
+            const box=document.getElementById('newStockForm');if(!box)return;
+            const show=typeof force==='boolean'?force:box.style.display==='none';
+            box.style.display=show?'block':'none';
+            if(!show){
+                ['newStockName','newStockQty','newStockPrice'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+                const c=document.getElementById('newStockCategory');if(c)c.value='Other';
+            }
+        }
+
+        async function saveInventoryItem(){
+            if(!requireAdmin('inventory update'))return;
+            const name=document.getElementById('invItemSelect')?.value||'';
+            const qty=Number(document.getElementById('invItemQty')?.value);
+            const note=document.getElementById('invItemNote')?.value.trim()||'Admin stock update';
+            if(!name||!Number.isFinite(qty)||qty<0){showCustomAlert('Select a stock item and enter a valid quantity.');return;}
+            const old=Number(stockData[name]??0);
+            try{
+                const r=await d1Post('/stock',{name,quantity:qty,unit:'pcs',low_stock_level:Number(stockMeta[name]?.low_stock_level??5),note,updated_by:localStorage.getItem('viraasat_user')||'Admin'});
+                stockData[name]=qty;
+                stockMeta[name]={...(stockMeta[name]||{}),name,unit:'pcs',updated_at:r.updated_at||new Date().toISOString()};
+                stockHistory.unshift({item_name:name,old_quantity:old,new_quantity:qty,change_quantity:qty-old,action:'UPDATE',note,updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});
+                auditLog('Stock Updated',`${name}: ${old} → ${qty}`);
+                renderStockDashboard();renderPremiumInventory();
+                showCustomAlert('Stock updated successfully.');
+            }catch(e){showCustomAlert('Stock update failed: '+(e?.message||e));}
+        }
+
+        async function addNewStockItem(){
+            if(!requireAdmin('add stock item'))return;
+            const name=document.getElementById('newStockName')?.value.trim();
+            const qty=Number(document.getElementById('newStockQty')?.value);
+            const priceRaw=document.getElementById('newStockPrice')?.value;
+            const price=priceRaw===''?0:Number(priceRaw);
+            const category=document.getElementById('newStockCategory')?.value.trim()||'Other';
+            if(!name||!Number.isFinite(qty)||qty<0||!Number.isFinite(price)||price<0){showCustomAlert('Enter a valid item name, quantity and menu price.');return;}
+            const duplicate=Object.keys(stockData).some(k=>k.toLowerCase()===name.toLowerCase());
+            if(duplicate){showCustomAlert('This stock item already exists. Select it from the dropdown to update quantity.');return;}
+            try{
+                const stockResult=await d1Post('/stock',{name,quantity:qty,unit:'pcs',low_stock_level:5,note:'New stock item',updated_by:localStorage.getItem('viraasat_user')||'Admin'});
+                const menuExists=menuData.some(m=>String(getVal(m,['name','itemname'])||'').trim().toLowerCase()===name.toLowerCase());
+                if(!menuExists){
+                    try{
+                        const menuResult=await d1Post('/menu',{name,category,price,is_available:true});
+                        menuData.push({id:Number(menuResult.id||0),name,itemname:name,category,price,is_available:1});
+                    }catch(menuErr){
+                        console.warn('Stock added but menu auto-add failed',menuErr);
+                    }
+                }
+                stockData[name]=qty;
+                stockMeta[name]={id:stockResult.id||'',name,unit:'pcs',low_stock_level:5,updated_at:stockResult.updated_at||new Date().toISOString()};
+                stockHistory.unshift({item_name:name,old_quantity:0,new_quantity:qty,change_quantity:qty,action:'ADD',note:'New stock item',updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});
+                auditLog('Stock Item Added',`${name}: ${qty} pcs`);
+                populateDropdown();renderStockDashboard();renderPremiumInventory();
+                showCustomAlert('New stock item added. It is now available in Inventory and POS Menu.');
+            }catch(e){showCustomAlert('New stock item failed: '+(e?.message||e));}
+        }
+
         function renderInventoryInsights(){const el=document.getElementById('inventoryInsightRows');if(!el)return;const rows=(stockHistory||[]).slice(0,10);el.innerHTML=rows.length?rows.map(r=>`<div class="admin-mini-row"><div><b>${esc(r.item_name||r.name)}</b><small>${esc(r.action||'UPDATE')} • ${esc(r.note||'Stock change')} • ${esc(r.updated_by||'Admin')}</small></div><strong>${Number(r.new_quantity??r.quantity??0)}</strong><small style="display:block;color:var(--text-muted)">${r.created_at?esc(cleanDisplayDate(r.created_at)+' '+cleanDisplayTime(r.created_at)):''}</small></div>`).join(''):'<div class="premium-empty">No stock update history available yet.</div>';}
         function renderPremiumInventoryRows(){const el=document.getElementById('pStockGrid');if(!el)return;const q=(document.getElementById('pStockSearch')?.value||'').toLowerCase();const e=Object.entries(stockData).filter(([k])=>k.toLowerCase().includes(q)).sort((a,b)=>Number(a[1])-Number(b[1]));el.innerHTML=e.map(([k,v])=>{const m=stockMeta[k]||{};const low=Number(m.low_stock_level??5);return `<div class="stock-box ${Number(v)<=low?'low':''}"><div class="stock-box-name">${esc(k)}</div><div class="stock-box-qty">${Number(v)||0}</div><small>${Number(v)<=0?'OUT OF STOCK':Number(v)<=low?'LOW STOCK':'Available'} • ${esc(m.unit||'pcs')}</small><button class="premium-btn light" style="margin-top:8px;width:100%" onclick="loadStockEditor('${esc(k)}')">Edit / Correct</button></div>`}).join('')||'<div class="premium-empty" style="grid-column:1/-1">No stock data received from source.</div>';}
         async function removeStaffRecord(key){
@@ -1758,6 +1903,7 @@ Tables, billing and existing local UI remain visible.`);}
 
         function renderPremiumAdmin(){
             const panel=document.getElementById('premiumPanel-settings'); if(!panel)return;
+            try{
             const logs=getAuditLogs();
             const active=activeStaffCount();
             const pendingPromise=loadPendingApprovals();
@@ -1776,7 +1922,7 @@ Tables, billing and existing local UI remain visible.`);}
 
             <div class="premium-card admin-card">
                 <div class="premium-card-head"><h3>Stock Management</h3><span>${Object.keys(stockData).length} items • Admin only</span></div>
-                <div class="admin-form-grid"><select id="adminStockSelect" onchange="loadAdminStockSelect(this.value)">${stockOptionHtml()}</select><input id="adminStockSearch" placeholder="New item name / search" oninput="syncAdminStockSearch(this.value)"><input id="adminStockQty" type="number" min="0" inputmode="numeric" placeholder="Current Qty"><input id="adminStockLow" type="number" min="0" inputmode="numeric" value="5" placeholder="Low Stock"><button class="premium-btn" onclick="adminUpdateStockUnified()">Save / Correct</button><button class="premium-btn light" onclick="resetAdminStockForm()">Add New Item</button></div>
+                <div class="admin-form-grid"><select id="adminStockSelect" onchange="loadAdminStockSelect(this.value)">${stockOptionHtml()}</select><input id="adminStockSearch" placeholder="New item name / search" oninput="syncAdminStockSearch(this.value)"><input id="adminStockQty" type="number" min="0" inputmode="numeric" placeholder="Current Qty"><button class="premium-btn" onclick="adminUpdateStockUnified()">Update Stock</button><button class="premium-btn light" onclick="resetAdminStockForm()">Add New Item</button></div>
                 <div class="admin-help">Use the dropdown to select an existing item. Quantity correction and new stock-item creation are restricted to Admin.</div><div id="adminStockMiniList" class="admin-mini-list"></div>
             </div>
 
@@ -1860,6 +2006,10 @@ Tables, billing and existing local UI remain visible.`);}
             });
             const logBox=document.getElementById('auditLogsBox');
             if(logBox)logBox.innerHTML=logs.length?logs.slice(0,40).map(l=>`<div class="audit-row"><b>${esc(l.action)}</b><span>${esc(l.details)} • ${esc(l.user)} • ${new Date(l.timestamp).toLocaleString('en-IN')}</span></div>`).join(''):'<div class="premium-empty">No activity logged yet.</div>';
+            }catch(err){
+                console.error('Admin render failed',err);
+                panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Admin Control</h3><span>Secure management</span></div><div class="approval-missing">Admin view could not render one of its modules.<br><small>${esc(err?.message||err)}</small></div></div>`;
+            }
         }
 
         function renderAdminStockRows(){const el=document.getElementById('adminStockMiniList');if(!el)return;const rows=Object.entries(stockData).sort((a,b)=>Number(a[1])-Number(b[1])).slice(0,15);el.innerHTML=rows.map(([name,qty])=>{const low=Number(stockMeta[name]?.low_stock_level??5);return `<div class="admin-mini-row" onclick="loadAdminStockSelect('${esc(name)}')" style="cursor:pointer"><div><b>${esc(name)}</b><small>${Number(qty)<=0?'OUT OF STOCK':Number(qty)<=low?'Low stock':'Available'} • Last update ${stockMeta[name]?.updated_at?esc(cleanDisplayDate(stockMeta[name].updated_at)):'—'}</small></div><strong>${Number(qty)||0}</strong></div>`}).join('')||'<div class="premium-empty">No stock data.</div>';}
@@ -2142,9 +2292,19 @@ Tables, billing and existing local UI remain visible.`);}
             trendChartInstance = new Chart(ctx, { type: 'line', data: { labels: finalLabels, datasets: [ { label: 'Sales (₹)', data: finalSales, borderColor: '#07CDAE', backgroundColor: 'rgba(7, 205, 174, 0.15)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#07CDAE', pointRadius: 4 }, { label: 'Expenses (₹)', data: finalExp, borderColor: '#FF5F8E', backgroundColor: 'rgba(255, 95, 142, 0.12)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#FF5F8E', pointRadius: 4 } ] }, options: { responsive: true, maintainAspectRatio: false } });
         }
 
-        function populateDropdown() { 
-            const datalist = document.getElementById('menuItemsList'); datalist.innerHTML = ""; 
-            menuData.forEach(item => { let itemName = getVal(item, ['itemname', 'name']); if(itemName) { let option = document.createElement('option'); option.value = itemName; datalist.appendChild(option); } }); 
+        function populateDropdown() {
+            const datalist=document.getElementById('menuItemsList'); if(!datalist)return;
+            datalist.innerHTML='';
+            const seen=new Set();
+            menuData.forEach(item=>{
+                const itemName=String(getVal(item,['itemname','name'])||'').trim();
+                const key=itemName.toLowerCase();
+                if(!key||seen.has(key))return;
+                seen.add(key);
+                const option=document.createElement('option');
+                option.value=itemName;
+                datalist.appendChild(option);
+            });
         }
 
         function renderStockDashboard() { 
@@ -2166,7 +2326,7 @@ Tables, billing and existing local UI remain visible.`);}
             if (!tStr) return ""; try { let d = new Date(tStr); if (!isNaN(d.getTime())) return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); return tStr; } catch(e) { return tStr; } 
         }
 
-        function renderLiveSales(){const salesGrid=document.getElementById('salesGrid'),homeRecent=document.getElementById('homeRecentOrders');if(!salesGrid)return;salesGrid.innerHTML='';if(homeRecent)homeRecent.innerHTML='';const start=document.getElementById('filterStartDate')?.value||'',end=document.getElementById('filterEndDate')?.value||'';const filtered=salesHistory.filter(s=>{const d=saleDateKey(s);return (!start||d>=start)&&(!end||d<=end);});const total=filtered.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);const box=document.getElementById('totalSalesBox');if(box)box.innerText=`Total Sales: ₹ ${total.toLocaleString('en-IN')}`;if(!filtered.length){salesGrid.innerHTML='<div class="premium-empty">No orders found.</div>';return;}filtered.slice().reverse().forEach(s=>{const id=getVal(s,['orderid','order_number','id'])||'N/A',table=getVal(s,['tablenumber','table','tablename','table_number'])||'Order',grand=parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),items=parseSaleItems(s),mode=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—';const itemHtml=items.length?items.map(it=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px dashed var(--border)"><span><b>${esc(it.name)}</b> ×${it.qty}</span><span>${money(it.amount)}</span></div>`).join(''):'<div style="color:var(--text-muted)">Item details unavailable</div>';salesGrid.innerHTML+=`<div class="card" style="padding:16px;margin-bottom:12px;cursor:pointer" onclick="openOrderDetails('${esc(id)}')"><div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:10px"><div><h4 style="margin:0;font-weight:800">${esc(table)}</h4><span style="font-size:.72rem;color:var(--text-muted)">#${esc(id)} • ${esc(mode)}</span></div><span style="font-weight:800;color:#B45309">${money(grand)}</span></div><div style="font-size:.84rem;line-height:1.5">${itemHtml}</div><div style="font-size:.72rem;color:var(--text-muted);margin-top:10px">${esc(cleanDisplayDate(saleDateKey(s)))} • ${esc(saleTimeText(s))}</div></div>`;});if(homeRecent)filtered.slice(0,5).forEach(s=>{const id=getVal(s,['orderid','order_number','id'])||'N/A',table=getVal(s,['tablenumber','table','tablename','table_number'])||'Order',grand=parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),items=parseSaleItems(s);homeRecent.innerHTML+=`<div class="h-order-card" onclick="openOrderDetails('${esc(id)}')"><div class="ho-icon">🍽️</div><div class="ho-info"><div class="ho-title">Order #${esc(id)}</div><div class="ho-sub">${esc(table)} • ${esc(saleTimeText(s))}</div><div class="ho-sub" style="font-weight:700;color:var(--text-dark);margin-top:2px">${items.length?items.map(i=>`${esc(i.name)} ×${i.qty}`).join(', '):'Item details unavailable'} • ${money(grand)}</div></div><div class="ho-badge" style="background:#E6F4EA;color:#10B981">COMPLETED</div><div>›</div></div>`;});}
+        function renderLiveSales(){const salesGrid=document.getElementById('salesGrid'),homeRecent=document.getElementById('homeRecentOrders');if(!salesGrid)return;salesGrid.innerHTML='';if(homeRecent)homeRecent.innerHTML='';const start=document.getElementById('filterStartDate')?.value||'',end=document.getElementById('filterEndDate')?.value||'';const filtered=salesHistory.filter(s=>{const d=saleDateKey(s);return (!start||d>=start)&&(!end||d<=end);});const total=filtered.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);const box=document.getElementById('totalSalesBox');if(box)box.innerText=`Total Sales: ₹ ${total.toLocaleString('en-IN')}`;if(!filtered.length){salesGrid.innerHTML='<div class="premium-empty">No orders found.</div>';return;}filtered.slice().sort((a,b)=>new Date(getVal(b,['date','isodate','created_at']))-new Date(getVal(a,['date','isodate','created_at']))).forEach(s=>{const id=getVal(s,['orderid','order_number','id'])||'N/A',table=getVal(s,['tablenumber','table','tablename','table_number'])||'Order',grand=parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),items=parseSaleItems(s),mode=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—';const itemHtml=items.length?items.map(it=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:4px 0;border-bottom:1px dashed var(--border)"><span><b>${esc(it.name)}</b> ×${it.qty}</span><span>${money(it.amount)}</span></div>`).join(''):'<div style="color:var(--text-muted)">Item details unavailable</div>';salesGrid.innerHTML+=`<div class="card" style="padding:16px;margin-bottom:12px;cursor:pointer" onclick="openOrderDetails('${esc(id)}')"><div style="display:flex;justify-content:space-between;gap:10px;margin-bottom:10px"><div><h4 style="margin:0;font-weight:800">${esc(table)}</h4><span style="font-size:.72rem;color:var(--text-muted)">#${esc(id)} • ${esc(mode)}</span></div><span style="font-weight:800;color:#B45309">${money(grand)}</span></div><div style="font-size:.84rem;line-height:1.5">${itemHtml}</div><div style="font-size:.72rem;color:var(--text-muted);margin-top:10px">${esc(cleanDisplayDate(saleDateKey(s)))} • ${esc(saleTimeText(s))}</div></div>`;});if(homeRecent)filtered.slice().sort((a,b)=>new Date(getVal(b,['date','isodate','created_at']))-new Date(getVal(a,['date','isodate','created_at']))).slice(0,5).forEach(s=>{const id=getVal(s,['orderid','order_number','id'])||'N/A',table=getVal(s,['tablenumber','table','tablename','table_number'])||'Order',grand=parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),items=parseSaleItems(s);homeRecent.innerHTML+=`<div class="h-order-card" onclick="openOrderDetails('${esc(id)}')"><div class="ho-icon">🍽️</div><div class="ho-info"><div class="ho-title">Order #${esc(id)}</div><div class="ho-sub">${esc(table)} • ${esc(saleTimeText(s))}</div><div class="ho-sub" style="font-weight:700;color:var(--text-dark);margin-top:2px">${items.length?items.map(i=>`${esc(i.name)} ×${i.qty}`).join(', '):'Item details unavailable'} • ${money(grand)}</div></div><div class="ho-badge" style="background:#E6F4EA;color:#10B981">COMPLETED</div><div>›</div></div>`;});}
 
         function renderTableGrid() {
             const gridContainer = document.getElementById('tableGrid'); gridContainer.innerHTML = ""; let activeCount = 0; let totalCount = 0;
