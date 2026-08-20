@@ -162,6 +162,16 @@ async function ensureSupportTables(db) {
     }
   }
   await db.prepare(`
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      action TEXT,
+      details TEXT,
+      user TEXT,
+      timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+
+  await db.prepare(`
     CREATE TABLE IF NOT EXISTS deletion_requests (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_id TEXT NOT NULL,
@@ -1328,7 +1338,7 @@ var worker_default = {
             "GET /api/tables","POST /api/tables/clear","GET /api/orders","POST /api/orders","POST /api/orders/checkout",
             "POST /api/orders/request-delete","GET /api/approvals","GET /api/approvals/debug","POST /api/approvals/resolve",
             "GET /api/expenses","POST /api/expenses","GET /api/staff","POST /api/staff","POST /api/staff/update",
-            "POST /api/staff/remove","POST /api/staff/status","POST /api/import/full","POST /api/backup/google-sheet"
+            "POST /api/staff/remove","POST /api/staff/status","POST /api/import/full","POST /api/backup/google-sheet","GET /api/audit-logs","POST /api/audit-logs","DELETE /api/audit-logs"
           ]
         });
       }
@@ -1344,6 +1354,38 @@ var worker_default = {
         const result = await runGoogleSheetBackup(db, env, "Manual");
         return json(result);
       }
+      if (path === "/api/audit-logs" && method === "GET") {
+        await ensureSupportTables(db);
+        const result = await db.prepare(`
+          SELECT id, action, details, user, timestamp
+          FROM audit_logs
+          ORDER BY id DESC
+          LIMIT 500
+        `).all();
+        return json({ success:true, logs:result.results || [] });
+      }
+
+      if (path === "/api/audit-logs" && method === "POST") {
+        await ensureSupportTables(db);
+        const body = await request.json();
+        const action = clean(body.action);
+        const details = clean(body.details);
+        const user = clean(body.user) || "Admin";
+        const timestamp = clean(body.timestamp) || new Date().toISOString();
+        if (!action) return json({ success:false, error:"Audit action required" },400);
+        const result = await db.prepare(`
+          INSERT INTO audit_logs (action, details, user, timestamp)
+          VALUES (?, ?, ?, ?)
+        `).bind(action, details, user, timestamp).run();
+        return json({ success:true, id:result.meta?.last_row_id || null });
+      }
+
+      if (path === "/api/audit-logs" && method === "DELETE") {
+        await ensureSupportTables(db);
+        await db.prepare(`DELETE FROM audit_logs`).run();
+        return json({ success:true, message:"All audit logs cleared" });
+      }
+
       if (path === "/api/dashboard" && method === "GET") {
         return json(
           await getDashboard(db)
