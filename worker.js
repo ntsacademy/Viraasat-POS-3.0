@@ -162,16 +162,6 @@ async function ensureSupportTables(db) {
     }
   }
   await db.prepare(`
-    CREATE TABLE IF NOT EXISTS audit_logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      action TEXT,
-      details TEXT,
-      user TEXT,
-      timestamp TEXT DEFAULT CURRENT_TIMESTAMP
-    )
-  `).run();
-
-  await db.prepare(`
     CREATE TABLE IF NOT EXISTS deletion_requests (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       order_id TEXT NOT NULL,
@@ -223,6 +213,23 @@ async function ensureSupportTables(db) {
   await ensureColumn(db, "deletion_requests", "reviewed_by", "TEXT");
   await ensureColumn(db, "deletion_requests", "reviewed_at", "TEXT");
   await ensureColumn(db, "deletion_requests", "created_at", "TEXT DEFAULT CURRENT_TIMESTAMP");
+
+  // Audit logs: create the table if missing and safely migrate older schemas.
+  // This specifically fixes legacy databases where `details` was not present.
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      action TEXT,
+      details TEXT,
+      user TEXT,
+      timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+  await ensureColumn(db, "audit_logs", "action", "TEXT");
+  await ensureColumn(db, "audit_logs", "details", "TEXT");
+  await ensureColumn(db, "audit_logs", "user", "TEXT");
+  await ensureColumn(db, "audit_logs", "timestamp", "TEXT DEFAULT CURRENT_TIMESTAMP");
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs(timestamp)`).run();
 }
 __name(ensureSupportTables, "ensureSupportTables");
 async function getMenu(db) {
@@ -1338,9 +1345,45 @@ var worker_default = {
             "GET /api/tables","POST /api/tables/clear","GET /api/orders","POST /api/orders","POST /api/orders/checkout",
             "POST /api/orders/request-delete","GET /api/approvals","GET /api/approvals/debug","POST /api/approvals/resolve",
             "GET /api/expenses","POST /api/expenses","GET /api/staff","POST /api/staff","POST /api/staff/update",
-            "POST /api/staff/remove","POST /api/staff/status","POST /api/import/full","POST /api/backup/google-sheet","GET /api/audit-logs","POST /api/audit-logs","DELETE /api/audit-logs"
+            "POST /api/staff/remove","POST /api/staff/status","POST /api/import/full","POST /api/backup/google-sheet",
+            "GET /api/audit-logs","POST /api/audit-logs","DELETE /api/audit-logs"
           ]
         });
+      }
+
+      if (path === "/api/audit-logs" && method === "GET") {
+        await ensureSupportTables(db);
+        const limit = Math.min(Math.max(num(url.searchParams.get("limit"), 500), 1), 1000);
+        const result = await db.prepare(`
+          SELECT id, action, details, user, timestamp
+          FROM audit_logs
+          ORDER BY id DESC
+          LIMIT ?
+        `).bind(limit).all();
+        return json({ success:true, logs:result.results || [] });
+      }
+
+      if (path === "/api/audit-logs" && method === "POST") {
+        await ensureSupportTables(db);
+        const body = await request.json();
+        const action = clean(body.action || body.event || body.type) || "Unknown";
+        const details = clean(body.details || body.description || body.note);
+        const user = clean(body.user || body.username || body.created_by || body.user_id) || "Admin";
+        const timestamp = clean(body.timestamp) || new Date().toISOString();
+        const inserted = await db.prepare(`
+          INSERT INTO audit_logs (action, details, user, timestamp)
+          VALUES (?, ?, ?, ?)
+        `).bind(action, details, user, timestamp).run();
+        return json({
+          success:true,
+          id:inserted.meta?.last_row_id ?? inserted.lastInsertRowid ?? null
+        });
+      }
+
+      if (path === "/api/audit-logs" && method === "DELETE") {
+        await ensureSupportTables(db);
+        await db.prepare(`DELETE FROM audit_logs`).run();
+        return json({ success:true, message:"All audit logs cleared successfully" });
       }
 
       if (path === "/api/backup/google-sheet" && method === "POST") {
@@ -1354,38 +1397,6 @@ var worker_default = {
         const result = await runGoogleSheetBackup(db, env, "Manual");
         return json(result);
       }
-      if (path === "/api/audit-logs" && method === "GET") {
-        await ensureSupportTables(db);
-        const result = await db.prepare(`
-          SELECT id, action, details, user, timestamp
-          FROM audit_logs
-          ORDER BY id DESC
-          LIMIT 500
-        `).all();
-        return json({ success:true, logs:result.results || [] });
-      }
-
-      if (path === "/api/audit-logs" && method === "POST") {
-        await ensureSupportTables(db);
-        const body = await request.json();
-        const action = clean(body.action);
-        const details = clean(body.details);
-        const user = clean(body.user) || "Admin";
-        const timestamp = clean(body.timestamp) || new Date().toISOString();
-        if (!action) return json({ success:false, error:"Audit action required" },400);
-        const result = await db.prepare(`
-          INSERT INTO audit_logs (action, details, user, timestamp)
-          VALUES (?, ?, ?, ?)
-        `).bind(action, details, user, timestamp).run();
-        return json({ success:true, id:result.meta?.last_row_id || null });
-      }
-
-      if (path === "/api/audit-logs" && method === "DELETE") {
-        await ensureSupportTables(db);
-        await db.prepare(`DELETE FROM audit_logs`).run();
-        return json({ success:true, message:"All audit logs cleared" });
-      }
-
       if (path === "/api/dashboard" && method === "GET") {
         return json(
           await getDashboard(db)
