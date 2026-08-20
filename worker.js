@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// worker.js — Viraasat POS Enterprise FINAL 6.2
+// worker.js — Viraasat POS Enterprise FINAL 6.2 + Google Sheet Backup
 var JSON_HEADERS = {
   "Content-Type": "application/json; charset=utf-8",
   "Cache-Control": "no-store",
@@ -212,8 +212,7 @@ async function ensureSupportTables(db) {
   await ensureColumn(db, "deletion_requests", "status", "TEXT DEFAULT 'pending'");
   await ensureColumn(db, "deletion_requests", "reviewed_by", "TEXT");
   await ensureColumn(db, "deletion_requests", "reviewed_at", "TEXT");
-  await ensureColumn(db, "deletion_requests", "created_at", "TEXT");
-  await db.prepare(`UPDATE deletion_requests SET created_at=CURRENT_TIMESTAMP WHERE created_at IS NULL`).run();
+  await ensureColumn(db, "deletion_requests", "created_at", "TEXT DEFAULT CURRENT_TIMESTAMP");
 }
 __name(ensureSupportTables, "ensureSupportTables");
 async function getMenu(db) {
@@ -501,6 +500,228 @@ async function getStaff(db) {
   return out;
 }
 __name(getStaff, "getStaff");
+
+// ============================================================
+// GOOGLE SHEET BACKUP
+// D1 remains the master database. Google Sheet is backup only.
+// ============================================================
+const GOOGLE_SHEET_BACKUP_URL = "https://script.google.com/macros/s/AKfycbwi7c15KvCY_GwjaK748HPNpk2AEPsq0vHdrnZDmYmOuXkJKAMgQ9Bsf_so9RiBagdk8Q/exec";
+const BACKUP_BATCH_SIZE = 1000;
+
+async function getAllOrdersForBackup(db) {
+  if (!(await tableExists(db, "orders"))) return [];
+  const cols = await getColumns(db, "orders");
+  const pick = (column, fallback) => cols.includes(column) ? column : fallback;
+  const grandTotalExp = cols.includes("grand_total") ? "grand_total" : cols.includes("total") ? "total AS grand_total" : "0 AS grand_total";
+  const out = [];
+  let lastId = 0;
+  while (true) {
+    const result = await db.prepare(`
+      SELECT
+        ${pick("id", "rowid AS id")},
+        ${pick("order_number", "CAST(id AS TEXT) AS order_number")},
+        ${pick("table_number", "NULL AS table_number")},
+        ${pick("subtotal", "0 AS subtotal")},
+        ${pick("discount", "0 AS discount")},
+        ${grandTotalExp},
+        ${pick("payment_method", "'' AS payment_method")},
+        ${pick("order_status", "'completed' AS order_status")},
+        ${pick("created_at", "NULL AS created_at")}
+      FROM orders
+      WHERE id > ?
+      ORDER BY id ASC
+      LIMIT ?
+    `).bind(lastId, BACKUP_BATCH_SIZE).all();
+    const batch = result.results || [];
+    if (!batch.length) break;
+    const ids = batch.map(o => Number(o.id)).filter(Number.isFinite);
+    const itemMap = await getOrderItemsMap(db, ids);
+    for (const o of batch) {
+      const details = itemMap[String(o.id)] || [];
+      out.push({
+        id: o.id,
+        order_id: o.id,
+        order_number: o.order_number,
+        table_number: o.table_number,
+        items: details.length ? JSON.stringify(details) : "",
+        subtotal: num(o.subtotal),
+        discount: num(o.discount),
+        grand_total: num(o.grand_total),
+        payment_method: o.payment_method || "",
+        status: o.order_status || "",
+        created_by: "",
+        created_at: o.created_at || "",
+        updated_at: o.created_at || ""
+      });
+    }
+    if (!ids.length || batch.length < BACKUP_BATCH_SIZE) break;
+    lastId = Math.max(...ids);
+  }
+  return out;
+}
+
+async function getBackupData(db) {
+  await ensureSupportTables(db);
+
+  const [sales, menuRaw, staffRaw, stockRaw, expensesRaw, approvalsRaw] = await Promise.all([
+    getAllOrdersForBackup(db),
+    tableExists(db, "menu_items") ? db.prepare(`SELECT id,name,category,price,gst_percent,is_available,created_at,updated_at FROM menu_items ORDER BY id ASC`).all() : { results: [] },
+    db.prepare(`SELECT id,name,mobile,role,salary,join_date,is_active,created_at,updated_at FROM staff ORDER BY id ASC`).all(),
+    db.prepare(`SELECT id,name,quantity,unit,low_stock_level,is_active,created_at,updated_at FROM stock_items ORDER BY id ASC`).all(),
+    db.prepare(`SELECT id,category,amount,description,expense_date,created_at FROM expenses ORDER BY id ASC`).all(),
+    db.prepare(`SELECT id,order_id,requested_by,reason,status,reviewed_by,reviewed_at,created_at FROM deletion_requests ORDER BY id ASC`).all()
+  ]);
+
+  const menu = (menuRaw.results || []).map(r => ({
+    id: r.id,
+    name: r.name || "",
+    category: r.category || "",
+    price: num(r.price),
+    gst: num(r.gst_percent),
+    available: Number(r.is_available ?? 1) === 1,
+    created_at: r.created_at || "",
+    updated_at: r.updated_at || ""
+  }));
+
+  const staff = (staffRaw.results || []).map(r => ({
+    id: r.id,
+    name: r.name || "",
+    mobile: r.mobile || "",
+    role: r.role || "",
+    salary: num(r.salary),
+    joining_date: r.join_date || "",
+    status: Number(r.is_active ?? 1) === 1 ? "active" : "inactive",
+    created_at: r.created_at || "",
+    updated_at: r.updated_at || ""
+  }));
+
+  const stock = (stockRaw.results || []).map(r => ({
+    id: r.id,
+    name: r.name || "",
+    quantity: num(r.quantity),
+    unit: r.unit || "pcs",
+    threshold: num(r.low_stock_level, 5),
+    status: Number(r.is_active ?? 1) === 1 ? "active" : "inactive",
+    updated_at: r.updated_at || r.created_at || ""
+  }));
+
+  const expenses = (expensesRaw.results || []).map(r => ({
+    id: r.id,
+    date: r.expense_date || r.created_at || "",
+    category: r.category || "",
+    description: r.description || "",
+    amount: num(r.amount),
+    payment_method: "",
+    created_by: "",
+    created_at: r.created_at || "",
+    updated_at: r.created_at || ""
+  }));
+
+  const approvals = (approvalsRaw.results || []).map(r => ({
+    id: r.id,
+    order_id: r.order_id || "",
+    reason: r.reason || "",
+    requested_by: r.requested_by || "",
+    status: r.status || "",
+    reviewed_by: r.reviewed_by || "",
+    requested_at: r.created_at || "",
+    reviewed_at: r.reviewed_at || ""
+  }));
+
+  let users = [];
+  if (await tableExists(db, "users")) {
+    const cols = await getColumns(db, "users");
+    const result = await db.prepare(`SELECT * FROM users ORDER BY ${cols.includes("id") ? "id" : "rowid"} ASC`).all();
+    users = (result.results || []).map(r => ({
+      id: r.id ?? r.rowid ?? "",
+      mobile: r.mobile ?? r.phone ?? "",
+      role: r.role ?? "",
+      allow_sales: r.allow_sales ?? true,
+      allow_analytics: r.allow_analytics ?? true,
+      allow_expenses: r.allow_expenses ?? true,
+      status: r.status ?? (Number(r.is_active ?? 1) === 1 ? "active" : "inactive"),
+      created_at: r.created_at ?? "",
+      updated_at: r.updated_at ?? ""
+    }));
+  }
+
+  let auditLogs = [];
+  if (await tableExists(db, "audit_logs")) {
+    const cols = await getColumns(db, "audit_logs");
+    const result = await db.prepare(`SELECT * FROM audit_logs ORDER BY ${cols.includes("id") ? "id" : "rowid"} ASC`).all();
+    auditLogs = (result.results || []).map(r => ({
+      id: r.id ?? r.rowid ?? "",
+      action: r.action ?? r.event ?? "",
+      details: r.details ?? r.description ?? "",
+      user: r.user ?? r.username ?? r.created_by ?? r.user_id ?? "",
+      timestamp: r.timestamp ?? r.created_at ?? ""
+    }));
+  }
+
+  return {
+    Sales: sales,
+    Menu: menu,
+    Staff: staff,
+    Stock: stock,
+    Expenses: expenses,
+    Users: users,
+    Approvals: approvals,
+    "Audit Logs": auditLogs
+  };
+}
+
+async function runGoogleSheetBackup(db, env, backupType = "Manual") {
+  const backupId = `BKP-${Date.now()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+  const backupTime = new Date().toISOString();
+  const data = await getBackupData(db);
+
+  const payload = {
+    backup_id: backupId,
+    backup_time: backupTime,
+    backup_type: backupType,
+    data
+  };
+
+  const response = await fetch(GOOGLE_SHEET_BACKUP_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const responseText = await response.text();
+  let result;
+  try {
+    result = JSON.parse(responseText);
+  } catch {
+    result = { raw: responseText };
+  }
+
+  if (!response.ok || result.ok !== true) {
+    throw new Error(`Google Sheet backup failed (${response.status}): ${responseText.slice(0, 500)}`);
+  }
+
+  return {
+    success: true,
+    backup_id: backupId,
+    backup_time: backupTime,
+    backup_type: backupType,
+    counts: {
+      sales: data.Sales.length,
+      menu: data.Menu.length,
+      staff: data.Staff.length,
+      stock: data.Stock.length,
+      expenses: data.Expenses.length,
+      users: data.Users.length,
+      approvals: data.Approvals.length,
+      audit_logs: data["Audit Logs"].length
+    },
+    google_response: result
+  };
+}
+
 async function getDashboard(db) {
   const [
     orders,
@@ -1032,6 +1253,20 @@ async function createOrder(db, body) {
 }
 __name(createOrder, "createOrder");
 var worker_default = {
+  async scheduled(event, env, ctx) {
+    const db = env.DB;
+    if (!db) {
+      console.error("Scheduled backup failed: D1 Database Binding is missing");
+      return;
+    }
+    try {
+      const result = await runGoogleSheetBackup(db, env, "Automatic");
+      console.log("Scheduled Google Sheet backup completed", result);
+    } catch (error) {
+      console.error("Scheduled Google Sheet backup failed", error);
+      throw error;
+    }
+  },
   async fetch(request, env) {
     const url = new URL(request.url);
     const path = url.pathname;
@@ -1093,11 +1328,22 @@ var worker_default = {
             "GET /api/tables","POST /api/tables/clear","GET /api/orders","POST /api/orders","POST /api/orders/checkout",
             "POST /api/orders/request-delete","GET /api/approvals","GET /api/approvals/debug","POST /api/approvals/resolve",
             "GET /api/expenses","POST /api/expenses","GET /api/staff","POST /api/staff","POST /api/staff/update",
-            "POST /api/staff/remove","POST /api/staff/status","POST /api/import/full"
+            "POST /api/staff/remove","POST /api/staff/status","POST /api/import/full","POST /api/backup/google-sheet"
           ]
         });
       }
 
+      if (path === "/api/backup/google-sheet" && method === "POST") {
+        const configuredSecret = clean(env.BACKUP_SECRET);
+        if (configuredSecret) {
+          const suppliedSecret = clean(request.headers.get("X-Backup-Secret"));
+          if (!suppliedSecret || suppliedSecret !== configuredSecret) {
+            return json({ success: false, error: "Backup authorization failed" }, 401);
+          }
+        }
+        const result = await runGoogleSheetBackup(db, env, "Manual");
+        return json(result);
+      }
       if (path === "/api/dashboard" && method === "GET") {
         return json(
           await getDashboard(db)
@@ -1272,8 +1518,8 @@ var worker_default = {
         }
 
         const inserted = await db.prepare(`
-          INSERT INTO deletion_requests (order_id, requested_by, reason, status, created_at)
-          VALUES (?, ?, ?, 'pending', CURRENT_TIMESTAMP)
+          INSERT INTO deletion_requests (order_id, requested_by, reason, status)
+          VALUES (?, ?, ?, 'pending')
         `).bind(orderId, requestedBy, reason).run();
 
         const orderCols = await getColumns(db,"orders");
@@ -1823,8 +2069,8 @@ var worker_default = {
 
         const result = await db.prepare(`
           INSERT INTO deletion_requests
-            (order_id, requested_by, reason, status, created_at)
-          VALUES (?, ?, ?, 'pending', CURRENT_TIMESTAMP)
+            (order_id, requested_by, reason, status)
+          VALUES (?, ?, ?, 'pending')
         `).bind(
           target,
           requestedBy,
