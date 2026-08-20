@@ -1,3023 +1,2047 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    
-    <title>Viraasat ERP & POS</title>
-    
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#FFFFFF">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="apple-touch-icon" href="icon.png">
-    <link rel="icon" type="image/png" href="icon.png">
-    
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
-    <script async src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script async src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+var __defProp = Object.defineProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-    <style>
-        :root {
-            --bg-color: #FBF9F5;       
-            --surface: #FFFFFF;        
-            --surface-alt: #F4EFEA;    
-            --border: #E8E4DC;         
-            
-            --primary: #1A1A1A;        
-            --primary-light: #F0EDE6;  
-            --text-dark: #1A1A1A;      
-            --text-muted: #7A756D;     
-            
-            --danger: #D03B3B;
-            --success: #10B981;
-            
-            --occ-bg: #FFF4F6;
-            --occ-border: #FF5F8E;
-            --occ-gradient: linear-gradient(135deg, #FF9A7A 0%, #FF5F8E 100%);
-            
-            --shadow-soft: 0 4px 18px rgba(0,0,0,0.03); 
-            --border-radius: 14px;      
+// worker.js — Viraasat POS Enterprise FINAL 6.2
+var JSON_HEADERS = {
+  "Content-Type": "application/json; charset=utf-8",
+  "Cache-Control": "no-store",
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Accept"
+};
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: JSON_HEADERS
+  });
+}
+__name(json, "json");
+function clean(value) {
+  if (value === void 0 || value === null) return "";
+  return String(value).trim();
+}
+__name(clean, "clean");
+function num(value, fallback = 0) {
+  if (typeof value === "string") {
+    value = value.replace(/₹/g, "").replace(/,/g, "").trim();
+  }
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+__name(num, "num");
+function bool(value, fallback = true) {
+  if (value === void 0 || value === null) return fallback;
+  const v = String(value).trim().toLowerCase();
+  if (v === "no" || v === "false" || v === "0" || v === "inactive") {
+    return false;
+  }
+  return true;
+}
+__name(bool, "bool");
+function todayIST() {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(/* @__PURE__ */ new Date());
+}
+__name(todayIST, "todayIST");
+function makeOrderNumber() {
+  return "ORD" + Date.now().toString().slice(-10);
+}
+__name(makeOrderNumber, "makeOrderNumber");
+function normalizeDate(value) {
+  if (!value) return todayIST();
+  const s = String(value).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    return s;
+  }
+  const d = new Date(s);
+  if (Number.isNaN(d.getTime())) {
+    return todayIST();
+  }
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Kolkata",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(d);
+}
+__name(normalizeDate, "normalizeDate");
+async function tableExists(db, table) {
+  const result = await db.prepare(
+    `SELECT name
+       FROM sqlite_master
+       WHERE type='table'
+       AND name=?`
+  ).bind(table).first();
+  return !!result;
+}
+__name(tableExists, "tableExists");
+async function getColumns(db, table) {
+  if (!await tableExists(db, table)) {
+    return [];
+  }
+  const result = await db.prepare(`PRAGMA table_info(${table})`).all();
+  return (result.results || []).map((row) => row.name);
+}
+__name(getColumns, "getColumns");
+async function ensureColumn(db, table, column, definition) {
+  const cols = await getColumns(db, table);
+  if (!cols.includes(column)) {
+    try {
+      await db.prepare(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`).run();
+    } catch (e) {
+      // If another request added it concurrently, continue; otherwise surface the error.
+      const colsAfter = await getColumns(db, table);
+      if (!colsAfter.includes(column)) throw e;
+    }
+  }
+}
+__name(ensureColumn, "ensureColumn");
+async function ensureSupportTables(db) {
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS stock_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL UNIQUE,
+      quantity REAL DEFAULT 0,
+      unit TEXT DEFAULT 'pcs',
+      low_stock_level REAL DEFAULT 5,
+      is_active INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS stock_history (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      stock_item_id INTEGER,
+      item_name TEXT NOT NULL,
+      old_quantity REAL DEFAULT 0,
+      new_quantity REAL DEFAULT 0,
+      change_quantity REAL DEFAULT 0,
+      action TEXT DEFAULT 'UPDATE',
+      note TEXT,
+      updated_by TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS staff (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      mobile TEXT,
+      role TEXT,
+      salary REAL DEFAULT 0,
+      join_date TEXT,
+      is_active INTEGER DEFAULT 1,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS expenses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      category TEXT,
+      amount REAL,
+      description TEXT,
+      expense_date TEXT,
+      receipt_image TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+  const expCols = await getColumns(db, "expenses");
+  if (expCols.length > 0 && !expCols.includes("receipt_image")) {
+    try {
+      await db.prepare(
+        "ALTER TABLE expenses ADD COLUMN receipt_image TEXT"
+      ).run();
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS deletion_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id TEXT NOT NULL,
+      requested_by TEXT,
+      reason TEXT,
+      status TEXT DEFAULT 'pending',
+      reviewed_by TEXT,
+      reviewed_at TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_deletion_requests_pending ON deletion_requests(order_id,status)`).run();
+
+  // Legacy compatibility: an earlier approval build used approval_requests.
+  // Keep it readable and migrate any unresolved requests into the canonical table.
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS approval_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id TEXT NOT NULL,
+      reason TEXT,
+      requested_by TEXT,
+      status TEXT DEFAULT 'pending',
+      reviewed_by TEXT,
+      reviewed_at TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_approval_requests_status ON approval_requests(status)`).run();
+  await db.prepare(`
+    INSERT INTO deletion_requests (order_id, requested_by, reason, status, reviewed_by, reviewed_at, created_at)
+    SELECT a.order_id, a.requested_by, a.reason, COALESCE(a.status,'pending'), a.reviewed_by, a.reviewed_at, a.created_at
+    FROM approval_requests a
+    WHERE NOT EXISTS (
+      SELECT 1 FROM deletion_requests d
+      WHERE d.order_id=a.order_id
+        AND COALESCE(d.created_at,'')=COALESCE(a.created_at,'')
+    )
+  `).run();
+  // Legacy rows are copied into the canonical deletion_requests table above.
+  // Mark legacy pending rows as migrated so the approval API never returns duplicate
+  // request IDs from two tables (which previously caused Approve/Reject to target the wrong row).
+  await db.prepare(`UPDATE approval_requests SET status='migrated' WHERE LOWER(COALESCE(status,'pending'))='pending'`).run();
+
+  // Migration-safe: older Viraasat databases may already have deletion_requests
+  // without the newer review/request metadata columns.
+  await ensureColumn(db, "deletion_requests", "requested_by", "TEXT");
+  await ensureColumn(db, "deletion_requests", "reason", "TEXT");
+  await ensureColumn(db, "deletion_requests", "status", "TEXT DEFAULT 'pending'");
+  await ensureColumn(db, "deletion_requests", "reviewed_by", "TEXT");
+  await ensureColumn(db, "deletion_requests", "reviewed_at", "TEXT");
+  await ensureColumn(db, "deletion_requests", "created_at", "TEXT");
+  await db.prepare(`UPDATE deletion_requests SET created_at=CURRENT_TIMESTAMP WHERE created_at IS NULL`).run();
+}
+__name(ensureSupportTables, "ensureSupportTables");
+async function getMenu(db) {
+  if (!await tableExists(db, "menu_items")) {
+    return [];
+  }
+  const cols = await getColumns(db, "menu_items");
+  const id = cols.includes("id") ? "id" : "rowid AS id";
+  const name = cols.includes("name") ? "name" : "'' AS name";
+  const category = cols.includes("category") ? "category" : "'' AS category";
+  const price = cols.includes("price") ? "price" : "0 AS price";
+  const gst = cols.includes("gst_percent") ? "COALESCE(gst_percent,0) AS gst_percent" : "0 AS gst_percent";
+  const active = cols.includes("is_available") ? "COALESCE(is_available,1) AS is_available" : "1 AS is_available";
+  const result = await db.prepare(`
+    SELECT
+      ${id},
+      ${name},
+      ${category},
+      ${price},
+      ${gst},
+      ${active}
+    FROM menu_items
+    ORDER BY category, name
+  `).all();
+  return result.results || [];
+}
+__name(getMenu, "getMenu");
+async function getTables(db) {
+  if (!await tableExists(db, "restaurant_tables")) {
+    return [];
+  }
+  const cols = await getColumns(
+    db,
+    "restaurant_tables"
+  );
+  const id = cols.includes("id") ? "id" : "rowid AS id";
+  const tableNumber = cols.includes("table_number") ? "table_number" : "'' AS table_number";
+  const seating = cols.includes("seating_area") ? "seating_area" : "'' AS seating_area";
+  const status = cols.includes("status") ? "status" : "'available' AS status";
+  const currentOrder = cols.includes("current_order_id") ? "current_order_id" : "NULL AS current_order_id";
+  const result = await db.prepare(`
+    SELECT
+      ${id},
+      ${tableNumber},
+      ${seating},
+      ${status},
+      ${currentOrder}
+    FROM restaurant_tables
+    ORDER BY CAST(table_number AS INTEGER)
+  `).all();
+  return result.results || [];
+}
+__name(getTables, "getTables");
+async function getOrderItemsMap(db, orderIds) {
+  const map = {};
+  if (!orderIds.length || !await tableExists(db, "order_items")) {
+    return map;
+  }
+  const cols = await getColumns(
+    db,
+    "order_items"
+  );
+  const has = /* @__PURE__ */ __name((c) => cols.includes(c), "has");
+  const nameExpr = has("item_name") ? "item_name" : has("name") ? "name" : "''";
+  const qtyExpr = has("quantity") ? "quantity" : has("qty") ? "qty" : "1";
+  const priceExpr = has("price") ? "price" : has("unit_price") ? "unit_price" : "0";
+  const totalExpr = has("total") ? "total" : `(${priceExpr})*(${qtyExpr})`;
+  const menuIdExpr = has("menu_item_id") ? "menu_item_id" : "NULL";
+  const oidExpr = has("order_id") ? "order_id" : "NULL";
+  const qs = orderIds.map(() => "?").join(",");
+  const rows = await db.prepare(`
+    SELECT
+      ${oidExpr} AS order_id,
+      ${menuIdExpr} AS menu_item_id,
+      ${nameExpr} AS item_name,
+      ${qtyExpr} AS quantity,
+      ${priceExpr} AS price,
+      ${totalExpr} AS total
+    FROM order_items
+    WHERE order_id IN (${qs})
+    ORDER BY order_id DESC, rowid ASC
+  `).bind(...orderIds).all();
+  for (const r of rows.results || []) {
+    const key = String(r.order_id);
+    if (!map[key]) {
+      map[key] = [];
+    }
+    map[key].push({
+      id: r.menu_item_id || null,
+      name: r.item_name || "",
+      qty: num(r.quantity, 1),
+      quantity: num(r.quantity, 1),
+      price: num(r.price),
+      unit_price: num(r.price),
+      total: num(r.total)
+    });
+  }
+  return map;
+}
+__name(getOrderItemsMap, "getOrderItemsMap");
+async function getOrders(db, limit = 500) {
+  if (!await tableExists(db, "orders")) {
+    return [];
+  }
+  const cols = await getColumns(
+    db,
+    "orders"
+  );
+  const pick = /* @__PURE__ */ __name((column, fallback) => cols.includes(column) ? column : fallback, "pick");
+  const grandTotalExp = cols.includes("grand_total") ? "grand_total" : cols.includes("total") ? "total AS grand_total" : "0 AS grand_total";
+  const result = await db.prepare(`
+    SELECT
+      ${pick("id", "rowid AS id")},
+      ${pick(
+    "order_number",
+    "CAST(id AS TEXT) AS order_number"
+  )},
+      ${pick(
+    "order_type",
+    "'Takeaway' AS order_type"
+  )},
+      ${pick(
+    "table_number",
+    "NULL AS table_number"
+  )},
+      ${pick(
+    "customer_phone",
+    "'' AS customer_phone"
+  )},
+      ${pick(
+    "subtotal",
+    "0 AS subtotal"
+  )},
+      ${pick(
+    "discount",
+    "0 AS discount"
+  )},
+      ${grandTotalExp},
+      ${pick(
+    "payment_method",
+    "'' AS payment_method"
+  )},
+      ${pick(
+    "payment_status",
+    "'' AS payment_status"
+  )},
+      ${pick(
+    "order_status",
+    "'completed' AS order_status"
+  )},
+      ${pick(
+    "items",
+    "'' AS items"
+  )},
+      ${pick(
+    "items_string",
+    "'' AS items_string"
+  )},
+      ${pick(
+    "created_at",
+    "NULL AS created_at"
+  )}
+    FROM orders
+    ORDER BY id DESC
+    LIMIT ?
+  `).bind(
+    Math.min(
+      Math.max(num(limit, 500), 1),
+      5e3
+    )
+  ).all();
+  const orders = result.results || [];
+  const ids = orders.map((o) => Number(o.id)).filter(Number.isFinite);
+  const itemMap = await getOrderItemsMap(db, ids);
+  return orders.map((o) => {
+    const details = itemMap[String(o.id)] || [];
+    let items = o.items;
+    let itemsString = o.items_string;
+    if (details.length) {
+      items = JSON.stringify(details);
+      if (!itemsString) {
+        itemsString = details.map(
+          (i) => `${clean(i.name)} (x${num(i.qty, 1)}) \u20B9${num(i.total)}`
+        ).join(", ");
+      }
+    }
+    return {
+      ...o,
+      items,
+      items_string: itemsString,
+      item_details: details
+    };
+  });
+}
+__name(getOrders, "getOrders");
+async function getExpenses(db, limit = 1e3) {
+  if (!await tableExists(db, "expenses")) {
+    return [];
+  }
+  const cols = await getColumns(db, "expenses");
+  const pick = /* @__PURE__ */ __name((column, fallback) => cols.includes(column) ? column : fallback, "pick");
+  const result = await db.prepare(`
+    SELECT
+      ${pick("id", "rowid AS id")},
+      ${pick(
+    "category",
+    "'' AS category"
+  )},
+      ${pick(
+    "amount",
+    "0 AS amount"
+  )},
+      ${pick(
+    "description",
+    "'' AS description"
+  )},
+      ${pick(
+    "expense_date",
+    "NULL AS expense_date"
+  )},
+      ${pick(
+    "receipt_image",
+    "NULL AS receipt_image"
+  )},
+      ${pick(
+    "created_at",
+    "NULL AS created_at"
+  )}
+    FROM expenses
+    ORDER BY id DESC
+    LIMIT ?
+  `).bind(
+    Math.min(
+      Math.max(num(limit, 1e3), 1),
+      5e3
+    )
+  ).all();
+  return result.results || [];
+}
+__name(getExpenses, "getExpenses");
+async function getStock(db) {
+  await ensureSupportTables(db);
+  const result = await db.prepare(`
+    SELECT
+      id,
+      name,
+      quantity,
+      unit,
+      low_stock_level,
+      is_active,
+      created_at,
+      updated_at
+    FROM stock_items
+    ORDER BY name
+  `).all();
+  return result.results || [];
+}
+__name(getStock, "getStock");
+async function getStaff(db) {
+  await ensureSupportTables(db);
+  // Portal should show only active staff. Removed/inactive staff remain in D1
+  // for historical integrity but must not reappear after a refresh.
+  const result = await db.prepare(`
+    SELECT
+      id, name, mobile, role, salary, join_date, is_active, created_at
+    FROM staff
+    WHERE COALESCE(is_active,1)=1
+      AND LOWER(TRIM(COALESCE(name,''))) NOT LIKE 'sample %'
+      AND LOWER(TRIM(COALESCE(name,''))) <> 'sample'
+    ORDER BY name, id DESC
+  `).all();
+
+  // Defensive de-duplication: same mobile OR same normalized name is one portal record.
+  const seenMobile = new Set();
+  const seenName = new Set();
+  const out = [];
+  for (const row of (result.results || [])) {
+    const mobile = String(row.mobile || '').replace(/\D/g,'');
+    const name = String(row.name || '').trim().toLowerCase();
+    if ((mobile && seenMobile.has(mobile)) || (name && seenName.has(name))) continue;
+    if (mobile) seenMobile.add(mobile);
+    if (name) seenName.add(name);
+    out.push(row);
+  }
+  return out;
+}
+__name(getStaff, "getStaff");
+async function getDashboard(db) {
+  const [
+    orders,
+    expenses,
+    tables,
+    stock,
+    staff
+  ] = await Promise.all([
+    getOrders(db, 5e3),
+    getExpenses(db, 5e3),
+    getTables(db),
+    getStock(db),
+    getStaff(db)
+  ]);
+  const today = todayIST();
+  const validOrders = orders.filter((order) => {
+    const status = String(
+      order.order_status || "completed"
+    ).toLowerCase();
+    return status !== "cancelled" && status !== "deleted";
+  });
+  const todayOrders = validOrders.filter(
+    (order) => String(
+      order.created_at || ""
+    ).startsWith(today)
+  );
+  const todaySales = todayOrders.reduce(
+    (sum, order) => sum + num(order.grand_total),
+    0
+  );
+  const overallSales = validOrders.reduce(
+    (sum, order) => sum + num(order.grand_total),
+    0
+  );
+  const totalExpenses = expenses.reduce(
+    (sum, exp) => sum + num(exp.amount),
+    0
+  );
+  const todayExpenses = expenses.filter(
+    (exp) => String(
+      exp.expense_date || exp.created_at || ""
+    ).startsWith(today)
+  ).reduce(
+    (sum, exp) => sum + num(exp.amount),
+    0
+  );
+  const averageOrder = todayOrders.length ? todaySales / todayOrders.length : 0;
+  const occupiedTables = tables.filter(
+    (table) => String(
+      table.status || ""
+    ).toLowerCase() === "occupied"
+  ).length;
+  const activeStaff = staff.filter(
+    (s) => Number(s.is_active) === 1
+  ).length;
+  return {
+    success: true,
+    summary: {
+      today_sales: todaySales,
+      today_orders: todayOrders.length,
+      average_order: averageOrder,
+      overall_sales: overallSales,
+      total_expenses: totalExpenses,
+      today_expenses: todayExpenses,
+      net_profit: overallSales - totalExpenses,
+      active_staff: activeStaff
+    },
+    tables: {
+      total: tables.length,
+      occupied: occupiedTables,
+      available: Math.max(
+        tables.length - occupiedTables,
+        0
+      )
+    },
+    stock,
+    staff
+  };
+}
+__name(getDashboard, "getDashboard");
+async function updateTable(db, tableNumber, status, orderId = null) {
+  if (!tableNumber || !await tableExists(
+    db,
+    "restaurant_tables"
+  )) {
+    return;
+  }
+  const cols = await getColumns(
+    db,
+    "restaurant_tables"
+  );
+  const updates = [];
+  const values = [];
+  if (cols.includes("status")) {
+    updates.push("status=?");
+    values.push(status);
+  }
+  if (cols.includes(
+    "current_order_id"
+  )) {
+    updates.push(
+      "current_order_id=?"
+    );
+    values.push(orderId);
+  }
+  if (cols.includes("updated_at")) {
+    updates.push(
+      "updated_at=CURRENT_TIMESTAMP"
+    );
+  }
+  if (!updates.length) {
+    return;
+  }
+  await db.prepare(`
+    UPDATE restaurant_tables
+    SET ${updates.join(",")}
+    WHERE CAST(table_number AS TEXT)=?
+  `).bind(
+    ...values,
+    String(tableNumber)
+  ).run();
+}
+__name(updateTable, "updateTable");
+function parseItemsString(itemsString) {
+  if (!itemsString) {
+    return [];
+  }
+  let text = String(itemsString).replace(
+    /\[Discount Applied:[^\]]+\]/gi,
+    ""
+  ).replace(
+    /\[Mode:[^\]]+\]/gi,
+    ""
+  ).trim();
+  const parts = text.split(",").map((x) => x.trim()).filter(Boolean);
+  const items = [];
+  for (const part of parts) {
+    const match = part.match(
+      /^(.+?)\s*\(x\s*(\d+(?:\.\d+)?)\)\s*₹\s*([\d,.]+)\s*$/i
+    );
+    if (!match) {
+      continue;
+    }
+    const name = clean(match[1]);
+    const quantity = num(match[2], 1);
+    const total = num(match[3]);
+    const price = quantity > 0 ? total / quantity : total;
+    items.push({
+      name,
+      qty: quantity,
+      price,
+      total
+    });
+  }
+  return items;
+}
+__name(parseItemsString, "parseItemsString");
+async function resolveMenuItemId(db, item) {
+  const cols = await getColumns(
+    db,
+    "menu_items"
+  );
+  if (!cols.length) {
+    throw new Error(
+      "menu_items table not found"
+    );
+  }
+  const suppliedId = num(
+    item.id || item.menu_item_id
+  );
+  if (suppliedId && cols.includes("id")) {
+    const found = await db.prepare(`
+        SELECT id, name
+        FROM menu_items
+        WHERE id=?
+        LIMIT 1
+      `).bind(suppliedId).first();
+    if (found) {
+      return Number(found.id);
+    }
+  }
+  const itemName = clean(
+    item.name || item.item_name
+  );
+  if (!itemName) {
+    throw new Error(
+      "Menu item name is missing"
+    );
+  }
+  if (cols.includes("name")) {
+    const found = await db.prepare(`
+        SELECT id, name
+        FROM menu_items
+        WHERE lower(trim(name)) =
+              lower(trim(?))
+        LIMIT 1
+      `).bind(itemName).first();
+    if (found) {
+      return Number(found.id);
+    }
+  }
+  if (cols.includes("id") && cols.includes("name")) {
+    const menuFields = [];
+    const menuValues = [];
+    menuFields.push("name");
+    menuValues.push(itemName);
+    if (cols.includes("category")) {
+      menuFields.push("category");
+      menuValues.push(
+        clean(item.category) || "Imported"
+      );
+    }
+    if (cols.includes("price")) {
+      menuFields.push("price");
+      menuValues.push(
+        num(item.price)
+      );
+    }
+    if (cols.includes("gst_percent")) {
+      menuFields.push(
+        "gst_percent"
+      );
+      menuValues.push(
+        num(
+          item.gst_percent || item.gst
+        )
+      );
+    }
+    if (cols.includes("is_available")) {
+      menuFields.push(
+        "is_available"
+      );
+      menuValues.push(1);
+    }
+    const result = await db.prepare(`
+        INSERT INTO menu_items
+        (${menuFields.join(",")})
+        VALUES
+        (${menuFields.map(() => "?").join(",")})
+      `).bind(...menuValues).run();
+    const newId = result.meta?.last_row_id ?? result.lastInsertRowid ?? null;
+    if (newId) {
+      return Number(newId);
+    }
+  }
+  throw new Error(
+    `Unable to resolve menu item: ${itemName}`
+  );
+}
+__name(resolveMenuItemId, "resolveMenuItemId");
+async function createOrder(db, body) {
+  const cols = await getColumns(
+    db,
+    "orders"
+  );
+  const orderNumber = clean(
+    body.order_number || body.orderNumber
+  ) || makeOrderNumber();
+  if (cols.includes("order_number")) {
+    const existing = await db.prepare(`
+        SELECT id, order_number
+        FROM orders
+        WHERE order_number=?
+        LIMIT 1
+      `).bind(orderNumber).first();
+    if (existing) {
+      return {
+        orderId: existing.id,
+        orderNumber: existing.order_number,
+        duplicate: true
+      };
+    }
+  }
+  const tableNumber = clean(
+    body.table_number || body.tableNumber
+  );
+  const orderType = clean(
+    body.order_type || body.orderType
+  ) || (tableNumber ? "Dine-in" : "Takeaway");
+  let items = Array.isArray(body.items) ? body.items : [];
+  if (!items.length && body.items_string) {
+    items = parseItemsString(
+      body.items_string
+    );
+  }
+  const resolvedItems = [];
+  for (const rawItem of items) {
+    const item = {
+      ...rawItem
+    };
+    item.name = clean(
+      item.name || item.item_name
+    );
+    item.qty = num(
+      item.qty ?? item.quantity,
+      1
+    );
+    item.price = num(
+      item.price ?? item.unit_price
+    );
+    item.total = num(
+      item.total,
+      item.price * item.qty
+    );
+    item.menu_item_id = await resolveMenuItemId(
+      db,
+      item
+    );
+    item.id = item.menu_item_id;
+    resolvedItems.push(item);
+  }
+  items = resolvedItems;
+  const subtotal = num(
+    body.subtotal,
+    items.reduce(
+      (sum, item) => sum + num(
+        item.total,
+        num(item.price) * num(item.qty, 1)
+      ),
+      0
+    )
+  );
+  const discount = num(body.discount);
+  const grandTotal = num(
+    body.grand_total ?? body.total,
+    Math.max(
+      subtotal - discount,
+      0
+    )
+  );
+  const paymentMethod = clean(
+    body.payment_method || body.paymentMethod
+  ) || "Cash";
+  const customerPhone = clean(
+    body.customer_phone || body.phone
+  ) || "NA";
+  const values = {};
+  const add = /* @__PURE__ */ __name((column, value) => {
+    if (cols.includes(column)) {
+      values[column] = value;
+    }
+  }, "add");
+  add(
+    "order_number",
+    orderNumber
+  );
+  add(
+    "order_type",
+    orderType
+  );
+  add(
+    "table_number",
+    tableNumber || null
+  );
+  add(
+    "customer_phone",
+    customerPhone
+  );
+  add(
+    "subtotal",
+    subtotal
+  );
+  add(
+    "discount",
+    discount
+  );
+  add(
+    "gst",
+    num(body.gst)
+  );
+  add(
+    "grand_total",
+    grandTotal
+  );
+  add(
+    "total",
+    grandTotal
+  );
+  add(
+    "payment_method",
+    paymentMethod
+  );
+  add(
+    "payment_status",
+    body.payment_status || "paid"
+  );
+  add(
+    "order_status",
+    body.order_status || "completed"
+  );
+  add(
+    "items",
+    JSON.stringify(items)
+  );
+  add(
+    "items_string",
+    body.items_string || items.map(
+      (item) => `${clean(item.name)} (x${num(item.qty, 1)}) \u20B9${num(item.total, num(item.price) * num(item.qty, 1))}`
+    ).join(", ")
+  );
+  add(
+    "created_at",
+    body.created_at || (/* @__PURE__ */ new Date()).toISOString()
+  );
+  add(
+    "updated_at",
+    (/* @__PURE__ */ new Date()).toISOString()
+  );
+  const fields = Object.keys(values);
+  if (!fields.length) {
+    throw new Error(
+      "orders table structure is incompatible"
+    );
+  }
+  const result = await db.prepare(`
+      INSERT INTO orders
+      (${fields.join(",")})
+      VALUES
+      (${fields.map(() => "?").join(",")})
+    `).bind(
+    ...fields.map(
+      (field) => values[field]
+    )
+  ).run();
+  const orderId = result.meta?.last_row_id ?? result.lastInsertRowid ?? null;
+  if (orderId && await tableExists(
+    db,
+    "order_items"
+  )) {
+    const itemCols = await getColumns(
+      db,
+      "order_items"
+    );
+    for (const item of items) {
+      const itemValues = {};
+      const addItem = /* @__PURE__ */ __name((column, value) => {
+        if (itemCols.includes(
+          column
+        )) {
+          itemValues[column] = value;
+        }
+      }, "addItem");
+      addItem(
+        "order_id",
+        orderId
+      );
+      addItem(
+        "menu_item_id",
+        item.menu_item_id || item.id || null
+      );
+      if (itemCols.includes(
+        "item_name"
+      )) {
+        addItem(
+          "item_name",
+          clean(item.name)
+        );
+      } else if (itemCols.includes("name")) {
+        addItem(
+          "name",
+          clean(item.name)
+        );
+      }
+      addItem(
+        "quantity",
+        num(item.qty, 1)
+      );
+      if (itemCols.includes("qty")) {
+        addItem(
+          "qty",
+          num(item.qty, 1)
+        );
+      }
+      if (itemCols.includes("price")) {
+        addItem(
+          "price",
+          num(item.price)
+        );
+      }
+      if (itemCols.includes(
+        "unit_price"
+      )) {
+        addItem(
+          "unit_price",
+          num(item.price)
+        );
+      }
+      if (itemCols.includes(
+        "gst_percent"
+      )) {
+        addItem(
+          "gst_percent",
+          num(
+            item.gst_percent || item.gst || 0
+          )
+        );
+      }
+      addItem(
+        "total",
+        num(
+          item.total,
+          num(item.price) * num(item.qty, 1)
+        )
+      );
+      const itemFields = Object.keys(
+        itemValues
+      );
+      if (!itemFields.length) {
+        continue;
+      }
+      await db.prepare(`
+        INSERT INTO order_items
+        (${itemFields.join(",")})
+        VALUES
+        (${itemFields.map(() => "?").join(",")})
+      `).bind(
+        ...itemFields.map(
+          (field) => itemValues[field]
+        )
+      ).run();
+    }
+  }
+  return {
+    orderId,
+    orderNumber,
+    grandTotal,
+    duplicate: false
+  };
+}
+__name(createOrder, "createOrder");
+var worker_default = {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const path = url.pathname;
+    const method = request.method.toUpperCase();
+    if (method === "OPTIONS") {
+      return new Response(
+        null,
+        {
+          status: 204,
+          headers: JSON_HEADERS
+        }
+      );
+    }
+    try {
+      const db = env.DB;
+      if (!db) {
+        return json(
+          {
+            success: false,
+            error: "D1 Database Binding is missing"
+          },
+          500
+        );
+      }
+      if (path === "/") {
+        return new Response(
+          "Viraasat POS Enterprise API Running",
+          {
+            status: 200
+          }
+        );
+      }
+      if (path === "/api/health") {
+        return json({
+          success: true,
+          application: "Viraasat POS Enterprise",
+          status: "online",
+          database: "connected",
+          binding: !!env.DB
+        });
+      }
+      if (path === "/api/test-db") {
+        const check = await db.prepare(
+          "SELECT 1 AS ok"
+        ).first();
+        return json({
+          success: true,
+          application: "Viraasat POS Enterprise",
+          database: "D1 connected",
+          binding: "DB",
+          result: check
+        });
+      }
+      if (path === "/api/routes" && method === "GET") {
+        return json({
+          success:true,
+          routes:[
+            "GET /api/health","GET /api/test-db","GET /api/dashboard","GET /api/menu","POST /api/menu",
+            "GET /api/tables","POST /api/tables/clear","GET /api/orders","POST /api/orders","POST /api/orders/checkout",
+            "POST /api/orders/request-delete","GET /api/approvals","GET /api/approvals/debug","POST /api/approvals/resolve",
+            "GET /api/expenses","POST /api/expenses","GET /api/staff","POST /api/staff","POST /api/staff/update",
+            "POST /api/staff/remove","POST /api/staff/status","POST /api/import/full"
+          ]
+        });
+      }
+
+      if (path === "/api/dashboard" && method === "GET") {
+        return json(
+          await getDashboard(db)
+        );
+      }
+      if (path === "/api/menu" && method === "GET") {
+        return json({
+          success: true,
+          items: await getMenu(db)
+        });
+      }
+      if (path === "/api/menu" && method === "POST") {
+        const body = await request.json();
+        const name = clean(body.name);
+        if (!name) {
+          return json(
+            {
+              success: false,
+              error: "Menu name required"
+            },
+            400
+          );
+        }
+        const cols = await getColumns(
+          db,
+          "menu_items"
+        );
+        const fields = [];
+        const values = [];
+        if (cols.includes("name")) {
+          fields.push("name");
+          values.push(name);
+        }
+        if (cols.includes("category")) {
+          fields.push("category");
+          values.push(
+            clean(body.category)
+          );
+        }
+        if (cols.includes("price")) {
+          fields.push("price");
+          values.push(
+            num(body.price)
+          );
+        }
+        if (cols.includes(
+          "gst_percent"
+        )) {
+          fields.push(
+            "gst_percent"
+          );
+          values.push(
+            num(body.gst_percent)
+          );
+        }
+        if (cols.includes(
+          "is_available"
+        )) {
+          fields.push(
+            "is_available"
+          );
+          values.push(
+            body.is_available === false ? 0 : 1
+          );
+        }
+        const result = await db.prepare(`
+            INSERT INTO menu_items
+            (${fields.join(",")})
+            VALUES
+            (${fields.map(() => "?").join(",")})
+          `).bind(...values).run();
+        return json({
+          success: true,
+          id: result.meta?.last_row_id ?? null
+        });
+      }
+      if (path === "/api/tables" && method === "GET") {
+        return json({
+          success: true,
+          tables: await getTables(db)
+        });
+      }
+      if (path === "/api/tables/clear" && method === "POST") {
+        const body = await request.json();
+        await updateTable(
+          db,
+          clean(
+            body.table_number || body.tableNumber
+          ),
+          "available",
+          null
+        );
+        return json({
+          success: true
+        });
+      }
+      if (path === "/api/orders" && method === "GET") {
+        const limit = url.searchParams.get(
+          "limit"
+        ) || 500;
+        return json({
+          success: true,
+          orders: await getOrders(
+            db,
+            limit
+          )
+        });
+      }
+      if (path === "/api/orders" && method === "POST") {
+        const body = await request.json();
+        const result = await createOrder(
+          db,
+          body
+        );
+        const tableNumber = clean(
+          body.table_number || body.tableNumber
+        );
+        if (tableNumber && !result.duplicate) {
+          await updateTable(
+            db,
+            tableNumber,
+            "occupied",
+            result.orderId
+          );
+        }
+        return json({
+          success: true,
+          ...result
+        });
+      }
+      if (path === "/api/orders/checkout" && method === "POST") {
+        const body = await request.json();
+        body.payment_status = "paid";
+        body.order_status = "completed";
+        const result = await createOrder(
+          db,
+          body
+        );
+        const tableNumber = clean(
+          body.table_number || body.tableNumber
+        );
+        if (tableNumber && !result.duplicate) {
+          await updateTable(
+            db,
+            tableNumber,
+            "available",
+            null
+          );
+        }
+        return json({
+          success: true,
+          ...result
+        });
+      }
+      if (path === "/api/orders/request-delete" && method === "POST") {
+        await ensureSupportTables(db);
+        const body = await request.json();
+        const orderId = clean(body.order_id || body.orderNumber || body.order_number || body.id);
+        const reason = clean(body.reason) || "Deletion requested from POS";
+        const requestedBy = clean(body.requested_by || body.requestedBy) || "Admin";
+        if (!orderId) return json({ success:false, error:"Order ID is required" },400);
+
+        const existing = await db.prepare(`
+          SELECT id, order_id, status
+          FROM deletion_requests
+          WHERE (order_id=? OR order_id=CAST(? AS TEXT)) AND status='pending'
+          ORDER BY id DESC LIMIT 1
+        `).bind(orderId, orderId).first();
+
+        if (existing) {
+          return json({ success:true, already_pending:true, id:existing.id, message:"Deletion request is already pending approval" });
         }
 
-        html { font-size: 16px; touch-action: manipulation; background-color: #FFFFFF; overscroll-behavior-y: contain; } 
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
-        input, textarea, select { user-select: auto; -webkit-user-select: auto; }
-        ::-webkit-scrollbar { display: none; }
+        const inserted = await db.prepare(`
+          INSERT INTO deletion_requests (order_id, requested_by, reason, status, created_at)
+          VALUES (?, ?, ?, 'pending', CURRENT_TIMESTAMP)
+        `).bind(orderId, requestedBy, reason).run();
 
-        body { 
-            font-family: 'Nunito', system-ui, -apple-system, sans-serif; 
-            background-color: var(--bg-color); color: var(--text-dark); 
-            display: flex; flex-direction: column; height: 100dvh; 
-            overflow: hidden; overscroll-behavior-y: contain; 
-            padding-top: env(safe-area-inset-top); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right);
-            max-width: 600px; margin: 0 auto; position: relative;
-        } 
-
-        .top-app-bar { padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 50; background: var(--bg-color); }
-        .brand-container { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
-        .brand-name { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 800; color: var(--text-dark); letter-spacing: 0.5px; line-height: 1.1; }
-        .page-subtitle { font-size: 0.85rem; font-weight: 500; color: var(--text-dark); margin-top: 2px; }
-        
-        .icon-btn { background: var(--surface); border: 1px solid var(--border); width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-dark); box-shadow: var(--shadow-soft); transition: 0.1s;}
-        .icon-btn:active { transform: scale(0.95); }
-
-        main { flex: 1; padding: 0 0 calc(90px + env(safe-area-inset-bottom)) 0; overflow-y: auto; -webkit-overflow-scrolling: touch; position: relative; }
-        .tab-content { display: none; animation: fadeIn 0.2s ease; padding: 0 20px; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .greeting-sec { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; margin-top: 8px; }
-        .greeting-sec h2 { font-size: 1.25rem; font-weight: 700; color: var(--text-dark); margin-bottom: 2px; }
-        .greeting-sec p { font-size: 0.78rem; color: var(--text-muted); font-weight: 500; }
-        .date-badge { background: var(--surface); border: 1px solid var(--border); padding: 8px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; color: var(--text-dark); display: flex; align-items: center; gap: 6px; box-shadow: var(--shadow-soft); }
-
-        .quick-action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-        .quick-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.1s;}
-        .quick-card:active { transform: scale(0.98); background: #FAF8F5; }
-        .quick-card.occupied { background: var(--occ-bg) !important; border-color: var(--occ-border) !important; }
-        .qc-icon { width: 44px; height: 44px; border-radius: 12px; background: #F8F6F0; border: 1px solid #ECE7DD; display: flex; align-items: center; justify-content: center; color: var(--text-dark); flex-shrink: 0; }
-        .qc-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-        .qc-info h4 { font-size: 0.95rem; font-weight: 700; color: var(--text-dark); }
-        .status-dot { font-size: 0.7rem; font-weight: 700; color: var(--success); display: flex; align-items: center; gap: 4px; }
-        .status-dot.occ { color: #E11D48; }
-
-        .section-header { display: flex; justify-content: space-between; align-items: center; margin: 24px 0 12px 0; }
-        .section-header h4 { font-weight: 700; font-size: 0.82rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
-        .section-header span { font-size: 0.8rem; font-weight: 600; color: var(--text-dark); cursor: pointer; }
-
-        .table-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
-        .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px 10px; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.15s; }
-        .table-card:active { transform: scale(0.96); }
-        .table-card.occupied { background: var(--occ-bg) !important; border: 1.5px solid var(--occ-border) !important; box-shadow: 0 5px 16px rgba(255,95,142,.10); }
-        .tc-name { font-size: 0.95rem; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; }
-        .tc-sub { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; margin-bottom: 8px;}
-        
-        .tc-status { font-size: 0.65rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; letter-spacing: 0.5px; text-transform: uppercase; }
-        .status-avail { color: #10B981; background: #E6F4EA; border: 1px solid #C6E7D2; }
-        .status-occ { background: var(--occ-gradient) !important; color: #FFFFFF !important; box-shadow: 0 3px 8px rgba(255, 95, 142, 0.3); border: none !important; }
-
-        .home-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-        .hkpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; box-shadow: var(--shadow-soft); display: flex; flex-direction: column; }
-        .hkpi-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--text-muted); font-size: 0.78rem; font-weight: 600; }
-        .hkpi-top svg { width: 16px; height: 16px; color: var(--text-dark); }
-        .hkpi-val { font-size: 1.35rem; font-weight: 800; color: var(--text-dark); margin-bottom: 4px; transition: font-size 0.2s;}
-        .hkpi-sub { font-size: 0.72rem; font-weight: 600; color: var(--success); }
-
-        .h-order-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.1s; }
-        .h-order-card:active { transform: scale(0.98); }
-        .ho-icon { width: 42px; height: 42px; border-radius: 12px; background: #F8F6F0; display: flex; align-items: center; justify-content: center; color: var(--text-dark); flex-shrink: 0; }
-        .ho-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-        .ho-title { font-size: 0.92rem; font-weight: 700; color: var(--text-dark); }
-        .ho-sub { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
-        .ho-badge { background: #E6F4EA; color: #10B981; font-size: 0.65rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; letter-spacing: 0.5px; }
-
-        /* --- UPDATED PREMIUM NAVIGATION BAR --- */
-        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; padding: 10px 8px calc(10px + env(safe-area-inset-bottom)) 8px; border-top: 1px solid var(--border); z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.03); border-radius: 20px 20px 0 0; }
-        .nav-item { background: transparent; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: inherit; font-size: 0.65rem; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; padding: 6px 0; }
-        .nav-item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: 0.2s; }
-        .nav-item.active { color: var(--text-dark); font-weight: 800; }
-        .nav-item.active .icon-container { background: #FDE8D7; width: 56px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-        .nav-item.active svg { stroke: var(--text-dark); stroke-width: 2.2; }
-
-        .card { background: var(--surface); border-radius: var(--border-radius); padding: 20px; border: 1px solid var(--border); margin-bottom: 16px; box-shadow: var(--shadow-soft); }
-        .form-group { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
-        .input-box { width: 100%; display: flex; flex-direction: column; gap: 6px;}
-        label { font-weight: 600; color: var(--text-muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.5px;}
-        select, input { width: 100%; height: 50px; padding: 0 16px; border: 1px solid var(--border); border-radius: 10px; font-size: 0.95rem; font-family: inherit; background-color: #FAFAFA; color: var(--text-dark); outline: none; font-weight: 500;}
-        select:focus, input:focus { border-color: var(--text-dark); background: #FFF; }
-        .input-row { display: flex; gap: 12px; align-items: flex-end; width: 100%; }
-        .input-row .input-box { flex: 1; }
-
-        .btn { font-family: inherit; background-color: var(--text-dark); color: #FFF; border: none; height: 50px; padding: 0 20px; cursor: pointer; font-size: 0.95rem; border-radius: 10px; font-weight: 600; transition: 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
-        .btn:active { transform: scale(0.97); }
-        .btn-outline { background: var(--surface); border: 1px solid var(--border); color: var(--text-dark); }
-        .btn-outline:active { background: var(--bg-color); }
-        .action-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 12px; }
-
-        .cart-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
-        .cart-summary { background: var(--surface); border-radius: 14px; padding: 20px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 12px; border: 1px solid var(--border); }
-        .summary-row { display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 0.95rem; color: var(--text-dark); }
-        .discount-input { width: 80px; padding: 6px 10px; text-align: right; border-radius: 6px; border: 1px solid var(--border); font-weight: 700; outline: none; }
-        .summary-row.grand-total { border-top: 1px dashed var(--border); padding-top: 14px; font-weight: 800; font-size: 1.3rem; margin-top: 4px; color: var(--text-dark);}
-
-        .pay-btn { padding: 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); font-weight: 600; font-size: 0.95rem; color: var(--text-dark); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: 0.1s;}
-        .pay-btn.selected { border-color: var(--text-dark); background: var(--primary-light); color: var(--text-dark); }
-
-        .stock-tag { padding: 6px 12px; border-radius: 6px; font-size: 0.85rem; font-weight: 600; background: var(--surface); color: var(--text-dark); display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--border); margin-right: 8px; margin-bottom: 8px;}
-        .stock-tag span { background: #F0EDE6; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
-        .stock-tag.low { border-color: var(--danger); color: var(--danger); }
-        .stock-tag.low span { background: #FDE8E8; color: var(--danger); }
-
-        .filter-btn { height: 36px; padding: 0 16px; font-size: 0.85rem; transition: 0.2s; border-radius: 18px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dark); font-weight: 600;}
-        .filter-btn.active { background: var(--text-dark); color: #FFF; border-color: var(--text-dark); }
-
-        .sales-grid { display: flex; flex-direction: column; gap: 12px; }
-        .sales-card { background: var(--surface); border-radius: var(--border-radius); padding: 18px; border: 1px solid var(--border); cursor: pointer; transition: 0.1s;}
-        .sales-card:active { transform: scale(0.98); }
-
-        /* P&L Grid */
-        .trend-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-        .trend-kpi-card { padding: 16px; border-radius: var(--border-radius); border: 1px solid var(--border); background: var(--surface); display: flex; flex-direction: column; box-shadow: var(--shadow-soft);}
-        .trend-kpi-card.full-width { grid-column: span 2; }
-        .kpi-title { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; margin-bottom: 4px;}
-        .kpi-value { font-size: 1.4rem; font-weight: 800; color: var(--text-dark); }
-        
-        .chart-wrapper { position: relative; height: 260px; min-height: 260px; width: 100%; margin-top: 16px; display: block; }
-        .chart-filters { display: flex; gap: 8px; margin-bottom: 12px; justify-content: center; }
-
-        .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:10000; align-items:flex-end; justify-content:center; backdrop-filter: blur(2px);}
-        .bottom-sheet { background:var(--surface); padding:24px; border-radius: 20px 20px 0 0; width:100%; max-width: 600px; animation: sheetUp 0.2s ease-out; max-height: 90dvh; overflow-y: auto; padding-bottom: calc(24px + env(safe-area-inset-bottom));}
-        @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        .sheet-handle { width: 36px; height: 4px; background: #E0E0E0; border-radius: 2px; margin: 0 auto 20px auto; }
-        
-        #loader { text-align: center; color: var(--text-muted); font-weight: 600; font-size: 0.9rem; margin: 40px 0; display: none; align-items: center; justify-content: center; gap: 10px;}
-        .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--text-dark); border-radius: 50%; animation: spin 0.8s linear infinite; }
-
-        #splashScreen { position: fixed; inset: 0; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.4s; }
-        .splash-logo { font-family: 'Playfair Display', serif; font-size: 2.8rem; font-weight: 700; color: var(--text-dark); }
-        .splash-subtitle { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); letter-spacing: 2px; margin-top: 6px; margin-bottom: 40px; text-transform: uppercase;}
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        @media screen { #printSection { display: none !important; } }
-        @media print {
-            body { background-color: white; margin: 0; padding: 0; display: block; height: auto; overflow: visible; max-width: none; box-shadow: none;}
-            .top-app-bar, .bottom-nav, main, #loginScreen, #splashScreen, #updatePrompt, .modal-overlay { display: none !important; }
-            #printSection { display: block !important; position: absolute; left: 0; top: 0; width: 80mm; font-family: 'Courier New', Courier, monospace; color: #000; margin: 0; padding: 2mm; }
-            #printSection h2, #printSection h3, #printSection p, #printSection div { margin: 0; padding: 0; }
-            #printSection table { width: 100%; border-collapse: collapse; margin-top: 5px; margin-bottom: 5px; table-layout: fixed; }
-            #printSection th, #printSection td { padding: 2px 0; font-size: 12px; color: #000; vertical-align: top; border-bottom: none !important; word-wrap: break-word; }
-            #printSection th { border-bottom: 1px dashed #000 !important; border-top: 1px dashed #000 !important; padding: 4px 0; font-weight: bold; }
-        }
-    
-        /* ================= PREMIUM VIRAASAT COMMAND CENTER ================= */
-        .premium-shell{display:flex;flex-direction:column;gap:16px}
-        .premium-hero{display:none!important;background:linear-gradient(135deg,#211A17 0%,#3A2922 48%,#8E5E38 100%);color:#fff;border-radius:22px;padding:22px;box-shadow:0 14px 40px rgba(43,31,24,.16);position:relative;overflow:hidden}
-        .premium-hero:after{content:"";position:absolute;width:180px;height:180px;border-radius:50%;right:-70px;top:-80px;background:rgba(255,255,255,.08)}
-        .premium-hero-row{display:flex;align-items:center;justify-content:space-between;gap:16px;position:relative;z-index:1}
-        .premium-title{font-family:'Playfair Display',serif;font-size:1.55rem;font-weight:800;letter-spacing:.2px}
-        .premium-sub{font-size:.76rem;opacity:.78;margin-top:4px}
-        .premium-live{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);padding:8px 11px;border-radius:999px;font-size:.7rem;font-weight:800}
-        .premium-live i{width:7px;height:7px;background:#67E8A5;border-radius:50%;display:inline-block;box-shadow:0 0 0 4px rgba(103,232,165,.12)}
-        .premium-tabs{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;scrollbar-width:none;position:sticky;top:0;z-index:30;background:var(--bg-color)}
-        .premium-tabs::-webkit-scrollbar{display:none}
-        .premium-tab{border:1px solid var(--border);background:var(--surface);color:var(--text-muted);padding:9px 13px;border-radius:999px;white-space:nowrap;font-family:inherit;font-size:.74rem;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.025)}
-        .premium-tab.active{background:#1A1A1A;color:#fff;border-color:#1A1A1A;box-shadow:0 7px 18px rgba(0,0,0,.12)}
-        .premium-panel{display:none}.premium-panel.active{display:block}
-        .premium-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
-        .pkpi{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:var(--shadow-soft);min-width:0}
-        .pkpi .label{font-size:.69rem;color:var(--text-muted);font-weight:800;text-transform:uppercase;letter-spacing:.6px}
-        .pkpi .value{font-size:1.35rem;font-weight:900;color:var(--text-dark);margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .pkpi .delta{font-size:.68rem;font-weight:700;margin-top:5px;color:#1A1A1A}
-        .premium-grid-2{display:grid;grid-template-columns:1.4fr .8fr;gap:16px}
-        .premium-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-        .premium-card{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:var(--shadow-soft);margin-bottom:16px}
-        .premium-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
-        .premium-card-head h3{font-size:.95rem;font-weight:900;color:var(--text-dark)}
-        .premium-card-head span{font-size:.7rem;color:var(--text-muted);font-weight:700}
-        .premium-toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
-        .premium-toolbar input,.premium-toolbar select{height:42px;min-width:145px;flex:1}
-        .premium-btn{height:42px;border:0;border-radius:10px;padding:0 14px;background:#211A17;color:#fff;font-family:inherit;font-weight:800;font-size:.75rem;cursor:pointer}
-        .premium-btn.alt{background:#F4EFEA;color:#1A1A1A;border:1px solid #D9D1C7}
-        .premium-btn.light{background:#fff;color:#211A17;border:1px solid var(--border)}
-        .premium-btn.danger{background:#FFF0F2;color:#C92E48;border:1px solid #F2C5CD}
-        .premium-table-wrap{overflow:auto;border:1px solid var(--border);border-radius:14px}
-        .premium-table{width:100%;border-collapse:collapse;min-width:760px}
-        .premium-table th{background:#FAF7F4;color:var(--text-muted);font-size:.67rem;text-transform:uppercase;letter-spacing:.5px;padding:11px;text-align:left;white-space:nowrap}
-        .premium-table td{padding:11px;border-top:1px solid #F1ECE7;font-size:.76rem;color:var(--text-dark);vertical-align:top}
-        .premium-table tr:hover td{background:#FFFBF8}
-        .pill{display:inline-flex;align-items:center;padding:4px 8px;border-radius:999px;font-size:.64rem;font-weight:800}
-        .pill.green{background:#E8F7EF;color:#0B8F55}.pill.neutral{background:#F2F0EE;color:#3B3835}.pill.gold{background:#FFF4DF;color:#9A6500}.pill.gray{background:#F2F0EE;color:#6B625D}.pill.red{background:#FFF0F2;color:#C92E48}
-        .item-rank{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #F1ECE7}
-        .item-rank:last-child{border-bottom:0}.item-rank-no{width:30px;height:30px;border-radius:9px;background:#F4EFEA;color:#1A1A1A;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:.75rem}
-        .item-rank-info{flex:1;min-width:0}.item-rank-name{font-weight:800;font-size:.78rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.item-rank-sub{font-size:.66rem;color:var(--text-muted);margin-top:3px}
-        .item-rank-val{font-weight:900;font-size:.78rem}
-        .stock-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
-        .stock-box{border:1px solid var(--border);border-radius:14px;padding:13px;background:#fff}
-        .stock-box.low{border-color:#F1B6C1;background:#FFF8F9}.stock-box-name{font-size:.74rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.stock-box-qty{font-size:1.15rem;font-weight:900;margin-top:7px}.stock-box small{font-size:.62rem;color:var(--text-muted)}
-        .admin-order-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.admin-order-card{border:1px solid var(--border);border-radius:14px;padding:14px;background:#fff;cursor:pointer;transition:.15s}.admin-order-card:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,.06)}.admin-order-title{font-size:1rem;font-weight:900}.admin-order-id{font-size:.72rem;color:#756f68;margin-top:4px}.admin-order-items{font-size:.78rem;line-height:1.45;color:#746d65;margin-top:12px;min-height:42px}.admin-order-bottom{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px}.admin-order-time{font-size:.72rem;font-weight:800;background:#f4f0ea;border:1px solid #e6dfd5;border-radius:8px;padding:8px 10px}.admin-order-total{font-size:1rem;font-weight:900;color:#f06b00;background:#fff0d7;border:1px solid #ffd27a;border-radius:9px;padding:8px 12px}.modal-overlay .modal-card{background:#fff !important;opacity:1 !important;color:var(--text-dark);border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.18);backdrop-filter:none}.expense-detail-row{background:#fff}.expense-detail-value{color:var(--text-dark)}
-.expense-click-card{cursor:pointer}.expense-detail-row{display:grid;grid-template-columns:110px 1fr;gap:18px;align-items:start;padding:14px 4px;border-bottom:1px solid #e9e3db;background:#fff !important}.expense-detail-label{font-size:.78rem;color:#817a72;font-weight:600}.expense-detail-value{font-weight:800;text-align:right;color:#211d1a !important;word-break:break-word}.approval-row{display:flex;justify-content:space-between;align-items:center;gap:10px}.approval-row+.approval-row{margin-top:8px}@media(max-width:700px){.admin-order-grid{grid-template-columns:1fr}}
-        .status-toggle{border:0;border-radius:999px;padding:6px 10px;font-size:.64rem;font-weight:900;cursor:pointer}
-        .status-toggle.active{background:#E8F7EF;color:#0B8F55}.status-toggle.inactive{background:#FFF0F2;color:#C92E48}
-        .staff-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-        .staff-card{border:1px solid var(--border);border-radius:16px;padding:15px;background:#fff}
-        .staff-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.staff-name{font-weight:900;font-size:.9rem}.staff-role{font-size:.67rem;color:var(--text-muted);margin-top:3px}
-        .staff-meta{display:grid;gap:6px;margin:13px 0;font-size:.7rem;color:var(--text-muted)}.staff-meta b{color:var(--text-dark)}
-        .staff-actions{display:flex;gap:7px}.staff-actions button{flex:1;height:36px;border-radius:9px;font-family:inherit;font-size:.66rem;font-weight:800;cursor:pointer}
-        .report-stat{padding:14px;border-radius:14px;background:#FAF7F4;border:1px solid var(--border)}.report-stat .rlabel{font-size:.65rem;color:var(--text-muted);font-weight:800}.report-stat .rvalue{font-size:1.05rem;font-weight:900;margin-top:5px}
-        .upload-drop{border:1.5px dashed #D9C6B9;border-radius:16px;padding:22px;text-align:center;background:#FFFCFA}
-        .upload-drop strong{display:block;font-size:.85rem}.upload-drop span{display:block;color:var(--text-muted);font-size:.68rem;margin:5px 0 12px}
-        .premium-empty{text-align:center;padding:28px 12px;color:var(--text-muted);font-size:.78rem}
-        .mini-bar{height:8px;border-radius:99px;background:#F0ECE9;overflow:hidden;margin-top:7px}.mini-bar>i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#1A1A1A,#7A756D)}
-        @media(max-width:800px){.premium-kpis{grid-template-columns:repeat(2,1fr)}.premium-grid-2,.premium-grid-3{grid-template-columns:1fr}.stock-grid{grid-template-columns:repeat(2,1fr)}.staff-grid{grid-template-columns:1fr 1fr}.premium-hero-row{align-items:flex-start}.premium-title{font-size:1.3rem}}
-        @media(max-width:520px){.staff-grid{grid-template-columns:1fr}.premium-kpis{gap:8px}.pkpi{padding:13px}.pkpi .value{font-size:1.1rem}.premium-card{padding:14px}}
-
-
-        /* ===== FINAL MOBILE ADMIN VIEW FIXES ===== */
-        html,body{width:100%;max-width:600px!important;overflow-x:hidden;margin-left:auto;margin-right:auto}
-        body{min-height:100dvh;width:100%;max-width:600px!important;margin:0 auto}
-        main{width:100%;max-width:600px;overflow-x:hidden}
-        .tab-content{width:100%;max-width:600px;min-width:0}
-        .premium-shell,.premium-panel,.premium-card{min-width:0;max-width:100%}
-        .premium-hero{width:100%;box-sizing:border-box}
-        .premium-hero-row{min-width:0}
-        .premium-hero-row>div:first-child{min-width:0;flex:1}
-        .premium-title{white-space:normal;line-height:1.15}
-        .premium-tabs{width:100%;max-width:100%;padding-left:0;padding-right:0}
-        .premium-tab{flex:0 0 auto}
-        .premium-toolbar{width:100%;min-width:0}
-        .premium-toolbar input,.premium-toolbar select{min-width:0;width:100%;max-width:100%}
-        .premium-table-wrap{width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
-        .premium-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
-        .premium-grid-2,.premium-grid-3{min-width:0}
-        .stock-grid{grid-template-columns:repeat(2,minmax(0,1fr));width:100%;min-width:0}
-        .stock-box{min-width:0;overflow:hidden}
-        .staff-grid{grid-template-columns:repeat(2,minmax(0,1fr));min-width:0}
-        .staff-card{min-width:0;overflow:hidden}
-        .staff-actions{flex-wrap:wrap}
-        .staff-actions button{min-width:0}
-        .premium-card-head{min-width:0}
-        .premium-card-head h3{min-width:0}
-        .premium-card-head span{white-space:nowrap}
-        .admin-insight-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
-        .admin-insight{border:1px solid var(--border);border-radius:14px;padding:13px;background:#fff;min-width:0}
-        .admin-insight .ai-label{font-size:.62rem;color:var(--text-muted);font-weight:800;text-transform:uppercase;letter-spacing:.5px}
-        .admin-insight .ai-value{font-size:1.08rem;font-weight:900;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .admin-insight .ai-note{font-size:.62rem;color:var(--text-muted);margin-top:3px}
-        .admin-insight.neutral{background:#FBF9F5;border-color:#D9D1C7}.admin-insight.mint{background:#F2FBF7;border-color:#BFE8D7}.admin-insight.peach{background:#FFF7EF;border-color:#F0D2B7}.admin-insight.purple{background:#F7F3FF;border-color:#D9C8F5}
-        .admin-section-title{font-size:.72rem;font-weight:900;text-transform:uppercase;letter-spacing:.8px;color:var(--text-muted);margin:18px 0 10px}
-        @media(max-width:520px){
-          .tab-content{padding-left:14px;padding-right:14px}
-          .premium-hero{padding:17px;border-radius:18px}
-          .premium-hero-row{gap:8px}
-          .premium-title{font-size:1.22rem}
-          .premium-sub{font-size:.68rem}
-          .premium-live{font-size:.58rem;padding:7px 8px}
-          .premium-tabs{gap:6px}
-          .premium-tab{padding:8px 10px;font-size:.68rem}
-          .premium-card{padding:13px;border-radius:15px}
-          .premium-kpis{gap:8px}
-          .pkpi{padding:12px}
-          .pkpi .value{font-size:1.02rem}
-          .premium-grid-2,.premium-grid-3{grid-template-columns:1fr}
-          .admin-insight-grid{grid-template-columns:1fr 1fr}
-          .stock-grid{grid-template-columns:1fr 1fr}
-          .staff-grid{grid-template-columns:1fr}
-          .premium-toolbar{flex-direction:column;align-items:stretch}
-          .premium-toolbar .premium-btn,.premium-toolbar label{width:100%;justify-content:center}
-        }
-        @media(min-width:521px) and (max-width:800px){
-          .premium-grid-2{grid-template-columns:1fr}
-          .premium-grid-3{grid-template-columns:repeat(2,minmax(0,1fr))}
+        const orderCols = await getColumns(db,"orders");
+        if (orderCols.includes("order_status")) {
+          await db.prepare(`
+            UPDATE orders SET order_status='deletion_pending'
+            WHERE order_number=? OR CAST(id AS TEXT)=?
+          `).bind(orderId, orderId).run();
         }
 
+        return json({
+          success:true,
+          id:inserted.meta?.last_row_id ?? inserted.lastInsertRowid ?? null,
+          message:"Deletion request submitted for approval"
+        });
+      }
+      if (path === "/api/approvals" && method === "GET") {
+        await ensureSupportTables(db);
+        const requests = await db.prepare(`
+          SELECT id, order_id, requested_by, reason, status, reviewed_by, reviewed_at, created_at
+          FROM deletion_requests
+          WHERE LOWER(COALESCE(status,'pending'))='pending'
+          ORDER BY id DESC
+        `).all();
+        const rows = Array.isArray(requests.results) ? requests.results : [];
+        return json({success:true,count:rows.length,requests:rows});
+      }
+      if (path === "/api/approvals/debug" && method === "GET") {
+        await ensureSupportTables(db);
+        const all = await db.prepare(`
+          SELECT id, order_id, requested_by, reason, status, reviewed_by, reviewed_at, created_at
+          FROM deletion_requests
+          ORDER BY id DESC LIMIT 50
+        `).all();
+        return json({
+          success:true,
+          count:(all.results||[]).length,
+          requests:all.results||[]
+        });
+      }
+      if (path === "/api/approvals/resolve" && method === "POST") {
+        await ensureSupportTables(db);
+        const body = await request.json();
+        const requestId = num(body.request_id || body.id);
+        const status = clean(body.status).toLowerCase();
+        const orderId = clean(body.order_id || body.orderNumber || body.order_number);
+        const reviewedBy = clean(body.reviewed_by || body.reviewedBy) || "Admin";
 
-        /* ===== ADMIN VIEW MOBILE-FIRST FINAL PASS ===== */
-        .admin-compact-head{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:10px 12px;box-shadow:var(--shadow-soft);min-width:0}
-        .admin-compact-title{font-family:'Playfair Display',serif;font-size:1.08rem;font-weight:900;color:var(--text-dark);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .admin-compact-title span{font-family:inherit;font-weight:700;color:var(--text-muted)}
-        .premium-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;overflow:visible;position:static;background:transparent;padding:0}
-        .premium-tab{width:100%;min-width:0;padding:8px 6px;font-size:.68rem;overflow:hidden;text-overflow:ellipsis}
-        .premium-table-wrap{overflow:hidden;width:100%;max-width:100%}
-        .premium-table{min-width:0;width:100%;table-layout:fixed}
-        .premium-table th,.premium-table td{padding:7px 5px;font-size:.60rem;white-space:normal;word-break:break-word;overflow-wrap:anywhere}
-        .premium-card{margin-bottom:10px}
-        .premium-kpis{gap:7px;margin-bottom:10px}
-        .pkpi{padding:10px;border-radius:13px}
-        .pkpi .label{font-size:.57rem}.pkpi .value{font-size:.98rem;margin-top:5px}.pkpi .delta{font-size:.58rem}
-        .admin-insight-grid{gap:7px;margin-bottom:10px}
-        .admin-insight{padding:10px;border-radius:12px}
-        .admin-insight .ai-label{font-size:.54rem}.admin-insight .ai-value{font-size:.92rem}.admin-insight .ai-note{font-size:.54rem}
-        .premium-card-head{margin-bottom:9px;gap:6px}.premium-card-head h3{font-size:.78rem}.premium-card-head span{font-size:.58rem}
-        .premium-toolbar{gap:6px;margin-bottom:9px}.premium-toolbar .premium-btn,.premium-toolbar label{height:36px;font-size:.64rem;padding:0 9px}
-        .stock-grid{gap:7px}.stock-box{padding:9px;border-radius:11px}.stock-box-name{font-size:.63rem}.stock-box-qty{font-size:1rem;margin-top:5px}.stock-box small{font-size:.55rem}
-        .bottom-nav{height:66px;padding:5px 4px 4px;gap:1px}
-        .nav-item{font-size:.54rem;gap:2px;padding:3px 0;min-width:0}
-        .nav-item svg{width:18px;height:18px}.nav-item.active .icon-container{width:42px;height:25px;border-radius:13px}
-        @media(max-width:600px){
-          #premiumDashboard{padding-top:4px!important}
-          .premium-shell{gap:8px}
-          .premium-tabs{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
-          .premium-tab{padding:7px 4px;font-size:.62rem;border-radius:10px;box-shadow:none}
-          .admin-compact-head{padding:9px 10px;border-radius:12px}
-          .admin-compact-title{font-size:.94rem}
-          .premium-live{font-size:.52rem;padding:6px 7px;gap:4px}
-          .premium-live i{width:6px;height:6px}
-          .premium-grid-2,.premium-grid-3{grid-template-columns:1fr}
-          .premium-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
-          .premium-table th,.premium-table td{font-size:.54rem;padding:6px 3px}
-          .premium-table th{letter-spacing:.1px}
-          .premium-card{padding:10px;border-radius:13px}
-          .premium-empty{padding:18px 8px;font-size:.65rem}
-        }
-        @media(max-width:380px){
-          .premium-tabs{gap:5px}.premium-tab{font-size:.57rem;padding:6px 3px}
-          .admin-compact-title{font-size:.86rem}.premium-live{font-size:.48rem}
-          .premium-table th,.premium-table td{font-size:.49rem;padding:5px 2px}
-          .nav-item{font-size:.49rem}.nav-item svg{width:17px;height:17px}.nav-item.active .icon-container{width:38px;height:23px}
-        }
-        /* ===== FINAL MOBILE POS + HISTORICAL BILL FIX ===== */
-        .mobile-sale-list{display:none}
-        .mobile-sale-card{border:1px solid var(--border);border-radius:12px;background:#fff;padding:10px;margin-bottom:8px;box-shadow:var(--shadow-soft)}
-        .mobile-sale-top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
-        .mobile-sale-id{font-weight:900;font-size:.72rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .mobile-sale-total{font-weight:900;font-size:.82rem;white-space:nowrap}
-        .mobile-sale-meta{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin-top:7px;font-size:.61rem;color:var(--text-muted)}
-        .mobile-sale-items{margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:.64rem;line-height:1.45}
-        .mobile-sale-item{display:flex;justify-content:space-between;gap:8px;padding:3px 0}
-        .mobile-sale-item span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis}
-        .historical-items-box{background:#FFFCFA;border:1px solid var(--border);border-radius:12px;padding:10px;margin-bottom:14px}
-        .historical-item-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #F1ECE7;font-size:.78rem}
-        .historical-item-row:last-child{border-bottom:0}
-        .historical-item-name{min-width:0;font-weight:700;overflow:hidden;text-overflow:ellipsis}
-        .historical-item-qty{color:var(--text-muted);white-space:nowrap}
-        .historical-item-total{font-weight:900;white-space:nowrap}
-        .historical-items-title{font-size:.68rem;font-weight:900;text-transform:uppercase;letter-spacing:.5px;color:var(--text-muted);margin-bottom:5px}
-        .top-selling-list .item-rank-no{background:#F4EFEA;color:#1A1A1A}
-        .premium-tab.active{background:#1A1A1A!important;border-color:#1A1A1A!important;color:#fff!important;box-shadow:0 5px 12px rgba(0,0,0,.12)!important}
-        .premium-btn.alt{background:#F4EFEA!important;color:#1A1A1A!important;border-color:#D9D1C7!important}
-         .pill.neutral{background:#F2F0EE!important;color:#3B3835!important}
-        .admin-insight.neutral{background:#FBF9F5!important;border-color:#D9D1C7!important}
-        @media(max-width:600px){
-          body{max-width:600px!important}
-          .premium-shell{width:100%;padding:0 10px}
-          .premium-hero{display:none!important}
-          .admin-compact-head{margin-top:2px}
-          .premium-tabs{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
-          .premium-tab{font-size:.61rem;padding:7px 3px}
-          .premium-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
-          .pkpi{padding:9px}.pkpi .value{font-size:.92rem}
-          .admin-insight-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
-          .premium-grid-2,.premium-grid-3{grid-template-columns:1fr!important}
-          .premium-card{padding:10px}
-          .premium-table-wrap{display:none!important}
-          .mobile-sale-list{display:block}
-          #premiumPanel-sales .premium-toolbar input,#premiumPanel-sales .premium-toolbar select,#premiumPanel-sales .premium-toolbar .premium-btn{width:100%}
-          .historical-items-box{font-size:.75rem}
-        }
-        @media(min-width:601px){.mobile-sale-list{display:none!important}}
-
-
-        /* ===== FINAL MOBILE ADMIN / ANALYTICS SYSTEM ===== */
-
-        .admin-module-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-        .admin-module{border:1px solid var(--border);background:#fff;border-radius:12px;padding:11px;text-align:left;font-family:inherit;cursor:pointer;min-width:0}
-        .admin-module b{display:block;font-size:.72rem;color:var(--text-dark)}.admin-module span{display:block;font-size:.58rem;color:var(--text-muted);margin-top:3px;line-height:1.35}
-        .admin-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-        .admin-form-grid input,.admin-form-grid select{height:40px;font-size:.72rem;padding:0 10px;min-width:0}
-        .check-row{height:40px;border:1px solid var(--border);border-radius:10px;padding:0 10px;display:flex;align-items:center;gap:7px;font-size:.65rem;font-weight:700;text-transform:none;letter-spacing:0;background:#fff}
-        .check-row input{width:16px;height:16px}
-        .admin-mini-list,.admin-staff-list,.admin-user-list{display:flex;flex-direction:column;gap:5px;max-height:300px;overflow:auto}
-        .admin-mini-row,.admin-staff-row,.admin-user-row,.approval-row,.audit-row{display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--border);border-radius:10px;padding:8px;background:#fff;min-width:0}
-        .admin-mini-row>div,.admin-staff-main,.admin-user-row>div,.approval-row>div:first-child{min-width:0;flex:1}.admin-mini-row b,.admin-staff-main b,.admin-user-row b{display:block;font-size:.68rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.admin-mini-row small,.admin-staff-main small,.admin-user-row small,.approval-row small,.audit-row span{display:block;color:var(--text-muted);font-size:.56rem;margin-top:2px;line-height:1.35}
-        .admin-staff-row .premium-btn,.admin-user-row .premium-btn,.approval-actions .premium-btn{width:auto;height:32px;padding:0 9px;font-size:.58rem}
-        .approval-actions{display:flex;gap:5px}.audit-row{display:block}.audit-row b{font-size:.63rem}.admin-help{font-size:.62rem;color:var(--text-muted);line-height:1.5;margin:0 0 10px}
-        .compact-toolbar{display:grid!important;grid-template-columns:1fr auto;gap:6px!important;align-items:center}.compact-toolbar input,.compact-toolbar select{height:36px!important;min-width:0!important;width:100%!important}.compact-toolbar .premium-btn,.compact-toolbar .upload-label{height:36px!important;display:flex;align-items:center;justify-content:center;white-space:nowrap}
-        .upload-label{cursor:pointer}
-        .sales-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-bottom:8px}.sales-summary-grid .report-stat{padding:8px}.sales-summary-grid .rlabel{font-size:.55rem}.sales-summary-grid .rvalue{font-size:.9rem}
-        .sales-filter-chips{display:flex;gap:5px;overflow-x:auto;padding-bottom:2px;margin-bottom:7px}.sales-filter-chips .filter-btn{height:30px;padding:0 10px;font-size:.62rem;white-space:nowrap}
-        .date-filter-row{display:grid;grid-template-columns:1fr 1fr;gap:6px}.date-filter-row input{height:36px!important;font-size:.68rem}
-        @media(max-width:600px){.admin-module-grid{gap:6px}.admin-form-grid{grid-template-columns:1fr 1fr}.compact-toolbar{grid-template-columns:1fr 70px}.compact-toolbar .premium-btn{padding:0 7px}.admin-staff-row{align-items:center}.admin-staff-row .status-toggle{padding:5px 7px;font-size:.54rem}.sales-summary-grid{grid-template-columns:repeat(3,1fr)}.premium-tabs{grid-template-columns:repeat(3,minmax(0,1fr));overflow:hidden}.premium-tab{font-size:.59rem}.premium-card-head h3{font-size:.74rem}}
-        @media(max-width:380px){.admin-form-grid{grid-template-columns:1fr}.compact-toolbar{grid-template-columns:1fr 64px}.sales-summary-grid .rvalue{font-size:.82rem}}
-
-        /* ===== VIRAASAT 6.2 REPAIR PASS ===== */
-        .filter-btn.active{background:#1A1A1A!important;color:#fff!important;border-color:#1A1A1A!important}
-        .table-card.occupied .tc-sub{color:#C92E48}
-        .status-dot.occ{color:#E11D48!important}
-        .approval-missing{background:#FFF8F9;border:1px solid #F2C5CD;border-radius:10px;padding:12px;color:#C92E48;font-size:.68rem;line-height:1.45}
-        .approval-row{background:#fff}
-        .repair-ok{background:#F2FBF7;border:1px solid #BFE8D7;border-radius:10px;padding:10px;color:#0B8F55;font-size:.68rem}
-
-
-        /* ===== FINAL MOBILE FIT — layout only, no business-logic changes ===== */
-        @media (max-width: 600px) {
-            html, body { width:100%; max-width:100%; overflow-x:hidden; }
-            body { min-width:0; }
-            main, .tab-content, .premium-panel, .premium-card, .card,
-            .premium-grid-2, .premium-grid-3, .premium-kpis, .home-kpi-grid,
-            .quick-action-grid, .sales-summary-grid, .admin-module-grid,
-            .admin-form-grid, .premium-toolbar, .premium-card-head { min-width:0; max-width:100%; }
-            .tab-content { padding-left:12px; padding-right:12px; overflow-x:hidden; }
-            .top-app-bar { padding-left:12px; padding-right:12px; gap:8px; }
-            .brand-container, .brand-name, .page-subtitle { min-width:0; }
-            .date-badge { max-width:46vw; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-            .premium-grid-2, .premium-grid-3 { grid-template-columns:minmax(0,1fr); }
-            .premium-kpis, .home-kpi-grid, .quick-action-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
-            .premium-card-head { gap:8px; flex-wrap:wrap; }
-            .premium-card-head h3, .premium-card-head span { min-width:0; overflow-wrap:anywhere; }
-            .premium-toolbar { flex-wrap:wrap; }
-            .premium-toolbar > * { min-width:0; max-width:100%; }
-            .admin-form-grid { grid-template-columns:minmax(0,1fr) !important; }
-            .admin-form-grid > * { width:100%; min-width:0; }
-            .premium-table-wrap { width:100%; max-width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; }
-            .premium-table { min-width:0; width:100%; table-layout:fixed; }
-            .premium-table th, .premium-table td { white-space:normal; overflow-wrap:anywhere; word-break:break-word; }
-            .premium-table th:nth-child(1), .premium-table td:nth-child(1) { width:24%; }
-            .premium-table th:nth-child(2), .premium-table td:nth-child(2) { width:22%; }
-            .premium-table th:nth-child(3), .premium-table td:nth-child(3) { width:16%; }
-            .premium-table th:nth-child(4), .premium-table td:nth-child(4) { width:16%; }
-            .premium-table th:nth-child(5), .premium-table td:nth-child(5) { width:22%; text-align:right; }
-            .mobile-sale-card, .admin-order-card, .admin-mini-row, .admin-staff-row, .admin-user-row { min-width:0; max-width:100%; overflow:hidden; }
-            .mobile-sale-top, .mobile-sale-meta, .admin-order-bottom { min-width:0; }
-            .mobile-sale-meta { flex-wrap:wrap; }
-            .mobile-sale-id, .mobile-sale-total, .admin-order-title, .admin-order-id, .admin-order-items, .admin-order-total { min-width:0; overflow-wrap:anywhere; }
-            .pkpi .value, .hkpi-val, .ai-value, .rvalue { min-width:0; max-width:100%; overflow-wrap:anywhere; word-break:break-word; }
-            input, select, textarea, button { max-width:100%; }
-        }
-        @media (max-width:380px) {
-            .premium-kpis, .home-kpi-grid, .quick-action-grid { grid-template-columns:minmax(0,1fr); }
-            .tab-content { padding-left:10px; padding-right:10px; }
-            .pkpi { padding:11px; }
-            .pkpi .value { font-size:1rem; }
+        if (!requestId || !["approved","rejected"].includes(status)) {
+          return json({ success:false, error:"Valid request_id and status (approved/rejected) are required" },400);
         }
 
-    </style>
-</head>
-<body>
-
-    <div id="splashScreen">
-        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
-            <img src="icon.png" alt="Viraasat Logo" style="width: 100px; height: auto; margin-bottom: 16px; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.08));">
-            <div class="splash-logo" style="margin-bottom: 0;">VIRAASAT</div>
-        </div>
-        <div class="splash-subtitle" style="margin-top: 0;">Premium POS</div>
-        <div class="spinner"></div>
-    </div>
-
-    <!-- LOGIN SCREEN -->
-    <div id="loginScreen" style="display: none; position: absolute; inset: 0; background: var(--bg-color); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
-        <div style="width: 100%; max-width: 400px; background: var(--surface); padding: 40px 24px; border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow-soft);">
-            <div style="text-align: center; margin-bottom: 30px;">
-                <img src="icon.png" alt="Viraasat Logo" style="width: 70px; height: auto; margin-bottom: 12px;">
-                <h1 style="font-family: 'Playfair Display', serif; color: var(--text-dark); font-size: 2.2rem; font-weight: 700;">VIRAASAT</h1>
-                <p style="color: var(--text-muted); font-weight: 600; font-size: 0.8rem; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px;">Authorized Access Only</p>
-            </div>
-            <div class="form-group">
-                <div class="input-box"><label>Mobile Number</label><input type="tel" id="loginMobile" placeholder="Enter registered number" inputmode="numeric"></div>
-                <div class="input-box"><label>Password</label><input type="password" id="loginPass" placeholder="Enter password"></div>
-            </div>
-            <button class="btn" onclick="attemptLogin()" id="btnLogin">Secure Login</button>
-            <div id="loginError" style="color: var(--danger); text-align: center; font-size: 0.85rem; margin-top: 16px; font-weight: 600; min-height: 20px;"></div>
-        </div>
-    </div>
-
-    <!-- ADD NEW TABLE MODAL -->
-    <div id="addTableModal" class="modal-overlay">
-        <div class="bottom-sheet">
-            <div class="sheet-handle"></div>
-            <h3 style="font-size:1.2rem; font-weight: 700; margin-bottom:16px;">Add New Table</h3>
-            <div class="form-group">
-                <div class="input-box"><label>Select Seating Area</label><select id="newTableCategory"></select></div>
-                <div class="input-box"><label>Table Number</label><input type="number" id="newTableNumber" placeholder="e.g. 11" inputmode="numeric"></div>
-            </div>
-            <div class="input-row">
-                <button class="btn btn-outline" onclick="document.getElementById('addTableModal').style.display='none'">Cancel</button>
-                <button class="btn" onclick="confirmAddTable()">Save Table</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- PAYMENT MODAL -->
-    <div id="paymentModal" class="modal-overlay">
-        <div class="bottom-sheet">
-            <div class="sheet-handle"></div>
-            <h3 style="font-size:1.2rem; font-weight: 700; margin-bottom:16px; text-align:center;">Select Payment Mode</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 24px;">
-                <button class="pay-btn selected" id="payCash" onclick="selectPaymentMode('Cash')"><span style="font-size:1.2rem;">💵</span> Cash</button>
-                <button class="pay-btn" id="payUPI" onclick="selectPaymentMode('UPI')"><span style="font-size:1.2rem;">📱</span> UPI</button>
-                <button class="pay-btn" id="payCard" onclick="selectPaymentMode('Card')"><span style="font-size:1.2rem;">💳</span> Card</button>
-            </div>
-            <button class="btn" style="height:56px; font-size:1.05rem;" id="btnFinalCheckout" onclick="processFinalCheckout()">✔ Confirm Checkout</button>
-            <button class="btn-outline" onclick="document.getElementById('paymentModal').style.display='none'" style="width:100%; height:48px; margin-top:12px; border-radius:10px; font-weight:600;">Cancel</button>
-        </div>
-    </div>
-
-    <!-- CONFLICT MODAL -->
-    <div id="conflictModal" class="modal-overlay">
-        <div class="bottom-sheet">
-            <div class="sheet-handle"></div>
-            <h3 style="color:var(--text-dark); font-size:1.2rem; font-weight:700; margin-bottom:8px;">Table Occupied</h3>
-            <p style="margin-bottom:20px; color:var(--text-muted); font-size: 0.9rem;">Select an empty table to move items.</p>
-            <div class="form-group"><select id="switchTableSelect"></select></div>
-            <div class="input-row">
-                <button class="btn btn-outline" onclick="document.getElementById('conflictModal').style.display='none'">Cancel</button>
-                <button class="btn" onclick="confirmSwitchTable()">Move Items</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ORDER DETAILS MODAL -->
-    <div id="orderDetailsModal" class="modal-overlay">
-        <div class="bottom-sheet">
-            <div class="sheet-handle"></div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-                <h3 style="font-size:1.2rem; font-weight: 700;">Order Details</h3>
-                <button onclick="document.getElementById('orderDetailsModal').style.display='none'" style="background:transparent; border:none; font-size:1.2rem; cursor:pointer; color:var(--text-muted);">✕</button>
-            </div>
-            <div id="modalOrderMeta" style="background:#FAFAFA; padding:12px; border-radius:8px; font-size:0.85rem; color:var(--text-dark); margin-bottom:16px; line-height: 1.6; border: 1px solid var(--border);"></div>
-            <div style="margin-bottom:16px; max-height: 30vh; overflow-y:auto; font-size:0.9rem; line-height:1.6;" id="modalOrderItems"></div>
-            <div style="display:flex; justify-content:space-between; align-items:center; border-top: 1px dashed var(--border); padding-top: 12px; margin-bottom:20px;">
-                <span style="font-weight:600; font-size:1rem; color:var(--text-dark);">Total</span>
-                <span style="font-weight:700; font-size:1.4rem; color:var(--text-dark);" id="modalOrderTotal"></span>
-            </div>
-            <div class="form-group" style="margin-bottom: 16px;">
-                <div class="input-box"><label>Customer Phone (Strict verification)</label><input type="tel" id="modalCustomerPhone" placeholder="10 digits required" inputmode="numeric"></div>
-            </div>
-            <div class="input-row">
-                <button class="btn btn-outline" onclick="printHistoricalBill()">Print</button>
-                <button class="btn" style="background:#10B981; border:none;" onclick="sendWA_HistoricalBill()">WhatsApp</button>
-            </div>
-            <button class="btn btn-outline" style="margin-top:10px;color:var(--danger);border-color:var(--danger)" onclick="requestHistoricalOrderDeletion()">Request Order Deletion</button>
-        </div>
-    </div>
-
-    <!-- CUSTOM THREE BUTTON MODAL (For Salary Print) -->
-    <div id="expenseDetailsModal" class="modal-overlay" style="z-index:100000; align-items:center; background:rgba(0,0,0,.55);">
-        <div class="modal-card expense-detail-modal-card" style="max-width:560px; width:calc(100% - 28px); background:#fff !important; opacity:1 !important; color:#211d1a !important; padding:20px; border-radius:18px;">
-            <div class="modal-header" style="margin-bottom:14px;"><h3 style="margin:0;color:#211d1a;">Expense Details</h3><button class="icon-btn" onclick="document.getElementById('expenseDetailsModal').style.display='none'">×</button></div>
-            <div id="expenseDetailsBody" style="background:#fff !important; color:#211d1a !important;"></div>
-        </div>
-    </div>
-
-    <div id="salaryActionModal" class="modal-overlay" style="z-index: 100000; align-items: center;">
-        <div class="bottom-sheet" style="max-width: 320px; border-radius: 16px; padding: 24px; text-align: center; margin: 0 20px; transform: none; animation: fadeIn 0.2s ease-out; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
-            <h3 id="salaryActionMessage" style="font-size:1.1rem; font-weight:700; margin-bottom: 24px; color: var(--text-dark); line-height: 1.5;">Payout Recorded!</h3>
-            <div style="display:flex; flex-direction:column; gap: 10px;" id="salaryActionButtons"></div>
-        </div>
-    </div>
-
-    <!-- CUSTOM SECURE ALERT & CONFIRM MODALS -->
-    <div id="customAlertModal" class="modal-overlay" style="z-index: 100000; align-items: center;">
-        <div class="bottom-sheet" style="max-width: 320px; border-radius: 16px; padding: 24px; text-align: center; margin: 0 20px; transform: none; animation: fadeIn 0.2s ease-out; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
-            <h3 id="customAlertMessage" style="font-size:1rem; font-weight:600; margin-bottom: 24px; color: var(--text-dark); line-height: 1.5;">Message</h3>
-            <div class="input-row" id="customAlertButtons" style="gap: 12px; justify-content: center;"></div>
-        </div>
-    </div>
-
-    <!-- TOP BAR -->
-    <header class="top-app-bar" id="appHeader" style="display: none;">
-        <div class="brand-container">
-            <div class="brand-name">VIRAASAT</div>
-            <div class="page-subtitle" id="pageMainTitle" style="transition: opacity 0.5s ease; font-family: 'Playfair Display', serif; font-size: 0.85rem; font-style: italic; font-weight: 700; color: var(--text-dark);">Premium POS</div>
-        </div>
-        <button class="icon-btn" onclick="fetchData()" title="Refresh Data">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path></svg>
-        </button>
-    </header>
-
-    <main id="appMain" style="display: none;">
-        <div id="loader"><div class="spinner"></div> <span>Syncing...</span></div>
-
-
-        <!-- PREMIUM COMMAND CENTER -->
-        <div id="premiumDashboard" class="tab-content" style="padding-top:10px;">
-            <div class="premium-shell">
-                <div class="admin-compact-head">
-                    <div class="admin-compact-title">VIRAASAT <span>Admin View</span></div>
-                    <div class="premium-live"><i></i> LIVE DATA</div>
-                </div>
-                <div class="premium-tabs" id="premiumTabs">
-                    <button class="premium-tab active" onclick="showPremiumTab('overview',this)">Overview</button>
-                    <button class="premium-tab" onclick="showPremiumTab('sales',this)">Sales</button>
-                    <button class="premium-tab" onclick="showPremiumTab('items',this)">Item Sales</button>
-                    <button class="premium-tab" onclick="showPremiumTab('inventory',this)">Inventory</button>
-                    <button class="premium-tab" onclick="showPremiumTab('reports',this)">Insights</button>
-                    <button class="premium-tab" onclick="showPremiumTab('expenses',this)">Expenses</button>
-                    <button class="premium-tab" onclick="showPremiumTab('settings',this)">Admin</button>
-                </div>
-
-                <section id="premiumPanel-overview" class="premium-panel active"></section>
-                <section id="premiumPanel-sales" class="premium-panel"></section>
-                <section id="premiumPanel-items" class="premium-panel"></section>
-                <section id="premiumPanel-inventory" class="premium-panel"></section>
-                <section id="premiumPanel-reports" class="premium-panel"></section>
-                <section id="premiumPanel-expenses" class="premium-panel"></section>
-                <section id="premiumPanel-settings" class="premium-panel"></section>
-            </div>
-        </div>
-
-        <!-- DASHBOARD VIEW -->
-        <div id="tableDashboard" class="tab-content active" style="padding-top: 10px;">
-            <div class="greeting-sec">
-                <div>
-                    <h2 id="greetText">Good Evening 👋</h2>
-                    <p>Here's what's happening today.</p>
-                </div>
-                <div class="date-badge" id="currentDateStr">Today</div>
-            </div>
-
-            <div class="quick-action-grid">
-                <div class="quick-card" id="cardTakeaway" onclick="openTable('Takeaway')">
-                    <div class="qc-icon">🛍️</div>
-                    <div class="qc-info">
-                        <h4>Takeaway</h4>
-                        <span class="status-dot" id="takeawayStatus">● READY</span>
-                    </div>
-                </div>
-                <div class="quick-card" id="cardDelivery" onclick="openTable('Home Delivery')">
-                    <div class="qc-icon">🛵</div>
-                    <div class="qc-info">
-                        <h4>Delivery</h4>
-                        <span class="status-dot" id="deliveryStatus">● READY</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="tableGrid"></div>
-
-            <div class="home-kpi-grid" id="homeKpiGrid">
-                <div class="hkpi-card">
-                    <div class="hkpi-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path></svg> Today's Sale</div>
-                    <div class="hkpi-val" id="homeTodaySale">₹0</div>
-                    <div class="hkpi-sub" style="color:var(--success);">Today</div>
-                </div>
-                <div class="hkpi-card">
-                    <div class="hkpi-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg> Avg. Order Value</div>
-                    <div class="hkpi-val" id="homeAvgOrder">₹0</div>
-                    <div class="hkpi-sub" style="color:var(--success);">Today</div>
-                </div>
-                <div class="hkpi-card">
-                    <div class="hkpi-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg> Overall Sale</div>
-                    <div class="hkpi-val" id="homeOverallSale">₹0</div>
-                    <div class="hkpi-sub" style="color:var(--success);">Lifetime</div>
-                </div>
-                <div class="hkpi-card">
-                    <div class="hkpi-top"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg> Active Tables</div>
-                    <div class="hkpi-val" id="homeActiveTables">0 / 0</div>
-                    <div class="hkpi-sub" style="color:var(--text-dark);">Live Status</div>
-                </div>
-            </div>
-
-            <div class="section-header"><h4>Recent Orders</h4> <span id="btnViewAllOrders" onclick="switchMainTab('salesDashboard', document.getElementById('navOrders'))">View All ›</span></div>
-            <div id="homeRecentOrders"></div>
-
-            <button class="btn btn-outline" onclick="showAddTableModal()" style="margin: 20px 0; font-weight:600;">+ Add New Table</button>
-            
-            <div class="section-header"><h4>Stock Alert</h4></div>
-            <div id="dashboardStockList" class="stock-list-container" style="margin-bottom:0; display: flex; flex-wrap: wrap;"></div>
-        </div>
-
-        <!-- LIVE SALES VIEW -->
-        <div id="salesDashboard" class="tab-content" style="padding-top: 10px;">
-            <div class="card" style="padding: 16px; margin-bottom: 16px;">
-                <div class="input-row" style="margin-bottom: 12px;">
-                    <div class="input-box"><label>From</label><input type="date" id="filterStartDate" onchange="renderLiveSales()"></div>
-                    <div class="input-box"><label>To</label><input type="date" id="filterEndDate" onchange="renderLiveSales()"></div>
-                </div>
-                <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-bottom: 12px;">
-                    <button id="btnFilterToday" class="filter-btn" onclick="setTodayFilter()">Today</button>
-                    <button id="btnFilterYesterday" class="filter-btn" onclick="setYesterdayFilter()">Yesterday</button>
-                    <button id="btnFilterClear" class="filter-btn" style="border-color: var(--danger); color: var(--danger);" onclick="resetDateFilter()">Clear</button>
-                </div>
-                <div style="background:#FAFAFA; border:1px solid var(--border); padding:12px; border-radius:8px; font-weight:700; font-size:1.1rem; text-align:center; color:var(--text-dark);" id="totalSalesBox">Total Sales: ₹ 0</div>
-            </div>
-            <div class="section-header"><h4>Recent Orders</h4><span>Newest first • click for details</span></div>
-            <div id="salesGrid" class="sales-grid admin-order-grid"></div>
-        </div>
-
-        <!-- P&L ANALYTICS VIEW -->
-        <div id="trendView" class="tab-content" style="padding-top: 10px;">
-            <div class="trend-kpi-grid">
-                <div class="trend-kpi-card full-width" style="background:var(--occ-bg); border-color:var(--occ-border);">
-                    <div class="kpi-title" style="color: #D03B3B;">Net Profit (All Time)</div>
-                    <div class="kpi-value" id="kpiNetProfit">₹ 0</div>
-                </div>
-                <div class="trend-kpi-card"><div class="kpi-title">Total Sales</div><div class="kpi-value" id="kpiTotalSales" style="color:var(--success);">₹ 0</div></div>
-                <div class="trend-kpi-card"><div class="kpi-title">Total Expense</div><div class="kpi-value" id="kpiTotalExpenses" style="color:var(--danger);">₹ 0</div></div>
-                <div class="trend-kpi-card"><div class="kpi-title">Staff Paid</div><div class="kpi-value" id="kpiTotalSalary">₹ 0</div></div>
-                <div class="trend-kpi-card"><div class="kpi-title">Active Staff</div><div class="kpi-value" id="kpiTotalStaff">0</div></div>
-            </div>
-
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Profit Trend</h4></div>
-                <div class="chart-filters">
-                    <button class="filter-btn active" id="btnChartDOD" onclick="renderPNLChart('daily')">Daily</button>
-                    <button class="filter-btn" id="btnChartWeekly" onclick="renderPNLChart('weekly')">Weekly</button>
-                    <button class="filter-btn" id="btnChartMonthly" onclick="renderPNLChart('monthly')">Monthly</button>
-                </div>
-                <div class="chart-wrapper"><canvas id="trendChart"></canvas></div>
-            </div>
-
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Staff Expense Breakdown</h4></div>
-                <div id="staffExpenseList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
-            </div>
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Staff Advance Details</h4></div>
-                <div id="staffAdvanceDetails" style="display:flex; flex-direction:column; gap:8px; font-size:0.78rem;"></div>
-            </div>
-            
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Other Expenses</h4></div>
-                <div id="expenseBreakdownList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
-            </div>
-        </div>
-
-        <!-- EXPENSES VIEW -->
-        <div id="expenses" class="tab-content" style="padding-top: 10px;">
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Add / Update Expense</h4><span>Receipt optional</span></div>
-                <div class="form-group">
-                    <div class="input-box"><label>Category</label><select id="expCategory"><option>Raw Material</option><option>Electricity</option><option>Maintenance</option><option>Rent</option><option>Staff Salary</option><option>Transport</option><option>Other</option></select></div>
-                    <div class="input-box"><label>Amount (₹)</label><input type="number" id="expAmount" placeholder="0" inputmode="numeric" min="1"></div>
-                    <div class="input-box"><label>Date</label><input type="date" id="expDate"></div>
-                    <div class="input-box"><label>Note (Optional)</label><input type="text" id="expDescription" placeholder="Add details"></div>
-                    <div class="input-box"><label>Receipt / Expense Image</label><input type="file" id="expReceipt" accept="image/*" capture="environment" onchange="previewExpenseReceipt(this)"><div id="expReceiptPreview" style="display:none;margin-top:8px;"></div></div>
-                </div>
-                <button class="btn" onclick="submitExpense()">Save Expense</button>
-            </div>
-            <div class="card" style="margin-top:14px;">
-                <div class="section-header" style="margin-top:0;"><h4>Expense History</h4><div style="display:flex;align-items:center;gap:8px"><span id="expenseListCount">0 entries</span><button class="premium-btn light" onclick="exportExpenses()">Export</button></div></div>
-                <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;margin-bottom:10px;">
-                    <button class="filter-btn" id="expFilterToday" onclick="setExpenseQuickFilter('today')">Today</button><button class="filter-btn" id="expFilterYesterday" onclick="setExpenseQuickFilter('yesterday')">Yesterday</button><button class="filter-btn" id="expFilter15" onclick="setExpenseQuickFilter('15')">Last 15 Days</button><button class="filter-btn" id="expFilter30" onclick="setExpenseQuickFilter('30')">Last 1 Month</button><button class="filter-btn active" id="expFilterAll" onclick="setExpenseQuickFilter('all')">All</button>
-                </div>
-                <div class="input-row" style="margin-bottom:12px;"><div class="input-box"><label>From</label><input type="date" id="expFilterFrom" onchange="renderExpenseHistoryList()"></div><div class="input-box"><label>To</label><input type="date" id="expFilterTo" onchange="renderExpenseHistoryList()"></div></div>
-                <div id="expenseHistoryList"></div>
-            </div>
-        </div>
-
-        <!-- ADMIN MANAGEMENT IS INSIDE ADMIN VIEW -->
-
-        <!-- BILLING VIEW -->
-        <div id="billingView" class="tab-content" style="padding-top: 10px;">
-            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-                <button class="icon-btn" onclick="goBackToTables(false)">
-                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                </button>
-                <h2 id="billingTitle" style="font-size: 1.2rem; font-weight: 700; color: var(--text-dark);">Billing</h2>
-            </div>
-            
-            <div class="card" style="padding: 16px;">
-                <div class="form-group" style="margin-bottom: 12px;">
-                    <div class="input-box">
-                        <label>Search Menu Item</label>
-                        <input list="menuItemsList" id="itemInput" placeholder="Type to search..." oninput="checkStockDisplay()" onchange="checkStockDisplay()">
-                        <datalist id="menuItemsList"></datalist>
-                        <div id="stockStatus" style="display:none; margin-top: 8px;"></div>
-                    </div>
-                </div>
-                <div class="input-row">
-                    <div class="input-box" style="flex:0.4;"><label>Qty</label><input type="number" id="itemQty" value="1" min="1" inputmode="numeric" style="text-align: center;"></div>
-                    <button class="btn" style="flex:1;" onclick="addToBill()">Add to Bag</button>
-                </div>
-            </div>
-
-            <details style="background:var(--surface); border-radius:12px; margin-bottom:24px; border:1px solid var(--border);">
-                <summary style="padding:16px; font-weight:500; font-size: 0.95rem; color:var(--text-dark); outline:none; cursor:pointer; list-style: none; display: flex; align-items: center; gap: 8px;">
-                    <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> Add Custom Item
-                </summary>
-                <div style="padding:0 16px 16px 16px;">
-                    <div class="form-group" style="margin-bottom:0;">
-                        <input type="text" id="customName" placeholder="Item Name" style="margin-bottom: 12px;">
-                        <div class="input-row" style="margin-bottom: 12px;">
-                            <input type="number" id="customPrice" placeholder="Price (₹)" inputmode="numeric">
-                            <input type="number" id="customQty" value="1" min="1" inputmode="numeric" style="flex:0.4; text-align: center;">
-                        </div>
-                        <button class="btn btn-outline" onclick="addCustomItem()">Add Custom</button>
-                    </div>
-                </div>
-            </details>
-
-            <div class="section-header" style="margin-top:0;"><h4>Cart Items</h4></div>
-            <div id="billTableBody" class="cart-list"></div>
-
-            <div class="cart-summary">
-                <div class="summary-row"><span>Subtotal</span><span id="subTotal">₹ 0</span></div>
-                <div class="summary-row">
-                    <span>Discount (₹)</span><input type="number" id="discountValue" class="discount-input" value="0" min="0" oninput="updateBillTable()">
-                </div>
-                <div class="summary-row grand-total"><span>Total</span><span id="grandTotal" style="color:var(--text-dark);">₹ 0</span></div>
-            </div>
-
-            <div class="card" style="padding: 16px;">
-                <div class="input-box" style="margin-bottom: 16px;">
-                    <label>Customer Phone (Strict verification)</label><input type="tel" id="customerPhone" placeholder="10 digits required" inputmode="numeric">
-                </div>
-                <div class="input-box" id="deliveryAddressBox" style="display:none;">
-                    <label>Delivery Address / Notes</label><input type="text" id="deliveryAddress" placeholder="Enter full address or rider info">
-                </div>
-            </div>
-
-            <div class="action-grid">
-                <button class="btn btn-outline" id="btnKOT" onclick="saveKOT()">Save KOT</button>
-                <button class="btn btn-outline" onclick="printBill('kot')">Print KOT</button>
-            </div>
-            
-            <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:30px; margin-top: 20px;">
-                <button class="btn btn-outline" onclick="printBill('final')">Print Final Bill</button>
-                <button class="btn btn-outline" style="border-color:#10B981; color:#10B981;" onclick="sendWA_Customer()">WhatsApp Bill</button>
-                <button class="btn btn-danger-action" onclick="clearTableWithoutCheckout()" style="background:var(--surface); border:1px solid var(--border); color:var(--text-dark); height:50px; border-radius:10px; font-weight:600; font-size:0.95rem;">Clear Table (Cancel)</button>
-                <button class="btn" style="margin-top:8px; height: 60px; font-size:1.1rem;" onclick="openPaymentModal()">Checkout</button>
-            </div>
-        </div>
-    </main>
-
-    <!-- BOTTOM NAV -->
-    <nav class="bottom-nav" id="appBottomNav" style="display: none;">
-        <button class="nav-item active" id="navTable" onclick="switchMainTab('tableDashboard', this)">
-            <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></div>
-            <span>Table</span>
-        </button>
-        <button class="nav-item" id="navOrders" onclick="switchMainTab('salesDashboard', this)">
-            <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
-            <span>Live sale</span>
-        </button>
-        <button class="nav-item" id="navAnalytics" onclick="switchMainTab('trendView', this)">
-            <div class="icon-container"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></div>
-            <span>P&L</span>
-        </button>
-        <button class="nav-item" id="navExpenses" onclick="switchMainTab('expenses', this)">
-            <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></div>
-            <span>Expenses</span>
-        </button>
-        <button class="nav-item" id="navAdmin" onclick="switchMainTab('premiumDashboard', this)">
-            <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg></div>
-            <span>Admin View</span>
-        </button>
-        <button class="nav-item" onclick="logoutUser()" style="color: var(--danger);">
-            <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></div>
-            <span>Logout</span>
-        </button>
-    </nav>
-
-    <div id="printSection"></div>
-
-    <script>
-        // D1-only build: Google Apps Script is intentionally not used.
-        const D1_API_BASE = '/api';
-        const API_TIMEOUT_MS = 10000;
-        
-const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6"; 
-        
-        const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
-
-        let menuData = []; 
-        let stockData = {};
-        let stockMeta = {};
-        let stockHistory = []; 
-        let runningTables = {}; 
-        let salesHistory = []; 
-        let expenseHistory = []; 
-        let currentBill = []; 
-        let staffData = [];
-        let activeTableNumber = ""; 
-        let trendChartInstance = null; 
-        let selectedPaymentMode = "Cash";
-        let rawChartSalesData = {}; 
-        let rawChartExpenseData = {};
-        
-        // --- GLOBAL CURRENT HISTORICAL SALE ---
-        let currentViewingSale = null;
-
-        // --- DYNAMIC TICKER LOGIC (MEWADI THEME TAGLINES) ---
-        const royalTaglines = [
-            "A Taste of Royal Mewar",
-            "Mewar Ki Shaan, Swaad Mein Jaan",
-            "Swaad Humari Sabse Badi Pehchaan",
-            "Authentic Rajputana Spices",
-            "Premium POS"
-        ];
-        let tickerIndex = 0;
-
-        function rotateTicker() {
-            const activeTab = document.querySelector('.tab-content.active');
-            if (!activeTab || activeTab.id !== 'tableDashboard') return;
-            
-            const tickerEl = document.getElementById('pageMainTitle');
-            if (!tickerEl) return;
-            
-            tickerEl.style.opacity = 0;
-            
-            setTimeout(() => {
-                tickerIndex = (tickerIndex + 1) % royalTaglines.length;
-                tickerEl.innerText = royalTaglines[tickerIndex];
-                tickerEl.style.opacity = 1;
-            }, 500); 
+        let reqRow = await db.prepare(`SELECT * FROM deletion_requests WHERE id=? LIMIT 1`).bind(requestId).first();
+        let sourceTable = 'deletion_requests';
+        if (!reqRow) {
+          reqRow = await db.prepare(`SELECT * FROM approval_requests WHERE id=? LIMIT 1`).bind(requestId).first();
+          sourceTable = 'approval_requests';
+        }
+        if (!reqRow) return json({ success:false, error:"Approval request not found" },404);
+        if (clean(reqRow.status).toLowerCase() !== "pending") {
+          return json({ success:false, error:"Approval request is already resolved" },409);
         }
 
-        setInterval(rotateTicker, 4000);
+        const targetOrder = orderId || clean(reqRow.order_id);
 
-        let tableSections;
-        try {
-            tableSections = JSON.parse(localStorage.getItem('viraasat_table_sections')) || [
-                { title: "Hut Seating", tables: ["1", "2", "3", "4"] },
-                { title: "Ground Seating", tables: ["5", "6", "7"] },
-                { title: "Terrace Seating", tables: ["8", "9", "10"] }
-            ];
-        } catch(e) {
-            tableSections = [
-                { title: "Hut Seating", tables: ["1", "2", "3", "4"] },
-                { title: "Ground Seating", tables: ["5", "6", "7"] },
-                { title: "Terrace Seating", tables: ["8", "9", "10"] }
-            ];
-        }
-
-        let userPermissions;
-        try {
-            userPermissions = JSON.parse(localStorage.getItem('viraasat_permissions')) || {};
-        } catch(e) {
-            userPermissions = {};
-        }
-
-        const d = new Date();
-        document.getElementById('currentDateStr').innerText = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-        
-        function getVal(obj, possibleKeys) {
-            if (!obj) return '';
-            let normalizedObj = {};
-            for (let k in obj) { 
-                normalizedObj[k.toLowerCase().replace(/[^a-z0-9]/g, '')] = obj[k]; 
+        if (String(targetOrder).startsWith("STAFF:")) {
+          const staffId = num(String(targetOrder).slice(6));
+          if (!staffId) return json({success:false,error:"Invalid staff approval target"},400);
+          const staffRow = await db.prepare(`SELECT id, name, mobile, is_active FROM staff WHERE id=? LIMIT 1`).bind(staffId).first();
+          if (!staffRow) return json({success:false,error:"Staff record not found"},404);
+          if (status === "approved") {
+            // Remove the selected employee and any duplicate record carrying the same
+            // mobile/name. This prevents a duplicate row from making a successful
+            // approval look like the employee was not removed.
+            const mobile = String(staffRow.mobile || '').replace(/\D/g,'');
+            const name = String(staffRow.name || '').trim().toLowerCase();
+            let result;
+            if (mobile) {
+              result = await db.prepare(`
+                UPDATE staff SET is_active=0, updated_at=CURRENT_TIMESTAMP
+                WHERE REPLACE(REPLACE(REPLACE(REPLACE(COALESCE(mobile,''),' ',''),'-',''),'+',''), '(', '') LIKE ?
+                   OR id=?
+              `).bind(`%${mobile}%`, staffId).run();
+            } else {
+              result = await db.prepare(`
+                UPDATE staff SET is_active=0, updated_at=CURRENT_TIMESTAMP
+                WHERE LOWER(TRIM(COALESCE(name,'')))=? OR id=?
+              `).bind(name, staffId).run();
             }
-            for (let k of possibleKeys) {
-                let normK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
-                if (normalizedObj[normK] !== undefined && normalizedObj[normK] !== null && normalizedObj[normK] !== '') { 
-                    return normalizedObj[normK]; 
-                }
-            }
-            return '';
+            const affected = Number(result?.meta?.changes || result?.changes || 0);
+            if (affected < 1) return json({success:false,error:"Staff record could not be deactivated"},500);
+          }
+
+          // Only mark the approval resolved after the protected action succeeded.
+          await db.prepare(`
+            UPDATE ${sourceTable}
+            SET status=?, reviewed_by=?, reviewed_at=CURRENT_TIMESTAMP
+            WHERE id=?
+          `).bind(status, reviewedBy, requestId).run();
+
+          if (status === "approved") {
+            return json({success:true,message:`Staff removal approved and removed from POS.`,staff_id:staffId,status,affected:1});
+          }
+          return json({success:true,message:`Staff removal request rejected`,staff_id:staffId,status,affected:0});
         }
 
-        function parseAmount(val) {
-            if (val === undefined || val === null || val === '') return 0;
-            if (typeof val === 'number') return Math.round(val);
-            let str = String(val).replace(/[^0-9.]/g, ''); 
-            let parsed = parseFloat(str);
-            return isNaN(parsed) ? 0 : Math.round(parsed);
+        // Orders: resolve the approval and then apply the order status.
+        await db.prepare(`
+          UPDATE ${sourceTable}
+          SET status=?, reviewed_by=?, reviewed_at=CURRENT_TIMESTAMP
+          WHERE id=?
+        `).bind(status, reviewedBy, requestId).run();
+
+        const orderCols = await getColumns(db,"orders");
+        if (orderCols.includes("order_status")) {
+          const nextStatus = status === "approved" ? "deleted" : "completed";
+          await db.prepare(`
+            UPDATE orders SET order_status=?
+            WHERE order_number=? OR CAST(id AS TEXT)=?
+          `).bind(nextStatus, targetOrder, targetOrder).run();
         }
 
-        window.showCustomAlert = function(message) {
-            document.getElementById('customAlertMessage').innerText = message;
-            document.getElementById('customAlertButtons').innerHTML = `<button class="btn" onclick="document.getElementById('customAlertModal').style.display='none'">OK</button>`;
-            document.getElementById('customAlertModal').style.display = 'flex';
+        return json({ success:true, message:`Request ${status}`, order_id:targetOrder, status });
+      }
+      if (path === "/api/expenses" && method === "GET") {
+        const limit = Math.min(
+          Math.max(
+            num(
+              url.searchParams.get(
+                "limit"
+              ) || 1e3,
+              1
+            ),
+            1
+          ),
+          5e3
+        );
+        return json({
+          success: true,
+          expenses: await getExpenses(
+            db,
+            limit
+          )
+        });
+      }
+      if (path === "/api/expenses" && method === "POST") {
+        await ensureSupportTables(
+          db
+        );
+        const body = await request.json();
+        const cols = await getColumns(
+          db,
+          "expenses"
+        );
+        const fields = [];
+        const values = [];
+        if (cols.includes("category")) {
+          fields.push("category");
+          values.push(
+            clean(body.category)
+          );
+        }
+        if (cols.includes("amount")) {
+          fields.push("amount");
+          values.push(
+            num(body.amount)
+          );
+        }
+        if (cols.includes("description")) {
+          fields.push(
+            "description"
+          );
+          values.push(
+            clean(body.description)
+          );
+        }
+        if (cols.includes(
+          "expense_date"
+        )) {
+          fields.push(
+            "expense_date"
+          );
+          values.push(
+            normalizeDate(
+              body.expense_date
+            )
+          );
+        }
+        if (cols.includes(
+          "receipt_image"
+        ) && body.receipt_image) {
+          fields.push(
+            "receipt_image"
+          );
+          values.push(
+            clean(
+              body.receipt_image
+            )
+          );
+        }
+        if (!fields.length) {
+          return json(
+            {
+              success: false,
+              error: "No fields mapped"
+            },
+            400
+          );
+        }
+        await db.prepare(`
+          INSERT INTO expenses
+          (${fields.join(",")})
+          VALUES
+          (${fields.map(() => "?").join(",")})
+        `).bind(...values).run();
+        return json({
+          success: true
+        });
+      }
+      if (path === "/api/stock" && method === "GET") {
+        return json({
+          success: true,
+          stock: await getStock(db)
+        });
+      }
+      if (path === "/api/stock/history" && method === "GET") {
+        await ensureSupportTables(
+          db
+        );
+        const limit = Math.min(
+          Math.max(
+            num(
+              url.searchParams.get(
+                "limit"
+              ) || 100,
+              1
+            ),
+            1
+          ),
+          500
+        );
+        const rows = await db.prepare(`
+            SELECT
+              id,
+              stock_item_id,
+              item_name,
+              old_quantity,
+              new_quantity,
+              change_quantity,
+              action,
+              note,
+              updated_by,
+              created_at
+            FROM stock_history
+            ORDER BY id DESC
+            LIMIT ?
+          `).bind(limit).all();
+        return json({
+          success: true,
+          history: rows.results || []
+        });
+      }
+      if (path === "/api/stock" && method === "POST") {
+        await ensureSupportTables(
+          db
+        );
+        const body = await request.json();
+        const name = clean(
+          body.name || body.item
+        );
+        if (!name) {
+          return json(
+            {
+              success: false,
+              error: "Stock item name required"
+            },
+            400
+          );
+        }
+        const qty = num(
+          body.quantity ?? body.qty
+        );
+        const low = num(
+          body.low_stock_level,
+          5
+        );
+        const unit = clean(body.unit) || "pcs";
+        const existing = await db.prepare(`
+            SELECT
+              id,
+              quantity
+            FROM stock_items
+            WHERE lower(name)=lower(?)
+            LIMIT 1
+          `).bind(name).first();
+        const oldQty = num(
+          existing?.quantity,
+          0
+        );
+        await db.prepare(`
+          INSERT INTO stock_items
+          (
+            name,
+            quantity,
+            unit,
+            low_stock_level,
+            is_active
+          )
+          VALUES
+          (?, ?, ?, ?, 1)
+          ON CONFLICT(name)
+          DO UPDATE SET
+            quantity=excluded.quantity,
+            unit=excluded.unit,
+            low_stock_level=
+              excluded.low_stock_level,
+            is_active=1,
+            updated_at=
+              CURRENT_TIMESTAMP
+        `).bind(
+          name,
+          qty,
+          unit,
+          low
+        ).run();
+        const current = await db.prepare(`
+            SELECT
+              id,
+              quantity,
+              updated_at
+            FROM stock_items
+            WHERE lower(name)=lower(?)
+            LIMIT 1
+          `).bind(name).first();
+        const action = existing ? "UPDATE" : "ADD";
+        const note = clean(body.note) || (existing ? "Admin stock correction" : "New stock item");
+        const updatedBy = clean(
+          body.updated_by
+        ) || "Admin";
+        await db.prepare(`
+          INSERT INTO stock_history
+          (
+            stock_item_id,
+            item_name,
+            old_quantity,
+            new_quantity,
+            change_quantity,
+            action,
+            note,
+            updated_by
+          )
+          VALUES
+          (?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          current?.id || null,
+          name,
+          oldQty,
+          qty,
+          qty - oldQty,
+          action,
+          note,
+          updatedBy
+        ).run();
+        return json({
+          success: true,
+          id: current?.id || null,
+          old_quantity: oldQty,
+          new_quantity: qty,
+          updated_at: current?.updated_at || null
+        });
+      }
+      if (path === "/api/staff" && method === "GET") {
+        return json({
+          success: true,
+          staff: await getStaff(db)
+        });
+      }
+      if (path === "/api/staff" && method === "POST") {
+        await ensureSupportTables(
+          db
+        );
+        const body = await request.json();
+        const name = clean(body.name);
+        if (!name) {
+          return json(
+            {
+              success: false,
+              error: "Staff name required"
+            },
+            400
+          );
+        }
+        const result = await db.prepare(`
+            INSERT INTO staff
+            (
+              name,
+              mobile,
+              role,
+              salary,
+              join_date,
+              is_active
+            )
+            VALUES
+            (?, ?, ?, ?, ?, ?)
+          `).bind(
+          name,
+          clean(body.mobile),
+          clean(body.role),
+          num(body.salary),
+          clean(
+            body.join_date || body.joinDate
+          ) || todayIST(),
+          bool(
+            body.is_active ?? body.active ?? true
+          ) ? 1 : 0
+        ).run();
+        return json({
+          success: true,
+          id: result.meta?.last_row_id ?? null
+        });
+      }
+      if (path === "/api/staff/update" && method === "POST") {
+        await ensureSupportTables(
+          db
+        );
+        const body = await request.json();
+        const id = num(body.id);
+        if (!id) {
+          return json(
+            {
+              success: false,
+              error: "Staff ID is required"
+            },
+            400
+          );
+        }
+        const fields = [];
+        const values = [];
+        if (body.name !== void 0) {
+          fields.push(
+            "name=?"
+          );
+          values.push(
+            clean(body.name)
+          );
+        }
+        if (body.mobile !== void 0) {
+          fields.push(
+            "mobile=?"
+          );
+          values.push(
+            clean(body.mobile)
+          );
+        }
+        if (body.role !== void 0) {
+          fields.push(
+            "role=?"
+          );
+          values.push(
+            clean(body.role)
+          );
+        }
+        if (body.salary !== void 0) {
+          fields.push(
+            "salary=?"
+          );
+          values.push(
+            num(body.salary)
+          );
+        }
+        if (body.join_date !== void 0) {
+          fields.push(
+            "join_date=?"
+          );
+          values.push(
+            clean(
+              body.join_date
+            )
+          );
+        }
+        if (body.is_active !== void 0) {
+          fields.push(
+            "is_active=?"
+          );
+          values.push(
+            bool(
+              body.is_active
+            ) ? 1 : 0
+          );
+        }
+        if (!fields.length) {
+          return json(
+            {
+              success: false,
+              error: "No fields to update"
+            },
+            400
+          );
+        }
+        fields.push(
+          "updated_at=CURRENT_TIMESTAMP"
+        );
+        await db.prepare(`
+          UPDATE staff
+          SET ${fields.join(",")}
+          WHERE id=?
+        `).bind(
+          ...values,
+          id
+        ).run();
+        return json({
+          success: true
+        });
+      }
+      if (path === "/api/staff/remove" && method === "POST") {
+        await ensureSupportTables(db);
+        const body = await request.json();
+        const id = num(body.id || body.staff_id || body.staffId);
+        const requestedBy = clean(body.requested_by || body.requestedBy) || "Admin";
+        if (!id) return json({success:false,error:"Staff ID required"},400);
+
+        const existing = await db.prepare(
+          `SELECT id, name, is_active FROM staff WHERE id=? LIMIT 1`
+        ).bind(id).first();
+        if (!existing) return json({success:false,error:"Staff record not found"},404);
+        if (Number(existing.is_active) === 0) {
+          return json({success:true,already_removed:true,id,name:existing.name,is_active:0});
+        }
+
+        const target = `STAFF:${id}`;
+        const pending = await db.prepare(`
+          SELECT id, order_id, requested_by, reason, status, created_at
+          FROM deletion_requests
+          WHERE order_id=? AND status='pending'
+          ORDER BY id DESC LIMIT 1
+        `).bind(target).first();
+
+        if (pending) {
+          return json({
+            success:true,
+            already_pending:true,
+            request_id:pending.id,
+            order_id:target,
+            message:"Staff removal request is already pending approval"
+          });
+        }
+
+        const result = await db.prepare(`
+          INSERT INTO deletion_requests
+            (order_id, requested_by, reason, status, created_at)
+          VALUES (?, ?, ?, 'pending', CURRENT_TIMESTAMP)
+        `).bind(
+          target,
+          requestedBy,
+          `Staff removal: ${clean(existing.name) || "Staff"}`
+        ).run();
+
+        return json({
+          success:true,
+          pending:true,
+          request_id:result.meta?.last_row_id ?? result.lastInsertRowid ?? null,
+          order_id:target,
+          message:"Staff removal request submitted for Admin approval"
+        });
+      }
+      if (path === "/api/staff/status" && method === "POST") {
+        await ensureSupportTables(db);
+        const body = await request.json();
+        const id = num(body.id || body.staff_id || body.staffId);
+        if (!id) return json({success:false,error:"Staff ID required"},400);
+        const active = bool(body.is_active ?? body.active ?? body.status, true) ? 1 : 0;
+        const result = await db.prepare(`UPDATE staff SET is_active=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(active,id).run();
+        if (!result.meta || result.meta.changes===0) return json({success:false,error:"Staff record not found"},404);
+        return json({success:true,id,is_active:active});
+      }
+      if (path === "/api/import/full" && method === "POST") {
+        const body = await request.json();
+        const sales = Array.isArray(body.sales) ? body.sales : (Array.isArray(body.Sales) ? body.Sales : []);
+        const menu = Array.isArray(body.menu) ? body.menu : (Array.isArray(body.Menu) ? body.Menu : []);
+        const staffRows = Array.isArray(body.staff) ? body.staff : (Array.isArray(body.Staff) ? body.Staff : []);
+        const stockRows = Array.isArray(body.stock) ? body.stock : (Array.isArray(body.Stock) ? body.Stock : []);
+        const expenseRows = Array.isArray(body.expenses) ? body.expenses : (Array.isArray(body.Expenses) ? body.Expenses : []);
+
+        const parseImportedItems = (value) => {
+          if (Array.isArray(value)) return value.map(x => ({
+            name: clean(x.name || x.item_name || x.item || x.title),
+            qty: num(x.qty ?? x.quantity ?? x.count, 1),
+            total: num(x.total ?? x.item_total ?? x.amount, 0),
+            price: num(x.price ?? x.unit_price, 0)
+          })).filter(x => x.name);
+          const text = clean(value).replace(/\[Mode:[^\]]*\]/gi, "").replace(/\[Discount Applied:[^\]]*\]/gi, "").trim();
+          if (!text) return [];
+          return text.split(/\s*,\s*(?=[^,]+\(x\s*\d+(?:\.\d+)?\))/i).map(part => {
+            const m = part.trim().match(/^(.+?)\s*\(x\s*(\d+(?:\.\d+)?)\)\s*(?:₹\s*([\d,.]+))?$/i);
+            if (!m) return null;
+            const qty = num(m[2], 1);
+            const total = num(m[3], 0);
+            return { name: clean(m[1]), qty, total, price: qty ? total / qty : 0 };
+          }).filter(Boolean);
         };
 
-        let currentConfirmCallback = null; 
-        let currentCancelCallback = null;
+        const menuCache = new Map();
+        const menuRows = await db.prepare(`SELECT id,name,category,price,gst_percent,is_available FROM menu_items`).all();
+        for (const m of menuRows.results || []) menuCache.set(clean(m.name).toLowerCase(), m);
 
-        window.showCustomConfirm = function(message, callback, cancelCallback) {
-            currentConfirmCallback = callback; 
-            currentCancelCallback = cancelCallback;
-            document.getElementById('customAlertMessage').innerText = message;
-            document.getElementById('customAlertButtons').innerHTML = `
-                <button class="btn btn-outline" onclick="document.getElementById('customAlertModal').style.display='none'; if(currentCancelCallback) currentCancelCallback();" style="flex:1;">Cancel</button>
-                <button class="btn" onclick="document.getElementById('customAlertModal').style.display='none'; if(currentConfirmCallback) currentConfirmCallback();" style="flex:1; background:var(--danger); color:#FFF; border:none;">Confirm</button>
-            `;
-            document.getElementById('customAlertModal').style.display = 'flex';
-        };
-
-        function enforceBackTrap() {
-            try { history.pushState({guard:true}, '', location.href); } catch(e) {}
+        let menuImported = 0;
+        for (const row of menu) {
+          const name = clean(row.name || row.Name || row.item_name || row["Item Name"] || row.item);
+          if (!name) continue;
+          const category = clean(row.category || row.Category || row["Menu Category"]) || "Imported";
+          const price = num(row.price ?? row.Price ?? row["Base Price"] ?? row.amount, 0);
+          const gst = num(row.gst_percent ?? row.GST ?? row["GST %"], 0);
+          const key = name.toLowerCase();
+          const existing = menuCache.get(key);
+          if (existing) {
+            await db.prepare(`UPDATE menu_items SET category=?,price=?,gst_percent=?,is_available=1,updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(category, price, gst, existing.id).run();
+            menuCache.set(key, { ...existing, category, price, gst_percent: gst, is_available: 1 });
+          } else {
+            const r = await db.prepare(`INSERT INTO menu_items (name,category,price,gst_percent,is_available) VALUES (?,?,?,?,1)`).bind(name, category, price, gst).run();
+            const id = r.meta?.last_row_id ?? r.lastInsertRowid;
+            menuCache.set(key, { id, name, category, price, gst_percent: gst, is_available: 1 });
+          }
+          menuImported++;
         }
-        function hardBlockBack(){
-            try{ history.pushState({guard:true}, '', location.href); }catch(e){}
-        }
 
-        // Startup must NOT depend on window.onload: external CDN assets can delay it indefinitely.
-        let appStarted = false;
-        function startApp() {
-            if (appStarted) return;
-            appStarted = true;
-            try {
-                loadViraasatLogo();
-                let savedMobile = localStorage.getItem('viraasat_user');
-                let savedPass = localStorage.getItem('viraasat_pass');
-                let savedVer = localStorage.getItem('app_version');
+        let ordersImported = 0, orderItemsImported = 0, ordersSkipped = 0;
+        for (const row of sales) {
+          const orderNumber = clean(row.order_number || row.orderNumber || row.Order_ID || row.order_id || row["Order ID"] || row["Order_ID"]);
+          if (!orderNumber) { ordersSkipped++; continue; }
 
-                if(savedVer !== APP_VERSION) {
-                    localStorage.clear();
-                    if(savedMobile && savedPass) {
-                        localStorage.setItem('viraasat_user', savedMobile);
-                        localStorage.setItem('viraasat_pass', savedPass);
-                    }
-                    localStorage.setItem('app_version', APP_VERSION);
-                    // Do not hard-reload during startup. Continue with the current document.
-                    savedMobile = localStorage.getItem('viraasat_user');
-                    savedPass = localStorage.getItem('viraasat_pass');
-                }
+          let existing = await db.prepare(`SELECT id FROM orders WHERE order_number=? LIMIT 1`).bind(orderNumber).first();
+          const itemsValue = row.items || row.Items || row.items_string || row.itemsString || row["Items"] || "";
+          const items = parseImportedItems(itemsValue);
 
-                if(savedMobile && savedPass) {
-                    document.getElementById('loginScreen').style.display = 'none';
-                    document.getElementById('appHeader').style.display = 'flex';
-                    document.getElementById('appMain').style.display = 'block';
-                    document.getElementById('appBottomNav').style.display = 'flex';
-                    applyAdminRights(savedMobile);
-                    switchMainTab('tableDashboard', document.getElementById('navTable'), true);
-                    enforceBackTrap(); hardBlockBack();
-                    // Show the actual POS immediately; D1 sync runs in the background.
-                    hideSplashScreen();
-                    fetchData();
-                } else {
-                    document.getElementById('loginScreen').style.display = 'flex';
-                    hideSplashScreen();
-                }
-            } catch (e) {
-                console.error('POS startup error', e);
-                document.getElementById('loginScreen').style.display = 'flex';
-                hideSplashScreen();
+          if (existing) {
+            const count = await db.prepare(`SELECT COUNT(*) AS count FROM order_items WHERE order_id=?`).bind(existing.id).first();
+            if (num(count?.count, 0) > 0) { ordersSkipped++; continue; }
+            for (const item of items) {
+              const key = item.name.toLowerCase();
+              let mi = menuCache.get(key);
+              if (!mi) {
+                const r = await db.prepare(`INSERT INTO menu_items (name,category,price,gst_percent,is_available) VALUES (?, 'Imported', ?, 0, 1)`).bind(item.name, num(item.price)).run();
+                mi = { id: r.meta?.last_row_id ?? r.lastInsertRowid, name:item.name, price:num(item.price), gst_percent:0 };
+                menuCache.set(key, mi);
+              }
+              const qty = num(item.qty, 1);
+              const price = item.price > 0 ? item.price : num(mi.price, 0);
+              const total = item.total > 0 ? item.total : price * qty;
+              await db.prepare(`INSERT INTO order_items (order_id,menu_item_id,item_name,quantity,price,gst_percent,total) VALUES (?,?,?,?,?,?,?)`).bind(existing.id, mi.id, item.name, qty, price, num(mi.gst_percent,0), total).run();
+              orderItemsImported++;
             }
-        }
+            continue;
+          }
 
-        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startApp, { once: true });
-        else startApp();
-        // Absolute safety net: never leave the splash screen covering the POS.
-        setTimeout(() => { if (!appStarted) startApp(); hideSplashScreen(); }, 2500);
+          const total = num(row.grand_total ?? row.total ?? row.Total_Amount ?? row["Total Amount"] ?? row.amount, 0);
+          const discount = num(row.discount ?? row.Discount ?? row["Discount"], 0);
+          const payment = clean(row.payment_method || row.paymentMethod || row.Mode || row.mode).replace(/\[Mode:/gi, "").replace(/\]/g, "").trim() || "Cash";
+          const table = clean(row.table_number || row.tableNumber || row.Table_Number || row["Table Number"] || row.table) || "Takeaway";
+          const date = clean(row.date || row.Date || row.order_date || row["Date"]);
+          const time = clean(row.time || row.Time || row.order_time || row["Time"]);
+          const created = date ? `${date} ${time}`.trim() : new Date().toISOString();
+          const type = table.toLowerCase() === "takeaway" ? "Takeaway" : "Dine-in";
 
-        window.onpopstate = function () {
-            enforceBackTrap();
-
-            let modals = ['customAlertModal', 'paymentModal', 'conflictModal', 'orderDetailsModal', 'addTableModal', 'salaryActionModal', 'expenseDetailsModal'];
-            let modalClosed = false;
-            for(let id of modals) { 
-                let m = document.getElementById(id); 
-                if(m && m.style.display === 'flex') { 
-                    m.style.display = 'none'; 
-                    modalClosed = true; 
-                } 
+          let r;
+          try {
+            r = await db.prepare(`INSERT INTO orders (order_number,order_type,customer_name,table_number,subtotal,discount,gst,total,payment_method,payment_status,order_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(orderNumber,type,null,table,Math.max(total + discount,0),discount,0,total,payment,"paid","completed",created,created).run();
+          } catch (insertError) {
+            if (/unique|constraint/i.test(String(insertError?.message || insertError))) {
+              ordersSkipped++;
+              continue;
             }
-            if(modalClosed){ enforceBackTrap(); return; }
+            throw insertError;
+          }
+          const orderId = r.meta?.last_row_id ?? r.lastInsertRowid;
+          if (!orderId) throw new Error(`Order ID was not created for ${orderNumber}`);
+          ordersImported++;
 
-            if (document.getElementById('billingView').style.display === 'block') { 
-                goBackToTables(true); 
-                return; 
+          for (const item of items) {
+            const key = item.name.toLowerCase();
+            let mi = menuCache.get(key);
+            if (!mi) {
+              const mr = await db.prepare(`INSERT INTO menu_items (name,category,price,gst_percent,is_available) VALUES (?, 'Imported', ?, 0, 1)`).bind(item.name, num(item.price)).run();
+              mi = { id: mr.meta?.last_row_id ?? mr.lastInsertRowid, name:item.name, price:num(item.price), gst_percent:0 };
+              menuCache.set(key, mi);
             }
-
-            let activeTab = document.querySelector('.tab-content.active');
-            if (activeTab && activeTab.id !== 'tableDashboard') {
-                switchMainTab('tableDashboard', document.getElementById('navTable'), true);
-                return;
-            }
-        };
-
-        function hideSplashScreen() { 
-            const splash = document.getElementById('splashScreen'); 
-            if(splash) { 
-                splash.style.opacity = '0'; 
-                setTimeout(() => { splash.style.display = 'none'; }, 300); 
-            } 
-        }
-
-        function attemptLogin() {
-            let mobile = document.getElementById('loginMobile').value.trim();
-            let pass = document.getElementById('loginPass').value.trim();
-            let btn = document.getElementById('btnLogin');
-            if(!/^\d{10}$/.test(mobile) || pass.length < 4) { showCustomAlert("Enter a valid 10-digit mobile number and minimum 4-character password."); return; }
-            if(!ADMIN_NUMBERS.includes(mobile)){ const p=userPermissions[mobile]; if(!p || p.password!==pass){ showCustomAlert('Invalid user or password.'); return; } }
-            btn.innerText = "Opening..."; btn.disabled = true;
-            localStorage.setItem('viraasat_user', mobile);
-            localStorage.setItem('viraasat_pass', pass);
-            localStorage.setItem('app_version', APP_VERSION);
-            setTimeout(()=>window.location.reload(),120);
-        }
-
-        function applyAdminRights(mobile) {
-            let isAdmin = ADMIN_NUMBERS.includes(mobile);
-            let perms = userPermissions[mobile] || { orders: false, analytics: false, expenses: false };
-            window.isUserAdmin = isAdmin; window.userPerms = perms;
-
-            let hr = new Date().getHours(); 
-            let tod = hr < 12 ? 'Morning' : (hr < 17 ? 'Afternoon' : 'Evening'); 
-            document.getElementById('greetText').innerText = `Good ${tod} 👋`;
-
-            document.getElementById('navOrders').style.display = (isAdmin || perms.orders) ? 'flex' : 'none'; 
-            document.getElementById('btnViewAllOrders').style.display = (isAdmin || perms.orders) ? 'inline' : 'none';
-            document.getElementById('navAnalytics').style.display = (isAdmin || perms.analytics) ? 'flex' : 'none'; 
-            document.getElementById('navExpenses').style.display = (isAdmin || perms.expenses) ? 'flex' : 'none'; 
-            document.getElementById('navAdmin').style.display = isAdmin ? 'flex' : 'none';
-
-        }
-
-        function saveUserPermissions() {
-            let mobile = document.getElementById('staffMobile').value.trim();
-            let pass = document.getElementById('staffPass').value.trim();
-            
-            if(mobile.length < 10 || pass.length < 4) { showCustomAlert("Enter valid 10 digit number and minimum 4 char password"); return; }
-            
-            userPermissions[mobile] = { password: pass, orders: document.getElementById('chkOrders').checked, analytics: document.getElementById('chkAnalytics').checked, expenses: document.getElementById('chkExpenses').checked };
-            localStorage.setItem('viraasat_permissions', JSON.stringify(userPermissions));
-            renderStaffList();
-
-
-            showCustomAlert("User Registered successfully!");
-            document.getElementById('staffMobile').value = ""; document.getElementById('staffPass').value = "";
-            document.getElementById('chkOrders').checked = false; document.getElementById('chkAnalytics').checked = false; document.getElementById('chkExpenses').checked = false; 
-        }
-
-        function removeUser(mobile) {
-            showCustomConfirm("Remove user " + mobile + "?", () => {
-                delete userPermissions[mobile]; localStorage.setItem('viraasat_permissions', JSON.stringify(userPermissions));
-                renderStaffList();
-            }, null);
-        }
-
-        function renderStaffList() {
-             let list = document.getElementById('staffList'); list.innerHTML = "";
-             let count = 0;
-             for(let mobile in userPermissions) {
-                 count++;
-                 let p = userPermissions[mobile];
-                 list.innerHTML += `<div class="card" style="margin-bottom:0; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--border); padding:16px;"><div><div style="font-weight:700; font-size:1rem; color:var(--text-dark);">${mobile}</div><div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Orders: ${p.orders?'✅':'❌'} | Analytics: ${p.analytics?'✅':'❌'} | Expenses: ${p.expenses?'✅':'❌'}</div></div><button class="delete-btn" style="color:var(--danger); border:1px solid var(--danger); padding:6px 12px; border-radius:6px; background:transparent;" onclick="removeUser('${mobile}')">Revoke</button></div>`;
-             }
-             if (count === 0) {
-                 list.innerHTML = "<p style='color:var(--text-muted); font-size:0.85rem;'>No extra POS users registered.</p>";
-             }
-        }
-
-        function renderEmployeeList() {
-            let elList = document.getElementById('employeeList');
-            if(!elList) return;
-            elList.innerHTML = "";
-            if(staffData.length === 0) {
-                elList.innerHTML = "<p style='font-size:0.85rem; color:var(--text-muted);'>No staff onboarded yet.</p>";
-                return;
-            }
-            staffData.forEach(s => {
-                let sId = getVal(s, ['empid', 'employeeid']) || 'N/A';
-                let sName = getVal(s, ['name']) || 'Unknown';
-                let sRole = getVal(s, ['role']) || "Staff";
-                let sMobile = getVal(s, ['mobile', 'phone']) || "N/A";
-                let sSal = parseAmount(getVal(s, ['monthlysalary', 'salary']));
-                let sDate = getVal(s, ['dateofjoining', 'joindate', 'date', 'doj']) || 'N/A';
-                
-                let formattedDate = sDate !== 'N/A' ? cleanDisplayDate(sDate) : 'N/A';
-
-                elList.innerHTML += `
-                <div class="card" style="padding:16px; margin-bottom:0; display:flex; flex-direction:column; gap:12px;">
-                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                        <div style="display:flex; flex-direction:column; gap:6px;">
-                            <div style="font-weight:800; font-size:1.1rem; color:var(--text-dark);">${sName}</div>
-                            <div style="display:inline-block; background:#FFEAD6; color:#D97706; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:700; width:max-content;">${sRole}</div>
-                        </div>
-                        <div style="background:#F4EFEA; color:var(--text-muted); font-size:0.75rem; font-weight:700; padding:4px 8px; border-radius:6px;">#${sId}</div>
-                    </div>
-                    <div style="border-top:1px dashed var(--border); margin:4px 0;"></div>
-                    <div style="display:flex; flex-direction:column; gap:8px; font-size:0.85rem; font-weight:600; color:var(--text-muted);">
-                        <div style="display:flex; align-items:center; gap:6px;">📱 <span>Mobile: <span style="color:var(--text-dark);">${sMobile}</span></span></div>
-                        <div style="display:flex; align-items:center; gap:6px;">💰 <span>Monthly Salary: <span style="color:var(--success);">₹${sSal.toLocaleString('en-IN')}</span></span></div>
-                        <div style="display:flex; align-items:center; gap:6px;">🗓️ <span>Date of Joining: <span style="color:var(--text-dark);">${formattedDate}</span></span></div>
-                    </div>
-                </div>`;
-            });
-        }
-
-        function updateStockAdmin() {
-            let item = document.getElementById('adminStockItem').value.trim(); let qty = parseInt(document.getElementById('adminStockQty').value);
-            if(!item || isNaN(qty)) { showCustomAlert("Please enter valid item and quantity."); return; }
-            stockData[item] = qty; renderStockDashboard(); checkStockDisplay(); showCustomAlert("Stock updated to " + qty + " for " + item);
-            document.getElementById('adminStockItem').value = ""; document.getElementById('adminStockQty').value = "";
-            d1Post('/stock', { name: item, quantity: qty, unit: 'pcs', low_stock_level: 5 }).catch(e => showCustomAlert('Stock saved locally but D1 sync failed: ' + e.message));
-        }
-
-        async function addMenuItemUI() {
-            let cat = document.getElementById('newMenuCategory').value; let name = document.getElementById('newMenuName').value.trim(); let price = parseInt(document.getElementById('newMenuPrice').value);
-            if(!name || isNaN(price) || price <= 0) { showCustomAlert("Please enter valid item name and price."); return; }
-            let existing = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === name.toLowerCase());
-            if(existing) { showCustomAlert("Item already exists!"); return; }
-            try{
-                const created=await d1Post('/menu', { category: cat, name: name, price: price, is_available: true });
-                const newItem = { id:Number(created.id||0), name: name, itemname:name, price: price, category: cat, is_available:1 };
-                menuData.push(newItem); populateDropdown();
-                showCustomAlert(name + " added successfully!");
-                document.getElementById('newMenuName').value = ""; document.getElementById('newMenuPrice').value = "";
-            }catch(e){showCustomAlert('Menu item could not be saved to D1: '+e.message);}
-        }
-
-        function logoutUser(clearFields = true) {
-            localStorage.removeItem('viraasat_user'); localStorage.removeItem('viraasat_pass');
-            document.getElementById('appHeader').style.display = 'none'; document.getElementById('appMain').style.display = 'none'; document.getElementById('appBottomNav').style.display = 'none'; document.getElementById('loginScreen').style.display = 'flex';
-            if(clearFields) { document.getElementById('loginMobile').value = ""; document.getElementById('loginPass').value = ""; }
-        }
-
-        function populateStaffDropdown() {
-            let sel = document.getElementById('payStaffSelect'); sel.innerHTML = "<option value=''>Select Employee</option>";
-            staffData.forEach(s => {
-                let sId = getVal(s, ['empid', 'employeeid']); let sName = getVal(s, ['name']);
-                if(sId && sName) { sel.innerHTML += `<option value="${sId}">${sName} (${sId})</option>`; }
-            });
-        }
-
-        function addStaffUI() {
-            let name = document.getElementById('newStaffName').value.trim(); let mobile = document.getElementById('newStaffMobile').value.trim(); let role = document.getElementById('newStaffRole').value; let salary = parseInt(document.getElementById('newStaffSalary').value); let joinDate = document.getElementById('newStaffDate').value; 
-            if(!name || mobile.length < 10 || isNaN(salary)) { showCustomAlert("Please fill all details correctly."); return; }
-            d1Post('/staff', { name: name, mobile: mobile, role: role, salary: salary, join_date: joinDate })
-            .then(data => {
-                showCustomAlert(`${name} added successfully! Emp ID: ${data.id || '—'}`);
-                document.getElementById('newStaffName').value = ""; document.getElementById('newStaffMobile').value = ""; document.getElementById('newStaffSalary').value = ""; document.getElementById('newStaffDate').value = ""; fetchData(); 
-            });
-        }
-
-        function calculateStaffBalance() {
-            let empId = document.getElementById('payStaffSelect').value; let infoDiv = document.getElementById('staffBalanceInfo');
-            if(!empId) { infoDiv.innerHTML = ''; return; }
-            let staff = staffData.find(s => getVal(s, ['empid', 'employeeid']) === empId); 
-            let monthlySal = parseAmount(getVal(staff, ['monthlysalary', 'salary'])); let d = new Date(); let currentMonthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; let advTaken = 0;
-
-            expenseHistory.forEach(exp => {
-                let eCat = getVal(exp, ['category']); let eDesc = getVal(exp, ['description', 'note']) || ''; let eDate = getVal(exp, ['date', 'isodate']) || '';
-                let eMonthStr = ""; let parsedDate = new Date(eDate);
-                if(!isNaN(parsedDate.getTime())) { eMonthStr = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}`; } else { eMonthStr = eDate.substring(0, 7); }
-                if(eCat === 'Staff Salary' && eDesc.includes(`[${empId}]`) && eMonthStr === currentMonthStr) { advTaken += parseAmount(getVal(exp, ['amount'])); }
-            });
-            let balance = monthlySal - advTaken;
-            infoDiv.innerHTML = `<b>Base Salary:</b> ₹${monthlySal}<br><b>Taken This Month:</b> <span style="color:var(--danger)">-₹${advTaken}</span><br><b style="font-size:1.1rem; color:var(--success)">Pending Balance: ₹${balance}</b>`;
-        }
-
-        function submitStaffPayout() {
-            let empId = document.getElementById('payStaffSelect').value; let amount = document.getElementById('payStaffAmount').value; let type = document.getElementById('payStaffType').value;
-            if(!empId || !amount || amount <= 0) { showCustomAlert("Please select staff and enter valid amount."); return; }
-            let staff = staffData.find(s => getVal(s, ['empid', 'employeeid']) === empId); let sName = getVal(staff, ['name']); let sPhone = getVal(staff, ['mobile']); let desc = `[${empId}] ${sName} - ${type}`; 
-            let d = new Date(); let fDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-            expenseHistory.push({ date: fDate, isodate: fDate, category: 'Staff Salary', amount: parseInt(amount), description: desc });
-            
-            d1Post('/expenses', { category: 'Staff Salary', amount: amount, description: desc })
-            .then(data => {
-                generateTrends(); calculateStaffBalance(); document.getElementById('payStaffAmount').value = "";
-                document.getElementById('salaryActionButtons').innerHTML = `<button class="btn" onclick="printSalarySlip('${sName}', '${empId}', '${amount}', '${type}'); document.getElementById('salaryActionModal').style.display='none';">🖨️ Print Slip</button><button class="btn" style="background:#10B981;" onclick="sendWASalarySlip('${sName}', '${empId}', '${amount}', '${type}', '${sPhone}'); document.getElementById('salaryActionModal').style.display='none';">📱 WhatsApp Slip</button><button class="btn btn-outline" onclick="document.getElementById('salaryActionModal').style.display='none';">Close</button>`;
-                document.getElementById('salaryActionModal').style.display = 'flex';
-            });
-        }
-
-        function printSalarySlip(sName, empId, amount, type) {
-            let printSec = document.getElementById('printSection'); let d = new Date(); let dStr = d.toLocaleDateString('en-IN') + ' ' + d.toLocaleTimeString('en-IN');
-            printSec.innerHTML = `<div style="text-align:center; margin-bottom:10px;"><h2 style="margin:0; font-size:1.5rem; font-weight:bold;">SALARY SLIP</h2><h3 style="margin:5px 0 2px 0;">VIRAASAT UDAIPUR</h3><p style="margin:0; font-size:0.8rem;">Date: ${dStr}</p></div><div style="border-top:2px dashed #000; padding:10px 0;"><p style="margin:4px 0;"><b>Name:</b> ${sName}</p><p style="margin:4px 0;"><b>Emp ID:</b> ${empId}</p><p style="margin:4px 0;"><b>Type:</b> ${type}</p></div><div style="border-top:2px dashed #000; border-bottom:2px dashed #000; padding:10px 0; margin-bottom:10px;"><h3 style="margin:0; font-size:1.3rem;">Amount Paid: ₹${amount}</h3></div><div style="text-align:center; font-size:0.8rem; margin-top:20px;">Generated by Viraasat ERP</div>`;
-            printSec.offsetHeight; window.print();
-        }
-
-        function sendWASalarySlip(sName, empId, amount, type, sPhone) {
-            let d = new Date(); let dStr = d.toLocaleDateString('en-IN') + ' ' + d.toLocaleTimeString('en-IN');
-            let slipText = `*VIRAASAT UDAIPUR - SALARY SLIP*\n\n*Name:* ${sName}\n*Emp ID:* ${empId}\n*Date:* ${dStr}\n-----------------------\n*Transaction Type:* ${type}\n*Amount Paid:* ₹${amount}\n-----------------------\n_Recorded automatically by Viraasat ERP._`;
-            window.open(`https://wa.me/91${sPhone}?text=${encodeURIComponent(slipText)}`, '_blank');
-        }
-
-        async function d1Get(path, timeoutMs = API_TIMEOUT_MS) {
-            const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), timeoutMs);
-            try {
-                const response = await fetch(`${D1_API_BASE}${path}`, { method:'GET', headers:{'Accept':'application/json'}, cache:'no-store', signal:controller.signal });
-                const data = await response.json().catch(()=>({}));
-                if (!response.ok || data.success === false) throw new Error(data.error || `D1 API error (${response.status})`);
-                return data;
-            } finally { clearTimeout(timer); }
-        }
-        async function d1Post(path, body, timeoutMs = API_TIMEOUT_MS) {
-            const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), timeoutMs);
-            try {
-                const response = await fetch(`${D1_API_BASE}${path}`, {
-                    method:'POST',
-                    headers:{'Content-Type':'application/json','Accept':'application/json'},
-                    body:JSON.stringify(body),
-                    cache:'no-store',
-                    signal:controller.signal
-                });
-                const data = await response.json().catch(()=>({}));
-                if (!response.ok || data.success === false) throw new Error(data.error || `D1 API error (${response.status})`);
-                return data;
-            } finally { clearTimeout(timer); }
-        }
-        function normalizeArray(payload, keys) {
-            if (Array.isArray(payload)) return payload;
-            for (const k of keys) if (payload && Array.isArray(payload[k])) return payload[k];
-            return [];
-        }
-        function normalizeStock(payload) {
-            const raw = payload && (payload.stock || payload.items || payload.data || payload.result || payload);
-            const out = {};
-            if (Array.isArray(raw)) {
-                raw.forEach(x => {
-                    const name = getVal(x,['name','itemname','item','stockname']);
-                    const qty = getVal(x,['quantity','qty','stock','currentstock','currentquantity']);
-                    if(name) out[String(name).trim()] = Number(qty)||0;
-                });
-            } else if (raw && typeof raw === 'object') {
-                Object.keys(raw).forEach(k => {
-                    const v=raw[k];
-                    out[k]=Number(v && typeof v==='object' ? getVal(v,['quantity','qty','stock','currentstock']) : v)||0;
-                });
-            }
-            return out;
-        }
-        function localISODate(value) {
-            const s=String(value||'').trim();
-            if(!s) return '';
-            const m=s.match(/^(\d{4}-\d{2}-\d{2})/);
-            if(m) return m[1];
-            const d=new Date(s);
-            return isNaN(d.getTime()) ? '' : `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-        }
-        function mapD1Order(o) {
-            const created=o.created_at||o.createdAt||o.date||o.order_date||'';
-            const tn=o.table_number ?? o.tableNumber ?? '';
-            const ot=o.order_type||o.orderType||'';
-            const total=Number(o.grand_total ?? o.grandTotal ?? o.total ?? o.amount ?? 0)||0;
-            const rawString=o.items_string??o.itemsString??'';
-            const rawItems=o.items??o.Items??'';
-             const detailItems=o.item_details??o.itemDetails??o.order_items??o.orderItems??null;
-            return {
-                id:o.id,
-                order_number:o.order_number||o.orderNumber||o.id||'',
-                orderid:o.order_number||o.orderNumber||o.id||'',
-                tablenumber:tn!==''&&tn!=null?`Table ${tn}`:(ot||'Order'),
-                table:tn!==''&&tn!=null?`Table ${tn}`:(ot||'Order'),
-                table_number:tn,
-                order_type:ot,
-                customerphone:o.customer_phone||o.customerPhone||o.phone||'',
-                phone:o.customer_phone||o.customerPhone||o.phone||'',
-                date:created,isodate:created,time:created,created_at:created,
-                grand_total:total,totalamount:total,total:total,amount:total,
-                discount:Number(o.discount||0)||0,
-                payment_method:o.payment_method||o.paymentMethod||'',
-                payment_status:o.payment_status||o.paymentStatus||'',
-                order_status:o.order_status||o.orderStatus||'',
-                items_string:rawString || (Array.isArray(detailItems)?detailItems.map(i=>`${i.name||i.item_name} (x${i.qty||i.quantity||1}) ₹${i.total||0}`).join(', '):''),
-                item_details:Array.isArray(detailItems)?detailItems:[],
-                items:rawItems || (Array.isArray(detailItems)?detailItems:rawString) || ''
-            };
-        }
-
-        async function fetchData(){
-            const loader=document.getElementById('loader');const expDate=document.getElementById('expDate');if(expDate&&!expDate.value)expDate.value=localISODate(new Date());const ef=document.getElementById('expFilterFrom'),et=document.getElementById('expFilterTo');if(ef&&et){ef.value='';et.value='';}loader.style.display='flex';loader.innerHTML='<div class="spinner"></div> <span>Syncing Viraasat D1...</span>';
-            const defs=[['/dashboard',d1Get('/dashboard')],['/menu',d1Get('/menu')],['/tables',d1Get('/tables')],['/orders',d1Get('/orders?limit=1000')],['/expenses',d1Get('/expenses?limit=2000')],['/stock',d1Get('/stock')],['/staff',d1Get('/staff')],['/stock/history',d1Get('/stock/history?limit=100')]];const results=await Promise.allSettled(defs.map(x=>x[1]));const failed=[];
-            try{
-                if(results[0].status==='fulfilled'){const dash=results[0].value||{};const summary=dash.summary||{},ts=dash.tables||{};document.getElementById('homeTodaySale').innerText=`₹${Math.round(Number(summary.today_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeAvgOrder').innerText=`₹${Math.round(Number(summary.average_order)||0).toLocaleString('en-IN')}`;document.getElementById('homeOverallSale').innerText=`₹${Math.round(Number(summary.overall_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeActiveTables').innerText=`${Number(ts.occupied)||0} / ${Number(ts.total)||tableSections.reduce((a,x)=>a+x.tables.length,0)}`;}else failed.push(['/dashboard',results[0].reason]);
-                if(results[1].status==='fulfilled'){
-                    const rawMenu=normalizeArray(results[1].value,['items','menu','data','result']);
-                    const seen=new Set();
-                    menuData=rawMenu.filter(item=>{
-                        const name=String(getVal(item,['itemname','name'])||'').trim();
-                        const key=name.toLowerCase();
-                        if(!key||seen.has(key))return false;
-                        seen.add(key); return true;
-                    });
-                }else failed.push(['/menu',results[1].reason]);
-                if(results[2].status==='fulfilled'){const ts=normalizeArray(results[2].value,['tables','data','result']);tableSections=[{title:'Hut Seating',tables:[]},{title:'Ground Seating',tables:[]},{title:'Terrace Seating',tables:[]}];const amap={'Hut Seating':0,'Ground Seating':1,'Terrace Seating':2};runningTables={};ts.forEach(t=>{const n=String(t.table_number??t.tableNumber??'').trim();if(!n)return;const i=amap[String(t.seating_area||t.seatingArea||'').trim()]??1;if(!tableSections[i].tables.includes(n))tableSections[i].tables.push(n);runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied'?[{__d1Occupied:true,orderId:t.current_order_id||t.currentOrderId}]:[];});if(!ts.length)tableSections=[{title:'Hut Seating',tables:['1','2','3','4']},{title:'Ground Seating',tables:['5','6','7']},{title:'Terrace Seating',tables:['8','9','10']}];}else failed.push(['/tables',results[2].reason]);
-                if(results[3].status==='fulfilled')salesHistory=normalizeArray(results[3].value,['orders','sales','data','result']).map(mapD1Order).filter(Boolean).filter(o=>!['kot','cancelled','deleted'].includes(String(o.order_status||'').toLowerCase()));else failed.push(['/orders',results[3].reason]);
-                Object.keys(runningTables).forEach(key=>{const arr=runningTables[key];if(Array.isArray(arr)&&arr[0]?.__d1Occupied){const oid=String(arr[0].orderId||'');const order=salesHistory.find(o=>String(o.id||'')===oid||String(o.orderid||'')===oid);runningTables[key]=order?parseSaleItems(order):[];}});
-                if(results[4].status==='fulfilled')expenseHistory=normalizeArray(results[4].value,['expenses','data','result']);else failed.push(['/expenses',results[4].reason]);
-                if(results[5].status==='fulfilled'){const raw=normalizeArray(results[5].value,['stock','items','data','result']);stockData={};stockMeta={};raw.forEach(x=>{const name=String(getVal(x,['name','itemname','item','stockname'])||'').trim();if(!name)return;stockData[name]=Number(getVal(x,['quantity','qty','stock','currentstock','currentquantity']))||0;stockMeta[name]={id:getVal(x,['id']),name,unit:getVal(x,['unit'])||'pcs',low_stock_level:Number(getVal(x,['low_stock_level','lowstocklevel']))||5,created_at:getVal(x,['created_at'])||'',updated_at:getVal(x,['updated_at'])||''};});}else failed.push(['/stock',results[5].reason]);
-                if(results[6].status==='fulfilled')staffData=normalizeArray(results[6].value,['staff','employees','data','result']);else failed.push(['/staff',results[6].reason]);
-                if(results[7].status==='fulfilled')stockHistory=normalizeArray(results[7].value,['history','stock_history','data','result']);else stockHistory=[];
-                applyLocalStaffState();
-                const renderSteps=[
-                    ['dropdown',populateDropdown],['staff dropdown',populateStaffDropdown],['employee list',renderEmployeeList],
-                    ['tables',renderTableGrid],['stock dashboard',renderStockDashboard],['stock status',checkStockDisplay],
-                    ['live sales',renderLiveSales],['trends',generateTrends],['premium dashboard',renderPremiumDashboard],
-                    ['expense history',renderExpenseHistoryList]
-                ];
-                renderSteps.forEach(([name,fn])=>{try{if(typeof fn==='function')fn();}catch(err){console.error(`UI render failed: ${name}`,err);}});
-                hideSplashScreen();
-                if(failed.length){const messages=failed.map(([path,e])=>`${path}: ${e?.message||e}`).join(' | ');console.warn('Partial D1 sync',failed);try{await d1Get('/test-db',5000);}catch(he){console.error('D1 health',he);}showCustomAlert(`Some D1 endpoints failed.
-
-${messages}
-
-Tables, billing and existing local UI remain visible.`);}
-            }catch(error){console.error('D1 Sync Error',error);renderTableGrid();renderStockDashboard();renderLiveSales();renderPremiumDashboard();renderExpenseHistoryList();hideSplashScreen();showCustomAlert(`D1 sync failed: ${error.message||error}`);}finally{setTimeout(()=>{loader.style.display='none';},700);}
-        }
-
-        function normalizeSheetSale(row){
-            if(!row || typeof row!=='object') return null;
-            const date=getVal(row,['date','orderdate','isodate']);
-            const time=getVal(row,['time','ordertime']);
-            const id=getVal(row,['orderid','order_id','id']);
-            const items=getVal(row,['items','itemsstring','itemdetails']);
-            const total=parseAmount(getVal(row,['totalamount','total_amount','total','amount']));
-            if(!id && !items && !date) return null;
-            return {
-                ...row,
-                orderid:id||`LEGACY-${date||''}-${time||''}-${Math.random().toString(36).slice(2,7)}`,
-                id:id||'',
-                date:date||'',
-                isodate:date||'',
-                time:time||'',
-                items:items||'',
-                itemsstring:items||'',
-                totalamount:total,
-                total:total,
-                amount:total,
-                tablenumber:getVal(row,['table_number','tablenumber','table','tablename'])||'',
-                table:getVal(row,['table_number','tablenumber','table','tablename'])||'',
-                discount:parseAmount(getVal(row,['discount'])),
-                payment_method:extractPaymentMode(items)||getVal(row,['paymentmode','payment_method','mode'])||''
-            };
-        }
-
-        function extractPaymentMode(items){
-            const m=String(items||'').match(/\[Mode:\s*([^\]]+)\]/i);
-            return m?m[1].trim():'';
-        }
-
-        function saleDateKey(s){
-            const direct=String(getVal(s,['date','isodate'])||'').trim();
-            if(/^\d{4}-\d{2}-\d{2}/.test(direct)) return direct.slice(0,10);
-            return localISODate(direct);
-        }
-
-        function formatTime12(value){
-            if(!value)return '';
-            const raw=String(value).trim();
-            const dt=new Date(raw);
-            if(!isNaN(dt.getTime())) return dt.toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit',hour12:true}).replace('am','AM').replace('pm','PM');
-            const m=raw.match(/(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM|am|pm)?/);
-            if(m){let h=Number(m[1]),min=m[2],ap=m[3]; if(!ap){ap=h>=12?'PM':'AM';h=h%12||12;} return `${h}:${min} ${ap.toUpperCase()}`;}
-            return raw;
-        }
-        function saleTimeText(s){
-            const t=String(getVal(s,['time'])||'').trim();
-            if(t) return formatTime12(t);
-            return formatTime12(getVal(s,['date','isodate','created_at'])||'');
-        }
-        function orderTimestamp(s){
-            const raw=getVal(s,['date','isodate','created_at','updated_at','time'])||'';
-            const dt=new Date(raw); return isNaN(dt.getTime())?0:dt.getTime();
-        }
-
-        function mergeSales(legacySales,d1Sales){
-            const out=[...legacySales];
-            const ids=new Set(out.map(s=>String(getVal(s,['orderid','order_number','id'])).trim()).filter(Boolean));
-            d1Sales.forEach(s=>{
-                const id=String(getVal(s,['orderid','order_number','id'])).trim();
-                if(!id || !ids.has(id)) out.push(s);
-            });
-            out.sort((a,b)=>{
-                const ad=`${saleDateKey(a)} ${saleTimeText(a)}`, bd=`${saleDateKey(b)} ${saleTimeText(b)}`;
-                return bd.localeCompare(ad);
-            });
-            return out;
-        }
-
-        function mergeByKey(primary,secondary,keys){
-            const out=[...primary], seen=new Set();
-            primary.forEach(x=>{ for(const k of keys){ const v=String(getVal(x,[k])||'').trim().toLowerCase(); if(v) seen.add(`${k}:${v}`); }});
-            secondary.forEach(x=>{
-                let duplicate=false;
-                for(const k of keys){const v=String(getVal(x,[k])||'').trim().toLowerCase(); if(v&&seen.has(`${k}:${v}`)){duplicate=true;break;}}
-                if(!duplicate) out.push(x);
-            });
-            return out;
-        }
-
-        function applyLocalStaffState(){
-            let state={}; let removed=[];
-            try{state=JSON.parse(localStorage.getItem('viraasat_staff_status')||'{}')}catch(e){}
-            try{removed=JSON.parse(localStorage.getItem('viraasat_removed_staff')||'[]')}catch(e){}
-            const removedSet=new Set(removed.map(String));
-            const seenMobile=new Set(), seenName=new Set();
-            staffData=staffData.filter(s=>{
-                const key=String(getVal(s,['id','empid','employeeid','mobile','phone','name'])||'');
-                const rawActive=getVal(s,['is_active','isactive','active','status']);
-                const d1Active=!(String(rawActive??'1').toLowerCase()==='0'||String(rawActive??'').toLowerCase()==='false'||String(rawActive??'').toLowerCase()==='inactive');
-                const mobile=String(getVal(s,['mobile','phone'])||'').replace(/\D/g,'');
-                const name=String(getVal(s,['name'])||'').trim().toLowerCase();
-                if(!d1Active || removedSet.has(key)) return false;
-                if((mobile && seenMobile.has(mobile)) || (name && seenName.has(name))) return false;
-                if(mobile) seenMobile.add(mobile);
-                if(name) seenName.add(name);
-                return true;
-            }).map(s=>{
-                const key=String(getVal(s,['id','empid','employeeid','mobile','phone','name'])||'');
-                const rawActive=getVal(s,['is_active','isactive','active','status']);
-                const d1Active=!(String(rawActive??'1').toLowerCase()==='0'||String(rawActive??'').toLowerCase()==='false'||String(rawActive??'').toLowerCase()==='inactive');
-                return {...s,__status:d1Active?(state[key]||'active'):'inactive'};
-            });
-        }
-
-
-        // ================= PREMIUM COMMAND CENTER LOGIC =================
-        let premiumActiveTab='overview';
-
-        function money(v){return `₹${Math.round(Number(v)||0).toLocaleString('en-IN')}`;}
-        function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
-        function getStaffKey(s){
-            return String(getVal(s,['id','empid','employeeid','mobile','phone','name'])||'').trim();
-        }
-        function getStaffStatus(s){
-            const raw=String(getVal(s,['status','is_active','isactive','active'])??'').trim().toLowerCase();
-            return (raw===''||raw==='1'||raw==='true'||raw==='active'||raw==='yes')?'active':'inactive';
-        }
-        function activeStaffCount(){return staffData.filter(s=>getStaffStatus(s)==='active').length;}
-        async function toggleStaffStatus(key){
-            if(!requireAdmin('staff status change'))return;
-            const staff=staffData.find(s=>getStaffKey(s)===String(key));
-            if(!staff)return;
-            const id=Number(getVal(staff,['id','empid','employeeid']));
-            if(!id){showCustomAlert('This staff record has no D1 ID.');return;}
-            const next=getStaffStatus(staff)==='active'?'inactive':'active';
-            try{
-                await d1Post('/staff/status',{id,status:next});
-                staff.status=next; staff.is_active=next==='active'?1:0;
-                renderAdminStaffRows(); renderEmployeeList(); renderPremiumAdmin();
-            }catch(e){showCustomAlert('Staff status update failed: '+(e?.message||e));}
-        }
-
-        function showPremiumTab(tab,btn){
-            premiumActiveTab=tab;
-            document.querySelectorAll('#premiumTabs .premium-tab').forEach(x=>x.classList.remove('active'));
-            if(btn) btn.classList.add('active');
-            else{
-                const labelMap={overview:'overview',sales:'sales',items:'item sales',inventory:'inventory',reports:'insights',expenses:'expenses',settings:'admin'};
-                const wanted=(labelMap[tab]||tab).replace(/\s/g,'');
-                const b=[...document.querySelectorAll('#premiumTabs .premium-tab')].find(x=>x.textContent.toLowerCase().replace(/\s/g,'').includes(wanted));
-                if(b)b.classList.add('active');
-            }
-            document.querySelectorAll('.premium-panel').forEach(x=>x.classList.remove('active'));
-            const panel=document.getElementById('premiumPanel-'+tab);
-            if(panel)panel.classList.add('active');
-            renderPremiumTab(tab);
-        }
-
-        function renderPremiumDashboard(){
-            renderPremiumTab(premiumActiveTab);
-        }
-
-        function renderPremiumTab(tab){
-            if(tab==='overview')renderPremiumOverview();
-            if(tab==='sales')renderPremiumSales();
-            if(tab==='items')renderPremiumItems();
-            if(tab==='inventory')renderPremiumInventory();
-            if(tab==='reports')renderPremiumReports();
-            if(tab==='settings')renderPremiumAdmin();
-            if(tab==='expenses')renderPremiumExpenses();
-        }
-
-        function renderPremiumOverview(){
-            const panel=document.getElementById('premiumPanel-overview'); if(!panel)return;
-            const today=saleDateKey({date:new Date().toISOString().slice(0,10)});
-            const todaySales=salesHistory.filter(s=>saleDateKey(s)===today);
-            const todayAmount=todaySales.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);
-            const lifetime=salesHistory.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);
-            const avg=todaySales.length?todayAmount/todaySales.length:0;
-            const modes={}; salesHistory.forEach(s=>{const m=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'Unknown';modes[m]=(modes[m]||0)+parseAmount(getVal(s,['grand_total','totalamount','total','amount']));});
-            const recent=salesHistory.slice().sort((a,b)=>orderTimestamp(b)-orderTimestamp(a)).slice(0,8);
-            panel.innerHTML=`
-            <div class="premium-kpis">
-                <div class="pkpi"><div class="label">Today's Sale</div><div class="value">${money(todayAmount)}</div><div class="delta">${todaySales.length} orders</div></div>
-                <div class="pkpi"><div class="label">Average Order</div><div class="value">${money(avg)}</div><div class="delta">Today</div></div>
-                <div class="pkpi"><div class="label">Lifetime Sale</div><div class="value">${money(lifetime)}</div><div class="delta">${salesHistory.length} orders</div></div>
-                <div class="pkpi"><div class="label">Active Staff</div><div class="value">${activeStaffCount()}</div><div class="delta">${staffData.length} total records</div></div>
-            </div>
-            <div class="admin-section-title">Business Insights</div>
-            <div class="admin-insight-grid">
-                <div class="admin-insight purple"><div class="ai-label">Today's Orders</div><div class="ai-value">${todaySales.length}</div><div class="ai-note">Completed sales today</div></div>
-                <div class="admin-insight peach"><div class="ai-label">Discount Given</div><div class="ai-value">${money(todaySales.reduce((a,s)=>a+parseAmount(getVal(s,['discount'])),0))}</div><div class="ai-note">Today's customer discount</div></div>
-                <div class="admin-insight mint"><div class="ai-label">Best Payment</div><div class="ai-value">${esc(Object.entries(modes).sort((a,b)=>b[1]-a[1])[0]?.[0]||'—')}</div><div class="ai-note">Highest lifetime collection</div></div>
-                <div class="admin-insight neutral"><div class="ai-label">Low Stock</div><div class="ai-value">${Object.values(stockData).filter(v=>Number(v)<=5).length}</div><div class="ai-note">Items at or below threshold</div></div>
-            </div>
-            <div class="premium-grid-2">
-                <div class="premium-card">
-                    <div class="premium-card-head"><h3>Recent Sales</h3><span>Latest 8 orders</span></div>
-                    <div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Order</th><th>Time</th><th>Table</th><th>Mode</th><th>Total</th></tr></thead><tbody>
-                    ${recent.map(s=>`<tr onclick="openOrderDetails('${esc(getVal(s,['orderid','order_number','id']))}')" style="cursor:pointer"><td><b>#${esc(getVal(s,['orderid','order_number','id']))}</b></td><td>${esc(saleDateKey(s))}<br>${esc(saleTimeText(s))}</td><td>${esc(getVal(s,['tablenumber','table','tablename','table_number'])||'—')}</td><td><span class="pill ${String(getVal(s,['payment_method'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))).toLowerCase().includes('cash')?'gold':'gray'}">${esc(getVal(s,['payment_method'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—')}</span></td><td><b>${money(getVal(s,['grand_total','totalamount','total','amount']))}</b></td></tr>`).join('')}
-                    </tbody></table></div>
-                    <div class="mobile-sale-list admin-recent-mobile">${recent.map(s=>`<div class="mobile-sale-card" onclick="openOrderDetails('${esc(getVal(s,['orderid','order_number','id']))}')"><div class="mobile-sale-top"><div class="mobile-sale-id">#${esc(getVal(s,['orderid','order_number','id']))}</div><div class="mobile-sale-total">${money(getVal(s,['grand_total','totalamount','total','amount']))}</div></div><div class="mobile-sale-meta"><span>${esc(saleDateKey(s))}</span><span>${esc(saleTimeText(s))}</span><span>${esc(getVal(s,['tablenumber','table','table_number'])||'—')}</span><span>${esc(getVal(s,['payment_method'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—')}</span></div><div class="mobile-sale-items">${parseSaleItems(s).slice(0,3).map(it=>`<div class="mobile-sale-item"><span>${esc(it.name)} ×${it.qty}</span><b>${money(it.amount)}</b></div>`).join('')||'<span>No item details</span>'}</div></div>`).join('')}</div>
-                </div>
-                <div>
-                    <div class="premium-card">
-                        <div class="premium-card-head"><h3>Payment Mix</h3><span>Lifetime</span></div>
-                        ${Object.entries(modes).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="item-rank"><div class="item-rank-info"><div class="item-rank-name">${esc(k)}</div><div class="mini-bar"><i style="width:${lifetime?Math.min(100,(v/lifetime)*100):0}%"></i></div></div><div class="item-rank-val">${money(v)}</div></div>`).join('')||'<div class="premium-empty">No payment data</div>'}
-                    </div>
-                    <div class="premium-card">
-                        <div class="premium-card-head"><h3>Quick Actions</h3></div>
-                        <div class="premium-grid-2" style="grid-template-columns:1fr 1fr">
-                            <button class="premium-btn" onclick="openTable('Takeaway')">+ Takeaway</button>
-                            <button class="premium-btn alt" onclick="showPremiumTab('sales')">View Sales</button>
-                            <button class="premium-btn light" onclick="showPremiumTab('items')">Item Report</button>
-                            <button class="premium-btn light" onclick="showPremiumTab('inventory')">Stock</button>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-        }
-
-        function getFilteredPremiumSales(){
-            const from=document.getElementById('psFrom')?.value||'';
-            const to=document.getElementById('psTo')?.value||'';
-            const q=(document.getElementById('psSearch')?.value||'').toLowerCase().trim();
-            return salesHistory.filter(s=>{
-                const dk=saleDateKey(s);
-                if(from&&dk<from)return false;
-                if(to&&dk>to)return false;
-                if(q){
-                    const haystack=[
-                        getVal(s,['orderid','order_number','id']),
-                        getVal(s,['phone','customerphone','customer_phone']),
-                        getVal(s,['items_string','itemsstring','items']),
-                        getVal(s,['tablenumber','table','tablename','table_number'])
-                    ].join(' ').toLowerCase();
-                    if(!haystack.includes(q))return false;
-                }
-                return true;
-            }).sort((a,b)=>orderTimestamp(b)-orderTimestamp(a));
-        }
-
-        function setPremiumSalesRange(range){
-            const f=document.getElementById('psFrom'),t=document.getElementById('psTo');
-            if(!f||!t)return;
-            const now=new Date(),key=localISODate(now);
-            document.querySelectorAll('#premiumPanel-sales .sales-filter-chips .filter-btn').forEach(b=>b.classList.remove('active'));
-            const activeMap={today:0,yesterday:1,'7d':2,'30d':3,all:4};
-            const btn=document.querySelectorAll('#premiumPanel-sales .sales-filter-chips .filter-btn')[activeMap[range]];
-            if(btn)btn.classList.add('active');
-
-            if(range==='all'){f.value='';t.value='';}
-            else if(range==='today'){f.value=key;t.value=key;}
-            else if(range==='yesterday'){
-                const y=new Date(now);y.setDate(y.getDate()-1);
-                const k=localISODate(y);f.value=k;t.value=k;
-            }else{
-                const days=range==='7d'?6:29;
-                const d=new Date(now);d.setDate(d.getDate()-days);
-                f.value=localISODate(d);t.value=key;
-            }
-            renderPremiumSalesRows();
-        }
-
-        function renderPremiumSales(){
-            const panel=document.getElementById('premiumPanel-sales');if(!panel)return;
-            panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Sales Register</h3><span id="psCount">0 orders</span></div>
-            <div class="sales-filter-chips">
-                <button class="filter-btn" onclick="setPremiumSalesRange('today')">Today</button>
-                <button class="filter-btn" onclick="setPremiumSalesRange('yesterday')">Yesterday</button>
-                <button class="filter-btn" onclick="setPremiumSalesRange('7d')">7 Days</button>
-                <button class="filter-btn" onclick="setPremiumSalesRange('30d')">30 Days</button>
-                <button class="filter-btn active" onclick="setPremiumSalesRange('all')">All</button>
-            </div>
-            <div class="date-filter-row">
-                <input type="date" id="psFrom" onchange="renderPremiumSalesRows()">
-                <input type="date" id="psTo" onchange="renderPremiumSalesRows()">
-            </div>
-            <div class="premium-toolbar compact-toolbar" style="margin-top:7px">
-                <input id="psSearch" placeholder="Search order / item / phone / table" oninput="renderPremiumSalesRows()">
-                <button class="premium-btn light" onclick="exportPremiumSales()">Export</button>
-            </div>
-            <div id="psSummary" class="sales-summary-grid"></div>
-            <div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Time</th><th>Order</th><th>Table</th><th>Items</th><th>Mode</th><th>Discount</th><th>Total</th></tr></thead><tbody id="psBody"></tbody></table></div>
-            <div id="psMobileList" class="mobile-sale-list"></div></div>`;
-            renderPremiumSalesRows();
-        }
-
-        function renderPremiumSalesRows(){
-            const rows=getFilteredPremiumSales();
-            const body=document.getElementById('psBody');if(!body)return;
-            const total=rows.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);
-            const aov=rows.length?total/rows.length:0;
-            const count=document.getElementById('psCount');
-            const summary=document.getElementById('psSummary');
-            if(count)count.innerText=`${rows.length} orders`;
-            if(summary)summary.innerHTML=`<div class="report-stat"><div class="rlabel">Orders</div><div class="rvalue">${rows.length}</div></div><div class="report-stat"><div class="rlabel">Sale</div><div class="rvalue">${money(total)}</div></div><div class="report-stat"><div class="rlabel">AOV</div><div class="rvalue">${money(aov)}</div></div>`;
-            body.innerHTML=rows.length?rows.map(s=>{
-                const items=saleItemsText(s);
-                const mode=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']));
-                return `<tr onclick="openOrderDetails('${esc(getVal(s,['orderid','order_number','id']))}')" style="cursor:pointer">
-                    <td>${esc(saleDateKey(s))}</td><td>${esc(saleTimeText(s))}</td>
-                    <td><b>${esc(getVal(s,['orderid','order_number','id']))}</b></td>
-                    <td>${esc(getVal(s,['tablenumber','table','tablename','table_number'])||'—')}</td>
-                    <td>${esc(items)}</td><td>${esc(mode||'—')}</td>
-                    <td>${money(getVal(s,['discount']))}</td>
-                    <td><b>${money(getVal(s,['grand_total','totalamount','total','amount']))}</b></td>
-                </tr>`;
-            }).join(''):`<tr><td colspan="8"><div class="premium-empty">No sales match the selected filters.</div></td></tr>`;
-
-            const mob=document.getElementById('psMobileList');
-            if(mob)mob.innerHTML=rows.map(s=>`<div class="mobile-sale-card" onclick="openOrderDetails('${esc(getVal(s,['orderid','order_number','id']))}')">
-                <div class="mobile-sale-top"><div class="mobile-sale-id">#${esc(getVal(s,['orderid','order_number','id']))}</div><div class="mobile-sale-total">${money(getVal(s,['grand_total','totalamount','total','amount']))}</div></div>
-                <div class="mobile-sale-meta"><span>${esc(saleDateKey(s))}</span><span>${esc(saleTimeText(s))}</span><span>${esc(getVal(s,['tablenumber','table','table_number'])||'—')}</span><span>${esc(getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—')}</span></div>
-                <div class="mobile-sale-items">${parseSaleItems(s).slice(0,4).map(it=>`<div class="mobile-sale-item"><span>${esc(it.name)} ×${it.qty}</span><b>${money(it.amount)}</b></div>`).join('')||'<span>No item details</span>'}</div>
-            </div>`).join('')||'<div class="premium-empty">No sales.</div>';
-        }
-
-        function exportPremiumSales(){
-            const rows=getFilteredPremiumSales().map(s=>({
-                Date:saleDateKey(s),Time:saleTimeText(s),Order_ID:getVal(s,['orderid','order_number','id']),
-                Phone:getVal(s,['phone','customerphone'])||'NA',Items:getVal(s,['items_string','itemsstring','items']),
-                Total_Amount:parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),
-                Table_Number:getVal(s,['tablenumber','table','tablename','table_number']),Discount:parseAmount(getVal(s,['discount'])),
-                Payment_Mode:getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))
-            }));
-            downloadCSV(rows,'Viraasat-Sales-Export.csv');
-        }
-
-        function parseSaleItems(source){
-            const s=source||{};const detail=s.item_details??s.itemDetails??s.order_items??s.orderItems;const raw=getVal(s,['items_string','itemsstring','items','Items','Items_String']);const out=[];const menuPrice=name=>{const mi=menuData.find(x=>String(getVal(x,['itemname','name'])).trim().toLowerCase()===String(name).trim().toLowerCase());return mi?parseAmount(getVal(mi,['price','sellingprice','rate'])):0;};const pushItem=obj=>{if(!obj)return;const name=String(obj.name??obj.item_name??obj.itemName??obj.title??'').trim();if(!name)return;const qty=Math.max(1,Number(obj.qty??obj.quantity??1)||1);let amount=obj.total??obj.amount??obj.line_total??obj.lineTotal;amount=(amount===null||amount===undefined||amount==='')?null:parseAmount(amount);let price=obj.price??obj.unit_price??obj.unitPrice??null;price=(price===null||price===undefined||price==='')?null:parseAmount(price);if(amount===null||amount===0)amount=price>0?price*qty:menuPrice(name)*qty;if((price===null||price===0)&&amount>0)price=Math.round(amount/qty);out.push({name,qty,amount:Number(amount)||0,price:Number(price)||0});};
-            if(Array.isArray(detail)&&detail.length){detail.forEach(pushItem);if(out.length)return out;}if(Array.isArray(raw)){raw.forEach(pushItem);return out;}const text=String(raw??'').trim();if(!text)return out;try{const parsed=JSON.parse(text);if(Array.isArray(parsed)){parsed.forEach(pushItem);if(out.length)return out;}if(parsed&&Array.isArray(parsed.items)){parsed.items.forEach(pushItem);if(out.length)return out;}}catch(_){}const cleaned=text.replace(/\s*\[(?:Mode|Discount Applied|Address):[^\]]*\]/gi,'').trim().replace(/,+$/,'');const chunks=cleaned.split(/\s*,\s*(?=[^,]+?\s*\(x\s*\d+(?:\.\d+)?\))/i);chunks.forEach(ch=>{const m=ch.trim().match(/^(.*?)\s*\(x\s*(\d+(?:\.\d+)?)\)\s*(?:₹\s*([\d,]+(?:\.\d+)?))?\s*$/i);if(!m)return;const name=m[1].trim(),qty=Math.max(1,Number(m[2])||1);let amount=m[3]?Number(String(m[3]).replace(/,/g,'')):null;const base=menuPrice(name);if(amount===null||amount===0)amount=base*qty;out.push({name,qty,amount:Number(amount)||0,price:base||(amount?Math.round(amount/qty):0)});});return out;
-        }
-        function parseItemsString(text){return parseSaleItems({items_string:text});}
-        function saleItemsText(s){
-            const items=parseSaleItems(s);
-            return items.length ? items.map(x=>`${x.name} (x${x.qty}) ${x.amount?`₹${x.amount}`:''}`.trim()).join(', ') : String(getVal(s,['items_string','itemsstring','items'])||'');
-        }
-
-        function buildItemSales(){
-            const map={};
-            salesHistory.forEach(s=>parseSaleItems(s).forEach(it=>{
-                const key=it.name.toLowerCase();
-                if(!map[key])map[key]={name:it.name,qty:0,sales:0,orders:0};
-                map[key].qty+=it.qty;map[key].sales+=it.amount;map[key].orders+=1;
-            }));
-            return Object.values(map).sort((a,b)=>b.sales-a.sales);
-        }
-
-        function renderPremiumItems(){
-            const panel=document.getElementById('premiumPanel-items');if(!panel)return;
-            const items=buildItemSales(); const totalSales=items.reduce((a,x)=>a+x.sales,0); const totalQty=items.reduce((a,x)=>a+x.qty,0);
-            panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Item Sales Ranking</h3><span>Highest sellers first</span></div>
-            <div class="premium-toolbar compact-toolbar"><input id="piSearch" placeholder="Search item..." oninput="renderPremiumItemRows()"><button class="premium-btn light" onclick="exportItemSales()">Export</button></div>
-            <div class="premium-grid-3" style="margin-bottom:10px"><div class="report-stat"><div class="rlabel">Units Sold</div><div class="rvalue">${totalQty}</div></div><div class="report-stat"><div class="rlabel">Item Sales Value</div><div class="rvalue">${money(totalSales)}</div></div><div class="report-stat"><div class="rlabel">Unique Items</div><div class="rvalue">${items.length}</div></div></div>
-            <div id="piRankList" class="top-selling-list"></div></div>`;
-            renderPremiumItemRows();
-        }
-        function renderPremiumItemRows(){
-            const body=document.getElementById('piRankList');if(!body)return;const q=(document.getElementById('piSearch')?.value||'').toLowerCase().trim();const all=buildItemSales();const items=all.filter(x=>x.name.toLowerCase().includes(q));const totalSales=all.reduce((a,x)=>a+x.sales,0);const totalQty=all.reduce((a,x)=>a+x.qty,0);
-            body.innerHTML=items.map((x,i)=>{const salesShare=totalSales?x.sales/totalSales*100:0;const qtyShare=totalQty?x.qty/totalQty*100:0;return `<div class="item-rank"><div class="item-rank-no">${i+1}</div><div class="item-rank-info"><div class="item-rank-name">${esc(x.name)}</div><div class="item-rank-sub">${x.qty} units • ${x.orders} orders • ${qtyShare.toFixed(1)}% qty share</div><div class="mini-bar"><i style="width:${Math.min(100,salesShare)}%"></i></div></div><div style="text-align:right"><div class="item-rank-val">${money(x.sales)}</div><small style="font-size:.6rem;color:var(--text-muted)">${salesShare.toFixed(1)}% sales</small></div></div>`}).join('')||'<div class="premium-empty">No item sales found.</div>';
-        }
-        function requireAdmin(action='this action'){ if(!window.isUserAdmin){showCustomAlert(`Only Admin can perform ${action}.`);return false;}return true; }
-        function stockOptionHtml(selected=''){
-            const names=Object.keys(stockData).sort((a,b)=>a.localeCompare(b));
-            return `<option value="">Select stock item</option>${names.map(n=>`<option value="${esc(n)}" ${String(n).toLowerCase()===String(selected).toLowerCase()?'selected':''}>${esc(n)}</option>`).join('')}`;
-        }
-
-        function renderPremiumInventory(){
-            const panel=document.getElementById('premiumPanel-inventory');if(!panel)return;
-            if(!window.isUserAdmin){
-                panel.innerHTML='<div class="premium-card"><div class="premium-empty">Inventory control is restricted to Admin.</div></div>';return;
-            }
-            const entries=Object.entries(stockData).sort((a,b)=>a[0].localeCompare(b[0]));
-            const low=entries.filter(([k,v])=>Number(v)<=Number(stockMeta[k]?.low_stock_level??5));
-            const out=entries.filter(([k,v])=>Number(v)<=0);
-            const totalUnits=entries.reduce((a,[k,v])=>a+Number(v||0),0);
-            const last=entries.map(([k])=>stockMeta[k]?.updated_at||'').filter(Boolean).sort().pop();
-
-            panel.innerHTML=`
-            <div class="premium-grid-3" style="margin-bottom:14px">
-                <div class="report-stat"><div class="rlabel">Tracked Items</div><div class="rvalue">${entries.length}</div></div>
-                <div class="report-stat"><div class="rlabel">Low Stock</div><div class="rvalue" style="color:#B45309">${low.length}</div></div>
-                <div class="report-stat"><div class="rlabel">Total Units</div><div class="rvalue">${Math.round(totalUnits)}</div></div>
-            </div>
-
-            <div class="premium-card" style="margin-bottom:14px">
-                <div class="premium-card-head"><h3>Inventory Control</h3><span>Admin only</span></div>
-                <div class="admin-form-grid">
-                    <select id="invItemSelect" onchange="loadStockEditor(this.value)">${stockOptionHtml()}</select>
-                    <input id="invItemQty" type="number" min="0" inputmode="numeric" placeholder="Current quantity">
-                    
-                    <button class="premium-btn" onclick="saveInventoryItem()">Update Stock</button>
-                    <button class="premium-btn light" onclick="toggleNewStockForm()">+ Add New Stock Item</button>
-                </div>
-
-                <div id="newStockForm" style="display:none;margin-top:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#FFFBF8">
-                    <div class="admin-form-grid">
-                        <input id="newStockName" placeholder="New stock item name">
-                        <input id="newStockQty" type="number" min="0" inputmode="numeric" placeholder="Opening quantity">
-                        <input id="newStockPrice" type="number" min="0" inputmode="numeric" placeholder="Menu price ₹ (optional)">
-                        <input id="newStockCategory" placeholder="Menu category" value="Other">
-                        <button class="premium-btn" onclick="addNewStockItem()">Save New Item</button>
-                        <button class="premium-btn light" onclick="toggleNewStockForm(false)">Cancel</button>
-                    </div>
-                    <div class="admin-help">Adding a stock item also adds it to the POS menu if it is not already present. Unit is automatically PCS.</div>
-                </div>
-
-                <div class="admin-help" style="margin-top:8px">
-                    Last stock update: <b>${last?esc(cleanDisplayDate(last)+' '+cleanDisplayTime(last)):'No stock update recorded yet'}</b>
-                    ${out.length?` • <span style="color:#B91C1C">${out.length} item(s) out of stock</span>`:''}
-                </div>
-            </div>
-
-            <div class="premium-card">
-                <div class="premium-card-head"><h3>Current Inventory</h3><span>Selected stock items only</span></div>
-                <div id="pStockGrid" class="stock-grid"></div>
-            </div>
-
-            <div class="premium-card" style="margin-top:14px">
-                <div class="premium-card-head"><h3>Inventory Insights</h3><span>Latest updates first</span></div>
-                <div id="inventoryInsightRows"></div>
-            </div>`;
-
-            renderPremiumInventoryRows();renderInventoryInsights();
-        }
-
-        function loadStockEditor(name){
-            const qty=document.getElementById('invItemQty'),note=document.getElementById('invItemNote');
-            if(!name){if(qty)qty.value='';if(note)note.value='';return;}
-            if(qty)qty.value=Number(stockData[name]||0);
-            if(note)note.value='';
-        }
-
-        function toggleNewStockForm(force){
-            const box=document.getElementById('newStockForm');if(!box)return;
-            const show=typeof force==='boolean'?force:box.style.display==='none';
-            box.style.display=show?'block':'none';
-            if(!show){
-                ['newStockName','newStockQty','newStockPrice'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-                const c=document.getElementById('newStockCategory');if(c)c.value='Other';
-            }
-        }
-
-        async function saveInventoryItem(){
-            if(!requireAdmin('inventory update'))return;
-            const name=document.getElementById('invItemSelect')?.value||'';
-            const qty=Number(document.getElementById('invItemQty')?.value);
-            const note='Admin stock update';
-            if(!name||!Number.isFinite(qty)||qty<0){showCustomAlert('Select a stock item and enter a valid quantity.');return;}
-            const old=Number(stockData[name]??0);
-            try{
-                const r=await d1Post('/stock',{name,quantity:qty,unit:'pcs',low_stock_level:Number(stockMeta[name]?.low_stock_level??5),note,updated_by:localStorage.getItem('viraasat_user')||'Admin'});
-                stockData[name]=qty;
-                stockMeta[name]={...(stockMeta[name]||{}),name,unit:'pcs',updated_at:r.updated_at||new Date().toISOString()};
-                stockHistory.unshift({item_name:name,old_quantity:old,new_quantity:qty,change_quantity:qty-old,action:'UPDATE',note,updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});
-                auditLog('Stock Updated',`${name}: ${old} → ${qty}`);
-                renderStockDashboard();renderPremiumInventory();
-                showCustomAlert('Stock updated successfully.');
-            }catch(e){showCustomAlert('Stock update failed: '+(e?.message||e));}
-        }
-
-        async function addNewStockItem(){
-            if(!requireAdmin('add stock item'))return;
-            const name=document.getElementById('newStockName')?.value.trim();
-            const qty=Number(document.getElementById('newStockQty')?.value);
-            const priceRaw=document.getElementById('newStockPrice')?.value;
-            const price=priceRaw===''?0:Number(priceRaw);
-            const category=document.getElementById('newStockCategory')?.value.trim()||'Other';
-            if(!name||!Number.isFinite(qty)||qty<0||!Number.isFinite(price)||price<0){showCustomAlert('Enter a valid item name, quantity and menu price.');return;}
-            const duplicate=Object.keys(stockData).some(k=>k.toLowerCase()===name.toLowerCase());
-            if(duplicate){showCustomAlert('This stock item already exists. Select it from the dropdown to update quantity.');return;}
-            try{
-                const stockResult=await d1Post('/stock',{name,quantity:qty,unit:'pcs',low_stock_level:5,note:'New stock item',updated_by:localStorage.getItem('viraasat_user')||'Admin'});
-                const menuExists=menuData.some(m=>String(getVal(m,['name','itemname'])||'').trim().toLowerCase()===name.toLowerCase());
-                if(!menuExists){
-                    try{
-                        const menuResult=await d1Post('/menu',{name,category,price,is_available:true});
-                        menuData.push({id:Number(menuResult.id||0),name,itemname:name,category,price,is_available:1});
-                    }catch(menuErr){
-                        console.warn('Stock added but menu auto-add failed',menuErr);
-                    }
-                }
-                stockData[name]=qty;
-                stockMeta[name]={id:stockResult.id||'',name,unit:'pcs',low_stock_level:5,updated_at:stockResult.updated_at||new Date().toISOString()};
-                stockHistory.unshift({item_name:name,old_quantity:0,new_quantity:qty,change_quantity:qty,action:'ADD',note:'New stock item',updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});
-                auditLog('Stock Item Added',`${name}: ${qty} pcs`);
-                populateDropdown();renderStockDashboard();renderPremiumInventory();
-                showCustomAlert('New stock item added. It is now available in Inventory and POS Menu.');
-            }catch(e){showCustomAlert('New stock item failed: '+(e?.message||e));}
-        }
-
-        function renderInventoryInsights(){const el=document.getElementById('inventoryInsightRows');if(!el)return;const rows=(stockHistory||[]).slice(0,10);el.innerHTML=rows.length?rows.map(r=>`<div class="admin-mini-row"><div><b>${esc(r.item_name||r.name)}</b><small>${esc(r.action||'UPDATE')} • ${esc(r.note||'Stock change')} • ${esc(r.updated_by||'Admin')}</small></div><strong>${Number(r.new_quantity??r.quantity??0)}</strong><small style="display:block;color:var(--text-muted)">${r.created_at?esc(cleanDisplayDate(r.created_at)+' '+cleanDisplayTime(r.created_at)):''}</small></div>`).join(''):'<div class="premium-empty">No stock update history available yet.</div>';}
-        function renderPremiumInventoryRows(){
-            const el=document.getElementById('pStockGrid');if(!el)return;
-            const e=Object.entries(stockData).sort((a,b)=>a[0].localeCompare(b[0]));
-            el.innerHTML=e.map(([k,v])=>{
-                const m=stockMeta[k]||{},low=Number(m.low_stock_level??5);
-                return `<div class="stock-box ${Number(v)<=low?'low':''}">
-                    <div class="stock-box-name">${esc(k)}</div>
-                    <div class="stock-box-qty">${Number(v)||0}</div>
-                    <small>${Number(v)<=0?'OUT OF STOCK':Number(v)<=low?'LOW STOCK':'Available'} • PCS</small>
-                </div>`;
-            }).join('')||'<div class="premium-empty" style="grid-column:1/-1">No stock data received from source.</div>';
-        }
-        async function removeStaffRecord(key){
-            if(!requireAdmin('staff removal request'))return;
-            const staff=staffData.find(s=>getStaffKey(s)===key);
-            if(!staff)return;
-            const id=Number(getVal(staff,['id','empid','employeeid']));
-            const name=String(getVal(staff,['name'])||'Staff');
-            if(!id){showCustomAlert('This staff record has no D1 ID.');return;}
-            showCustomConfirm(`Send ${name} for approval to remove from POS?`,async()=>{
-                try{
-                    const r=await d1Post('/staff/remove',{
-                        id,
-                        requested_by:localStorage.getItem('viraasat_user')||'Admin'
-                    });
-                    auditLog('Staff Removal Requested',`${name} (ID ${id})`);
-                    renderPremiumAdmin();
-                    showCustomAlert(r?.already_pending?'Staff removal approval is already pending.':'Staff removal request sent for approval.');
-                }catch(e){
-                    showCustomAlert('Staff removal request failed: '+(e?.message||e));
-                }
-            },null);
-        }
-        function exportStaff(){downloadCSV(staffData.map(s=>({Emp_ID:getVal(s,['empid','employeeid']),Name:getVal(s,['name']),Role:getVal(s,['role']),Mobile:getVal(s,['mobile','phone']),Monthly_Salary:parseAmount(getVal(s,['monthlysalary','salary'])),Date_of_Joining:getVal(s,['dateofjoining','joindate','date','doj']),Status:getStaffStatus(s)})),'Viraasat-Staff.csv');}
-
-        function downloadMenuSample(){downloadCSV([{Name:'Paneer Butter Masala',Category:'Main Course',Price:170,Active:'Yes',Stock:20},{Name:'Tea',Category:'Beverage',Price:20,Active:'Yes',Stock:50},{Name:'Aloo Paratha',Category:'Breakfast',Price:60,Active:'Yes',Stock:15}],'Viraasat-Menu-Sample.csv');}
-        function exportMenu(){downloadCSV(menuData.map(m=>({Name:getVal(m,['itemname','name']),Category:getVal(m,['category','cat']),Price:parseAmount(getVal(m,['price'])),Active:getVal(m,['active','status'])||'Yes',Stock:stockData[getVal(m,['itemname','name'])]??''})),'Viraasat-Menu-Export.csv');}
-        async function handleMenuUpload(file){
-            if(!file)return;
-            try{
-                let rows=[];
-                if(window.XLSX){
-                    const data=await file.arrayBuffer();const wb=XLSX.read(data,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];rows=XLSX.utils.sheet_to_json(ws,{defval:''});
-                }else{
-                    const text=await file.text();rows=parseCSVText(text);
-                }
-                if(!rows.length){showCustomAlert('No menu rows found in file.');return;}
-                let added=0;
-                rows.forEach(r=>{
-                    const name=String(getVal(r,['name','itemname','item'])||'').trim();const price=parseAmount(getVal(r,['price','rate','sellingprice']));
-                    if(!name||!price)return;
-                    const category=getVal(r,['category','cat'])||'Other';const active=String(getVal(r,['active','status'])||'Yes').toLowerCase();
-                    const obj={name, itemname:name, category, price, active:!['no','false','inactive','0'].includes(active)};
-                    const ix=menuData.findIndex(m=>getVal(m,['itemname','name']).toLowerCase()===name.toLowerCase());
-                    if(ix>=0)menuData[ix]={...menuData[ix],...obj};else menuData.push(obj);added++;
-                    d1Post('/menu',{category,name,price,is_available:obj.active}).catch(()=>{});
-                });
-                populateDropdown();renderPremiumAdmin();auditLog('Menu Import',`${added} rows`);showCustomAlert(`${added} menu rows imported.`);
-            }catch(e){console.error(e);showCustomAlert('Could not read this file. Use the downloaded sample format.');}
-        }
-        function parseCSVText(text){const lines=text.split(/\r?\n/).filter(x=>x.trim());if(!lines.length)return[];const head=lines.shift().split(',').map(x=>x.trim().replace(/^"|"$/g,''));return lines.map(line=>{const vals=line.match(/(".*?"|[^",]+)(?=\s*,|\s*$)/g)||[];const o={};head.forEach((h,i)=>o[h]=(vals[i]||'').trim().replace(/^"|"$/g,''));return o;});}
-
-        function exportExpenses(){downloadCSV(expenseHistory.map(e=>({Date:getVal(e,['date','isodate']),Category:getVal(e,['category']),Description:getVal(e,['description','note']),Amount:parseAmount(getVal(e,['amount','total']))})),'Viraasat-Expenses.csv');}
-
-        function renderPremiumReports(){
-            const panel=document.getElementById('premiumPanel-reports');if(!panel)return;
-            const byDate={}; salesHistory.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!byDate[d])byDate[d]={orders:0,sales:0,discount:0};byDate[d].orders++;byDate[d].sales+=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));byDate[d].discount+=parseAmount(getVal(s,['discount']));});
-            const days=Object.entries(byDate).sort((a,b)=>b[0].localeCompare(a[0]));
-            const items=buildItemSales(); const totalItemSales=items.reduce((a,x)=>a+x.sales,0); const totalItemQty=items.reduce((a,x)=>a+x.qty,0);
-            const top=items.slice(0,15);
-            const totalSale=salesHistory.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0); const totalDiscount=salesHistory.reduce((a,s)=>a+parseAmount(getVal(s,['discount'])),0);
-            panel.innerHTML=`
-            <div class="sales-summary-grid"><div class="report-stat"><div class="rlabel">Overall Sale</div><div class="rvalue">${money(totalSale)}</div></div><div class="report-stat"><div class="rlabel">Discount</div><div class="rvalue">${money(totalDiscount)}</div></div><div class="report-stat"><div class="rlabel">Orders</div><div class="rvalue">${salesHistory.length}</div></div></div>
-            <div class="premium-card"><div class="premium-card-head"><h3>Top Selling Items</h3><span>Sorted by sales value</span></div><div class="admin-help">Highest-selling items are shown first. Sales % = item's value ÷ total item sales. Qty % = item's quantity ÷ total units sold.</div><div class="top-selling-list">${top.map((x,i)=>{const ss=totalItemSales?x.sales/totalItemSales*100:0;const qs=totalItemQty?x.qty/totalItemQty*100:0;return `<div class="item-rank"><div class="item-rank-no">${i+1}</div><div class="item-rank-info"><div class="item-rank-name">${esc(x.name)}</div><div class="item-rank-sub">${x.qty} units • ${x.orders} orders • Qty ${qs.toFixed(1)}%</div><div class="mini-bar"><i style="width:${Math.min(100,ss)}%"></i></div></div><div style="text-align:right"><div class="item-rank-val">${money(x.sales)}</div><small style="font-size:.6rem;color:var(--text-muted)">${ss.toFixed(1)}%</small></div></div>`}).join('')||'<div class="premium-empty">No item sales found.</div>'}</div></div>
-            <div class="premium-card"><div class="premium-card-head"><h3>Daily Business Report</h3><button class="premium-btn light" onclick="exportDailyReport()">Export</button></div><div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Orders</th><th>Sales</th><th>Discount</th><th>AOV</th></tr></thead><tbody>${days.map(([d,x])=>`<tr><td>${d}</td><td>${x.orders}</td><td><b>${money(x.sales)}</b></td><td>${money(x.discount)}</td><td>${money(x.sales/x.orders)}</td></tr>`).join('')||'<tr><td colspan="5"><div class="premium-empty">No sales.</div></td></tr>'}</tbody></table></div></div>`;
-        }
-        function exportDailyReport(){const by={};salesHistory.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!by[d])by[d]={orders:0,sales:0};by[d].orders++;by[d].sales+=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));});downloadCSV(Object.entries(by).sort((a,b)=>a[0].localeCompare(b[0])).map(([Date,x])=>({Date,Orders:x.orders,Sales:Math.round(x.sales),AOV:Math.round(x.sales/x.orders)})),'Viraasat-Daily-Report.csv');}
-
-        function renderPremiumExpenses(){
-            // Kept as a safe refresh hook because the main Expenses screen is the live expense editor.
-            // This prevents submitExpense() from failing after a successful D1 save.
-            try{
-                generateTrends();
-                renderExpenseHistoryList();
-                const panel=document.getElementById('premiumPanel-expenses');
-                if(!panel)return;
-                const rows=(expenseHistory||[]).slice().sort((a,b)=>expenseTimestamp(b)-expenseTimestamp(a)).slice(0,20);
-                const total=rows.reduce((a,e)=>a+parseAmount(getVal(e,['amount','total'])),0);
-                panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Expenses</h3><span>Latest first • click for details</span></div><div class="report-stat" style="margin-bottom:12px"><div class="rlabel">Recent Total</div><div class="rvalue">${money(total)}</div></div><div class="admin-mini-list">${rows.map(e=>{const eid=getVal(e,['id'])||`${expenseDateKey(e)}-${getVal(e,['category'])}-${getVal(e,['amount'])}`;return `<div class="admin-mini-row expense-click-card" onclick="openExpenseDetails('${esc(eid)}')"><div><b>${esc(getVal(e,['category'])||'Other')}</b><small>${esc(expenseDateKey(e))} • ${esc(expenseTimeText(e)||'')}</small></div><strong style="color:var(--danger)">- ${money(getVal(e,['amount','total']))}</strong></div>`}).join('')||'<div class="premium-empty">No expenses recorded.</div>'}</div></div>`;
-            }catch(e){console.error('Premium expenses render failed',e);}
-        }
-
-        // ===== LOGO =====
-        function applyViraasatLogo(src){
-            const value=String(src||'icon.png');
-            document.querySelectorAll('img[src="icon.png"], img[data-viraasat-logo="true"]').forEach(img=>{
-                img.src=value;
-                img.dataset.viraasatLogo='true';
-            });
-            const preview=document.getElementById('viraasatLogoPreview');
-            if(preview)preview.src=value;
-            const favicon=document.querySelector('link[rel="icon"]');
-            if(favicon)favicon.href=value;
-            const apple=document.querySelector('link[rel="apple-touch-icon"]');
-            if(apple)apple.href=value;
-        }
-        function loadViraasatLogo(){
-            try{
-                const saved=localStorage.getItem('viraasat_logo_src')||'icon.png';
-                applyViraasatLogo(saved);
-                const input=document.getElementById('viraasatLogoUrl');
-                if(input && /^https?:\/\//i.test(saved)) input.value=saved;
-            }catch(e){applyViraasatLogo('icon.png');}
-        }
-        function saveViraasatLogoUrl(){
-            const input=document.getElementById('viraasatLogoUrl');
-            const value=String(input?.value||'').trim();
-            if(!value){showCustomAlert('Please enter a logo image URL.');return;}
-            if(!/^https?:\/\//i.test(value) && !/^data:image\//i.test(value)){
-                showCustomAlert('Please enter a valid image URL starting with http:// or https://.');return;
-            }
-            localStorage.setItem('viraasat_logo_src',value);
-            applyViraasatLogo(value);
-            auditLog('Logo Updated','Logo URL updated');
-            showCustomAlert('Logo updated successfully.');
-        }
-        function handleViraasatLogoUpload(file){
-            if(!file)return;
-            if(!file.type.startsWith('image/')){showCustomAlert('Please select an image file.');return;}
-            if(file.size>2*1024*1024){showCustomAlert('Logo must be 2 MB or smaller.');return;}
-            const reader=new FileReader();
-            reader.onload=()=>{
-                const value=String(reader.result||'');
-                localStorage.setItem('viraasat_logo_src',value);
-                applyViraasatLogo(value);
-                const input=document.getElementById('viraasatLogoUrl');if(input)input.value='';
-                auditLog('Logo Updated','Logo image uploaded');
-                showCustomAlert('Logo uploaded successfully.');
-            };
-            reader.onerror=()=>showCustomAlert('Could not read the logo file.');
-            reader.readAsDataURL(file);
-        }
-        function resetViraasatLogo(){
-            localStorage.removeItem('viraasat_logo_src');
-            applyViraasatLogo('icon.png');
-            const input=document.getElementById('viraasatLogoUrl');if(input)input.value='';
-            auditLog('Logo Reset','Default logo restored');
-            showCustomAlert('Default logo restored.');
-        }
-
-        // ===== GOOGLE SHEET BACKUP =====
-        async function runManualGoogleSheetBackup(){
-            if(!requireAdmin('Google Sheet backup'))return;
-            const status=document.getElementById('backupStatus');
-            if(status)status.textContent='Backup running…';
-            try{
-                const result=await d1Post('/backup/google-sheet',{},30000);
-                const c=result?.counts||{};
-                const summary=`Sales ${c.sales??0} • Menu ${c.menu??0} • Staff ${c.staff??0} • Stock ${c.stock??0} • Expenses ${c.expenses??0}`;
-                if(status)status.textContent=`Last backup: ${new Date().toLocaleString('en-IN')} • ${summary}`;
-                localStorage.setItem('viraasat_last_backup',JSON.stringify({time:new Date().toISOString(),result}));
-                auditLog('Manual Backup','Google Sheet backup completed');
-                showCustomAlert('Google Sheet backup completed successfully.');
-            }catch(e){
-                if(status)status.textContent='Backup failed: '+(e?.message||e);
-                showCustomAlert('Google Sheet backup failed: '+(e?.message||e));
-            }
-        }
-        function loadBackupStatus(){
-            try{
-                const saved=JSON.parse(localStorage.getItem('viraasat_last_backup')||'null');
-                const el=document.getElementById('backupStatus');
-                if(saved?.time&&el)el.textContent='Last manual backup: '+new Date(saved.time).toLocaleString('en-IN');
-            }catch(e){}
-        }
-
-        // ===== SHARED AUDIT LOGS =====
-        // D1 is the shared source when the Worker route is available.
-        // localStorage remains only as a temporary offline fallback.
-        let auditSyncInFlight = false;
-        let auditInitialSyncDone = false;
-        function getLocalAuditLogs(){
-            try{return JSON.parse(localStorage.getItem('viraasat_audit_logs')||'[]')}catch(e){return[]}
-        }
-        function saveLocalAuditLogs(logs){
-            try{localStorage.setItem('viraasat_audit_logs',JSON.stringify((logs||[]).slice(0,500)));}catch(e){}
-        }
-        function auditLog(action, details=''){
-            const entry={
-                action:String(action),
-                details:String(details||''),
-                timestamp:new Date().toISOString(),
-                user:localStorage.getItem('viraasat_user')||'Admin'
-            };
-            const local=getLocalAuditLogs();
-            local.unshift(entry); saveLocalAuditLogs(local);
-            // Fire-and-forget: existing POS actions must never wait for logging.
-            d1Post('/audit-logs',entry,8000).catch(()=>{});
-        }
-        function getAuditLogs(){ return getLocalAuditLogs(); }
-        async function syncAuditLogsFromServer(){
-            if(auditSyncInFlight)return;
-            auditSyncInFlight=true;
-            try{
-                const data=await d1Get('/audit-logs',8000);
-                const rows=Array.isArray(data?.logs)?data.logs:(Array.isArray(data?.data)?data.data:[]);
-                if(rows.length){
-                    saveLocalAuditLogs(rows.map(x=>({
-                        action:String(x.action||''),
-                        details:String(x.details||''),
-                        timestamp:x.timestamp||x.created_at||new Date().toISOString(),
-                        user:String(x.user||x.username||'Admin')
-                    })));
-                }else{
-                    saveLocalAuditLogs([]);
-                }
-            }catch(e){
-                // Keep the local fallback silently; do not break Admin rendering.
-            }finally{
-                auditSyncInFlight=false;
-            }
-        }
-        async function clearAuditLogs(){
-            if(!window.confirm('Are you sure you want to clear all Audit Logs? This action cannot be undone.'))return;
-            try{
-                await fetch(`${D1_API_BASE}/audit-logs`,{
-                    method:'DELETE',
-                    headers:{'Accept':'application/json'},
-                    cache:'no-store'
-                }).then(async r=>{
-                    const data=await r.json().catch(()=>({}));
-                    if(!r.ok || data.success===false)throw new Error(data.error||`Audit log clear failed (${r.status})`);
-                    return data;
-                });
-            }catch(e){
-                // If shared route is unavailable, do not falsely claim global deletion.
-                showCustomAlert('Audit Logs could not be cleared from the shared database. Please check the Worker route.');
-                return;
-            }
-            saveLocalAuditLogs([]);
-            renderPremiumAdmin();
-        }
-        async function loadPendingApprovals(){
-            try{
-                const data=await d1Get('/approvals');
-                if(!Array.isArray(data?.requests)) throw new Error('Approval API returned an invalid response');
-                return data.requests;
-            }catch(e){
-                return {error:e.message||String(e)};
-            }
-        }
-        async function resolveApproval(requestId,orderId,status){
-            try{
-                const result=await d1Post('/approvals/resolve',{
-                    request_id:requestId,
-                    order_id:orderId,
-                    status,
-                    reviewed_by:localStorage.getItem('viraasat_user')||'Admin'
-                });
-                auditLog('Approval '+status,orderId);
-                renderPremiumAdmin();
-                fetchData();
-                showCustomAlert(result?.message||`Request ${status}.`);
-            }catch(e){
-                showCustomAlert('Approval failed: '+(e?.message||e));
-            }
-        }
-
-        function renderPremiumAdmin(){
-            const panel=document.getElementById('premiumPanel-settings'); if(!panel)return;
-            try{
-            const logs=getAuditLogs();
-            const active=activeStaffCount();
-            const pendingPromise=loadPendingApprovals();
-            panel.innerHTML=`
-            <div class="premium-card admin-card">
-                <div class="premium-card-head"><h3>Admin Control</h3><span>All management in one place</span></div>
-                <div class="admin-module-grid">
-                    <button class="admin-module" onclick="document.getElementById('adminStockSearch').focus()"><b>Inventory</b><span>Update stock & thresholds</span></button>
-                    <button class="admin-module" onclick="document.getElementById('adminStaffSearch').focus()"><b>Employees</b><span>${active} active staff</span></button>
-                    <button class="admin-module" onclick="document.getElementById('userMobile').focus()"><b>Users</b><span>Register / revoke access</span></button>
-                    <button class="admin-module" onclick="document.getElementById('adminMenuName').focus()"><b>Menu</b><span>Add & export menu</span></button>
-                    <button class="admin-module" onclick="exportFullDatabaseWorkbook()"><b>Export</b><span>Download complete workbook</span></button>
-                </div>
-            </div>
-
-            <div class="premium-card admin-card">
-                <div class="premium-card-head"><h3>Google Sheet Backup</h3><span>D1 → Backup only</span></div>
-                <div class="admin-help">D1 remains the master database. Google Sheet is used only for backup. Automatic backup runs at 3:00 AM; this button starts the same backup manually.</div>
-                <div class="premium-toolbar compact-toolbar">
-                    <button class="premium-btn" onclick="runManualGoogleSheetBackup()">Backup Now</button>
-                    <span id="backupStatus" class="admin-help" style="margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Ready for backup.</span>
-                </div>
-            </div>
-
-            <div class="premium-card admin-card">
-                <div class="premium-card-head"><h3>Viraasat Logo</h3><span>POS + browser tab</span></div>
-                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;min-width:0">
-                    <img id="viraasatLogoPreview" data-viraasat-logo="true" src="icon.png" alt="Logo preview" style="width:48px;height:48px;object-fit:contain;border:1px solid var(--border);border-radius:10px;background:#fff;padding:5px">
-                    <div class="admin-help" style="margin:0">Use either Upload Logo or Logo URL. The selected logo is applied to the POS and browser tab.</div>
-                </div>
-                <div class="admin-form-grid">
-                    <label class="premium-btn alt upload-label">Upload Logo<input type="file" accept="image/*" style="display:none" onchange="handleViraasatLogoUpload(this.files[0])"></label>
-                    <input id="viraasatLogoUrl" type="url" placeholder="Logo image URL">
-                    <button class="premium-btn" onclick="saveViraasatLogoUrl()">Use URL</button>
-                    <button class="premium-btn light" onclick="resetViraasatLogo()">Reset Logo</button>
-                </div>
-            </div>
-
-            <div class="premium-card admin-card">
-                <div class="premium-card-head"><h3>Stock Management</h3><span>${Object.keys(stockData).length} items • Admin only</span></div>
-                <div class="admin-form-grid"><select id="adminStockSelect" onchange="loadAdminStockSelect(this.value)">${stockOptionHtml()}</select><input id="adminStockSearch" placeholder="New item name / search" oninput="syncAdminStockSearch(this.value)"><input id="adminStockQty" type="number" min="0" inputmode="numeric" placeholder="Current Qty"><button class="premium-btn" onclick="adminUpdateStockUnified()">Update Stock</button><button class="premium-btn light" onclick="resetAdminStockForm()">Add New Item</button></div>
-                <div class="admin-help">Use the dropdown to select an existing item. Quantity correction and new stock-item creation are restricted to Admin.</div><div id="adminStockMiniList" class="admin-mini-list"></div>
-            </div>
-
-            <div class="premium-card admin-card">
-                <div class="premium-card-head"><h3>Employee Management</h3><span>${active}/${staffData.length} active</span></div>
-                <div class="premium-toolbar compact-toolbar">
-                    <input id="adminStaffSearch" placeholder="Search employee..." oninput="renderAdminStaffRows()">
-                    <button class="premium-btn" onclick="document.getElementById('newStaffName').focus()">Add Employee</button>
-                    <button class="premium-btn light" onclick="exportStaff()">Export</button>
-                </div>
-                <div class="admin-form-grid">
-                    <input id="newStaffName" placeholder="Full name">
-                    <input id="newStaffMobile" inputmode="numeric" placeholder="Mobile">
-                    <select id="newStaffRole"><option>Manager</option><option>Chef</option><option>Cashier</option><option>Waiter</option><option>Cleaner</option><option>Helper</option></select>
-                    <input id="newStaffSalary" type="number" inputmode="numeric" placeholder="Monthly salary">
-                    <input id="newStaffDate" type="date">
-                    <button class="premium-btn" onclick="addStaffUI()">Register Employee</button>
-                </div>
-                <div id="adminStaffRows" class="admin-staff-list"></div>
-            </div>
-
-            <div class="premium-card admin-card">
-                <div class="premium-card-head"><h3>POS User Registration</h3><span>Access control</span></div>
-                <div class="admin-form-grid">
-                    <input id="userMobile" inputmode="numeric" placeholder="10 digit mobile">
-                    <input id="userPass" type="password" placeholder="Password (min 4)">
-                    <select id="userRole"><option value="cashier">Cashier</option><option value="manager">Manager</option><option value="waiter">Waiter</option><option value="kitchen">Kitchen</option></select>
-                    <label class="check-row"><input type="checkbox" id="userAllowSales" checked> Live Sale</label>
-                    <label class="check-row"><input type="checkbox" id="userAllowAnalytics"> P&L</label>
-                    <label class="check-row"><input type="checkbox" id="userAllowExpenses"> Expenses</label>
-                    <button class="premium-btn" onclick="registerPOSUser()">Register User</button>
-                </div>
-                <div id="adminUsersRows" class="admin-user-list"></div>
-            </div>
-
-            <div class="premium-card admin-card">
-                <div class="premium-card-head"><h3>Menu Management</h3><span>${menuData.length} items</span></div>
-                <div class="admin-form-grid">
-                    <input id="adminMenuName" placeholder="Item name">
-                    <input id="adminMenuPrice" type="number" inputmode="numeric" placeholder="Price ₹">
-                    <input id="adminMenuCategory" placeholder="Category" value="Main Course">
-                    <button class="premium-btn" onclick="adminAddMenuUnified()">Add Menu Item</button>
-                </div>
-                <div class="premium-toolbar compact-toolbar" style="margin-top:8px">
-                    
-                    <label class="premium-btn alt upload-label">Upload Menu<input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleMenuUpload(this.files[0])"></label>
-                    <button class="premium-btn light" onclick="exportMenu()">Export Menu</button>
-                </div>
-            </div>
-
-            <div class="premium-card admin-card">
-                <div class="premium-card-head"><h3>Pending Approvals</h3><span>Protected actions</span></div>
-                <div id="pendingApprovalsBox" class="premium-empty">Checking approvals...</div>
-            </div>
-
-            <div class="premium-card admin-card">
-                <div class="premium-card-head"><h3>Audit Logs</h3><button class="premium-btn light" onclick="clearAuditLogs()">Clear</button></div>
-                <div id="auditLogsBox"></div>
-            </div>
-            `;
-            renderAdminStockRows(); renderAdminStaffRows(); renderAdminUsersRows();
-            loadBackupStatus();
-            loadViraasatLogo();
-            if(!auditInitialSyncDone){
-                auditInitialSyncDone=true;
-                syncAuditLogsFromServer().then(()=>{ if(document.getElementById('premiumPanel-settings')) renderPremiumAdmin(); });
-            }
-            pendingPromise.then(result=>{
-                const box=document.getElementById('pendingApprovalsBox'); if(!box)return;
-                if(result&&result.error){
-                    box.innerHTML=`<div class="approval-missing"><b>Approval API unavailable.</b><br>${esc(result.error)}<br><br>Apply the Worker approval/staff patch supplied with this build, then refresh.</div>`;
-                    return;
-                }
-                const requests=Array.isArray(result)?result:(Array.isArray(result?.requests)?result.requests:[]);
-                box.innerHTML=requests.length?`<div class="admin-help" style="margin-bottom:8px"><b>${requests.length}</b> pending protected action${requests.length===1?'':'s'}</div>`+requests.map(r=>{
-                    const target=String(r.order_id||'');
-                    const isStaff=target.startsWith('STAFF:');
-                    const displayTarget=isStaff?'Staff Removal':`Order #${target}`;
-                    return `<div class="approval-row"><div><b>${displayTarget}</b><small>${esc(r.reason||'Protected action')} • ${esc(r.requested_by||'Unknown')}</small></div><div class="approval-actions"><button class="premium-btn" onclick="resolveApproval(${Number(r.id)},'${esc(target)}','approved')">Approve</button><button class="premium-btn danger" onclick="resolveApproval(${Number(r.id)},'${esc(target)}','rejected')">Reject</button></div></div>`;
-                }).join(''):'<div class="premium-empty">No pending approvals.</div>';
-            });
-            const logBox=document.getElementById('auditLogsBox');
-            if(logBox)logBox.innerHTML=logs.length?logs.slice(0,40).map(l=>`<div class="audit-row"><b>${esc(l.action)}</b><span>${esc(l.details)} • ${esc(l.user)} • ${new Date(l.timestamp).toLocaleString('en-IN')}</span></div>`).join(''):'<div class="premium-empty">No activity logged yet.</div>';
-            }catch(err){
-                console.error('Admin render failed',err);
-                panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Admin Control</h3><span>Secure management</span></div><div class="approval-missing">Admin view could not render one of its modules.<br><small>${esc(err?.message||err)}</small></div></div>`;
-            }
-        }
-
-        function renderAdminRecentOrders(){
-            const el=document.getElementById('adminRecentOrders'); if(!el)return;
-            const rows=(salesHistory||[]).slice().sort((a,b)=>orderTimestamp(b)-orderTimestamp(a)).slice(0,12);
-            el.innerHTML=rows.length?rows.map(s=>{
-                const id=getVal(s,['orderid','order_number','id'])||'—';
-                const table=getVal(s,['tablenumber','table','tablename','table_number'])||'—';
-                const items=parseSaleItems(s).map(it=>`${it.name} (x${it.qty})`).join(', ');
-                const total=money(getVal(s,['grand_total','totalamount','total','amount']));
-                return `<div class="admin-order-card" onclick="openOrderDetails('${esc(id)}')"><div class="admin-order-title">${esc(table)}${table!=='—'?'':' Order'}</div><div class="admin-order-id">#${esc(id)}</div><div class="admin-order-items">${esc(items||'No item details')}</div><div class="admin-order-bottom"><span class="admin-order-time">${esc(cleanDisplayTime(getVal(s,['date','isodate','created_at'])||getVal(s,['time'])))}</span><span class="admin-order-total">${total}</span></div></div>`;
-            }).join(''):'<div class="premium-empty" style="grid-column:1/-1">No orders found.</div>';
-        }
-
-        function renderAdminStockRows(){const el=document.getElementById('adminStockMiniList');if(!el)return;const rows=Object.entries(stockData).sort((a,b)=>Number(a[1])-Number(b[1])).slice(0,15);el.innerHTML=rows.map(([name,qty])=>{const low=Number(stockMeta[name]?.low_stock_level??5);return `<div class="admin-mini-row" onclick="loadAdminStockSelect('${esc(name)}')" style="cursor:pointer"><div><b>${esc(name)}</b><small>${Number(qty)<=0?'OUT OF STOCK':Number(qty)<=low?'Low stock':'Available'} • Last update ${stockMeta[name]?.updated_at?esc(cleanDisplayDate(stockMeta[name].updated_at)):'—'}</small></div><strong>${Number(qty)||0}</strong></div>`}).join('')||'<div class="premium-empty">No stock data.</div>';}
-        function loadAdminStockSelect(name){if(!name){resetAdminStockForm(false);return;}const m=stockMeta[name]||{};document.getElementById('adminStockSearch').value=name;document.getElementById('adminStockQty').value=Number(stockData[name]||0);document.getElementById('adminStockLow').value=Number(m.low_stock_level??5);}
-        function syncAdminStockSearch(v){const sel=document.getElementById('adminStockSelect');if(sel){const opt=[...sel.options].find(o=>o.value.toLowerCase()===String(v).trim().toLowerCase());sel.value=opt?opt.value:'';}}
-        function resetAdminStockForm(clear=true){if(clear&&document.getElementById('adminStockSelect'))document.getElementById('adminStockSelect').value='';['adminStockSearch','adminStockQty'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});document.getElementById('adminStockLow').value=5;}
-        function renderAdminStaffRows(){
-            const el=document.getElementById('adminStaffRows'); if(!el)return;
-            const q=(document.getElementById('adminStaffSearch')?.value||'').toLowerCase();
-            const filtered=staffData.filter(s=>`${getVal(s,['name'])} ${getVal(s,['role'])} ${getVal(s,['mobile','phone'])}`.toLowerCase().includes(q));
-            const unique=new Map();
-            filtered.forEach(s=>{
-                const name=String(getVal(s,['name'])||'').trim().toLowerCase();
-                const mobile=String(getVal(s,['mobile','phone'])||'').replace(/\D/g,'');
-                const key=(mobile||name)?`${name}|${mobile}`:getStaffKey(s);
-                const old=unique.get(key);
-                if(!old || (getStaffStatus(s)==='active' && getStaffStatus(old)!=='active') || Number(getVal(s,['id','empid','employeeid'])||0)>Number(getVal(old,['id','empid','employeeid'])||0)) unique.set(key,s);
-            });
-            const rows=[...unique.values()];
-            el.innerHTML=rows.map(s=>{const key=getStaffKey(s),active=getStaffStatus(s)==='active';return `<div class="admin-staff-row"><div class="admin-staff-main"><b>${esc(getVal(s,['name'])||'Unknown')}</b><small>${esc(getVal(s,['role'])||'Staff')} • ${esc(getVal(s,['mobile','phone'])||'—')} • ₹${parseAmount(getVal(s,['monthlysalary','salary'])).toLocaleString('en-IN')}</small></div><button class="status-toggle ${active?'active':'inactive'}" onclick="toggleStaffStatus('${esc(key)}')">${active?'ACTIVE':'INACTIVE'}</button><button class="premium-btn danger" onclick="removeStaffRecord('${esc(key)}')">Remove</button></div>`}).join('')||'<div class="premium-empty">No employees found.</div>';
-        }
-        function renderAdminUsersRows(){
-            const el=document.getElementById('adminUsersRows'); if(!el)return;
-            const entries=Object.entries(userPermissions||{});
-            el.innerHTML=entries.map(([mobile,p])=>`<div class="admin-user-row"><div><b>${esc(mobile)}</b><small>${esc(p.role||'cashier')} • Sales ${p.orders?'Yes':'No'} • P&L ${p.analytics?'Yes':'No'} • Expenses ${p.expenses?'Yes':'No'}</small></div><button class="premium-btn danger" onclick="removeUser('${esc(mobile)}');renderAdminUsersRows()">Remove</button></div>`).join('')||'<div class="premium-empty">No additional POS users registered.</div>';
-        }
-        async function adminUpdateStockUnified(){if(!requireAdmin('inventory update'))return;const selected=document.getElementById('adminStockSelect')?.value||'',typed=document.getElementById('adminStockSearch')?.value.trim()||'',name=typed||selected,qty=Number(document.getElementById('adminStockQty')?.value),low=Number(document.getElementById('adminStockLow')?.value||5);if(!name||!Number.isFinite(qty)||qty<0){showCustomAlert('Select an item or enter a new item name, then enter a valid quantity.');return;}const old=Number(stockData[name]??0),exists=Object.prototype.hasOwnProperty.call(stockData,name);try{await d1Post('/stock',{name,quantity:qty,unit:stockMeta[name]?.unit||'pcs',low_stock_level:low,note:exists?'Admin correction':'New stock item',updated_by:localStorage.getItem('viraasat_user')||'Admin'});stockData[name]=qty;stockMeta[name]={...(stockMeta[name]||{}),name,unit:stockMeta[name]?.unit||'pcs',low_stock_level:low,updated_at:new Date().toISOString()};stockHistory.unshift({item_name:name,old_quantity:old,new_quantity:qty,change_quantity:qty-old,action:exists?'UPDATE':'ADD',note:exists?'Admin correction':'New stock item',updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});auditLog(exists?'Stock Corrected':'Stock Item Added',`${name}: ${old} → ${qty}`);renderStockDashboard();renderPremiumInventory();renderPremiumAdmin();showCustomAlert(exists?'Stock corrected successfully.':'New stock item added successfully.');}catch(e){showCustomAlert('Stock update failed: '+e.message);}}
-        async function adminAddMenuUnified(){
-            const name=document.getElementById('adminMenuName')?.value.trim(); const price=Number(document.getElementById('adminMenuPrice')?.value); const category=document.getElementById('adminMenuCategory')?.value.trim()||'Other';
-            if(!name||!Number.isFinite(price)||price<=0){showCustomAlert('Enter item name and valid price.');return;}
-            try{const existing=menuData.find(m=>String(getVal(m,['name','itemname'])).toLowerCase()===name.toLowerCase());if(existing){showCustomAlert('Menu item already exists.');return;}const r=await d1Post('/menu',{name,category,price,is_available:true});menuData.push({id:Number(r.id||0),name,itemname:name,category,price,is_available:1});populateDropdown();auditLog('Menu Added',`${name} ₹${price}`);document.getElementById('adminMenuName').value='';document.getElementById('adminMenuPrice').value='';renderPremiumAdmin();showCustomAlert('Menu item added.');}catch(e){showCustomAlert('Menu save failed: '+e.message);}
-        }
-        function registerPOSUser(){
-            const mobile=document.getElementById('userMobile')?.value.trim(); const pass=document.getElementById('userPass')?.value.trim();
-            if(!/^\d{10}$/.test(mobile)||pass.length<4){showCustomAlert('Enter valid 10-digit mobile and minimum 4-character password.');return;}
-            userPermissions[mobile]={password:pass,role:document.getElementById('userRole').value,orders:document.getElementById('userAllowSales').checked,analytics:document.getElementById('userAllowAnalytics').checked,expenses:document.getElementById('userAllowExpenses').checked};
-            localStorage.setItem('viraasat_permissions',JSON.stringify(userPermissions)); auditLog('User Registered',mobile); renderPremiumAdmin(); showCustomAlert('POS user registered successfully.');
-        }
-
-        function normalizeWorkbookDate(value){
-            if(value instanceof Date && !isNaN(value.getTime())){
-                return `${value.getFullYear()}-${String(value.getMonth()+1).padStart(2,'0')}-${String(value.getDate()).padStart(2,'0')}`;
-            }
-            const s=String(value??'').trim();
-            if(!s)return '';
-            if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
-            const d=new Date(s);
-            if(!isNaN(d.getTime()))return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-            return s;
-        }
-
-        function normalizeWorkbookTime(value){
-            if(value instanceof Date && !isNaN(value.getTime())){
-                return value.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
-            }
-            if(typeof value==='number' && value>=0 && value<1){
-                const total=Math.round(value*24*60);let h=Math.floor(total/60)%24;const m=total%60;const ap=h>=12?'PM':'AM';let hh=h%12||12;return `${hh}:${String(m).padStart(2,'0')} ${ap}`;
-            }
-            return String(value??'').trim();
-        }
-
-        function workbookRows(wb,sheetName){
-            const ws=wb.Sheets[sheetName];
-            return ws?XLSX.utils.sheet_to_json(ws,{defval:'',raw:true}):[];
-        }
-
-        function normalizeImportSales(rows){
-            return rows.map(r=>({
-                date:normalizeWorkbookDate(r.Date??r.date),
-                time:normalizeWorkbookTime(r.Time??r.time),
-                order_id:String(r.Order_ID??r.order_id??r.Order_Number??r.order_number??'').trim(),
-                phone:String(r.Phone??r.phone??r.Customer_Phone??r.customer_phone??'NA').trim()||'NA',
-                items:String(r.Items??r.items??r.Items_String??r.items_string??''),
-                total_amount:parseAmount(r.Total_Amount??r.total_amount??r.Total??r.total),
-                table_number:String(r.Table_Number??r.table_number??r.Table??r.table??'').trim(),
-                discount:parseAmount(r.Discount??r.discount),
-                payment_method:String(r.Payment_Mode??r.payment_method??r.Mode??r.mode??'').trim()
-            })).filter(r=>r.order_id);
-        }
-
-        async function handleFullDatabaseImport(file){
-            if(!file)return;
-            if(typeof XLSX==='undefined'){showCustomAlert('Excel engine is not loaded. Refresh the POS and try again.');return;}
-            const status=document.getElementById('fullImportStatus');
-            if(status)status.innerHTML='Reading workbook...';
-            try{
-                const buf=await file.arrayBuffer();
-                const wb=XLSX.read(buf,{type:'array',cellDates:true});
-                const salesRows=workbookRows(wb,'Sales');
-                const menuRows=workbookRows(wb,'Menu');
-                const staffRows=workbookRows(wb,'Staff');
-                const stockRows=workbookRows(wb,'Stock');
-                const expenseRows=workbookRows(wb,'Expenses');
-                if(!salesRows.length && wb.SheetNames.length===1) salesRows.push(...workbookRows(wb,wb.SheetNames[0]));
-
-                let inserted={sales:0,menu:0,staff:0,stock:0,expenses:0};
-                if(status)status.innerHTML='Importing Menu...';
-                for(const r of menuRows){
-                    const name=String(getVal(r,['name','itemname','item'])||'').trim();
-                    const price=parseAmount(getVal(r,['price','rate','sellingprice']));
-                    if(!name||price<=0)continue;
-                    const createdMenu=await d1Post('/menu',{name,category:getVal(r,['category','cat'])||'Other',price,is_available:!['no','false','inactive','0'].includes(String(getVal(r,['active','status'])||'Yes').toLowerCase())});
-                    inserted.menu++;
-                }
-                const menuRefresh=await d1Get('/menu'); menuData=normalizeArray(menuRefresh,['items','menu','data','result']);
-                if(status)status.innerHTML='Importing Staff...';
-                for(const r of staffRows){
-                    const name=String(getVal(r,['name'])||'').trim();
-                    if(!name)continue;
-                    await d1Post('/staff',{name,mobile:getVal(r,['mobile','phone'])||'',role:getVal(r,['role'])||'Staff',salary:parseAmount(getVal(r,['monthly_salary','monthlysalary','salary'])),join_date:getVal(r,['date_of_joining','dateofjoining','joindate','date','doj'])||''});
-                    inserted.staff++;
-                }
-                if(status)status.innerHTML='Importing Stock...';
-                for(const r of stockRows){
-                    const name=String(getVal(r,['name','item','stockname'])||'').trim();
-                    if(!name)continue;
-                    await d1Post('/stock',{name,quantity:Number(getVal(r,['quantity','qty','stock']))||0,unit:getVal(r,['unit'])||'pcs',low_stock_level:Number(getVal(r,['low_stock_level','lowstocklevel']))||5});
-                    inserted.stock++;
-                }
-                if(status)status.innerHTML='Importing Expenses...';
-                for(const r of expenseRows){
-                    const amount=parseAmount(getVal(r,['amount','total']));
-                    if(amount<=0)continue;
-                    await d1Post('/expenses',{category:getVal(r,['category'])||'Other',amount,description:getVal(r,['description','note'])||'Imported'});
-                    inserted.expenses++;
-                }
-                if(status)status.innerHTML='Importing Sales...';
-                const existingOrderIds=new Set(salesHistory.map(s=>String(getVal(s,['orderid','order_number','id'])||'').trim()).filter(Boolean));
-                const importedOrderIds=new Set();
-                for(const r of salesRows){
-                    const order=normalizeImportSales([r])[0];
-                    if(!order)continue;
-                    const oid=String(order.order_id||'').trim();
-                    if(!oid || existingOrderIds.has(oid) || importedOrderIds.has(oid)) continue;
-
-                    let items=parseSaleItems({items: order.items});
-                    const prepared=[];
-                    for(const item of items){
-                        const copy={...item};
-                        copy.id=Number(copy.id||0);
-                        if(!copy.id){
-                            const found=menuData.find(m=>String(getVal(m,['itemname','name'])).trim().toLowerCase()===String(copy.name).trim().toLowerCase());
-                            if(found) copy.id=Number(getVal(found,['id','menu_item_id']))||0;
-                        }
-                        if(!copy.id){
-                            const made=await d1Post('/menu',{name:copy.name,category:'Imported',price:copy.price,is_available:true});
-                            copy.id=Number(made.id||0);
-                        }
-                        if(!copy.id) throw new Error(`Menu item ID missing for ${copy.name}`);
-                        prepared.push(copy);
-                    }
-                    try{
-                        await d1Post('/orders/checkout',{
-                            order_number:oid,
-                            order_type:order.table_number? 'Dine-in':'Takeaway',
-                            table_number:order.table_number.replace(/^Table\s+/i,'')||null,
-                            customer_phone:order.phone,items:prepared,items_string:order.items,
-                            subtotal:order.total_amount+order.discount,discount:order.discount,
-                            grand_total:order.total_amount,total:order.total_amount,
-                            payment_method:order.payment_method||'Cash',payment_status:'paid',
-                            order_status:'completed',
-                            created_at:new Date(`${order.date} ${order.time||'00:00'}`).toISOString()
-                        });
-                        inserted.sales++;
-                        importedOrderIds.add(oid);
-                    }catch(err){
-                        const msg=String(err?.message||err);
-                        if(/unique|order_number|constraint/i.test(msg)){
-                            console.warn('Skipped duplicate order during import:',oid);
-                            importedOrderIds.add(oid);
-                            continue;
-                        }
-                        throw err;
-                    }
-                }
-                if(status)status.innerHTML=`<b style="color:#10B981">Import complete.</b> Sales ${inserted.sales}, Menu ${inserted.menu}, Staff ${inserted.staff}, Stock ${inserted.stock}, Expenses ${inserted.expenses}.`;
-                await fetchData();
-                auditLog('Full Import', JSON.stringify(inserted)); showCustomAlert('Full database import completed successfully.');
-            }catch(e){
-                console.error('Full import error',e);
-                if(status)status.innerHTML=`<span style="color:var(--danger)">Import failed: ${esc(e.message||e)}</span>`;
-                showCustomAlert(`Import failed: ${e.message||e}`);
-            }
-        }
-
-        function downloadFullImportSample(){
-            if(typeof XLSX==='undefined'){showCustomAlert('Excel engine is not loaded. Refresh the POS and try again.');return;}
-            const wb=XLSX.utils.book_new();
-            const sales=[
-                {Date:'2026-08-14',Time:'1:20 PM',Order_ID:'ORD-EXAMPLE-001',Phone:'NA',Items:'Tea (x2) ₹40, Classic Mild (x1) ₹30, [Mode: UPI]',Total_Amount:70,Table_Number:'Table 1',Discount:0,Payment_Mode:'UPI'}
-            ];
-            const menu=[{Name:'Paneer Butter Masala',Category:'Main Course',Price:170,Active:'Yes',GST:0}];
-            const staff=[];
-            const stock=[{Name:'Water Bottle',Quantity:50,Unit:'pcs',Low_Stock_Level:5}];
-            const expenses=[{Date:'2026-08-14',Category:'Electricity',Description:'Sample expense',Amount:1000}];
-            [
-                ['Sales',sales],['Menu',menu],['Staff',staff],['Stock',stock],['Expenses',expenses]
-            ].forEach(([name,rows])=>XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),name));
-            XLSX.writeFile(wb,'Viraasat-Full-Database-Import-Sample.xlsx');
-        }
-
-        function exportFullDatabaseWorkbook(){
-            if(typeof XLSX==='undefined'){showCustomAlert('Excel engine is not loaded. Refresh the POS and try again.');return;}
-            const wb=XLSX.utils.book_new();
-            const sales=getFilteredPremiumSales().map(s=>({
-                Date:saleDateKey(s),Time:saleTimeText(s),Order_ID:getVal(s,['orderid','order_number','id']),Phone:getVal(s,['phone','customerphone'])||'NA',Items:getVal(s,['items_string','itemsstring','items']),Total_Amount:parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),Table_Number:getVal(s,['tablenumber','table','tablename','table_number']),Discount:parseAmount(getVal(s,['discount'])),Payment_Mode:getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))
-            }));
-            const menu=menuData.map(m=>({Name:getVal(m,['itemname','name']),Category:getVal(m,['category','cat']),Price:parseAmount(getVal(m,['price'])),Active:getVal(m,['active','status'])||'Yes',Stock:stockData[getVal(m,['itemname','name'])]??''}));
-            const staff=staffData.map(s=>({Emp_ID:getVal(s,['empid','employeeid']),Name:getVal(s,['name']),Role:getVal(s,['role']),Mobile:getVal(s,['mobile','phone']),Monthly_Salary:parseAmount(getVal(s,['monthlysalary','salary'])),Date_of_Joining:getVal(s,['dateofjoining','joindate','date','doj']),Status:getStaffStatus(s)}));
-            const stock=Object.entries(stockData).map(([Name,Quantity])=>({Name,Quantity,Unit:'pcs',Low_Stock_Level:5}));
-            const expenses=expenseHistory.map(e=>({Date:getVal(e,['date','isodate']),Category:getVal(e,['category']),Description:getVal(e,['description','note']),Amount:parseAmount(getVal(e,['amount','total']))}));
-            [['Sales',sales],['Menu',menu],['Staff',staff],['Stock',stock],['Expenses',expenses]].forEach(([name,rows])=>XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),name));
-            XLSX.writeFile(wb,'Viraasat-Full-Database-Export.xlsx');
-        }
-
-        function exportAllData(){exportPremiumSales();setTimeout(()=>exportItemSales(),250);setTimeout(()=>exportMenu(),500);setTimeout(()=>exportStaff(),750);setTimeout(()=>exportExpenses(),1000);}
-
-        function downloadCSV(rows,filename){
-            if(!rows||!rows.length){showCustomAlert('No data available to export.');return;}
-            const headers=Object.keys(rows[0]);const csv=[headers.join(','),...rows.map(r=>headers.map(h=>`"${String(r[h]??'').replace(/"/g,'""')}"`).join(','))].join('\r\n');
-            const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-        }
-
-        function generateTrends() {
-            try {
-                let totalSalesAmount = 0; let totalExpensesAmount = 0; let totalSalaryPaid = 0;
-                let d = new Date(); let todayIso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; let todayGb = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-                let revenueToday = 0; let ordersToday = 0; let expenseCategories = {}; let staffExpenseMap = {};
-                rawChartSalesData = {}; rawChartExpenseData = {};
-
-                salesHistory.forEach(sale => { 
-                    let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sDate = String(getVal(sale, ['date', 'isodate']) || '').trim();
-                    totalSalesAmount += sTotal; 
-                    if(sDate) {
-                        let isToday = false; let dateStrKey = sDate.split("T")[0].split(" ")[0]; 
-                        if (sDate.startsWith(todayIso) || sDate.includes(todayIso) || sDate.includes(todayGb)) { isToday = true; } else { let parsedDate = new Date(sDate); if (!isNaN(parsedDate.getTime())) { if (parsedDate.getDate() === d.getDate() && parsedDate.getMonth() === d.getMonth() && parsedDate.getFullYear() === d.getFullYear()) { isToday = true; } dateStrKey = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')}`; } }
-                        rawChartSalesData[dateStrKey] = (rawChartSalesData[dateStrKey] || 0) + sTotal; if (isToday) { revenueToday += sTotal; ordersToday++; }
-                    }
-                });
-                
-                expenseHistory.forEach(exp => { 
-                    let sAmount = parseAmount(getVal(exp, ['amount', 'total'])); let sDate = getVal(exp, ['expense_date', 'date', 'isodate', 'created_at']) || ''; let eCat = getVal(exp, ['category']) || 'Other'; let eDesc = getVal(exp, ['description', 'note']) || '';
-                    if(sDate) { 
-                        let dateStrKey = sDate.split("T")[0].split(" ")[0]; let parsedDate = new Date(sDate);
-                        if (!isNaN(parsedDate.getTime())) { dateStrKey = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}-${String(parsedDate.getDate()).padStart(2, '0')}`; }
-                        rawChartExpenseData[dateStrKey] = (rawChartExpenseData[dateStrKey] || 0) + sAmount; totalExpensesAmount += sAmount; 
-                        if(eCat === 'Staff Salary') { totalSalaryPaid += sAmount; let match = eDesc.match(/\[(.*?)\] (.*?) -/); let staffName = match ? match[2] : eDesc; staffExpenseMap[staffName] = (staffExpenseMap[staffName] || 0) + sAmount; } else { expenseCategories[eCat] = (expenseCategories[eCat] || 0) + sAmount; }
-                    }
-                });
-                
-                let netProfit = totalSalesAmount - totalExpensesAmount;
-                document.getElementById('kpiTotalSales').innerText = `₹ ${totalSalesAmount.toLocaleString('en-IN')}`; document.getElementById('kpiTotalExpenses').innerText = `₹ ${totalExpensesAmount.toLocaleString('en-IN')}`; document.getElementById('kpiNetProfit').innerText = `₹ ${netProfit.toLocaleString('en-IN')}`; document.getElementById('kpiTotalSalary').innerText = `₹ ${totalSalaryPaid.toLocaleString('en-IN')}`; document.getElementById('kpiTotalStaff').innerText = staffData.length;
-                
-                let breakdownHtml = ""; for(let cat in expenseCategories) { breakdownHtml += `<div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:6px;"><span>${cat}</span> <span style="font-weight:600; color:var(--danger);">- ₹${expenseCategories[cat].toLocaleString('en-IN')}</span></div>`; }
-                document.getElementById('expenseBreakdownList').innerHTML = breakdownHtml || "<span style='color:var(--text-muted);'>No other expenses logged.</span>";
-
-                let staffHtml = ""; for(let sName in staffExpenseMap) { staffHtml += `<div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:6px;"><span>👤 ${sName}</span> <span style="font-weight:600; color:var(--danger);">- ₹${staffExpenseMap[sName].toLocaleString('en-IN')}</span></div>`; }
-                document.getElementById('staffExpenseList').innerHTML = staffHtml || "<span style='color:var(--text-muted);'>No staff payments recorded.</span>";
-                const advanceEl=document.getElementById('staffAdvanceDetails'); if(advanceEl){ const staffRows=expenseHistory.filter(exp=>['Staff Salary','Payroll'].includes(String(getVal(exp,['category'])||''))).slice(0,30); advanceEl.innerHTML=staffRows.length?staffRows.map(exp=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:6px;gap:8px"><span>${esc(getVal(exp,['date','isodate'])||'')} • ${esc(getVal(exp,['description','note'])||'Staff')}</span><b>₹${parseAmount(getVal(exp,['amount','total'])).toLocaleString('en-IN')}</b></div>`).join(''):'<span style="color:var(--text-muted)">No staff advances or payroll entries.</span>'; }
-
-                let avgToday = ordersToday > 0 ? Math.floor(revenueToday / ordersToday) : 0;
-                let hasSalesAccess = true; if (typeof window.isUserAdmin !== 'undefined') { hasSalesAccess = window.isUserAdmin || (window.userPerms && window.userPerms.orders); }
-
-                if (hasSalesAccess) {
-                    document.getElementById('homeTodaySale').innerText = `₹${revenueToday.toLocaleString('en-IN')}`; document.getElementById('homeAvgOrder').innerText = `₹${avgToday.toLocaleString('en-IN')}`; document.getElementById('homeOverallSale').innerText = `₹${totalSalesAmount.toLocaleString('en-IN')}`; document.getElementById('homeTodaySale').style.fontSize = "1.35rem"; document.getElementById('homeAvgOrder').style.fontSize = "1.35rem"; document.getElementById('homeOverallSale').style.fontSize = "1.35rem";
-                } else {
-                    document.getElementById('homeTodaySale').innerText = "No Access"; document.getElementById('homeTodaySale').style.fontSize = "1.1rem"; document.getElementById('homeAvgOrder').innerText = "No Access"; document.getElementById('homeAvgOrder').style.fontSize = "1.1rem"; document.getElementById('homeOverallSale').innerText = "No Access"; document.getElementById('homeOverallSale').style.fontSize = "1.1rem";
-                }
-                renderPNLChart('daily');
-            } catch(e) { console.error("Trends Error", e); }
-        }
-
-        function renderPNLChart(viewType) {
-            document.querySelectorAll('.chart-filters .filter-btn').forEach(btn => btn.classList.remove('active'));
-            if(viewType === 'daily') document.getElementById('btnChartDOD').classList.add('active'); else if(viewType === 'weekly') document.getElementById('btnChartWeekly').classList.add('active'); else if(viewType === 'monthly') document.getElementById('btnChartMonthly').classList.add('active');
-
-            let aggSales = {}; let aggExp = {}; let allKeys = Array.from(new Set([...Object.keys(rawChartSalesData), ...Object.keys(rawChartExpenseData)])).sort();
-            allKeys.forEach(key => {
-                let dParts = key.split('-'); if(dParts.length !== 3) return; let dObj = new Date(dParts[0], dParts[1]-1, dParts[2]); let newKey = key;
-                if(viewType === 'monthly') { newKey = `${dParts[0]}-${dObj.toLocaleString('default', { month: 'short' })}`; } else if (viewType === 'weekly') { var start = new Date(dObj.getFullYear(), 0, 1); var days = Math.floor((dObj - start) / (24 * 60 * 60 * 1000)); var weekNumber = Math.ceil(days / 7); newKey = `${dParts[0]} - Wk ${weekNumber}`; }
-                aggSales[newKey] = (aggSales[newKey] || 0) + (rawChartSalesData[key] || 0); aggExp[newKey] = (aggExp[newKey] || 0) + (rawChartExpenseData[key] || 0);
-            });
-
-            let finalLabels = Array.from(new Set([...Object.keys(aggSales), ...Object.keys(aggExp)])).sort();
-            let finalSales = []; let finalExp = [];
-            finalLabels.forEach(lbl => { finalSales.push(aggSales[lbl] || 0); finalExp.push(aggExp[lbl] || 0); });
-
-            const canvas = document.getElementById('trendChart'); if(!canvas) return; const ctx = canvas.getContext('2d'); if(typeof Chart === 'undefined') return; if(trendChartInstance) trendChartInstance.destroy();
-            trendChartInstance = new Chart(ctx, { type: 'line', data: { labels: finalLabels, datasets: [ { label: 'Sales (₹)', data: finalSales, borderColor: '#07CDAE', backgroundColor: 'rgba(7, 205, 174, 0.15)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#07CDAE', pointRadius: 4 }, { label: 'Expenses (₹)', data: finalExp, borderColor: '#FF5F8E', backgroundColor: 'rgba(255, 95, 142, 0.12)', borderWidth: 3, tension: 0.4, fill: true, pointBackgroundColor: '#FF5F8E', pointRadius: 4 } ] }, options: { responsive: true, maintainAspectRatio: false } });
-        }
-
-        function populateDropdown() {
-            const datalist=document.getElementById('menuItemsList'); if(!datalist)return;
-            datalist.innerHTML='';
-            const seen=new Set();
-            menuData.forEach(item=>{
-                const itemName=String(getVal(item,['itemname','name'])||'').trim();
-                const key=itemName.toLowerCase();
-                if(!key||seen.has(key))return;
-                seen.add(key);
-                const option=document.createElement('option');
-                option.value=itemName;
-                datalist.appendChild(option);
-            });
-        }
-
-        function renderStockDashboard() { 
-            let stockDiv = document.getElementById('dashboardStockList'); if(!stockDiv) return; stockDiv.innerHTML = ""; let keys = Object.keys(stockData); 
-            if(keys.length === 0) { stockDiv.innerHTML = "<p style='color:var(--text-muted); font-size:0.85rem;'>No stock tracked.</p>"; return; } 
-            keys.forEach(key => { let qty = parseInt(stockData[key]); let tagClass = qty <= 5 ? 'stock-tag low' : 'stock-tag'; stockDiv.innerHTML += `<div class="${tagClass}">${key}: <span>${qty}</span></div>`; }); 
-        }
-
-        function checkStockDisplay() { 
-            const itemInput=document.getElementById('itemInput'), statusDiv=document.getElementById('stockStatus'); if(!itemInput||!statusDiv)return; let itemName = itemInput.value; let foundStockKey = Object.keys(stockData).find(key => key.trim().toLowerCase() === itemName.trim().toLowerCase()); 
-            if(foundStockKey !== undefined) { let currentQty = parseInt(stockData[foundStockKey]); statusDiv.style.color = ""; statusDiv.style.backgroundColor = ""; statusDiv.style.border = ""; statusDiv.className = currentQty > 5 ? "stock-tag" : "stock-tag low"; statusDiv.innerHTML = currentQty > 5 ? `Available: <span>${currentQty}</span>` : `Low Stock: <span>${currentQty}</span>`; statusDiv.style.display = "inline-flex"; statusDiv.style.marginTop = "8px"; } else { statusDiv.style.display = "none"; statusDiv.innerHTML = ""; } 
-        }
-
-        function cleanDisplayDate(dStr) { 
-            if (!dStr) return ""; try { let d = new Date(dStr); if (isNaN(d.getTime())) return dStr.split(" ")[0]; return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); } catch(e) { return dStr; } 
-        }
-
-        function cleanDisplayTime(tStr) { 
-            if (!tStr) return ""; try { let d = new Date(tStr); if (!isNaN(d.getTime())) return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); return tStr; } catch(e) { return tStr; } 
-        }
-
-        function renderLiveSales(){
-            const salesGrid=document.getElementById('salesGrid'),homeRecent=document.getElementById('homeRecentOrders');
-            if(!salesGrid)return;
-            salesGrid.innerHTML='';if(homeRecent)homeRecent.innerHTML='';
-            const startDate=document.getElementById('filterStartDate')?.value||'',endDate=document.getElementById('filterEndDate')?.value||'';
-            const filtered=salesHistory.filter(s=>{const d=saleDateKey(s);return(!startDate||d>=startDate)&&(!endDate||d<=endDate);})
-                .slice().sort((a,b)=>new Date(getVal(b,['date','isodate','created_at']))-new Date(getVal(a,['date','isodate','created_at'])));
-            const total=filtered.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);
-            const box=document.getElementById('totalSalesBox');if(box)box.innerText=`Total Sales: ₹ ${total.toLocaleString('en-IN')}`;
-            if(!filtered.length){salesGrid.innerHTML='<div class="premium-empty">No orders found.</div>';return;}
-            filtered.forEach(s=>{
-                const id=getVal(s,['orderid','order_number','id'])||'N/A';
-                const table=getVal(s,['tablenumber','table','tablename','table_number'])||'Takeaway';
-                const grand=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));
-                const items=parseSaleItems(s).map(it=>`${it.name} (x${it.qty})`).join(', ');
-                const time=cleanDisplayTime(getVal(s,['date','isodate','created_at'])||getVal(s,['time'])||saleTimeText(s));
-                salesGrid.innerHTML+=`<div class="admin-order-card" onclick="openOrderDetails('${esc(id)}')"><div class="admin-order-title">${esc(table)}</div><div class="admin-order-id">#${esc(id)}</div><div class="admin-order-items">${esc(items||'No item details')}</div><div class="admin-order-bottom"><span class="admin-order-time">${esc(time)}</span><span class="admin-order-total">${money(grand)}</span></div></div>`;
-            });
-            if(homeRecent)filtered.slice(0,5).forEach(s=>{
-                const id=getVal(s,['orderid','order_number','id'])||'N/A',table=getVal(s,['tablenumber','table','tablename','table_number'])||'Order',grand=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));
-                homeRecent.innerHTML+=`<div class="h-order-card" onclick="openOrderDetails('${esc(id)}')"><div class="ho-icon">🍽️</div><div class="ho-info"><div class="ho-title">Order #${esc(id)}</div><div class="ho-sub">${esc(table)} • ${esc(saleDateKey(s))} • ${esc(saleTimeText(s))}</div></div><div class="ho-badge" style="background:#E6F4EA;color:#10B981">COMPLETED</div><div style="font-weight:800;color:#F97316">${money(grand)}</div><div>›</div></div>`;
-            });
-        }
-
-        function renderTableGrid() {
-            const gridContainer = document.getElementById('tableGrid'); gridContainer.innerHTML = ""; let activeCount = 0; let totalCount = 0;
-            tableSections.forEach((section) => {
-                gridContainer.innerHTML += `<div class="section-header"><h4>${section.title}</h4></div>`; let gridHTML = '<div class="table-grid" style="margin-bottom:24px;">'; 
-                section.tables.forEach(i => { 
-                    let tName = "Table " + i; let isOccupied = runningTables.hasOwnProperty(tName) && runningTables[tName] && runningTables[tName].length > 0;
-                    if(isOccupied) activeCount++; totalCount++;
-                    let statusStr = isOccupied ? "OCCUPIED" : "AVAILABLE"; let statusCls = isOccupied ? "status-occ" : "status-avail"; let cardCls = isOccupied ? "table-card occupied" : "table-card";
-                    gridHTML += `<div class="${cardCls}" onclick="openTable('${i}')" style="width:100%; min-width:auto; padding:20px 10px;"><div class="tc-name">Table ${i}</div><div class="tc-status ${statusCls}">${statusStr}</div><div class="tc-sub">Dining Area</div></div>`;
-                }); 
-                gridContainer.innerHTML += gridHTML + '</div>';
-            });
-            
-            document.getElementById('homeActiveTables').innerText = `${activeCount} / ${totalCount}`;
-            let tkOccupied = runningTables.hasOwnProperty("Takeaway") && runningTables["Takeaway"] && runningTables["Takeaway"].length > 0; document.getElementById('cardTakeaway').className = tkOccupied ? "quick-card occupied" : "quick-card";
-            let delOccupied = runningTables.hasOwnProperty("Home Delivery") && runningTables["Home Delivery"] && runningTables["Home Delivery"].length > 0; document.getElementById('cardDelivery').className = delOccupied ? "quick-card occupied" : "quick-card";
-        }
-
-        function showAddTableModal() { 
-            let sel = document.getElementById('newTableCategory'); sel.innerHTML = ""; tableSections.forEach((sec, idx) => { sel.innerHTML += `<option value="${idx}">${sec.title}</option>`; }); document.getElementById('newTableNumber').value = ""; document.getElementById('addTableModal').style.display = 'flex'; 
-        }
-
-        function confirmAddTable() { 
-            let catIdx = document.getElementById('newTableCategory').value; let tNum = document.getElementById('newTableNumber').value.trim(); 
-            if(!tNum) { showCustomAlert("Please enter a table number."); return; } 
-            let isDuplicate = false; tableSections.forEach(sec => { if(sec.tables.includes(tNum)) isDuplicate = true; }); 
-            if(isDuplicate) { showCustomAlert("Table " + tNum + " already exists!"); return; } 
-            tableSections[catIdx].tables.push(tNum); localStorage.setItem('viraasat_table_sections', JSON.stringify(tableSections)); document.getElementById('addTableModal').style.display = 'none'; renderTableGrid(); 
-        }
-
-        function switchMainTab(tabName, btnElement, skipHistory = false) {
-            let htmlMap = { 'premiumDashboard': `Admin View`, 'tableDashboard': `POS Tables`, 'salesDashboard': `Live sale`, 'trendView': `P&L Dashboard`, 'expenses': `Expenses`, 'premiumDashboard': `Admin View` };
-            if(!skipHistory) { try { history.pushState({view: tabName}, '', '#' + tabName); } catch(e){} }
-            
-            document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display = 'none'; tab.classList.remove('active'); });
-            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active')); 
-            
-            if(btnElement) btnElement.classList.add('active');
-            if(tabName === 'tableDashboard' || tabName === 'premiumDashboard') { document.getElementById('appHeader').style.display = 'flex'; } else { document.getElementById('appHeader').style.display = 'none'; }
-            
-            document.getElementById(tabName).style.display = 'block'; setTimeout(() => document.getElementById(tabName).classList.add('active'), 10);
-            document.getElementById('appBottomNav').style.display = 'flex';
-            
-            let tickerEl = document.getElementById('pageMainTitle');
-            if(tickerEl) {
-                if(tabName === 'tableDashboard') {
-                    tickerEl.style.color = 'var(--text-dark)';
-                    tickerEl.style.fontFamily = "'Playfair Display', serif";
-                    tickerEl.style.fontStyle = 'italic';
-                    tickerEl.style.fontWeight = '700';
-                    tickerEl.innerText = royalTaglines[tickerIndex];
-                } else {
-                    tickerEl.style.color = 'var(--text-muted)';
-                    tickerEl.style.fontFamily = "inherit";
-                    tickerEl.style.fontStyle = 'normal';
-                    tickerEl.style.fontWeight = '500';
-                    tickerEl.innerText = htmlMap[tabName];
-                }
-            }
-
-            if(tabName === 'trendView') setTimeout(generateTrends, 100); if(tabName === 'premiumDashboard') setTimeout(renderPremiumDashboard, 50);
-        }
-
-        function openTable(num) {
-            try { history.pushState({view: 'billing'}, '', '#billing'); } catch(e){}
-            activeTableNumber = (num === 'Takeaway' || num === 'Home Delivery') ? num : "Table " + num;
-            document.getElementById('billingTitle').innerText = activeTableNumber;
-            if(num === 'Home Delivery') { document.getElementById('deliveryAddressBox').style.display = 'flex'; } else { document.getElementById('deliveryAddressBox').style.display = 'none'; }
-            
-            currentBill = (runningTables[activeTableNumber] && Array.isArray(runningTables[activeTableNumber])) ? JSON.parse(JSON.stringify(runningTables[activeTableNumber])) : [];
-            document.getElementById('discountValue').value = 0; document.getElementById('customerPhone').value = ""; document.getElementById('deliveryAddress').value = ""; document.getElementById('stockStatus').style.display = "none"; 
-            
-            updateBillTable();
-            document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display = 'none'; tab.classList.remove('active'); });
-            document.getElementById('appHeader').style.display = 'none';
-            document.getElementById('billingView').style.display = 'block'; setTimeout(() => document.getElementById('billingView').classList.add('active'), 10);
-            document.getElementById('appBottomNav').style.display = 'none';
-        }
-
-        function goBackToTables(skipHistory = false) {
-            if(!skipHistory) { try { history.pushState({view: 'tableDashboard'}, '', '#home'); } catch(e){} }
-            document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display = 'none'; tab.classList.remove('active'); });
-            document.getElementById('appHeader').style.display = 'flex';
-            document.getElementById('tableDashboard').style.display = 'block'; setTimeout(() => document.getElementById('tableDashboard').classList.add('active'), 10);
-            document.getElementById('appBottomNav').style.display = 'flex'; renderTableGrid(); 
-        }
-
-        function haptic(ms=12){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
-        document.addEventListener('click',e=>{const el=e.target.closest('button,[role="button"],.quick-card,.table-card,.premium-tab,.h-order-card,.stock-box'); if(el)haptic(10);},{passive:true});
-
-        function addToBill() {
-            let itemName = document.getElementById('itemInput').value; let qty = parseInt(document.getElementById('itemQty').value) || 1;
-            if (!itemName) { showCustomAlert("Please select an item!"); return; }
-            let selectedItem = menuData.find(i => getVal(i, ['itemname', 'name']).trim().toLowerCase() === itemName.trim().toLowerCase());
-            if (!selectedItem) { showCustomAlert("Item not in menu. Use Custom Item box."); return; }
-            let itemPrice = parseInt(getVal(selectedItem, ['price'])); let existingItem = currentBill.find(i => i.name === getVal(selectedItem, ['itemname', 'name']));
-            if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ id:Number(getVal(selectedItem,['id','menu_item_id']))||null, menu_item_id:Number(getVal(selectedItem,['id','menu_item_id']))||null, name: getVal(selectedItem, ['itemname', 'name']), price: itemPrice, qty: qty, total: itemPrice * qty }); }
-            updateBillTable();
-        }
-
-        function addCustomItem() {
-            let name = document.getElementById('customName').value; let price = parseInt(document.getElementById('customPrice').value); let qty = parseInt(document.getElementById('customQty').value) || 1;
-            if (!name || !price || price <= 0) { showCustomAlert("Enter valid custom item."); return; }
-            let existingItem = currentBill.find(i => i.name === name + " (Custom)");
-            if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ name: name + " (Custom)", price: price, qty: qty, total: price * qty }); }
-            updateBillTable(); document.getElementById('customName').value = ""; document.getElementById('customPrice').value = ""; document.getElementById('customQty').value = 1;
-        }
-
-        function changeQty(index, amount) { currentBill[index].qty += amount; if(currentBill[index].qty <= 0) { currentBill.splice(index, 1); } else { currentBill[index].total = currentBill[index].price * currentBill[index].qty; } updateBillTable(); }
-
-        function updateBillTable() {
-            let tbody = document.getElementById('billTableBody'); tbody.innerHTML = ""; let subTotal = 0;
-            currentBill.forEach((item, index) => {
-                subTotal += (item.total || 0);
-                tbody.innerHTML += `<div class="cart-card" style="padding: 10px 12px; gap: 4px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); display: flex; align-items: center; justify-content: space-between;"><div style="display:flex; flex-direction:column; flex:1;"><div style="font-weight: 600; font-size: 0.9rem; color: var(--text-dark);">${item.name}</div><div style="font-size: 0.8rem; color: var(--text-muted);">₹${item.price}</div></div><div style="display: flex; align-items: center; gap: 10px;"><div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-color);"><button onclick="changeQty(${index}, -1)" style="width: 28px; height: 28px; background: transparent; border: none; font-weight: 600; font-size: 1.2rem; cursor: pointer; color: var(--text-dark);">−</button><span style="width: 28px; text-align: center; font-weight: 600; font-size: 0.9rem; border-left: 1px solid var(--border); border-right: 1px solid var(--border); line-height: 28px;">${item.qty}</span><button onclick="changeQty(${index}, 1)" style="width: 28px; height: 28px; background: transparent; border: none; font-weight: 600; font-size: 1.2rem; cursor: pointer; color: var(--text-dark);">+</button></div><div style="font-weight: 700; font-size: 0.95rem; color: var(--text-dark); min-width: 45px; text-align: right;">₹${item.total}</div><button onclick="removeItem(${index})" style="background: transparent; border: none; color: var(--danger); cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button></div></div>`;
-            });
-            document.getElementById('subTotal').innerText = `₹ ${subTotal}`; let discount = parseInt(document.getElementById('discountValue').value) || 0;
-            document.getElementById('grandTotal').innerText = (subTotal - discount) > 0 ? `₹ ${subTotal - discount}` : "₹ 0";
-            document.getElementById('itemInput').value = ""; document.getElementById('itemQty').value = 1; document.getElementById('stockStatus').style.display = "none";
-        }
-
-        function removeItem(index) { currentBill.splice(index, 1); updateBillTable(); }
-
-        function clearTableWithoutCheckout() {
-            showCustomConfirm(`Are you sure you want to clear ${activeTableNumber}?`, async()=>{
-                try{
-                    const tableNumber=activeTableNumber.replace(/^Table\s+/,'');
-                    if(/^\d+$/.test(tableNumber)) await d1Post('/tables/clear',{table_number:tableNumber});
-                    delete runningTables[activeTableNumber]; currentBill=[]; goBackToTables();
-                }catch(e){showCustomAlert('Could not clear table: '+e.message);}
-            },null);
-        }
-
-        function orderContext(){
-            const isDining=/^Table\s+/.test(activeTableNumber);
-            return {
-                table_number:isDining?activeTableNumber.replace(/^Table\s+/,''):null,
-                order_type:isDining?'Dine-in':(activeTableNumber==='Home Delivery'?'Delivery':'Takeaway')
-            };
-        }
-
-        async function ensureMenuItemId(item){
-            if(item && (item.id || item.menu_item_id)) return item.id || item.menu_item_id;
-            const name=String(item?.name||'').trim();
-            if(!name) throw new Error('Item name is missing.');
-            const existing=menuData.find(m=>String(getVal(m,['id','menu_item_id'])||'') && String(getVal(m,['itemname','name'])).trim().toLowerCase()===name.toLowerCase());
-            if(existing){ const id=Number(getVal(existing,['id','menu_item_id'])); if(id) return id; }
-            const created=await d1Post('/menu',{name,category:'Custom',price:Number(item.price)||0,is_available:true});
-            const id=Number(created.id||created.menu_item_id||0);
-            if(!id) throw new Error(`Could not create menu reference for ${name}`);
-            menuData.push({id,name,itemname:name,category:'Custom',price:Number(item.price)||0,is_available:1});
-            populateDropdown();
-            return id;
-        }
-
-        async function prepareOrderItems(){
-            const prepared=[];
-            for(const item of currentBill){
-                const copy={...item};
-                copy.id=Number(copy.id||copy.menu_item_id||await ensureMenuItemId(copy));
-                if(!copy.id) throw new Error(`Menu item ID missing for ${copy.name}`);
-                copy.qty=Number(copy.qty)||1;
-                copy.price=Number(copy.price)||0;
-                copy.total=Number(copy.total)||copy.price*copy.qty;
-                prepared.push(copy);
-            }
-            return prepared;
-        }
-
-        async function saveKOT() {
-            if (currentBill.length === 0) { showCustomAlert('Cart is empty!'); return; }
-            const btn=document.getElementById('btnKOT'); btn.innerText='Saving...'; btn.disabled=true;
-            try{
-                const subtotal=currentBill.reduce((a,i)=>a+Number(i.total||0),0);
-                const ctx=orderContext();
-                const orderNumber='KOT-'+Date.now();
-                const preparedItems=await prepareOrderItems(); const data=await d1Post('/orders',{order_number:orderNumber,...ctx,items:preparedItems,items_string:preparedItems.map(i=>`${i.name} (x${i.qty}) ₹${i.total}`).join(', '),subtotal,discount:0,grand_total:subtotal,total:subtotal,payment_method:'Cash',payment_status:'unpaid',order_status:'cancelled'});
-                runningTables[activeTableNumber]=preparedItems;
-                auditLog('KOT Saved', orderNumber);
-                btn.innerText='Save KOT'; btn.disabled=false; goBackToTables();
-            }catch(e){
-                btn.innerText='Save KOT'; btn.disabled=false; showCustomAlert('KOT save failed: '+e.message);
-            }
-        }
-
-        function openPaymentModal() { if (currentBill.length === 0) return; document.getElementById('paymentModal').style.display='flex'; }
-        function selectPaymentMode(mode) { selectedPaymentMode=mode; document.querySelectorAll('.pay-btn').forEach(btn=>btn.classList.remove('selected')); const el=document.getElementById('pay'+mode); if(el)el.classList.add('selected'); }
-
-        async function processFinalCheckout() {
-            const btn=document.getElementById('btnFinalCheckout'); btn.innerText='Processing...'; btn.disabled=true;
-            try{
-                const phone=document.getElementById('customerPhone').value||'NA';
-                const address=document.getElementById('deliveryAddressBox').style.display==='flex'?document.getElementById('deliveryAddress').value:'';
-                const orderId='ORD'+Date.now();
-                const discount=Math.max(0,parseInt(document.getElementById('discountValue').value)||0);
-                const subtotal=currentBill.reduce((a,i)=>a+Number(i.total||0),0);
-                const grandTotal=Math.max(0,subtotal-discount);
-                const preparedItems=await prepareOrderItems();
-                const itemsString=preparedItems.map(i=>`${i.name} (x${i.qty}) ₹${i.total}`).join(', ');
-                const ctx=orderContext();
-                const data=await d1Post('/orders/checkout',{order_number:orderId,...ctx,customer_phone:phone,items:preparedItems,items_string:itemsString,subtotal,discount,grand_total:grandTotal,total:grandTotal,payment_method:selectedPaymentMode,payment_status:'paid',order_status:'completed',delivery_address:address});
-                auditLog('Checkout', orderId);
-                delete runningTables[activeTableNumber];
-                currentBill.forEach(item=>{const key=Object.keys(stockData).find(k=>k.trim().toLowerCase()===item.name.trim().toLowerCase());if(key!==undefined)stockData[key]=Math.max(0,Number(stockData[key])-Number(item.qty||0));});
-                const now=new Date();
-                salesHistory.unshift({date:now.toISOString(),isodate:now.toISOString(),time:now.toISOString(),orderid:orderId,items:itemsString,total:grandTotal,table:activeTableNumber,tablenumber:activeTableNumber,phone:phone,payment_method:selectedPaymentMode,order_status:'completed'});
-                btn.innerText='Confirm Checkout';btn.disabled=false;document.getElementById('paymentModal').style.display='none';generateTrends();goBackToTables();
-                showCustomAlert('Checkout completed successfully.');
-            }catch(e){btn.innerText='Confirm Checkout';btn.disabled=false;showCustomAlert('Checkout failed: '+e.message);}
-        }
-
-        let expenseReceiptBase64='';
-        function previewExpenseReceipt(input){const file=input?.files?.[0],box=document.getElementById('expReceiptPreview');if(!box)return;if(!file){clearExpenseReceipt();return;}if(file.size>2*1024*1024){showCustomAlert('Receipt image should be under 2 MB.');input.value='';return;}const r=new FileReader();r.onload=()=>{expenseReceiptBase64=String(r.result||'');box.style.display='block';box.innerHTML=`<img src="${expenseReceiptBase64}" style="max-width:120px;max-height:120px;border:1px solid var(--border);border-radius:8px;display:block"><button class="premium-btn light" style="margin-top:6px" onclick="clearExpenseReceipt()">Remove Image</button>`;};r.readAsDataURL(file);}
-        function clearExpenseReceipt(){expenseReceiptBase64='';const i=document.getElementById('expReceipt');if(i)i.value='';const b=document.getElementById('expReceiptPreview');if(b){b.style.display='none';b.innerHTML='';}}
-        async function submitExpense(){const category=document.getElementById('expCategory').value,amount=Number(document.getElementById('expAmount').value)||0;if(amount<=0){showCustomAlert('Enter valid amount.');return;}try{const description=document.getElementById('expDescription').value||'NA',expenseDate=document.getElementById('expDate').value||localISODate(new Date());await d1Post('/expenses',{category,amount,description,expense_date:expenseDate,receipt_image:expenseReceiptBase64||''});expenseHistory.unshift({date:expenseDate,isodate:expenseDate,expense_date:expenseDate,amount,category,description,receipt_image:expenseReceiptBase64||''});auditLog('Expense Added',`${category} ₹${amount}`);document.getElementById('expAmount').value='';document.getElementById('expDescription').value='';clearExpenseReceipt();document.getElementById('expDate').value=localISODate(new Date());generateTrends();renderPremiumExpenses();renderExpenseHistoryList();showCustomAlert('Expense Saved!');}catch(e){showCustomAlert('Expense save failed: '+e.message);}}
-        function expenseDateKey(e){return localISODate(getVal(e,['expense_date','date','isodate','created_at']));}
-        function setExpenseQuickFilter(type){const today=localISODate(new Date()),from=document.getElementById('expFilterFrom'),to=document.getElementById('expFilterTo');['expFilterToday','expFilterYesterday','expFilter15','expFilter30','expFilterAll'].forEach(id=>document.getElementById(id)?.classList.remove('active'));const map={today:'expFilterToday',yesterday:'expFilterYesterday','15':'expFilter15','30':'expFilter30',all:'expFilterAll'};document.getElementById(map[type])?.classList.add('active');if(type==='today'){from.value=today;to.value=today;}else if(type==='yesterday'){const d=new Date();d.setDate(d.getDate()-1);from.value=localISODate(d);to.value=localISODate(d);}else if(type==='15'){const d=new Date();d.setDate(d.getDate()-14);from.value=localISODate(d);to.value=today;}else if(type==='30'){const d=new Date();d.setMonth(d.getMonth()-1);from.value=localISODate(d);to.value=today;}else{from.value='';to.value='';}renderExpenseHistoryList();}
-        function renderExpenseHistoryList(){const el=document.getElementById('expenseHistoryList');if(!el)return;const from=document.getElementById('expFilterFrom')?.value||'',to=document.getElementById('expFilterTo')?.value||'';const rows=expenseHistory.filter(e=>{const d=expenseDateKey(e);return(!from||d>=from)&&(!to||d<=to);}).sort((a,b)=>expenseTimestamp(b)-expenseTimestamp(a));const total=rows.reduce((a,e)=>a+parseAmount(getVal(e,['amount','total'])),0);const count=document.getElementById('expenseListCount');if(count)count.innerText=`${rows.length} entries • ₹${total.toLocaleString('en-IN')}`;el.innerHTML=rows.length?rows.map(e=>{const receipt=getVal(e,['receipt_image']);const eid=getVal(e,['id'])||`${expenseDateKey(e)}-${getVal(e,['category'])}-${getVal(e,['amount'])}`;return `<div class="card expense-click-card" style="padding:12px;margin-bottom:8px" onclick="openExpenseDetails('${esc(eid)}')"><div style="display:flex;justify-content:space-between;gap:10px"><div><b>${esc(getVal(e,['category'])||'Other')}</b><div style="font-size:.72rem;color:var(--text-muted)">${esc(expenseDateKey(e))} • ${esc(expenseTimeText(e))}</div></div><strong style="color:var(--danger)">- ${money(getVal(e,['amount','total']))}</strong></div>${getVal(e,['description','note'])?`<div style="font-size:.72rem;color:var(--text-muted);margin-top:7px">${esc(getVal(e,['description','note']))}</div>`:''}${receipt?`<div style="margin-top:8px"><span style="font-size:.68rem;color:var(--text-muted)">Receipt attached</span></div>`:''}</div>`}).join(''):'<div class="premium-empty">No expenses for the selected period.</div>';}
-        function expenseTimestamp(e){const raw=getVal(e,['created_at','updated_at','expense_date','date','isodate'])||'';const dt=new Date(raw);return isNaN(dt.getTime())?0:dt.getTime();}
-        function expenseTimeText(e){return formatTime12(getVal(e,['created_at','updated_at'])||'');}
-        function openExpenseDetails(id){const e=(expenseHistory||[]).find(x=>String(getVal(x,['id'])||`${expenseDateKey(x)}-${getVal(x,['category'])}-${getVal(x,['amount'])}`)===String(id));if(!e)return;const body=document.getElementById('expenseDetailsBody');if(!body)return;const receipt=getVal(e,['receipt_image']);body.innerHTML=`<div class="expense-detail-row"><span class="expense-detail-label">Category</span><span class="expense-detail-value">${esc(getVal(e,['category'])||'Other')}</span></div><div class="expense-detail-row"><span class="expense-detail-label">Amount</span><span class="expense-detail-value" style="color:var(--danger)">- ${money(getVal(e,['amount','total']))}</span></div><div class="expense-detail-row"><span class="expense-detail-label">Date</span><span class="expense-detail-value">${esc(expenseDateKey(e))}</span></div><div class="expense-detail-row"><span class="expense-detail-label">Time</span><span class="expense-detail-value">${esc(expenseTimeText(e)||'—')}</span></div><div class="expense-detail-row"><span class="expense-detail-label">Description</span><span class="expense-detail-value">${esc(getVal(e,['description','note'])||'—')}</span></div>${receipt?`<div style="margin-top:14px"><img src="${esc(receipt)}" style="max-width:100%;max-height:260px;object-fit:contain;border:1px solid var(--border);border-radius:10px"></div>`:''}`;document.getElementById('expenseDetailsModal').style.display='flex';}
-
-        function setActiveFilterBtn(id) { ['btnFilterToday','btnFilterYesterday','btnFilterClear'].forEach(x=>{const b=document.getElementById(x);if(b)b.classList.remove('active');}); if(id){const b=document.getElementById(id);if(b)b.classList.add('active');} }
-        function setTodayFilter() { setActiveFilterBtn('btnFilterToday'); let now = new Date(); let todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`; document.getElementById('filterStartDate').value = todayStr; document.getElementById('filterEndDate').value = todayStr; renderLiveSales(); }
-        function setYesterdayFilter() { setActiveFilterBtn('btnFilterYesterday'); let yest = new Date(); yest.setDate(yest.getDate() - 1); let yestStr = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, '0')}-${String(yest.getDate()).padStart(2, '0')}`; document.getElementById('filterStartDate').value = yestStr; document.getElementById('filterEndDate').value = yestStr; renderLiveSales(); }
-        function resetDateFilter() { setActiveFilterBtn('btnFilterClear'); document.getElementById('filterStartDate').value = ""; document.getElementById('filterEndDate').value = ""; renderLiveSales(); }
-
-        function openOrderDetails(orderId){
-            const sale=salesHistory.find(s=>String(getVal(s,['orderid','order_number','id'])).trim()===String(orderId).trim());
-            if(!sale)return; currentViewingSale=sale;
-            const sTable=getVal(sale,['tablenumber','table','tablename','table_number'])||'Order';
-            const sDate=getVal(sale,['date','isodate','created_at'])||'';
-            const sTime=getVal(sale,['time','created_at'])||'';
-            const sTotal=parseAmount(getVal(sale,['grand_total','totalamount','total','amount']));
-            const sPhone=getVal(sale,['phone','customerphone','customer_phone'])||'';
-            const parsed=parseSaleItems(sale);
-            document.getElementById('modalOrderMeta').innerHTML=`<b>Table:</b> ${esc(sTable)}<br><b>ID:</b> #${esc(orderId)}<br><b>Time:</b> ${esc(cleanDisplayDate(sDate))} • ${esc(cleanDisplayTime(sTime))}<br><b>Payment:</b> ${esc(getVal(sale,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(sale,['items_string','itemsstring','items']))||'—')}`;
-            let html=`<div class="historical-items-box"><div class="historical-items-title">Items & Charges</div>`;
-            html+=parsed.length?parsed.map(it=>`<div class="historical-item-row"><div class="historical-item-name">${esc(it.name)}</div><div class="historical-item-qty">×${it.qty} @ ${money(it.price)}</div><div class="historical-item-total">${money(it.amount)}</div></div>`).join(''):`<div class="premium-empty" style="padding:10px 0">No item details were stored for this order.</div>`;
-            const disc=parseAmount(getVal(sale,['discount']));
-            if(disc>0)html+=`<div class="historical-item-row"><div class="historical-item-name">Discount</div><div></div><div class="historical-item-total">- ${money(disc)}</div></div>`;
-            html+='</div>';
-            document.getElementById('modalOrderItems').innerHTML=html;
-            document.getElementById('modalOrderTotal').innerText=`₹ ${sTotal}`;
-            document.getElementById('modalCustomerPhone').value=(sPhone&&sPhone!=='NA')?sPhone:'';
-            document.getElementById('orderDetailsModal').style.display='flex';
-        }
-
-        // --- DIRECT PRINT / WHATSAPP COMMANDS (CRASH-PROOF) ---
-        function printBill(type) {
-            try {
-                if (currentBill.length === 0) { showCustomAlert("Cart is empty! Nothing to print."); return; }
-                let printSec = document.getElementById('printSection'); let d = new Date(); let dStr = d.toLocaleDateString('en-IN') + ' ' + d.toLocaleTimeString('en-IN');
-                
-                if(type === 'kot') {
-                    let itemsHtml = currentBill.map(i => `<div style="font-size:1.1rem; font-weight:bold; margin-bottom:5px; border-bottom:1px dashed #ccc; padding-bottom:5px;">[ ${i.qty} ] x ${i.name}</div>`).join("");
-                    printSec.innerHTML = `<div style="text-align:center; margin-bottom:10px;"><h2 style="margin:0; font-size:1.5rem;">K.O.T</h2><h3 style="margin:5px 0;">Table: ${activeTableNumber}</h3><p style="margin:0; font-size:0.8rem;">Date: ${dStr}</p></div><div style="border-top:2px dashed #000; padding-top:10px;">${itemsHtml}</div>`;
-                } else {
-                    let discountEl = document.getElementById('discountValue'); let discount = discountEl ? (parseInt(discountEl.value) || 0) : 0; 
-                    let grandTotalEl = document.getElementById('grandTotal'); let grandTotal = grandTotalEl ? (parseInt(grandTotalEl.innerText.replace(/[^0-9]/g, '')) || 0) : 0;
-                    let addBox = document.getElementById('deliveryAddressBox'); let addInput = document.getElementById('deliveryAddress'); let addStr = (addBox && addBox.style.display === 'flex' && addInput) ? addInput.value : "";
-                    
-                    let itemsHtml = currentBill.map(i => `<tr><td class="col-item" style="text-align: left; width: 50%;">${i.name}</td><td class="col-price" style="text-align: center; width: 15%;">${i.price}</td><td class="col-qty" style="text-align: center; width: 15%;">${i.qty}</td><td class="col-amt" style="text-align: right; width: 20%;">${i.total}</td></tr>`).join("");
-                    
-                    printSec.innerHTML = `<div style="text-align: center; margin-bottom: 10px;"><h2 style="font-size: 1.2rem; margin: 0; padding: 0; font-weight: bold;">VIRAASAT UDAIPUR</h2><p style="font-size: 0.8rem; margin: 2px 0;">A Taste Of Royal Mewar</p><p style="font-size: 0.8rem; margin: 2px 0;">Contact: +91 7852041644</p><p style="font-size: 0.8rem; margin: 2px 0;">Udaipur, Rajasthan</p></div><div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; margin-bottom: 10px; font-size: 0.85rem;"><div style="display: flex; justify-content: space-between;"><span>Invoice No: INV-${Math.floor(Math.random() * 9000 + 1000)}</span> <span>${d.toLocaleDateString('en-IN')}</span></div><div style="margin-top:2px;">Table: ${activeTableNumber}</div>${addStr?`<div style="margin-top:2px;">Address: ${addStr}</div>`:""}</div><table style="width: 100%; font-size: 0.85rem; text-align: left; border-collapse: collapse;"><thead><tr><th class="col-item" style="text-align: left; width: 50%;">ITEM</th><th class="col-price" style="text-align: center; width: 15%;">PRICE</th><th class="col-qty" style="text-align: center; width: 15%;">QTY</th><th class="col-amt" style="text-align: right; width: 20%;">AMT</th></tr></thead><tbody>${itemsHtml}</tbody></table><div style="border-top: 1px dashed #000; margin-top: 10px; padding-top: 5px; font-size: 0.9rem;">${discount > 0 ? `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Discount:</span><span>-₹${discount}</span></div>` : ''}<div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;"><span>TOTAL (FOOD):</span><span>₹${grandTotal}</span></div></div><div style="text-align: center; font-size: 0.85rem; font-weight: bold; margin-top: 20px;">THANK YOU FOR DINING WITH US!</div>`;
-                }
-                
-                printSec.offsetHeight; window.print();
-            } catch (e) { console.log(e); }
-        }
-
-        async function requestHistoricalOrderDeletion(){
-            const sale=currentViewingSale;if(!sale)return;
-            const id=getVal(sale,['orderid','order_number','id'])||'';if(!id)return;
-            showCustomConfirm('Send this order for Admin approval before deletion?',async()=>{
-                try{
-                    await d1Post('/orders/request-delete',{
-                        order_id:id,
-                        reason:'Deletion requested from POS',
-                        requested_by:localStorage.getItem('viraasat_user')||'Admin'
-                    });
-                    auditLog('Order Delete Requested',id);
-                    document.getElementById('orderDetailsModal').style.display='none';
-                    showCustomAlert('Deletion request submitted for Admin approval.');
-                }catch(e){
-                    const msg=String(e?.message||e);
-                    if(/unique|already|pending/i.test(msg)){
-                        showCustomAlert('This order already has a pending deletion request.');
-                    }else{
-                        showCustomAlert('Deletion request failed: '+msg+'\n\nIf this says "API route not found", apply the Worker patch supplied with this build.');
-                    }
-                }
-            },null);
-        }
-
-        function printHistoricalBill() {
-            try{
-                const sale=currentViewingSale;if(!sale)return;
-                const id=getVal(sale,['orderid','order_number','id'])||'N/A';
-                const table=getVal(sale,['tablenumber','table','tablename','table_number'])||'Table';
-                const date=getVal(sale,['date','isodate','created_at'])||'';
-                const time=getVal(sale,['time','created_at'])||'';
-                const total=parseAmount(getVal(sale,['grand_total','totalamount','total','amount']));
-                const raw=String(getVal(sale,['items_string','itemsstring','items'])||'');
-                let discount=parseAmount(getVal(sale,['discount']));
-                if(!discount){const dm=raw.match(/\[Discount Applied:\s*-?₹?([\d,]+)/i);if(dm)discount=parseAmount(dm[1]);}
-                const mode=getVal(sale,['payment_method','paymentmode','mode'])||(raw.match(/\[Mode:\s*(.+?)\]/i)?.[1]||'');
-                const address=raw.match(/\[Address:\s*(.+?)\]/i)?.[1]||'';
-                const items=parseSaleItems(sale);
-                const rows=items.map(it=>`<tr><td style="text-align:left;width:50%">${esc(it.name)}</td><td style="text-align:center;width:15%">${it.price||'-'}</td><td style="text-align:center;width:15%">${it.qty}</td><td style="text-align:right;width:20%">${it.amount||'-'}</td></tr>`).join('');
-                const ps=document.getElementById('printSection');
-                ps.innerHTML=`<div style="text-align:center;margin-bottom:10px"><h2 style="font-size:1.2rem;margin:0;font-weight:bold">VIRAASAT UDAIPUR</h2><p style="font-size:.8rem;margin:2px 0">A Taste Of Royal Mewar</p><p style="font-size:.8rem;margin:2px 0">Contact: +91 7852041644</p><p style="font-size:.8rem;margin:2px 0">Udaipur, Rajasthan</p></div><div style="border-top:1px dashed #000;border-bottom:1px dashed #000;padding:5px 0;margin-bottom:10px;font-size:.85rem"><div style="display:flex;justify-content:space-between"><span>Invoice No: #${esc(id)}</span><span>(DUPLICATE)</span></div><div style="margin-top:2px">Table: ${esc(table)}</div>${mode?`<div style="margin-top:2px">Payment Mode: ${esc(mode)}</div>`:''}${address?`<div style="margin-top:2px">Address: ${esc(address)}</div>`:''}</div><table style="width:100%;font-size:.85rem;border-collapse:collapse"><thead><tr><th style="text-align:left;width:50%">ITEM</th><th style="text-align:center;width:15%">PRICE</th><th style="text-align:center;width:15%">QTY</th><th style="text-align:right;width:20%">AMT</th></tr></thead><tbody>${rows||'<tr><td colspan="4">Item details unavailable</td></tr>'}</tbody></table><div style="border-top:1px dashed #000;margin-top:10px;padding-top:5px;font-size:.9rem">${discount>0?`<div style="display:flex;justify-content:space-between;margin-bottom:5px"><span>Discount:</span><span>-₹${discount}</span></div>`:''}<div style="display:flex;justify-content:space-between;font-weight:bold;font-size:1.1rem"><span>TOTAL:</span><span>₹${total}</span></div></div><div style="text-align:center;font-size:.85rem;font-weight:bold;margin-top:18px">THANK YOU FOR DINING WITH US!</div><div style="text-align:center;font-size:.7rem;margin-top:5px">Print Date: ${cleanDisplayDate(date)} ${cleanDisplayTime(time)}</div>`;
-                ps.offsetHeight;window.print();
-            }catch(e){console.log(e);showCustomAlert('Historical bill print failed: '+e.message);}
-        }
-
-        function sendWA_Customer() {
-            if (currentBill.length === 0) { showCustomAlert("Cart is empty! Please add items first."); return; }
-            let phone = document.getElementById('customerPhone').value.trim();
-            if (!phone || phone.length < 10) { showCustomAlert("Please enter a valid 10-digit customer phone number."); return; }
-            
-            let discount = parseInt(document.getElementById('discountValue').value) || 0; 
-            let grandTotal = parseInt(document.getElementById('grandTotal').innerText.replace(/[^0-9]/g, '')) || 0;
-            let d = new Date(); let dateStr = d.toLocaleDateString('en-IN'); let timeStr = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-            let invoiceNo = "INV-" + Math.floor(Math.random() * 9000 + 1000);
-            
-            let text = `*VIRAASAT UDAIPUR*\n_A Taste Of Royal Mewar_\n\n*Invoice No:* ${invoiceNo}\n*Table:* ${activeTableNumber}\n*Date:* ${dateStr} • ${timeStr}\n----------------------------------------\n*ITEMS*\n`;
-            currentBill.forEach(item => { text += `▪ ${item.name} (x${item.qty})  ~  *₹${item.total}*\n`; });
-            text += `----------------------------------------\n`;
-            if (discount > 0) { text += `*Discount:*  -₹${discount}\n`; }
-            text += `*TOTAL AMOUNT:  ₹${grandTotal}*\n----------------------------------------\n\nThank you for dining with us! 🙏\n\n⭐ *We would love to hear your feedback:*\nhttps://g.page/r/CSJLAggbIn1JEBM/review`;
-            
-            let waLink = `https://wa.me/91${phone}?text=${encodeURIComponent(text)}`; 
-            window.open(waLink, '_blank');
-        }
-
-        function sendWA_HistoricalBill() {
-            const sale=currentViewingSale;if(!sale)return;
-            const phone=document.getElementById('modalCustomerPhone').value.trim();
-            if(!phone||phone.length<10){showCustomAlert('Please enter a valid 10-digit customer phone number.');return;}
-            const id=getVal(sale,['orderid','order_number','id'])||'N/A', table=getVal(sale,['tablenumber','table','tablename','table_number'])||'Table';
-            const date=getVal(sale,['date','isodate','created_at'])||'', time=getVal(sale,['time','created_at'])||'';
-            const total=parseAmount(getVal(sale,['grand_total','totalamount','total','amount']));
-            const raw=String(getVal(sale,['items_string','itemsstring','items'])||'');
-            let discount=parseAmount(getVal(sale,['discount']));if(!discount){const dm=raw.match(/\[Discount Applied:\s*-?₹?([\d,]+)/i);if(dm)discount=parseAmount(dm[1]);}
-            const items=parseSaleItems(sale);
-            let text=`*VIRAASAT UDAIPUR*\n_A Taste Of Royal Mewar_\n\n*Invoice No:* ${id}\n*Table:* ${table}\n*Date:* ${cleanDisplayDate(date)} • ${cleanDisplayTime(time)}\n----------------------------------------\n*ITEMS*\n`;
-            if(items.length)items.forEach(it=>text+=`▪ ${it.name} (x${it.qty}) ~ *₹${it.amount||'-'}*\n`);else text+='▪ Item details unavailable\n';
-            text+='----------------------------------------\n';if(discount>0)text+=`*Discount:* -₹${discount}\n`;text+=`*TOTAL AMOUNT: ₹${total}*\n----------------------------------------\n\nThank you for dining with us! 🙏`;
-            window.open(`https://wa.me/91${phone}?text=${encodeURIComponent(text)}`,'_blank');
-        }
-
-
-
-        // Lightweight mobile haptic feedback for primary UI actions.
-        document.addEventListener('click', (e)=>{
-            const target=e.target.closest('button,.nav-item,.quick-card,.table-card,.h-order-card,.card');
-            if(target && navigator.vibrate){ try{ navigator.vibrate(8); }catch(_){} }
-        }, {passive:true});
-    </script>
-</body>
-</html>
+            const qty = num(item.qty,1);
+            const price = item.price > 0 ? item.price : num(mi.price,0);
+            const itemTotal = item.total > 0 ? item.total : price * qty;
+            await db.prepare(`INSERT INTO order_items (order_id,menu_item_id,item_name,quantity,price,gst_percent,total) VALUES (?,?,?,?,?,?,?)`).bind(orderId,mi.id,item.name,qty,price,num(mi.gst_percent,0),itemTotal).run();
+            orderItemsImported++;
+          }
+        }
+
+        await ensureSupportTables(db);
+        let staffImported = 0;
+        for (const row of staffRows) {
+          const name = clean(row.name || row.Name || row.Employee || row["Employee Name"]);
+          if (!name) continue;
+          const mobile = clean(row.mobile || row.Mobile || row.Phone);
+          const role = clean(row.role || row.Role || row.Designation) || "Staff";
+          const salary = num(row.salary || row.Salary || row["Monthly Salary"],0);
+          const joinDate = clean(row.join_date || row.joinDate || row["Join Date"]);
+          const existingStaff = await db.prepare(`SELECT id FROM staff WHERE name=? AND mobile=? LIMIT 1`).bind(name,mobile).first();
+          if (existingStaff) {
+            await db.prepare(`UPDATE staff SET mobile=?,role=?,salary=?,join_date=?,is_active=1,updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(mobile,role,salary,joinDate,existingStaff.id).run();
+          } else {
+            await db.prepare(`INSERT INTO staff (name,mobile,role,salary,join_date,is_active) VALUES (?,?,?,?,?,1)`).bind(name,mobile,role,salary,joinDate).run();
+          }
+          staffImported++;
+        }
+
+        let stockImported = 0;
+        for (const row of stockRows) {
+          const name = clean(row.name || row.Name || row.item_name || row["Item Name"] || row.item);
+          if (!name) continue;
+          const quantity = num(row.quantity ?? row.Quantity ?? row.qty ?? row.Qty,0);
+          const unit = clean(row.unit || row.Unit) || "pcs";
+          const low = num(row.low_stock_level ?? row.lowStockLevel ?? row["Low Stock Level"],5);
+          const existingStock = await db.prepare(`SELECT id FROM stock_items WHERE lower(name)=lower(?) LIMIT 1`).bind(name).first();
+          if (existingStock) {
+            await db.prepare(`UPDATE stock_items SET quantity=?,unit=?,low_stock_level=?,is_active=1,updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(quantity,unit,low,existingStock.id).run();
+          } else {
+            await db.prepare(`INSERT INTO stock_items (name,quantity,unit,low_stock_level,is_active) VALUES (?,?,?,?,1)`).bind(name,quantity,unit,low).run();
+          }
+          stockImported++;
+        }
+
+        let expensesImported = 0;
+        for (const row of expenseRows) {
+          const category = clean(row.category || row.Category || row["Expense Category"]) || "Other";
+          const amount = num(row.amount ?? row.Amount ?? row["Amount (₹)"],0);
+          const description = clean(row.description || row.Description || row.note || row.Note);
+          const date = clean(row.date || row.Date || row.expense_date) || todayIST();
+          await db.prepare(`INSERT INTO expenses (category,amount,description,expense_date) VALUES (?,?,?,?)`).bind(category,amount,description,date).run();
+          expensesImported++;
+        }
+
+        return json({
+          success:true,
+          message:"Full import completed successfully",
+          imported:{menu:menuImported,orders:ordersImported,order_items:orderItemsImported,staff:staffImported,stock:stockImported,expenses:expensesImported},
+          skipped:{orders:ordersSkipped}
+        });
+      }
+      return json(
+        {
+          success: false,
+          error: "API route not found",
+          path
+        },
+        404
+      );
+    } catch (error) {
+      console.error(
+        "Viraasat Worker Error:",
+        error
+      );
+      return json(
+        {
+          success: false,
+          error: error?.message || String(error)
+        },
+        500
+      );
+    }
+  }
+};
+export {
+  worker_default as default
+};
+//# sourceMappingURL=worker.js.map
