@@ -212,7 +212,7 @@ async function ensureSupportTables(db) {
   await ensureColumn(db, "deletion_requests", "status", "TEXT DEFAULT 'pending'");
   await ensureColumn(db, "deletion_requests", "reviewed_by", "TEXT");
   await ensureColumn(db, "deletion_requests", "reviewed_at", "TEXT");
-  await ensureColumn(db, "deletion_requests", "created_at", "TEXT DEFAULT CURRENT_TIMESTAMP");
+  await ensureColumn(db, "deletion_requests", "created_at", "TEXT");
 
   // Audit logs: create the table if missing and safely migrate older schemas.
   // This specifically fixes legacy databases where `details` was not present.
