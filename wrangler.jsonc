@@ -8,6 +8,12 @@
     "directory": "."
   },
 
+  "triggers": {
+    "crons": [
+      "30 21 * * *"
+    ]
+  },
+
   "d1_databases": [
     {
       "binding": "DB",
