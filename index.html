@@ -58,7 +58,6 @@
         .brand-container { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
         .brand-name { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 800; color: var(--text-dark); letter-spacing: 0.5px; line-height: 1.1; }
         .page-subtitle { font-size: 0.85rem; font-weight: 500; color: var(--text-dark); margin-top: 2px; }
-        .brand-logo-img { height: 38px; width: auto; object-fit: contain; }
         
         .icon-btn { background: var(--surface); border: 1px solid var(--border); width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-dark); box-shadow: var(--shadow-soft); transition: 0.1s;}
         .icon-btn:active { transform: scale(0.95); }
@@ -113,12 +112,13 @@
         .ho-sub { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
         .ho-badge { background: #E6F4EA; color: #10B981; font-size: 0.65rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; letter-spacing: 0.5px; }
 
+        /* --- UPDATED PREMIUM NAVIGATION BAR --- */
         .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; padding: 10px 8px calc(10px + env(safe-area-inset-bottom)) 8px; border-top: 1px solid var(--border); z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.03); border-radius: 20px 20px 0 0; }
         .nav-item { background: transparent; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: inherit; font-size: 0.65rem; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; padding: 6px 0; }
         .nav-item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: 0.2s; }
-        .nav-item.active { color: var(--text-dark); font-weight: 800; }
+        .nav-item.active { color: #E21B70; font-weight: 800; }
         .nav-item.active .icon-container { background: #FDE8D7; width: 56px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-        .nav-item.active svg { stroke: var(--text-dark); stroke-width: 2.2; }
+        .nav-item.active svg { stroke: #E21B70; stroke-width: 2.2; }
 
         .card { background: var(--surface); border-radius: var(--border-radius); padding: 20px; border: 1px solid var(--border); margin-bottom: 16px; box-shadow: var(--shadow-soft); }
         .form-group { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
@@ -149,13 +149,8 @@
         .stock-tag.low { border-color: var(--danger); color: var(--danger); }
         .stock-tag.low span { background: #FDE8E8; color: var(--danger); }
 
-        .filter-btn { height: 36px; padding: 0 16px; font-size: 0.85rem; transition: 0.2s; border-radius: 18px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dark); font-weight: 600; cursor:pointer;}
+        .filter-btn { height: 36px; padding: 0 16px; font-size: 0.85rem; transition: 0.2s; border-radius: 18px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dark); font-weight: 600;}
         .filter-btn.active { background: var(--text-dark); color: #FFF; border-color: var(--text-dark); }
-
-        .swipe-filters { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 16px; scroll-behavior: smooth; }
-        .swipe-filters::-webkit-scrollbar { display: none; }
-        .filter-chip { flex: 0 0 auto; height: 38px; padding: 0 20px; font-size: 0.85rem; border-radius: 19px; border: 1px solid var(--border); background: var(--surface); color: var(--text-dark); font-weight: 600; display: flex; align-items: center; transition: 0.2s; cursor:pointer;}
-        .filter-chip.active { background: var(--text-dark); color: #FFF; border-color: var(--text-dark); }
 
         .sales-grid { display: flex; flex-direction: column; gap: 12px; }
         .sales-card { background: var(--surface); border-radius: var(--border-radius); padding: 18px; border: 1px solid var(--border); cursor: pointer; transition: 0.1s;}
@@ -179,8 +174,11 @@
         #loader { text-align: center; color: var(--text-muted); font-weight: 600; font-size: 0.9rem; margin: 40px 0; display: none; align-items: center; justify-content: center; gap: 10px;}
         .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--text-dark); border-radius: 50%; animation: spin 0.8s linear infinite; }
 
-        #splashScreen { position: fixed; inset: 0; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.4s; pointer-events: auto; }
-        
+        #splashScreen { position: fixed; inset: 0; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.4s; }
+        .splash-logo { font-family: 'Playfair Display', serif; font-size: 2.8rem; font-weight: 700; color: var(--text-dark); }
+        .splash-subtitle { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); letter-spacing: 2px; margin-top: 6px; margin-bottom: 40px; text-transform: uppercase;}
+        @keyframes spin { to { transform: rotate(360deg); } }
+
         @media screen { #printSection { display: none !important; } }
         @media print {
             body { background-color: white; margin: 0; padding: 0; display: block; height: auto; overflow: visible; max-width: none; box-shadow: none;}
@@ -191,34 +189,37 @@
             #printSection th, #printSection td { padding: 2px 0; font-size: 12px; color: #000; vertical-align: top; border-bottom: none !important; word-wrap: break-word; }
             #printSection th { border-bottom: 1px dashed #000 !important; border-top: 1px dashed #000 !important; padding: 4px 0; font-weight: bold; }
         }
+
+        /* Update Logo & App Name Images */
+        .brand-logo-img { height: 38px; width: auto; object-fit: contain; display: none; }
+        .splash-logo-img { height: 90px; width: auto; margin-bottom: 15px; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.08)); display: none; }
     </style>
 </head>
 <body>
 
+    <!-- G-SHEET URL & LOGO VARS -->
     <script>
-        // GOOGLE SHEET SYNC CONFIGURATION
-        const GOOGLE_SHEET_API = "https://script.google.com/macros/s/AKfycbz2JlJYUw75cp9-r98_oKqm65z3l_OD-d0KMy7QZOpQ6XvUPLy0OLcBLT-KetLUoKsL/exec"; 
-        
+        const GOOGLE_SHEET_API = "https://script.google.com/macros/s/AKfycbz2JlJYUw75cp9-r98_oKqm65z3l_OD-d0KMy7QZOpQ6XvUPLy0OLcBLT-KetLUoKsL/exec";
         const defaultLogo = "icon.png";
     </script>
 
     <div id="splashScreen">
-        <div class="splash-logo-container">
+        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
             <img src="icon.png" alt="Viraasat Logo" class="splash-logo-img" id="splashLogoImg">
-            <div class="brand-name" id="splashLogoText" style="display:none; font-size:2.8rem; margin-bottom:15px;">VIRAASAT</div>
+            <div class="brand-name" id="splashLogoText" style="font-size:2.8rem; margin-bottom:15px;">VIRAASAT</div>
         </div>
         <div class="splash-subtitle" style="margin-top: 0;">Premium POS</div>
-        <div class="spinner" style="margin-top: 20px;"></div>
+        <div class="spinner"></div>
     </div>
     
-    <div id="loader"><div class="spinner"></div><span id="loaderText">Syncing...</span></div>
+    <div id="loader"><div class="spinner"></div><div id="loaderText">Syncing...</div></div>
 
     <!-- LOGIN SCREEN -->
     <div id="loginScreen" style="display: none; position: absolute; inset: 0; background: var(--bg-color); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
         <div style="width: 100%; max-width: 400px; background: var(--surface); padding: 40px 24px; border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow-soft);">
             <div style="text-align: center; margin-bottom: 30px;">
                 <img src="icon.png" alt="Viraasat Logo" class="splash-logo-img" style="height:70px" id="loginLogoImg">
-                <div class="brand-name" id="loginLogoText" style="display:none; font-size:2.2rem; margin-bottom:12px;">VIRAASAT</div>
+                <div class="brand-name" id="loginLogoText" style="font-size: 2.2rem; margin-bottom:12px;">VIRAASAT</div>
                 <p style="color: var(--text-muted); font-weight: 600; font-size: 0.8rem; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px;">Authorized Access Only</p>
             </div>
             <div class="form-group">
@@ -300,7 +301,7 @@
         </div>
     </div>
 
-    <!-- CUSTOM THREE BUTTON MODAL -->
+    <!-- CUSTOM THREE BUTTON MODAL (For Salary Print) -->
     <div id="salaryActionModal" class="modal-overlay" style="z-index: 100000; align-items: center;">
         <div class="bottom-sheet" style="max-width: 320px; border-radius: 16px; padding: 24px; text-align: center; margin: 0 20px; transform: none; animation: fadeIn 0.2s ease-out; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
             <h3 id="salaryActionMessage" style="font-size:1.1rem; font-weight:700; margin-bottom: 24px; color: var(--text-dark); line-height: 1.5;">Payout Recorded!</h3>
@@ -394,7 +395,7 @@
                 </div>
             </div>
 
-            <button class="btn btn-outline" onclick="openModal('addTableModal')" style="margin: 20px 0; font-weight:600; width:100%; border-radius:10px;">+ Deploy New Table</button>
+            <button class="btn btn-outline" onclick="showAddTableModal()" style="margin: 20px 0; font-weight:600; width:100%; border-radius:10px;">+ Deploy New Table</button>
 
             <div class="section-header"><h4>Recent Orders</h4> <span id="btnViewAllOrders" onclick="switchMainTab('salesDashboard', document.getElementById('navOrders'))">View All ›</span></div>
             <div id="homeRecentOrders"></div>
@@ -542,6 +543,43 @@
                 <div id="adminApprovalsList" style="display:flex; flex-direction:column; gap:12px;"></div>
             </div>
 
+            <!-- BRAND LOGO UPDATE -->
+            <div class="card">
+                <div class="section-header" style="margin-top:0;"><h4>Update Brand Logo</h4></div>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:12px;">Enter a direct image URL (PNG/JPG) to change the app logo.</p>
+                <div class="form-group" style="margin-bottom:0;">
+                    <div class="input-box"><input type="url" id="customLogoUrl" placeholder="https://example.com/logo.png"></div>
+                    <button class="btn" style="margin-top:12px;" onclick="saveCustomLogo()">Update Logo</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-header" style="margin-top:0;"><h4>System Restoration</h4></div>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:12px;">Upload the template below, add your records, and execute master import.</p>
+                <button class="btn btn-outline" style="margin-bottom:16px; height: 40px; font-size:0.85rem;" onclick="downloadFullImportSample()">📥 Download Import Template</button>
+                
+                <div class="form-group" style="margin-bottom:0;">
+                    <input type="file" id="fullImportInput" accept=".xlsx,.xls,.csv" style="padding:10px; border:1px dashed var(--border); background:#FFF;">
+                    <button class="btn" style="margin-top:10px; background:var(--success);" onclick="runFullImport()">Execute Master Import</button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="section-header" style="margin-top:0;"><h4>Add New Menu Item</h4></div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <div class="input-box"><label>Category</label>
+                        <select id="newMenuCategory">
+                            <option>Starters</option><option>Main Course</option><option>Breads</option><option>Desserts</option><option>Beverages</option><option>Add-ons</option>
+                        </select>
+                    </div>
+                    <div class="input-row" style="margin-top:12px;">
+                        <div class="input-box"><label>Item Name</label><input type="text" id="newMenuName" placeholder="e.g. Paneer Tikka"></div>
+                        <div class="input-box"><label>Price (₹)</label><input type="number" id="newMenuPrice" placeholder="250" inputmode="numeric"></div>
+                    </div>
+                    <button class="btn" style="margin-top:16px;" onclick="addMenuItemUI()">Save to Menu</button>
+                </div>
+            </div>
+
             <div class="card" style="border-color:#10B981;">
                 <div class="section-header" style="margin-top:0;"><h4>Staff Payroll & Advance</h4></div>
                 <div class="form-group" style="margin-bottom:0;">
@@ -555,25 +593,6 @@
                         <div class="input-box"><label>Type</label><select id="payStaffType"><option>Advance</option><option>Salary Clearance</option></select></div>
                     </div>
                     <button class="btn" style="margin-top:16px; background:#10B981;" onclick="submitStaffPayout()">Pay & Record</button>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>System Restoration</h4></div>
-                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:12px;">Upload original Excel to restore all Orders, Menu, Staff & Stock.</p>
-                <div class="form-group" style="margin-bottom:0;">
-                    <input type="file" id="fullImportInput" accept=".xlsx,.xls,.csv" style="padding:10px; border:1px dashed var(--border); background:#FFF;">
-                    <button class="btn" style="margin-top:10px; background:var(--success);" onclick="runFullImport()">Execute Master Import</button>
-                </div>
-            </div>
-
-            <!-- BRAND LOGO UPDATE -->
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Update Brand Logo</h4></div>
-                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:12px;">Enter a direct image URL (PNG/JPG) to change the app logo.</p>
-                <div class="form-group" style="margin-bottom:0;">
-                    <div class="input-box"><input type="url" id="customLogoUrl" placeholder="https://example.com/logo.png"></div>
-                    <button class="btn" style="margin-top:12px;" onclick="saveCustomLogo()">Update Logo</button>
                 </div>
             </div>
 
@@ -611,22 +630,6 @@
                         <div class="input-box"><label>New Quantity</label><input type="number" id="adminStockQty" placeholder="e.g. 50" inputmode="numeric"></div>
                         <button class="btn" style="flex:1;" onclick="updateStockAdmin()">Update</button>
                     </div>
-                </div>
-            </div>
-            
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Add New Menu Item</h4></div>
-                <div class="form-group" style="margin-bottom:0;">
-                    <div class="input-box"><label>Category</label>
-                        <select id="newMenuCategory">
-                            <option>Starters</option><option>Main Course</option><option>Breads</option><option>Desserts</option><option>Beverages</option><option>Add-ons</option>
-                        </select>
-                    </div>
-                    <div class="input-row" style="margin-top:12px;">
-                        <div class="input-box"><label>Item Name</label><input type="text" id="newMenuName" placeholder="e.g. Paneer Tikka"></div>
-                        <div class="input-box"><label>Price (₹)</label><input type="number" id="newMenuPrice" placeholder="250" inputmode="numeric"></div>
-                    </div>
-                    <button class="btn" style="margin-top:16px;" onclick="addMenuItemUI()">Save to Menu</button>
                 </div>
             </div>
 
@@ -778,7 +781,7 @@
 
     <script>
         const API_BASE = '/api'; 
-        const APP_VERSION = "FINAL_V5.6_STABLE"; 
+        const APP_VERSION = "FINAL_V6.0_STABLE"; 
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
         let menuData = []; let stockData = {}; let runningTables = {}; 
@@ -1132,13 +1135,12 @@
         // GOOGLE SHEET AUTO-SYNC (Nightly Backup)
         // ==========================================
         function autoSyncGoogleSheet() {
-            if(typeof GOOGLE_SHEET_API === 'undefined' || GOOGLE_SHEET_API.length < 10) return;
+            if(!window.isUserAdmin || !GOOGLE_SHEET_API || GOOGLE_SHEET_API.length < 10) return;
             try {
                 let lastSync = localStorage.getItem('viraasat_last_gsync');
                 let now = new Date();
                 let todayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
                 
-                // Trigger sync only if it's past 3 AM and hasn't been synced today
                 if (now.getHours() >= 3 && lastSync !== todayKey) {
                     let yest = new Date(now); yest.setDate(yest.getDate() - 1);
                     let yestIso = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, '0')}-${String(yest.getDate()).padStart(2, '0')}`;
@@ -1578,10 +1580,7 @@
         }
 
         function fetchApprovals() {
-            if(!window.isUserAdmin) {
-                let card = document.getElementById('adminApprovalsCard'); if(card) card.style.display = 'none';
-                return;
-            }
+            if(!window.isUserAdmin) return;
             fetch(`${API_BASE}/approvals`).then(r=>r.json()).then(data => {
                 let card = document.getElementById('adminApprovalsCard'); let list = document.getElementById('adminApprovalsList');
                 if(!data.success || !data.requests || !data.requests.length) { if(card) card.style.display = 'none'; return; }
@@ -1622,7 +1621,7 @@
         }
 
         // =====================================
-        // LIVE SALES & FILTERS FIXED (DIRECT DATE MATCHING)
+        // LIVE SALES & FILTERS FIXED (DIRECT DATE STRING MATCHING)
         // =====================================
         function renderLiveSales() {
             const salesGrid = document.getElementById('salesGrid'); if(salesGrid) salesGrid.innerHTML = ""; 
@@ -1730,18 +1729,7 @@
                 for(let m of menu) { 
                     if(m.Item_Name || m.name || m.Name) await fetch(`${API_BASE}/menu`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ category: m.Category || m.category || 'Uncategorized', name: m.Item_Name || m.name || m.Name, price: m.Price || m.price || 0, is_available: 1 }) }); 
                 }
-                // Import Stock
-                for(let s of stock) { 
-                    if(s.Item_Name || s.name || s.Name) await fetch(`${API_BASE}/stock`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name: s.Item_Name || s.name || s.Name, quantity: s.Current_Stock || s.quantity || s.Quantity || 0 }) }); 
-                }
-                // Import Staff
-                for(let st of staff) { 
-                    if(st.Name || st.name) await fetch(`${API_BASE}/staff`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name: st.Name || st.name, mobile: st.Mobile || st.mobile || '', role: st.Role || st.role || 'Staff', salary: st['Monthly Salary'] || st.salary || st.Salary || 0, join_date: st['Join Date'] || st.join_date || '' }) }); 
-                }
-                // Import Expenses
-                for(let e of expenses) { 
-                    if(e.Amount || e.amount) await fetch(`${API_BASE}/expenses`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ category: e.Category || e.category || 'Other', amount: e.Amount || e.amount, description: e.Description || e.description || '', expense_date: e.Date || e.date }) }); 
-                }
+                
                 // Import Historical Sales (Bulletproof Date/Time Handling)
                 for(let sale of allSales) {
                     let total = sale.Total_Amount || sale.total || sale.totalamount || sale.Amount || sale.amount;
