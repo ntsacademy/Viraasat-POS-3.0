@@ -42,7 +42,7 @@
 
         html { font-size: 16px; touch-action: manipulation; background-color: #FFFFFF; overscroll-behavior-y: contain; } 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
-        input, textarea, select { user-select: auto; -webkit-user-select: auto; font-family: 'Poppins', sans-serif;}
+        input, textarea, select { user-select: auto; -webkit-user-select: auto; }
         ::-webkit-scrollbar { display: none; }
 
         body { 
@@ -54,14 +54,11 @@
             max-width: 600px; margin: 0 auto; position: relative;
         } 
 
-        /* Custom Logo Classes */
-        .brand-logo-img { height: 38px; width: auto; object-fit: contain; }
-        .splash-logo-img { height: 90px; width: auto; margin-bottom: 15px; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.08)); }
-
         .top-app-bar { padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 50; background: var(--bg-color); }
         .brand-container { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
         .brand-name { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 800; color: var(--text-dark); letter-spacing: 0.5px; line-height: 1.1; }
-        .page-subtitle { font-size: 0.85rem; font-weight: 500; color: var(--text-dark); margin-top: 2px; transition: opacity 0.5s ease; }
+        .page-subtitle { font-size: 0.85rem; font-weight: 500; color: var(--text-dark); margin-top: 2px; }
+        .brand-logo-img { height: 38px; width: auto; object-fit: contain; }
         
         .icon-btn { background: var(--surface); border: 1px solid var(--border); width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-dark); box-shadow: var(--shadow-soft); transition: 0.1s;}
         .icon-btn:active { transform: scale(0.95); }
@@ -119,9 +116,9 @@
         .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; padding: 10px 8px calc(10px + env(safe-area-inset-bottom)) 8px; border-top: 1px solid var(--border); z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.03); border-radius: 20px 20px 0 0; }
         .nav-item { background: transparent; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: inherit; font-size: 0.65rem; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; padding: 6px 0; }
         .nav-item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: 0.2s; }
-        .nav-item.active { color: #E21B70; font-weight: 800; }
+        .nav-item.active { color: var(--text-dark); font-weight: 800; }
         .nav-item.active .icon-container { background: #FDE8D7; width: 56px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-        .nav-item.active svg { stroke: #E21B70; stroke-width: 2.2; }
+        .nav-item.active svg { stroke: var(--text-dark); stroke-width: 2.2; }
 
         .card { background: var(--surface); border-radius: var(--border-radius); padding: 20px; border: 1px solid var(--border); margin-bottom: 16px; box-shadow: var(--shadow-soft); }
         .form-group { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
@@ -164,6 +161,7 @@
         .sales-card { background: var(--surface); border-radius: var(--border-radius); padding: 18px; border: 1px solid var(--border); cursor: pointer; transition: 0.1s;}
         .sales-card:active { transform: scale(0.98); }
 
+        /* P&L Grid */
         .trend-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
         .trend-kpi-card { padding: 16px; border-radius: var(--border-radius); border: 1px solid var(--border); background: var(--surface); display: flex; flex-direction: column; box-shadow: var(--shadow-soft);}
         .trend-kpi-card.full-width { grid-column: span 2; }
@@ -181,9 +179,8 @@
         #loader { text-align: center; color: var(--text-muted); font-weight: 600; font-size: 0.9rem; margin: 40px 0; display: none; align-items: center; justify-content: center; gap: 10px;}
         .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--text-dark); border-radius: 50%; animation: spin 0.8s linear infinite; }
 
-        #splashScreen { position: fixed; inset: 0; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.4s; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
+        #splashScreen { position: fixed; inset: 0; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.4s; pointer-events: auto; }
+        
         @media screen { #printSection { display: none !important; } }
         @media print {
             body { background-color: white; margin: 0; padding: 0; display: block; height: auto; overflow: visible; max-width: none; box-shadow: none;}
@@ -200,11 +197,8 @@
 
     <script>
         // GOOGLE SHEET SYNC CONFIGURATION
-        // Ye POS automatically raat 3 baje D1 API se data nikal kar 
-        // is Google Sheet url par JSON bhej dega (backup ke liye).
         const GOOGLE_SHEET_API = "https://script.google.com/macros/s/AKfycbz2JlJYUw75cp9-r98_oKqm65z3l_OD-d0KMy7QZOpQ6XvUPLy0OLcBLT-KetLUoKsL/exec"; 
         
-        // Brand Logo Fallback
         const defaultLogo = "icon.png";
     </script>
 
@@ -216,6 +210,8 @@
         <div class="splash-subtitle" style="margin-top: 0;">Premium POS</div>
         <div class="spinner" style="margin-top: 20px;"></div>
     </div>
+    
+    <div id="loader"><div class="spinner"></div><span id="loaderText">Syncing...</span></div>
 
     <!-- LOGIN SCREEN -->
     <div id="loginScreen" style="display: none; position: absolute; inset: 0; background: var(--bg-color); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
@@ -335,7 +331,7 @@
             <div class="brand-name" id="topNavLogoText" style="display:none; font-size:1.6rem;">VIRAASAT</div>
             <div class="page-subtitle" id="pageMainTitle" style="transition: opacity 0.5s ease; font-family: 'Playfair Display', serif; font-size: 0.85rem; font-style: italic; font-weight: 700; color: #A67C52;">Premium POS</div>
         </div>
-        <button class="icon-btn" onclick="fetchData()" title="Refresh Data">
+        <button class="icon-btn" onclick="haptic(); fetchData();" title="Refresh Data">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path></svg>
         </button>
     </header>
@@ -415,9 +411,9 @@
                     <div class="input-box"><label>End Date</label><input type="date" id="filterEndDate" onchange="renderLiveSales()"></div>
                 </div>
                 <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-bottom: 12px;">
-                    <button id="btnFilterToday" class="filter-btn" style="background:var(--text-dark); color:#FFF; border-color:var(--text-dark);" onclick="setTodayFilter()">Today</button>
-                    <button id="btnFilterYesterday" class="filter-btn" onclick="setYesterdayFilter()">Yesterday</button>
-                    <button id="btnFilterClear" class="filter-btn" style="color: var(--danger); border-color: var(--danger); background:transparent;" onclick="resetDateFilter()">Reset</button>
+                    <button id="btnFilterToday" class="filter-btn" style="background:var(--text-dark); color:#FFF; border-color:var(--text-dark);" onclick="haptic(); setTodayFilter()">Today</button>
+                    <button id="btnFilterYesterday" class="filter-btn" onclick="haptic(); setYesterdayFilter()">Yesterday</button>
+                    <button id="btnFilterClear" class="filter-btn" style="color: var(--danger); border-color: var(--danger); background:transparent;" onclick="haptic(); resetDateFilter()">Reset</button>
                 </div>
                 <div style="display:flex; gap:8px;">
                     <div style="flex:1; background:var(--text-dark); border-radius:8px; font-weight:700; font-size:1.1rem; text-align:center; color:#FFF; display:flex; align-items:center; justify-content:center; height:50px;" id="totalSalesBox">Total Sales: ₹ 0</div>
@@ -469,6 +465,7 @@
                 <div id="staffExpenseList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
             </div>
 
+            <!-- Employee Advance Log in P&L -->
             <div class="card" style="border:1px solid var(--border); box-shadow:none;">
                 <div class="section-header" style="margin-top:0;"><h4>Staff Advance Details</h4></div>
                 <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px;">Staff advance and salary details.</p>
@@ -500,6 +497,7 @@
 
             <div class="section-header" style="margin-bottom:16px;"><h4>Expense Ledger</h4> <span onclick="exportExpensesTable()">Export ›</span></div>
             
+            <!-- Date Filter Dropdown -->
             <div class="input-box" style="margin-bottom: 16px;">
                 <label>Filter Expenses By Date</label>
                 <select id="expenseDateFilter" onchange="renderExpensesListUI()">
@@ -513,12 +511,14 @@
                 </select>
             </div>
 
+            <!-- Progress Bar -->
             <div class="card" style="padding: 16px; border:1px solid var(--border); box-shadow:none; margin-bottom: 20px;">
                 <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-dark); margin-bottom: 8px;">Category Breakdown</div>
                 <div id="expenseProgressBar" style="width: 100%; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; display: flex; margin-top: 8px;"></div>
                 <div id="expenseProgressLegend" style="display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; font-size:0.75rem; font-weight:600;"></div>
             </div>
 
+            <!-- Expense Filters -->
             <div class="swipe-filters" id="expenseFilters">
                 <button class="filter-chip active" onclick="renderExpensesListUI(this, 'All')">All</button>
                 <button class="filter-chip" onclick="renderExpensesListUI(this, 'Raw Material')">Raw Material</button>
@@ -558,6 +558,15 @@
                 </div>
             </div>
 
+            <div class="card">
+                <div class="section-header" style="margin-top:0;"><h4>System Restoration</h4></div>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:12px;">Upload original Excel to restore all Orders, Menu, Staff & Stock.</p>
+                <div class="form-group" style="margin-bottom:0;">
+                    <input type="file" id="fullImportInput" accept=".xlsx,.xls,.csv" style="padding:10px; border:1px dashed var(--border); background:#FFF;">
+                    <button class="btn" style="margin-top:10px; background:var(--success);" onclick="runFullImport()">Execute Master Import</button>
+                </div>
+            </div>
+
             <!-- BRAND LOGO UPDATE -->
             <div class="card">
                 <div class="section-header" style="margin-top:0;"><h4>Update Brand Logo</h4></div>
@@ -565,17 +574,6 @@
                 <div class="form-group" style="margin-bottom:0;">
                     <div class="input-box"><input type="url" id="customLogoUrl" placeholder="https://example.com/logo.png"></div>
                     <button class="btn" style="margin-top:12px;" onclick="saveCustomLogo()">Update Logo</button>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>System Restoration</h4></div>
-                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:12px;">Download the template below, add your historical records, and execute master import.</p>
-                <button class="btn btn-outline" style="margin-bottom:16px; height: 40px; font-size:0.85rem;" onclick="downloadFullImportSample()">📥 Download Import Template</button>
-                
-                <div class="form-group" style="margin-bottom:0;">
-                    <input type="file" id="fullImportInput" accept=".xlsx,.xls,.csv" style="padding:10px; border:1px dashed var(--border); background:#FFF;">
-                    <button class="btn" style="margin-top:10px; background:var(--success);" onclick="runFullImport()">Execute Master Import</button>
                 </div>
             </div>
 
@@ -659,7 +657,7 @@
         <div id="logsDashboard" class="tab-content" style="padding-top: 10px;">
             <div class="greeting-sec">
                 <div>
-                    <h2 id="greetText">Audit Logs</h2>
+                    <h2 id="greetTextLogs">Audit Logs</h2>
                     <p>Track system activities & approvals.</p>
                 </div>
             </div>
@@ -780,7 +778,7 @@
 
     <script>
         const API_BASE = '/api'; 
-        const APP_VERSION = "FINAL_V5.5_STABLE"; 
+        const APP_VERSION = "FINAL_V5.6_STABLE"; 
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
         let menuData = []; let stockData = {}; let runningTables = {}; 
@@ -1134,12 +1132,13 @@
         // GOOGLE SHEET AUTO-SYNC (Nightly Backup)
         // ==========================================
         function autoSyncGoogleSheet() {
-            if(!window.isUserAdmin || !GOOGLE_SHEET_API || GOOGLE_SHEET_API.length < 10) return;
+            if(typeof GOOGLE_SHEET_API === 'undefined' || GOOGLE_SHEET_API.length < 10) return;
             try {
                 let lastSync = localStorage.getItem('viraasat_last_gsync');
                 let now = new Date();
                 let todayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
                 
+                // Trigger sync only if it's past 3 AM and hasn't been synced today
                 if (now.getHours() >= 3 && lastSync !== todayKey) {
                     let yest = new Date(now); yest.setDate(yest.getDate() - 1);
                     let yestIso = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, '0')}-${String(yest.getDate()).padStart(2, '0')}`;
@@ -1148,7 +1147,8 @@
                     let syncExp = expenseHistory.filter(e => String(e.date || e.isodate || '').includes(yestIso));
                     
                     if(syncSales.length > 0 || syncExp.length > 0) {
-                        fetch(GOOGLE_SHEET_API, { method: 'POST', body: JSON.stringify({ type: 'daily_backup', sales: syncSales, expenses: syncExp, date: yestIso }) })
+                        // Use mode: no-cors to prevent preflight block issues from google scripts
+                        fetch(GOOGLE_SHEET_API, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ type: 'daily_backup', sales: syncSales, expenses: syncExp, date: yestIso }) })
                         .then(() => { localStorage.setItem('viraasat_last_gsync', todayKey); }).catch(e => console.log('G-Sheet Auto-Sync Deferred.'));
                     } else {
                         localStorage.setItem('viraasat_last_gsync', todayKey); 
@@ -1161,17 +1161,28 @@
         // ==========================================
         // FETCH DATA (Universal Mapped)
         // ==========================================
+        async function fetchJson(url) {
+            try {
+                let res = await fetch(url);
+                if (!res.ok) return {};
+                return await res.json();
+            } catch (e) {
+                console.warn("Fetch failed:", url);
+                return {};
+            }
+        }
+
         async function fetchData() {
             let loader = document.getElementById('loader');
             if(loader) { loader.style.display = 'flex'; document.getElementById('loaderText').innerText = "Syncing..."; }
             try {
                 const [menuRes, stockRes, tablesRes, ordersRes, expRes, staffRes] = await Promise.all([
-                    fetch(`${API_BASE}/menu`).then(r => r.json()),
-                    fetch(`${API_BASE}/stock`).then(r => r.json()),
-                    fetch(`${API_BASE}/tables`).then(r => r.json()),
-                    fetch(`${API_BASE}/orders?limit=500`).then(r => r.json()),
-                    fetch(`${API_BASE}/expenses`).then(r => r.json()),
-                    fetch(`${API_BASE}/staff`).then(r => r.json())
+                    fetchJson(`${API_BASE}/menu`),
+                    fetchJson(`${API_BASE}/stock`),
+                    fetchJson(`${API_BASE}/tables`),
+                    fetchJson(`${API_BASE}/orders?limit=500`),
+                    fetchJson(`${API_BASE}/expenses`),
+                    fetchJson(`${API_BASE}/staff`)
                 ]);
 
                 // Map Menu
@@ -1234,23 +1245,22 @@
                     salary: s.salary || s['Monthly Salary'], join_date: s.join_date || s['Join Date'],
                     is_active: s.is_active !== undefined ? s.is_active : 1
                 }));
-
-                populateDropdown(); populateStaffDropdown(); renderEmployeeList(); renderTableGrid(); renderStockDashboard(); checkStockDisplay(); renderLiveSales(); generateOverview(); renderExpensesListUI();
-                if(window.isUserAdmin) fetchApprovals();
-                setTimeout(autoSyncGoogleSheet, 5000); 
                 
             } catch(err) { 
                 console.error("Fetch Error:", err); 
             } finally {
+                // Guarantee render functions run even if fetch fails to avoid blank screens
+                try { populateDropdown(); populateStaffDropdown(); renderEmployeeList(); renderTableGrid(); renderStockDashboard(); checkStockDisplay(); renderLiveSales(); generateOverview(); renderExpensesListUI(); if(window.isUserAdmin) fetchApprovals(); } catch(re) { console.error("Render Error:", re); }
                 hideSplashScreen();
                 if(loader) loader.style.display = 'none';
+                setTimeout(autoSyncGoogleSheet, 5000); 
             }
         }
 
         // =====================================
         // SMART OVERVIEW & ANALYTICS
         // =====================================
-        function generateOverview() {
+        function generateTrends() {
             try {
                 let totalSalesAmount = 0; let totalExpensesAmount = 0; let totalSalaryPaid = 0;
                 let tDate = new Date(); let todayIso = `${tDate.getFullYear()}-${String(tDate.getMonth() + 1).padStart(2, '0')}-${String(tDate.getDate()).padStart(2, '0')}`; let todayGb = tDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -1568,7 +1578,10 @@
         }
 
         function fetchApprovals() {
-            if(!window.isUserAdmin) return;
+            if(!window.isUserAdmin) {
+                let card = document.getElementById('adminApprovalsCard'); if(card) card.style.display = 'none';
+                return;
+            }
             fetch(`${API_BASE}/approvals`).then(r=>r.json()).then(data => {
                 let card = document.getElementById('adminApprovalsCard'); let list = document.getElementById('adminApprovalsList');
                 if(!data.success || !data.requests || !data.requests.length) { if(card) card.style.display = 'none'; return; }
@@ -1609,7 +1622,7 @@
         }
 
         // =====================================
-        // LIVE SALES & FILTERS FIXED (DIRECT DATE STRING MATCHING)
+        // LIVE SALES & FILTERS FIXED (DIRECT DATE MATCHING)
         // =====================================
         function renderLiveSales() {
             const salesGrid = document.getElementById('salesGrid'); if(salesGrid) salesGrid.innerHTML = ""; 
@@ -1735,7 +1748,10 @@
                     if(!total) continue;
                     let dateVal = sale.Date || sale.date; let timeVal = sale.Time || sale.time;
                     let parsedTime = "12:00:00"; 
-                    if(timeVal && !String(timeVal).includes("GMT")) parsedTime = timeVal; // Handle missing time from excel
+                    if (timeVal) {
+                        if (timeVal instanceof Date) parsedTime = timeVal.toLocaleTimeString('en-GB');
+                        else if (String(timeVal).includes(":")) parsedTime = String(timeVal);
+                    }
                     
                     let isoDate = dateVal;
                     if(dateVal && !String(dateVal).includes("T")) { isoDate = `${dateVal}T${parsedTime}`; }
