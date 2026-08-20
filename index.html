@@ -10,8 +10,8 @@
     <meta name="theme-color" content="#FFFFFF">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
-    <link rel="apple-touch-icon" href="icon.png">
-    <link rel="icon" type="image/png" href="icon.png">
+    <link rel="apple-touch-icon" id="viraasatAppleIcon" href="icon.png">
+    <link rel="icon" type="image/png" id="viraasatFavicon" href="icon.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script async src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -428,13 +428,17 @@
         .approval-row{background:#fff}
         .repair-ok{background:#F2FBF7;border:1px solid #BFE8D7;border-radius:10px;padding:10px;color:#0B8F55;font-size:.68rem}
 
+    
+        .admin-form-grid > .upload-label{min-width:0;display:flex;align-items:center;justify-content:center}
+        #viraasatLogoPreview{flex:0 0 auto}
+        @media(max-width:600px){.admin-form-grid{min-width:0}.admin-form-grid>*{min-width:0}.premium-toolbar.compact-toolbar{min-width:0}.premium-toolbar.compact-toolbar #backupStatus{font-size:.55rem}}
     </style>
 </head>
 <body>
 
     <div id="splashScreen">
         <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
-            <img src="icon.png" alt="Viraasat Logo" style="width: 100px; height: auto; margin-bottom: 16px; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.08));">
+            <img data-viraasat-logo src="icon.png" alt="Viraasat Logo" style="width: 100px; height: auto; margin-bottom: 16px; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.08));">
             <div class="splash-logo" style="margin-bottom: 0;">VIRAASAT</div>
         </div>
         <div class="splash-subtitle" style="margin-top: 0;">Premium POS</div>
@@ -445,7 +449,7 @@
     <div id="loginScreen" style="display: none; position: absolute; inset: 0; background: var(--bg-color); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
         <div style="width: 100%; max-width: 400px; background: var(--surface); padding: 40px 24px; border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow-soft);">
             <div style="text-align: center; margin-bottom: 30px;">
-                <img src="icon.png" alt="Viraasat Logo" style="width: 70px; height: auto; margin-bottom: 12px;">
+                <img data-viraasat-logo src="icon.png" alt="Viraasat Logo" style="width: 70px; height: auto; margin-bottom: 12px;">
                 <h1 style="font-family: 'Playfair Display', serif; color: var(--text-dark); font-size: 2.2rem; font-weight: 700;">VIRAASAT</h1>
                 <p style="color: var(--text-muted); font-weight: 600; font-size: 0.8rem; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px;">Authorized Access Only</p>
             </div>
@@ -971,6 +975,8 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
 
         // Startup must NOT depend on window.onload: external CDN assets can delay it indefinitely.
         let appStarted = false;
+        // Apply saved branding before the POS becomes visible.
+        try{loadViraasatLogo();}catch(e){}
         function startApp() {
             if (appStarted) return;
             appStarted = true;
@@ -1955,7 +1961,88 @@ Tables, billing and existing local UI remain visible.`);}
             }catch(e){}
         }
         function getAuditLogs(){try{return JSON.parse(localStorage.getItem('viraasat_audit_logs')||'[]')}catch(e){return[]}}
-        function clearAuditLogs(){localStorage.removeItem('viraasat_audit_logs');renderPremiumAdmin();}
+
+        // ===== VIRAASAT BRANDING / FAVICON =====
+        function applyViraasatLogo(src){
+            const value=String(src||'').trim();
+            const safe=value || 'icon.png';
+            const fav=document.getElementById('viraasatFavicon');
+            const apple=document.getElementById('viraasatAppleIcon');
+            if(fav) fav.href=safe;
+            if(apple) apple.href=safe;
+            document.querySelectorAll('[data-viraasat-logo]').forEach(img=>{img.src=safe;});
+            const preview=document.getElementById('viraasatLogoPreview');
+            if(preview) preview.src=safe;
+        }
+        function getViraasatLogo(){return localStorage.getItem('viraasat_logo_src')||'icon.png';}
+        function loadViraasatLogo(){applyViraasatLogo(getViraasatLogo());}
+        function saveViraasatLogoUrl(){
+            const input=document.getElementById('viraasatLogoUrl');
+            const value=String(input?.value||'').trim();
+            if(!value){showCustomAlert('Please enter a logo image URL.');return;}
+            if(!/^https?:\/\//i.test(value) && !/^data:image\//i.test(value)){
+                showCustomAlert('Please enter a valid image URL starting with http:// or https://.');return;
+            }
+            localStorage.setItem('viraasat_logo_src',value);
+            applyViraasatLogo(value);
+            auditLog('Logo Updated','Logo URL updated');
+            showCustomAlert('Logo updated successfully.');
+        }
+        function handleViraasatLogoUpload(file){
+            if(!file)return;
+            if(!file.type.startsWith('image/')){showCustomAlert('Please select an image file.');return;}
+            if(file.size>2*1024*1024){showCustomAlert('Logo must be 2 MB or smaller.');return;}
+            const reader=new FileReader();
+            reader.onload=()=>{
+                const value=String(reader.result||'');
+                localStorage.setItem('viraasat_logo_src',value);
+                applyViraasatLogo(value);
+                const urlInput=document.getElementById('viraasatLogoUrl'); if(urlInput) urlInput.value='';
+                auditLog('Logo Updated','Logo image uploaded');
+                showCustomAlert('Logo uploaded successfully.');
+            };
+            reader.onerror=()=>showCustomAlert('Could not read the logo file.');
+            reader.readAsDataURL(file);
+        }
+        function resetViraasatLogo(){
+            localStorage.removeItem('viraasat_logo_src');
+            applyViraasatLogo('icon.png');
+            const input=document.getElementById('viraasatLogoUrl'); if(input) input.value='';
+            auditLog('Logo Reset','Default logo restored');
+            showCustomAlert('Default logo restored.');
+        }
+
+        // ===== GOOGLE SHEET BACKUP =====
+        async function runManualGoogleSheetBackup(){
+            if(!requireAdmin('Google Sheet backup'))return;
+            const status=document.getElementById('backupStatus');
+            if(status)status.textContent='Backup running…';
+            try{
+                const result=await d1Post('/backup/google-sheet',{},30000);
+                const c=result?.counts||{};
+                const summary=`Sales ${c.sales??0} • Menu ${c.menu??0} • Staff ${c.staff??0} • Stock ${c.stock??0} • Expenses ${c.expenses??0}`;
+                if(status)status.textContent=`Last backup: ${new Date().toLocaleString('en-IN')} • ${summary}`;
+                localStorage.setItem('viraasat_last_backup',JSON.stringify({time:new Date().toISOString(),result}));
+                auditLog('Manual Backup','Google Sheet backup completed');
+                showCustomAlert('Google Sheet backup completed successfully.');
+            }catch(e){
+                if(status)status.textContent='Backup failed: '+(e?.message||e);
+                showCustomAlert('Google Sheet backup failed: '+(e?.message||e));
+            }
+        }
+        function loadBackupStatus(){
+            try{
+                const saved=JSON.parse(localStorage.getItem('viraasat_last_backup')||'null');
+                const el=document.getElementById('backupStatus');
+                if(saved?.time&&el)el.textContent='Last manual backup: '+new Date(saved.time).toLocaleString('en-IN');
+            }catch(e){}
+        }
+
+        function clearAuditLogs(){
+            if(!confirm('Are you sure you want to clear all Audit Logs from this device? This action cannot be undone.'))return;
+            localStorage.removeItem('viraasat_audit_logs');
+            renderPremiumAdmin();
+        }
         async function loadPendingApprovals(){
             try{
                 const data=await d1Get('/approvals');
@@ -1997,6 +2084,29 @@ Tables, billing and existing local UI remain visible.`);}
                     <button class="admin-module" onclick="document.getElementById('userMobile').focus()"><b>Users</b><span>Register / revoke access</span></button>
                     <button class="admin-module" onclick="document.getElementById('adminMenuName').focus()"><b>Menu</b><span>Add & export menu</span></button>
                     <button class="admin-module" onclick="exportFullDatabaseWorkbook()"><b>Export</b><span>Download complete workbook</span></button>
+                </div>
+            </div>
+
+            <div class="premium-card admin-card">
+                <div class="premium-card-head"><h3>Google Sheet Backup</h3><span>D1 → Backup</span></div>
+                <div class="admin-help">Google Sheet is used only as a backup. D1 remains the master database.</div>
+                <div class="premium-toolbar compact-toolbar">
+                    <button class="premium-btn" onclick="runManualGoogleSheetBackup()">Backup Now</button>
+                    <span id="backupStatus" class="admin-help" style="margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Ready for backup.</span>
+                </div>
+            </div>
+
+            <div class="premium-card admin-card">
+                <div class="premium-card-head"><h3>Viraasat Logo</h3><span>Browser tab + POS</span></div>
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;min-width:0">
+                    <img id="viraasatLogoPreview" src="icon.png" alt="Logo preview" style="width:48px;height:48px;object-fit:contain;border:1px solid var(--border);border-radius:10px;background:#fff;padding:5px">
+                    <div class="admin-help" style="margin:0">Upload an image or use a logo URL. Uploaded logo takes priority.</div>
+                </div>
+                <div class="admin-form-grid">
+                    <label class="premium-btn alt upload-label">Upload Logo<input type="file" accept="image/*" style="display:none" onchange="handleViraasatLogoUpload(this.files[0])"></label>
+                    <input id="viraasatLogoUrl" type="url" placeholder="Logo image URL">
+                    <button class="premium-btn" onclick="saveViraasatLogoUrl()">Use URL</button>
+                    <button class="premium-btn light" onclick="resetViraasatLogo()">Reset Logo</button>
                 </div>
             </div>
 
@@ -2064,6 +2174,7 @@ Tables, billing and existing local UI remain visible.`);}
             </div>
             `;
             renderAdminStockRows(); renderAdminStaffRows(); renderAdminUsersRows();
+            setTimeout(()=>{loadViraasatLogo();loadBackupStatus();},0);
             pendingPromise.then(result=>{
                 const box=document.getElementById('pendingApprovalsBox'); if(!box)return;
                 if(result&&result.error){
