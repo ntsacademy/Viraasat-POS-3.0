@@ -63,12 +63,14 @@
         } 
 
         /* CSS Graphic Logo Styling */
-        .logo-graphic { font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 800; color: var(--primary); position: relative; display: inline-block; line-height: 1; letter-spacing: 0.5px;}
+        .logo-graphic { display: none; font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 800; color: var(--primary); position: relative; line-height: 1; letter-spacing: 0.5px;}
         .logo-graphic::after { content: '™'; font-size: 0.6rem; position: absolute; top: 0; right: -12px; color: var(--accent-gold); font-family: 'Poppins', sans-serif;}
         .logo-accent { display: block; width: 40px; height: 3px; background: var(--accent-gold); margin: 6px 0 0 2px; border-radius: 2px; }
-        .splash-logo { font-size: 3rem; text-align: center; margin-bottom: 8px;}
-        .splash-logo .logo-accent { margin: 12px auto 0; width: 60px; height: 4px; }
-        .custom-logo { max-width: 140px; max-height: 50px; object-fit: contain; }
+        
+        .brand-logo-img { height: 38px; width: auto; object-fit: contain; }
+
+        .splash-logo-container { font-size: 3rem; text-align: center; margin-bottom: 8px;}
+        .splash-logo-img { height: 90px; width: auto; margin-bottom: 15px; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.08)); }
 
         .top-app-bar { padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 50; background: var(--bg-color); }
         .brand-container { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
@@ -122,7 +124,7 @@
         .hkpi-sub { font-size: 0.75rem; font-weight: 700; color: var(--text-dark); display: inline-block; padding: 4px 10px; border-radius: 8px; background: rgba(255,255,255,0.7); width: max-content; }
         .hkpi-sub.green-text { color: var(--success); background: transparent; padding: 0; }
 
-        /* Exact colors from Screenshot */
+        /* Exact colors */
         .bg-purple { background-color: var(--card-purple) !important; border-color: transparent !important; }
         .bg-peach { background-color: var(--card-peach) !important; border-color: transparent !important; }
         .bg-mint { background-color: var(--card-mint) !important; border-color: transparent !important; }
@@ -136,11 +138,10 @@
         .ho-sub { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
         .ho-badge { background: #E6F4EA; color: #10B981; font-size: 0.65rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; letter-spacing: 0.5px; }
 
-        /* Fixed Navigation per Screenshot */
         .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; padding: 10px 4px calc(10px + env(safe-area-inset-bottom)) 4px; border-top: 1px solid var(--border); z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.03); border-radius: 20px 20px 0 0; }
         .nav-item { background: transparent; border: none; color: #6B7280; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: inherit; font-size: 0.6rem; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; padding: 6px 0; }
         .nav-item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: 0.2s; }
-        .nav-item.active { color: var(--btn-pink); font-weight: 700; }
+        .nav-item.active { color: var(--btn-pink); font-weight: 800; }
         .nav-item.active .icon-container { background: #FDE8D7; width: 50px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
         .nav-item.active svg { stroke: var(--btn-pink); stroke-width: 2.2; }
 
@@ -200,7 +201,7 @@
         @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .sheet-handle { width: 36px; height: 4px; background: #E0E0E0; border-radius: 2px; margin: 0 auto 20px auto; }
         
-        /* Non-blocking loader fix */
+        /* Loader Fix */
         #loader { text-align: center; color: var(--text-muted); font-weight: 600; font-size: 0.9rem; margin: 40px 0; display: none; align-items: center; justify-content: center; gap: 10px;}
         .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--text-dark); border-radius: 50%; animation: spin 0.8s linear infinite; }
 
@@ -220,11 +221,20 @@
 </head>
 <body>
 
+    <script>
+        // GOOGLE SHEET SYNC CONFIGURATION
+        // Yahan par apna Google Apps Script Web App URL daalein.
+        // POS auto-sync karega raat 3 baje (agar open ho) ya manual sync button se.
+        const GOOGLE_SHEET_API = "https://script.google.com/macros/s/AKfycbz2JlJYUw75cp9-r98_oKqm65z3l_OD-d0KMy7QZOpQ6XvUPLy0OLcBLT-KetLUoKsL/exec"; 
+        
+        // Brand Logo Fallback
+        const defaultLogo = "icon.png";
+    </script>
+
     <div id="splashScreen">
-        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
-            <div id="splashLogoBox">
-                <div class="logo-graphic">Viraasat<div class="logo-accent"></div></div>
-            </div>
+        <div class="splash-logo-container">
+            <img src="icon.png" alt="Viraasat Logo" class="splash-logo-img" id="splashLogoImg" onerror="this.style.display='none'; document.getElementById('splashLogoGraphic').style.display='block';">
+            <div class="logo-graphic" id="splashLogoGraphic">Viraasat<div class="logo-accent"></div></div>
         </div>
         <div class="splash-subtitle" style="margin-top: 20px; font-family: 'Poppins', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase;">Premium POS</div>
         <div class="spinner" style="margin-top: 20px;"></div>
@@ -236,9 +246,8 @@
     <div id="loginScreen" style="display: none; position: absolute; inset: 0; background: var(--bg-color); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
         <div style="width: 100%; max-width: 400px; background: var(--surface); padding: 40px 24px; border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow-soft);">
             <div style="text-align: center; margin-bottom: 30px;">
-                <div id="loginLogoBox">
-                    <div class="logo-graphic" style="font-size: 2.2rem;">Viraasat<div class="logo-accent" style="margin: 8px auto 0;"></div></div>
-                </div>
+                <img src="icon.png" alt="Viraasat Logo" class="splash-logo-img" style="height:70px" id="loginLogoImg" onerror="this.style.display='none'; document.getElementById('loginLogoGraphic').style.display='inline-block';">
+                <div class="logo-graphic" id="loginLogoGraphic" style="font-size: 2.2rem;">Viraasat<div class="logo-accent" style="margin: 8px auto 0;"></div></div>
                 <p style="color: var(--text-muted); font-weight: 600; font-size: 0.8rem; margin-top: 16px; text-transform: uppercase; letter-spacing: 1px;">Authorized Access Only</p>
             </div>
             <div class="form-group">
@@ -316,11 +325,18 @@
                 <button class="btn btn-outline" onclick="printHistoricalBill()">Print</button>
                 <button class="btn" style="background:#10B981; border:none;" onclick="sendWA_HistoricalBill()">WhatsApp</button>
             </div>
-            <button class="btn btn-danger" style="width:100%; margin-top: 12px; background:var(--occ-bg); color:var(--danger); border:1px solid var(--occ-border);" id="btnRequestDelete" onclick="requestOrderDeletion()">Request Deletion (Admin Approval)</button>
+            <button class="btn btn-danger" style="width:100%; margin-top:12px; background:var(--occ-bg); color:var(--danger); border:1px solid var(--occ-border);" id="btnRequestDelete" onclick="requestOrderDeletion()">Request Deletion (Admin Approval)</button>
         </div>
     </div>
 
-    <!-- CUSTOM THREE BUTTON MODAL -->
+    <!-- CUSTOM THREE BUTTON MODAL (For Salary Print) -->
+    <div id="expenseDetailsModal" class="modal-overlay" style="z-index:100000; align-items:center; background:rgba(0,0,0,.55);">
+        <div class="modal-card expense-detail-modal-card" style="max-width:560px; width:calc(100% - 28px); background:#fff !important; opacity:1 !important; color:#211d1a !important; padding:20px; border-radius:18px;">
+            <div class="modal-header" style="margin-bottom:14px;"><h3 style="margin:0;color:#211d1a;">Expense Details</h3><button class="icon-btn" onclick="document.getElementById('expenseDetailsModal').style.display='none'">×</button></div>
+            <div id="expenseDetailsBody" style="background:#fff !important; color:#211d1a !important;"></div>
+        </div>
+    </div>
+
     <div id="salaryActionModal" class="modal-overlay" style="z-index: 100000; align-items: center;">
         <div class="bottom-sheet" style="max-width: 320px; border-radius: 16px; padding: 24px; text-align: center; margin: 0 20px; transform: none; animation: fadeIn 0.2s ease-out; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
             <h3 id="salaryActionMessage" style="font-size:1.1rem; font-weight:700; margin-bottom: 24px; color: var(--text-dark); line-height: 1.5;">Payout Recorded!</h3>
@@ -347,9 +363,8 @@
     <!-- TOP BAR -->
     <header class="top-app-bar" id="appHeader" style="display: none;">
         <div class="brand-container">
-            <div id="headerLogoBox">
-                <div class="logo-graphic">Viraasat<div class="logo-accent"></div></div>
-            </div>
+            <img src="icon.png" alt="Brand Logo" class="brand-logo-img" id="topNavLogoImg" onerror="this.style.display='none'; document.getElementById('topNavLogoGraphic').style.display='inline-block';">
+            <div class="logo-graphic" id="topNavLogoGraphic" style="font-size: 1.4rem;">Viraasat<div class="logo-accent" style="width:30px; margin-top:4px;"></div></div>
             <div class="page-subtitle" id="pageMainTitle" style="transition: opacity 0.5s ease; font-family: 'Playfair Display', serif; font-size: 0.85rem; font-style: italic; font-weight: 700; color: #A67C52;">Premium POS</div>
         </div>
         <button class="icon-btn" onclick="haptic(); fetchData();" title="Refresh Data">
@@ -388,7 +403,6 @@
             </div>
 
             <div class="section-header" style="margin-top: 8px;"><h4>Dining Zones</h4></div>
-            
             <div id="tableGrid"></div>
 
             <!-- TODAY'S SALE & AVG VALUE (Exact Screenshot Order) -->
@@ -420,7 +434,6 @@
             <div class="section-header"><h4>Recent Orders</h4> <span id="btnViewAllOrders" onclick="switchMainTab('salesDashboard', document.getElementById('navOrders'))">View All ›</span></div>
             <div id="homeRecentOrders"></div>
             
-            <!-- Fixed Stock Alert Padding -->
             <div class="section-header"><h4>Stock Alert</h4></div>
             <div id="dashboardStockList" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px;"></div>
         </div>
@@ -482,6 +495,11 @@
                 <div id="itemAnalyticsList" style="display:flex; flex-direction:column; gap:12px;"></div>
             </div>
 
+            <div class="card" style="border:1px solid var(--border); box-shadow:none;">
+                <div class="section-header" style="margin-top:0;"><h4>Staff Expense Breakdown</h4></div>
+                <div id="staffExpenseList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
+            </div>
+
             <!-- Employee Advance Log in P&L -->
             <div class="card" style="border:1px solid var(--border); box-shadow:none;">
                 <div class="section-header" style="margin-top:0;"><h4>Staff Advance Details</h4></div>
@@ -495,7 +513,7 @@
             </div>
         </div>
 
-        <!-- TAB 4: EXPENSES VIEW -->
+        <!-- EXPENSES VIEW -->
         <div id="expenses" class="tab-content" style="padding-top: 10px;">
             <div class="greeting-sec"><h2 style="font-size:1.4rem;">Expenditure Log</h2><p>Track operational costs.</p></div>
             <div class="card" style="border:1px solid var(--border); box-shadow:none;">
@@ -503,7 +521,6 @@
                     <div class="input-box"><label>Category</label><select id="expCategory"><option>Raw Material</option><option>Electricity</option><option>Payroll</option><option>Maintenance</option><option>Other</option></select></div>
                     <div class="input-box"><label>Amount (₹)</label><input type="number" id="expAmount" placeholder="0" inputmode="numeric"></div>
                     <div class="input-box"><label>Note (Optional)</label><input type="text" id="expDescription" placeholder="Add details"></div>
-                    <!-- Image Upload -->
                     <div class="input-box" style="margin-top: 8px;">
                         <label>Attach Receipt (Optional)</label>
                         <input type="file" id="expImage" accept="image/*" style="padding: 10px; border: 1px dashed var(--text-muted); cursor: pointer; border-radius:8px; font-size:0.8rem;" onchange="handleExpenseImage(event)">
@@ -515,6 +532,7 @@
 
             <div class="section-header" style="margin-bottom:16px;"><h4>Expense Ledger</h4> <span onclick="exportExpensesTable()">Export ›</span></div>
             
+            <!-- Date Filter Dropdown -->
             <div class="input-box" style="margin-bottom: 16px;">
                 <label>Filter Expenses By Date</label>
                 <select id="expenseDateFilter" onchange="renderExpensesListUI()">
@@ -528,12 +546,14 @@
                 </select>
             </div>
 
+            <!-- Progress Bar -->
             <div class="card" style="padding: 16px; border:1px solid var(--border); box-shadow:none; margin-bottom: 20px;">
                 <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-dark); margin-bottom: 8px;">Category Breakdown</div>
                 <div id="expenseProgressBar" style="width: 100%; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; display: flex; margin-top: 8px;"></div>
                 <div id="expenseProgressLegend" style="display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; font-size:0.75rem; font-weight:600;"></div>
             </div>
 
+            <!-- Expense Filters -->
             <div class="swipe-filters" id="expenseFilters">
                 <button class="filter-chip active" onclick="renderExpensesListUI(this, 'All')">All</button>
                 <button class="filter-chip" onclick="renderExpensesListUI(this, 'Raw Material')">Raw Material</button>
@@ -580,23 +600,17 @@
                 
                 <div class="form-group" style="margin-bottom:0;">
                     <input type="file" id="fullImportInput" accept=".xlsx,.xls,.csv" style="padding:10px; border:1px dashed var(--border); background:#FFF;">
-                    <button class="btn" style="margin-top:10px; background:var(--success);" onclick="handleFullDatabaseImport(document.getElementById('fullImportInput').files[0])">Execute Master Import</button>
+                    <button class="btn" style="margin-top:10px; background:var(--success);" onclick="runFullImport()">Execute Master Import</button>
                 </div>
-                <div id="fullImportStatus" style="font-size:0.8rem; margin-top:10px; font-weight:600;"></div>
             </div>
 
+            <!-- BRAND LOGO UPDATE -->
             <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>App Customization</h4></div>
+                <div class="section-header" style="margin-top:0;"><h4>Update Brand Logo</h4></div>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:12px;">Enter a direct image URL (PNG/JPG) to change the app logo.</p>
                 <div class="form-group" style="margin-bottom:0;">
-                    <div class="input-box">
-                        <label>Upload Brand Logo</label>
-                        <input type="file" id="customLogoUpload" accept="image/*" style="padding:10px; border:1px dashed var(--border); background:#FFF;" onchange="uploadCustomLogo(event)">
-                    </div>
-                    <div class="input-box" style="margin-top:12px;">
-                        <label>G-Sheet Auto Sync (Nightly)</label>
-                        <input type="text" id="gSheetSyncUrl" placeholder="Enter Google Script Web App URL">
-                        <button class="btn btn-outline" style="margin-top:10px; height: 40px;" onclick="saveGSheetSyncUrl()">Save Sync URL</button>
-                    </div>
+                    <div class="input-box"><input type="url" id="customLogoUrl" placeholder="https://example.com/logo.png"></div>
+                    <button class="btn" style="margin-top:12px;" onclick="saveCustomLogo()">Update Logo</button>
                 </div>
             </div>
 
@@ -670,7 +684,7 @@
             </div>
 
             <div class="section-header" style="margin-top:24px;"><h4>Active Staff Directory</h4></div>
-            <div id="employeeList" style="display:flex; flex-direction:column; gap:12px;"></div>
+            <div id="employeeList" style="display:flex; flex-direction:column; gap:12px; margin-bottom:32px;"></div>
 
             <div class="section-header" style="margin-top:24px;"><h4>Registered POS App Users</h4></div>
             <div id="staffList" style="display:flex; flex-direction:column; gap:10px; margin-bottom: 24px;"></div>
@@ -760,14 +774,14 @@
                 <button class="btn btn-outline" onclick="haptic(); printBill('final')">Print Final Bill</button>
                 <button class="btn btn-outline" style="border-color:#10B981; color:#10B981;" onclick="sendWA_Customer()">WhatsApp Bill</button>
                 <button class="btn btn-outline" onclick="clearTableWithoutCheckout()" style="color:var(--danger); border-color:var(--danger);">Clear Table (Cancel)</button>
-                <button class="btn" style="margin-top:8px; height: 60px; font-size:1.1rem; background:var(--btn-pink);" onclick="openModal('paymentModal')">Checkout</button>
+                <button class="btn" style="margin-top:8px; height: 60px; font-size:1.1rem; background:var(--btn-pink);" onclick="openPaymentModal()">Checkout</button>
             </div>
         </div>
     </main>
 
     <!-- BOTTOM NAV -->
     <nav class="bottom-nav" id="appBottomNav" style="display: none;">
-        <button class="nav-item active" onclick="switchMainTab('tableDashboard', this)">
+        <button class="nav-item active" id="navTable" onclick="switchMainTab('tableDashboard', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></div>
             <span>Table</span>
         </button>
@@ -783,7 +797,7 @@
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></div>
             <span>Expenses</span>
         </button>
-        <button class="nav-item" id="navUsers" onclick="switchMainTab('usersManager', this)" style="display:none;">
+        <button class="nav-item" id="navAdmin" onclick="switchMainTab('usersManager', this)" style="display:none;">
             <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
             <span>Admin</span>
         </button>
@@ -802,72 +816,53 @@
     <script>
         const API_BASE = '/api'; 
         
-        const APP_VERSION = "Master Full Backup Sync V6.0"; 
+        const APP_VERSION = "D1 Hybrid Master V5.5"; 
         
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
-        let menuData = []; 
-        let stockData = {}; 
-        let runningTables = {}; 
-        let salesHistory = []; 
-        let expenseHistory = []; 
-        let currentBill = []; 
-        let staffData = [];
-        let activeTableNumber = ""; 
-        let trendChartInstance = null; 
-        let donutChartInstance = null;
-        let selectedPaymentMode = "Cash";
-        let rawChartSalesData = {}; 
-        let rawChartExpenseData = {};
+        let menuData = []; let stockData = {}; let runningTables = {}; 
+        let salesHistory = []; let expenseHistory = []; let currentBill = []; let staffData = [];
+        let activeTableNumber = ""; let trendChartInstance = null; let donutChartInstance = null; let selectedPaymentMode = "Cash";
+        let rawChartSalesData = {}; let rawChartExpenseData = {};
         
-        let currentViewingSale = null;
-        let expenseImageBase64 = null;
+        let currentViewingSale = null; let expenseImageBase64 = null;
 
-        function haptic() {
-            try { if (navigator.vibrate) navigator.vibrate(40); } catch(e){}
-        }
+        function haptic() { try { if (navigator.vibrate) navigator.vibrate(40); } catch(e){} }
 
-        const royalTaglines = [
-            "A Taste of Royal Mewar",
-            "Mewar Ki Shaan, Swaad Mein Jaan",
-            "Swaad Humari Sabse Badi Pehchaan",
-            "Authentic Rajputana Spices",
-            "Premium POS"
-        ];
+        const royalTaglines = ["A Taste of Royal Mewar", "Mewar Ki Shaan, Swaad Mein Jaan", "Swaad Humari Sabse Badi Pehchaan", "Authentic Rajputana Spices", "Premium POS"];
         let tickerIndex = 0;
 
         function rotateTicker() {
             const activeTab = document.querySelector('.tab-content.active');
             if (!activeTab || activeTab.id !== 'tableDashboard') return;
-            
-            const tickerEl = document.getElementById('pageMainTitle');
-            if (!tickerEl) return;
-            
+            const tickerEl = document.getElementById('pageMainTitle'); if (!tickerEl) return;
             tickerEl.style.opacity = 0;
-            
-            setTimeout(() => {
-                tickerIndex = (tickerIndex + 1) % royalTaglines.length;
-                tickerEl.innerText = royalTaglines[tickerIndex];
-                tickerEl.style.opacity = 1;
-            }, 500); 
+            setTimeout(() => { tickerIndex = (tickerIndex + 1) % royalTaglines.length; tickerEl.innerText = royalTaglines[tickerIndex]; tickerEl.style.opacity = 1; }, 500); 
         }
-
         setInterval(rotateTicker, 4000);
 
-        let tableSections;
-        try {
-            tableSections = JSON.parse(localStorage.getItem('viraasat_table_sections')) || [
-                { title: "Hut Seating", tables: ["1", "2", "3", "4"] },
-                { title: "Ground Seating", tables: ["5", "6", "7"] },
-                { title: "Terrace Seating", tables: ["8", "9", "10"] }
-            ];
-        } catch(e) {
-            tableSections = [
-                { title: "Hut Seating", tables: ["1", "2", "3", "4"] },
-                { title: "Ground Seating", tables: ["5", "6", "7"] },
-                { title: "Terrace Seating", tables: ["8", "9", "10"] }
-            ];
+        // INITIALIZE CUSTOM LOGO
+        function initLogo() {
+            let savedLogo = localStorage.getItem('viraasat_custom_logo') || defaultLogo;
+            document.querySelectorAll('img[alt="Viraasat Logo"], img[alt="Brand Logo"], .splash-logo-img').forEach(img => {
+                img.src = savedLogo;
+                img.style.display = 'inline-block';
+            });
+            document.querySelectorAll('.logo-graphic').forEach(el => el.style.display = 'none');
         }
+
+        function saveCustomLogo() {
+            haptic();
+            let url = document.getElementById('customLogoUrl').value.trim();
+            if(!url) { url = defaultLogo; }
+            localStorage.setItem('viraasat_custom_logo', url);
+            initLogo();
+            showCustomAlert("Brand logo updated successfully!");
+        }
+
+        let tableSections;
+        try { tableSections = JSON.parse(localStorage.getItem('viraasat_table_sections')) || [{ title: "Hut Seating", tables: ["1", "2", "3", "4"] }, { title: "Ground Seating", tables: ["5", "6", "7"] }, { title: "Terrace Seating", tables: ["8", "9", "10"] }]; } 
+        catch(e) { tableSections = [{ title: "Hut Seating", tables: ["1", "2", "3", "4"] }, { title: "Ground Seating", tables: ["5", "6", "7"] }, { title: "Terrace Seating", tables: ["8", "9", "10"] }]; }
 
         let userPermissions;
         try { userPermissions = JSON.parse(localStorage.getItem('viraasat_permissions')) || {}; } catch(e) { userPermissions = {}; }
@@ -877,16 +872,11 @@
         if(dt) dt.innerText = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
         
         function getVal(obj, possibleKeys) {
-            if (!obj) return '';
-            let normalizedObj = {};
-            for (let k in obj) { 
-                normalizedObj[k.toLowerCase().replace(/[^a-z0-9]/g, '')] = obj[k]; 
-            }
+            if (!obj) return ''; let normalizedObj = {};
+            for (let k in obj) { normalizedObj[k.toLowerCase().replace(/[^a-z0-9]/g, '')] = obj[k]; }
             for (let k of possibleKeys) {
                 let normK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
-                if (normalizedObj[normK] !== undefined && normalizedObj[normK] !== null && normalizedObj[normK] !== '') { 
-                    return normalizedObj[normK]; 
-                }
+                if (normalizedObj[normK] !== undefined && normalizedObj[normK] !== null && normalizedObj[normK] !== '') { return normalizedObj[normK]; }
             }
             return '';
         }
@@ -894,260 +884,80 @@
         function parseAmount(val) {
             if (val === undefined || val === null || val === '') return 0;
             if (typeof val === 'number') return Math.round(val);
-            let str = String(val).replace(/[^0-9.-]/g, ''); 
-            let parsed = parseFloat(str);
-            return isNaN(parsed) ? 0 : Math.round(parsed);
+            let str = String(val).replace(/[^0-9.-]/g, ''); let parsed = parseFloat(str); return isNaN(parsed) ? 0 : Math.round(parsed);
         }
 
-        // SMART ITEM PARSER (Bulletproof logic for Order Details modal)
+        // SMART ITEM PARSER (Bulletproof string matching)
         function extractItemsList(sItems) {
             let parsedItems = [];
             if (!sItems) return parsedItems;
             
             try {
                 let arr = typeof sItems === 'string' ? JSON.parse(sItems) : sItems;
-                if (Array.isArray(arr)) {
-                    return arr.map(i => ({ name: i.name || i.itemname || "Item", qty: parseInt(i.qty) || 1, total: parseFloat(i.total || i.price) || 0 }));
-                }
+                if (Array.isArray(arr)) { return arr.map(i => ({ name: i.name || i.itemname || "Item", qty: parseInt(i.qty) || 1, total: parseFloat(i.total || i.price) || 0 })); }
             } catch(e) {}
             
             let cleanStr = String(sItems).replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
             cleanStr.split(',').forEach(str => {
-                str = str.trim();
-                if(!str) return;
+                str = str.trim(); if(!str) return;
                 let match = str.match(/(.+?)\s*\(x(\d+)\)(?:\s*₹?(\d+(?:\.\d+)?))?/);
-                if(match) {
-                    parsedItems.push({ name: match[1].trim(), qty: parseInt(match[2]), total: match[3] ? parseFloat(match[3]) : null });
-                } else {
-                    parsedItems.push({ name: str, qty: 1, total: null });
-                }
+                if(match) { parsedItems.push({ name: match[1].trim(), qty: parseInt(match[2]), total: match[3] ? parseFloat(match[3]) : null }); } 
+                else { parsedItems.push({ name: str, qty: 1, total: null }); }
             });
             return parsedItems;
         }
 
         function getSaleItemsText(sale) {
-            let itemsArr = extractItemsList(sale.itemsstring || sale.items_string || sale.items);
-            if(itemsArr.length > 0) {
-                return itemsArr.map(i => `${i.name} (x${i.qty}) ₹${i.total || ''}`).join(', ');
-            }
-            return sale.itemsstring || sale.items_string || sale.items || '';
-        }
-
-        // MODAL HELPER FUNCTIONS
-        function openModal(id) { 
-            let el = document.getElementById(id); 
-            if(el) { el.style.display = 'flex'; try { history.pushState({modal: id}, '', '#' + id); } catch(e){} } 
-        }
-
-        function closeModal(id) { 
-            let el = document.getElementById(id); 
-            if(el) el.style.display = 'none'; 
-        }
-
-        // CUSTOM BRAND LOGO LOGIC
-        function loadCustomLogo() {
-            let savedLogo = localStorage.getItem('viraasat_custom_logo');
-            if (savedLogo) {
-                let hb = document.getElementById('headerLogoBox'); if(hb) hb.innerHTML = `<img src="${savedLogo}" class="custom-logo">`;
-                let sb = document.getElementById('splashLogoBox'); if(sb) sb.innerHTML = `<img src="${savedLogo}" style="max-width: 200px; max-height: 80px; object-fit: contain;">`;
-                let lb = document.getElementById('loginLogoBox'); if(lb) lb.innerHTML = `<img src="${savedLogo}" style="max-width: 160px; max-height: 70px; object-fit: contain;">`;
-            }
-        }
-
-        function uploadCustomLogo(event) {
-            const file = event.target.files[0];
-            if(!file) return;
-            if(file.size > 1 * 1024 * 1024) { showCustomAlert("Logo size must be under 1 MB."); return; }
-            const reader = new FileReader();
-            reader.onload = (e) => { 
-                localStorage.setItem('viraasat_custom_logo', e.target.result); 
-                loadCustomLogo(); 
-                showCustomAlert("Brand Logo Updated successfully!"); 
-            };
-            reader.readAsDataURL(file);
-        }
-
-        // AUDIT LOG SYSTEM
-        function logAction(action, user) {
-            let logs = JSON.parse(localStorage.getItem('viraasat_logs')) || [];
-            let log_date = new Date(); let dStr = log_date.toLocaleDateString('en-GB') + " " + log_date.toLocaleTimeString('en-IN');
-            logs.unshift({ time: dStr, action: action, user: user });
-            if (logs.length > 100) logs.pop();
-            localStorage.setItem('viraasat_logs', JSON.stringify(logs));
-            renderLogs();
-        }
-
-        function renderLogs() {
-            let logsList = document.getElementById('actionLogsList');
-            if(!logsList) return;
-            let logs = JSON.parse(localStorage.getItem('viraasat_logs')) || [];
-            if(logs.length === 0) { logsList.innerHTML = "<span style='color:var(--text-muted);'>No recent actions.</span>"; return; }
-            let html = "";
-            logs.forEach(l => {
-                html += `<div style="border-bottom:1px dashed var(--border); padding-bottom:8px; margin-bottom:8px;">
-                    <div style="font-weight:600; color:var(--text-dark);">${l.action}</div>
-                    <div style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;">By: ${l.user} • ${l.time}</div>
-                </div>`;
-            });
-            logsList.innerHTML = html;
-        }
-
-        // FILTERS
-        function setActiveFilterBtn(id) { 
-            document.querySelectorAll('.filter-btn').forEach(btn => {
-                btn.style.background = 'transparent';
-                btn.style.color = (btn.id === 'btnFilterClear') ? 'var(--danger)' : 'var(--text-dark)';
-            }); 
-            let btn = document.getElementById(id);
-            if(btn && id !== 'btnFilterClear') { btn.style.background = 'var(--text-dark)'; btn.style.color = '#FFF'; }
-        }
-        
-        window.setTodayFilter = function() { 
-            setActiveFilterBtn('btnFilterToday'); 
-            let now = new Date(); let todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`; 
-            let fStart = document.getElementById('filterStartDate'); if(fStart) fStart.value = todayStr; 
-            let fEnd = document.getElementById('filterEndDate'); if(fEnd) fEnd.value = todayStr; 
-            renderLiveSales(); 
-        }
-        
-        window.setYesterdayFilter = function() { 
-            setActiveFilterBtn('btnFilterYesterday'); 
-            let yest = new Date(); yest.setDate(yest.getDate() - 1); 
-            let yestStr = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, '0')}-${String(yest.getDate()).padStart(2, '0')}`; 
-            let fStart = document.getElementById('filterStartDate'); if(fStart) fStart.value = yestStr; 
-            let fEnd = document.getElementById('filterEndDate'); if(fEnd) fEnd.value = yestStr; 
-            renderLiveSales(); 
-        }
-        
-        window.resetDateFilter = function() { 
-            setActiveFilterBtn('btnFilterClear'); 
-            let fStart = document.getElementById('filterStartDate'); if(fStart) fStart.value = ""; 
-            let fEnd = document.getElementById('filterEndDate'); if(fEnd) fEnd.value = ""; 
-            renderLiveSales(); 
-        }
-
-        // GOOGLE SHEET SYNC SYSTEM (Nightly Backup)
-        function saveGSheetSyncUrl() {
-            let url = document.getElementById('gSheetSyncUrl').value.trim();
-            if(!url.includes('script.google.com')) { showCustomAlert('Invalid Google Apps Script Web App URL.'); return; }
-            localStorage.setItem('viraasat_gsheet_sync_url', url);
-            showCustomAlert('Google Sheet Sync URL saved. Data will backup nightly at 3 AM.');
-        }
-
-        function checkAndRunNightlySync() {
-            let syncUrl = localStorage.getItem('viraasat_gsheet_sync_url');
-            if(!syncUrl) return;
-            
-            let lastSync = localStorage.getItem('viraasat_last_sync_date');
-            let now = new Date();
-            let todayStr = now.toDateString();
-            
-            // Run sync if it's past 3 AM and hasn't synced today
-            if(now.getHours() >= 3 && lastSync !== todayStr) {
-                syncToGSheet(syncUrl, todayStr);
-            }
-        }
-
-        async function syncToGSheet(url, todayStr) {
-            try {
-                let payload = {
-                    sales: salesHistory,
-                    menu: menuData,
-                    stock: Object.entries(stockData).map(([Name,Quantity])=>({Name,Quantity})),
-                    staff: staffData,
-                    expenses: expenseHistory
-                };
-                
-                await fetch(url, { method: 'POST', body: JSON.stringify({ type: 'full_backup', data: payload }) });
-                localStorage.setItem('viraasat_last_sync_date', todayStr);
-                logAction("Nightly G-Sheet Backup Successful", "System");
-            } catch(e) {
-                console.warn("Nightly backup failed:", e);
-            }
-        }
-
-
-        // DOWNLOAD TEMPLATE (Creates Full Excel Sheet without external library dependency issue)
-        window.downloadFullImportSample = function() {
-            try {
-                let wb = XLSX.utils.book_new();
-                
-                let salesData = [["Date", "Time", "Order_ID", "Phone", "Items", "Total_Amount", "Table_Number", "Discount", "Payment_Mode"]];
-                salesData.push(["2026-08-17", "14:30:00", "ORD12345", "9999999999", "Paneer Tikka (x2)", "500", "Table 1", "0", "Cash"]);
-                
-                let menuData = [["Item_Name", "Category", "Price", "Active"]];
-                menuData.push(["Paneer Tikka", "Starters", "250", "Yes"]);
-
-                let staffData = [["Name", "Mobile", "Role", "Monthly Salary", "Join Date"]];
-                staffData.push(["Raju", "8888888888", "Waiter", "15000", "2026-01-01"]);
-
-                let stockData = [["Item_Name", "Current_Stock"]];
-                stockData.push(["Water Bottle", "100"]);
-
-                let expData = [["Date", "Amount", "Category", "Description"]];
-                expData.push(["2026-08-17", "500", "Raw Material", "Vegetables"]);
-
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(menuData), "Menu");
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(salesData), "Sales");
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(staffData), "Staff");
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(stockData), "Stock");
-                XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(expData), "Expenses");
-                
-                XLSX.writeFile(wb, "Viraasat_Master_Template.xlsx");
-            } catch(e) {
-                let csv = "Order_ID,Date,Time,Table_Number,Total_Amount,Items\nORD12345,2026-08-17,14:30:00,Table 1,500,\"Paneer Tikka (x2)\"\n";
-                const blob = new Blob(['\ufeff'+csv], {type: 'text/csv;charset=utf-8;'});
-                const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'Viraasat_Master_Template.csv'; a.click();
-            }
+            let itemsArr = extractItemsList(sale.itemsstring || sale.items_string || sale.items || sale.Items || sale.Items_String);
+            if(itemsArr.length > 0) { return itemsArr.map(i => `${i.name} (x${i.qty}) ₹${i.total || ''}`).join(', '); }
+            return sale.itemsstring || sale.items_string || sale.items || sale.Items || '';
         }
 
         window.showCustomAlert = function(message) {
             haptic();
             let msgEl = document.getElementById('customAlertMessage'); if(msgEl) msgEl.innerText = message;
-            let btnEl = document.getElementById('customAlertButtons'); if(btnEl) btnEl.innerHTML = `<button class="btn" onclick="closeModal('customAlertModal')">OK</button>`;
-            openModal('customAlertModal');
+            let btnEl = document.getElementById('customAlertButtons'); if(btnEl) btnEl.innerHTML = `<button class="btn" onclick="document.getElementById('customAlertModal').style.display='none'">OK</button>`;
+            let modEl = document.getElementById('customAlertModal'); if(modEl) modEl.style.display = 'flex';
         };
 
+        let currentConfirmCallback = null; let currentCancelCallback = null;
         window.showCustomConfirm = function(message, callbackName, cancelCallbackName) {
             haptic();
-            let btnCancel = cancelCallbackName ? `closeModal('customAlertModal'); ${cancelCallbackName}();` : "closeModal('customAlertModal');";
-            let btnConfirm = callbackName ? `closeModal('customAlertModal'); ${callbackName}();` : "closeModal('customAlertModal');";
+            let btnCancel = cancelCallbackName ? `document.getElementById('customAlertModal').style.display='none'; ${cancelCallbackName}();` : "document.getElementById('customAlertModal').style.display='none';";
+            let btnConfirm = callbackName ? `document.getElementById('customAlertModal').style.display='none'; ${callbackName}();` : "document.getElementById('customAlertModal').style.display='none';";
             let msgEl = document.getElementById('customAlertMessage'); if(msgEl) msgEl.innerText = message;
             let btnEl = document.getElementById('customAlertButtons'); if(btnEl) btnEl.innerHTML = `<button class="btn btn-outline" onclick="${btnCancel}" style="flex:1;">Cancel</button><button class="btn" onclick="${btnConfirm}" style="flex:1; background:var(--danger); color:#FFF; border:none;">Confirm</button>`;
-            openModal('customAlertModal');
+            let modEl = document.getElementById('customAlertModal'); if(modEl) modEl.style.display = 'flex';
         };
 
         function enforceBackTrap() { try { history.pushState(null, null, location.href); } catch(e) {} }
 
-        // MAIN INITIALIZATION (Fail-safe)
+        // Failsafe initialization
         function initApp() {
+            initLogo();
             let savedMobile = localStorage.getItem('viraasat_user'); let savedPass = localStorage.getItem('viraasat_pass'); let savedVer = localStorage.getItem('app_version');
             if(savedVer !== APP_VERSION) {
                 localStorage.clear();
                 if(savedMobile && savedPass) { localStorage.setItem('viraasat_user', savedMobile); localStorage.setItem('viraasat_pass', savedPass); }
                 localStorage.setItem('app_version', APP_VERSION); window.location.reload(true); return;
             }
-            loadCustomLogo();
             if(savedMobile && savedPass) {
                 let ls = document.getElementById('loginScreen'); if(ls) ls.style.display = 'none';
                 let ah = document.getElementById('appHeader'); if(ah) ah.style.display = 'flex';
                 let am = document.getElementById('appMain'); if(am) am.style.display = 'block';
                 let abn = document.getElementById('appBottomNav'); if(abn) abn.style.display = 'flex';
-                applyAdminRights(savedMobile); fetchData(); renderLogs(); checkAndRunNightlySync(); enforceBackTrap(); enforceBackTrap(); 
+                applyAdminRights(savedMobile); fetchData(); renderLogs(); enforceBackTrap(); enforceBackTrap(); 
             } else { 
                 let ls = document.getElementById('loginScreen'); if(ls) ls.style.display = 'flex'; 
+                hideSplashScreen(); 
             }
         }
         
         document.addEventListener('DOMContentLoaded', initApp);
 
-        // HIDE SPLASH SCREEN (Absolute fallback)
         function hideSplashScreen() { 
             const splash = document.getElementById('splashScreen'); 
-            if(splash) { 
-                splash.style.opacity = '0'; splash.style.pointerEvents = 'none'; 
-                setTimeout(() => { splash.style.display = 'none'; }, 300); 
-            } 
+            if(splash) { splash.style.opacity = '0'; splash.style.pointerEvents = 'none'; setTimeout(() => { splash.style.display = 'none'; }, 300); } 
         }
         setTimeout(hideSplashScreen, 3000); 
 
@@ -1166,7 +976,6 @@
             if (activeTab && activeTab.id !== 'tableDashboard' && fItem) { switchMainTab('tableDashboard', fItem, true); return; }
         };
 
-        // LOGIN
         let lp = document.getElementById('loginPass');
         if(lp) lp.addEventListener('keypress', function (e) { if (e.key === 'Enter') attemptLogin(); });
 
@@ -1201,17 +1010,183 @@
             let nu = document.getElementById('navUsers'); if(nu) nu.style.display = isAdmin ? 'flex' : 'none';
             let nl = document.getElementById('navLogs'); if(nl) nl.style.display = isAdmin ? 'flex' : 'none';
 
-            let uUrl = document.getElementById('gSheetSyncUrl'); if(uUrl) uUrl.value = localStorage.getItem('viraasat_gsheet_sync_url') || "";
-
             if(isAdmin) { renderStaffList(); fetchApprovals(); }
         }
 
-        function logoutUser() {
-            localStorage.removeItem('viraasat_user'); localStorage.removeItem('viraasat_pass'); window.location.reload(true);
+        function saveUserPermissions() {
+            haptic();
+            let mobile = document.getElementById('staffMobile').value.trim(); let pass = document.getElementById('staffPass').value.trim();
+            if(mobile.length < 10 || pass.length < 4) { showCustomAlert("Enter valid 10 digit number and minimum 4 char password"); return; }
+            userPermissions[mobile] = { password: pass, orders: document.getElementById('chkOrders').checked, analytics: document.getElementById('chkAnalytics').checked, expenses: document.getElementById('chkExpenses').checked };
+            localStorage.setItem('viraasat_permissions', JSON.stringify(userPermissions)); renderStaffList();
+            fetch(`${API_BASE}/staff`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: mobile, mobile: mobile, role: "User", is_active: 1 }) }).catch(e=>console.log(e));
+            showCustomAlert("User Registered successfully!");
+            document.getElementById('staffMobile').value = ""; document.getElementById('staffPass').value = ""; document.getElementById('chkOrders').checked = false; document.getElementById('chkAnalytics').checked = false; document.getElementById('chkExpenses').checked = false; 
+        }
+
+        window.removeUserConf = function() {
+            let mobile = window.tempMobileToRemove; delete userPermissions[mobile]; localStorage.setItem('viraasat_permissions', JSON.stringify(userPermissions));
+            renderStaffList(); fetch(`${API_BASE}/staff/remove`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: mobile }) }).catch(e=>console.log(e));
+        }
+
+        function removeUser(mobile) { haptic(); window.tempMobileToRemove = mobile; showCustomConfirm("Remove user " + mobile + "?", "removeUserConf", null); }
+
+        function renderStaffList() {
+             let list = document.getElementById('staffList'); if(!list) return; list.innerHTML = ""; let count = 0;
+             for(let mobile in userPermissions) {
+                 count++; let p = userPermissions[mobile];
+                 list.innerHTML += `<div class="card" style="margin-bottom:0; display:flex; justify-content:space-between; align-items:center; border: 1px solid var(--border); padding:16px;"><div><div style="font-weight:700; font-size:1rem; color:var(--text-dark);">${mobile}</div><div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">Orders: ${p.orders?'✅':'❌'} | Analytics: ${p.analytics?'✅':'❌'} | Expenses: ${p.expenses?'✅':'❌'}</div></div><button class="delete-btn" style="color:var(--danger); border:1px solid var(--danger); padding:6px 12px; border-radius:6px; background:transparent;" onclick="removeUser('${mobile}')">Revoke</button></div>`;
+             }
+             if (count === 0) { list.innerHTML = "<p style='color:var(--text-muted); font-size:0.85rem;'>No extra POS users registered.</p>"; }
+        }
+
+        window.reqEmpDelConf = function() {
+            let empId = window.tempEmpId; let empName = window.tempEmpName; let reason = window.tempEmpReason;
+            fetch(`${API_BASE}/orders/request-delete`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_id: `EMP-${empId}`, reason: reason, requested_by: localStorage.getItem('viraasat_user') || 'Terminal' }) })
+            .then(r=>r.json()).then(data => { logAction(`Requested Removal for Staff ${empName}`, localStorage.getItem('viraasat_user')); showCustomAlert(`Removal request for ${empName} sent to Admin approval.`); fetchData(); }).catch(e=> { showCustomAlert("Request Sent Locally."); });
+        }
+
+        function requestEmployeeDeletion(empId, empName) {
+            haptic(); let reason = prompt(`Enter reason for removing employee ${empName}:`);
+            if(!reason) return; window.tempEmpId = empId; window.tempEmpName = empName; window.tempEmpReason = reason;
+            showCustomConfirm(`Send removal request for ${empName}?`, "reqEmpDelConf", null);
+        }
+
+        function renderEmployeeList() {
+            let elList = document.getElementById('employeeList'); if(!elList) return; elList.innerHTML = "";
+            if(staffData.length === 0) { elList.innerHTML = "<p style='font-size:0.85rem; color:var(--text-muted);'>No staff onboarded yet.</p>"; return; }
+            staffData.forEach(s => {
+                let sId = getVal(s, ['empid', 'employeeid', 'id']) || 'N/A'; let sName = getVal(s, ['name']) || 'Unknown'; let sRole = getVal(s, ['role']) || "Staff"; let sMobile = getVal(s, ['mobile', 'phone']) || "N/A"; let sSal = parseAmount(getVal(s, ['monthlysalary', 'salary'])); let sDate = getVal(s, ['dateofjoining', 'joindate', 'date', 'doj', 'join_date']) || 'N/A'; let formattedDate = sDate !== 'N/A' ? cleanDisplayDate(sDate) : 'N/A';
+                if(s.is_active === 0 || s.is_active === false || String(s.is_active) === '0') return; // Hide removed staff
+                elList.innerHTML += `
+                <div class="card" style="padding:16px; margin-bottom:0; display:flex; flex-direction:column; gap:12px;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                        <div style="display:flex; flex-direction:column; gap:6px;">
+                            <div style="font-weight:800; font-size:1.1rem; color:var(--text-dark);">${sName}</div>
+                            <div style="display:inline-block; background:#FFEAD6; color:#D97706; padding:4px 10px; border-radius:6px; font-size:0.75rem; font-weight:700; width:max-content;">${sRole}</div>
+                        </div>
+                        <div style="display:flex; gap:8px;">
+                            <div style="background:#F4EFEA; color:var(--text-muted); font-size:0.75rem; font-weight:700; padding:6px 10px; border-radius:6px; display:flex; align-items:center;">#${sId}</div>
+                            <button onclick="requestEmployeeDeletion('${sId}', '${sName}')" style="background:#FEE2E2; color:var(--danger); border:none; padding:6px 10px; border-radius:6px; font-weight:700; cursor:pointer;">Req Remove</button>
+                        </div>
+                    </div>
+                    <div style="border-top:1px dashed var(--border); margin:4px 0;"></div>
+                    <div style="display:flex; flex-direction:column; gap:8px; font-size:0.85rem; font-weight:600; color:var(--text-muted);">
+                        <div style="display:flex; align-items:center; gap:6px;">📱 <span>Mobile: <span style="color:var(--text-dark);">${sMobile}</span></span></div>
+                        <div style="display:flex; align-items:center; gap:6px;">💰 <span>Monthly Salary: <span style="color:var(--success);">₹${sSal.toLocaleString('en-IN')}</span></span></div>
+                        <div style="display:flex; align-items:center; gap:6px;">🗓️ <span>Date of Joining: <span style="color:var(--text-dark);">${formattedDate}</span></span></div>
+                    </div>
+                </div>`;
+            });
+        }
+
+        function updateStockAdmin() {
+            haptic();
+            let item = document.getElementById('adminStockItem').value.trim(); let qty = parseInt(document.getElementById('adminStockQty').value);
+            if(!item || isNaN(qty)) { showCustomAlert("Please enter valid item and quantity."); return; }
+            stockData[item] = qty; renderStockDashboard(); checkStockDisplay(); showCustomAlert("Stock updated to " + qty + " for " + item);
+            document.getElementById('adminStockItem').value = ""; document.getElementById('adminStockQty').value = "";
+            fetch(`${API_BASE}/stock`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: item, quantity: qty }) }).catch(e => console.log("Stock update sync failed"));
+        }
+
+        function addMenuItemUI() {
+            haptic();
+            let cat = document.getElementById('newMenuCategory').value; let name = document.getElementById('newMenuName').value.trim(); let price = parseInt(document.getElementById('newMenuPrice').value);
+            if(!name || isNaN(price) || price <= 0) { showCustomAlert("Please enter valid item name and price."); return; }
+            let existing = menuData.find(m => getVal(m, ['itemname', 'name']).toLowerCase() === name.toLowerCase());
+            if(existing) { showCustomAlert("Item already exists!"); return; }
+            let newItem = { name: name, price: price, category: cat }; menuData.push(newItem); populateDropdown(); 
+            fetch(`${API_BASE}/menu`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: cat, name: name, price: price, is_available: true }) }).catch(e => console.log("Menu addition failed"));
+            showCustomAlert(name + " added successfully!"); document.getElementById('newMenuName').value = ""; document.getElementById('newMenuPrice').value = "";
+        }
+
+        function populateStaffDropdown() {
+            let sel = document.getElementById('payStaffSelect'); if(!sel) return; sel.innerHTML = "<option value=''>Select Employee</option>";
+            staffData.forEach(s => { let sId = getVal(s, ['empid', 'employeeid', 'id']); let sName = getVal(s, ['name']); if(sId && sName && s.is_active !== 0 && s.is_active !== false && String(s.is_active) !== '0') { sel.innerHTML += `<option value="${sId}">${sName} (${sId})</option>`; } });
+        }
+
+        function addStaffUI() {
+            haptic();
+            let name = document.getElementById('newStaffName').value.trim(); let mobile = document.getElementById('newStaffMobile').value.trim(); let role = document.getElementById('newStaffRole').value; let salary = parseInt(document.getElementById('newStaffSalary').value); let joinDate = document.getElementById('newStaffDate').value; 
+            if(!name || mobile.length < 10 || isNaN(salary)) { showCustomAlert("Please fill all details correctly."); return; }
+            fetch(`${API_BASE}/staff`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name, mobile: mobile, role: role, salary: salary, join_date: joinDate }) })
+            .then(res => res.json()).then(data => { showCustomAlert(`${name} added successfully!`); document.getElementById('newStaffName').value = ""; document.getElementById('newStaffMobile').value = ""; document.getElementById('newStaffSalary').value = ""; document.getElementById('newStaffDate').value = ""; fetchData(); });
+        }
+
+        function calculateStaffBalance() {
+            let empId = document.getElementById('payStaffSelect').value; let infoDiv = document.getElementById('staffBalanceInfo');
+            if(!empId) { infoDiv.innerHTML = ''; return; }
+            let staff = staffData.find(s => String(getVal(s, ['empid', 'employeeid', 'id'])) === String(empId)); 
+            let monthlySal = parseAmount(getVal(staff, ['monthlysalary', 'salary'])); let d = new Date(); let currentMonthStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; let advTaken = 0;
+
+            expenseHistory.forEach(exp => {
+                let eCat = getVal(exp, ['category']); let eDesc = getVal(exp, ['description', 'note']) || ''; let eDate = getVal(exp, ['date', 'isodate']) || '';
+                let eMonthStr = ""; let parsedDate = new Date(eDate);
+                if(!isNaN(parsedDate.getTime())) { eMonthStr = `${parsedDate.getFullYear()}-${String(parsedDate.getMonth() + 1).padStart(2, '0')}`; } else { eMonthStr = eDate.substring(0, 7); }
+                if(eCat === 'Staff Salary' && eDesc.includes(`[${empId}]`) && eMonthStr === currentMonthStr) { advTaken += parseAmount(getVal(exp, ['amount'])); }
+            });
+            let balance = monthlySal - advTaken;
+            infoDiv.innerHTML = `<b>Base Salary:</b> ₹${monthlySal}<br><b>Taken This Month:</b> <span style="color:var(--danger)">-₹${advTaken}</span><br><b style="font-size:1.1rem; color:var(--success)">Pending Balance: ₹${balance}</b>`;
+        }
+
+        function submitStaffPayout() {
+            haptic();
+            let empId = document.getElementById('payStaffSelect').value; let amount = document.getElementById('payStaffAmount').value; let type = document.getElementById('payStaffType').value;
+            if(!empId || !amount || amount <= 0) { showCustomAlert("Please select staff and enter valid amount."); return; }
+            let staff = staffData.find(s => String(getVal(s, ['empid', 'employeeid', 'id'])) === String(empId)); let sName = getVal(staff, ['name']); let sPhone = getVal(staff, ['mobile']); let desc = `[${empId}] ${sName} - ${type}`; 
+            
+            fetch(`${API_BASE}/expenses`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ category: 'Staff Salary', amount: amount, description: desc }) })
+            .then(res => res.json()).then(data => {
+                document.getElementById('payStaffAmount').value = "";
+                document.getElementById('salaryActionButtons').innerHTML = `<button class="btn" onclick="printSalarySlip('${sName}', '${empId}', '${amount}', '${type}'); document.getElementById('salaryActionModal').style.display='none';">🖨️ Print Slip</button><button class="btn" style="background:#10B981;" onclick="sendWASalarySlip('${sName}', '${empId}', '${amount}', '${type}', '${sPhone}'); document.getElementById('salaryActionModal').style.display='none';">📱 WhatsApp Slip</button><button class="btn btn-outline" onclick="document.getElementById('salaryActionModal').style.display='none';">Close</button>`;
+                document.getElementById('salaryActionModal').style.display = 'flex';
+                fetchData();
+            });
+        }
+
+        function printSalarySlip(sName, empId, amount, type) {
+            let printSec = document.getElementById('printSection'); let d = new Date(); let dStr = d.toLocaleDateString('en-IN') + ' ' + d.toLocaleTimeString('en-IN');
+            printSec.innerHTML = `<div style="text-align:center; margin-bottom:10px;"><h2 style="margin:0; font-size:1.5rem; font-weight:bold;">SALARY SLIP</h2><h3 style="margin:5px 0 2px 0;">VIRAASAT UDAIPUR</h3><p style="margin:0; font-size:0.8rem;">Date: ${dStr}</p></div><div style="border-top:2px dashed #000; padding:10px 0;"><p style="margin:4px 0;"><b>Name:</b> ${sName}</p><p style="margin:4px 0;"><b>Emp ID:</b> ${empId}</p><p style="margin:4px 0;"><b>Type:</b> ${type}</p></div><div style="border-top:2px dashed #000; border-bottom:2px dashed #000; padding:10px 0; margin-bottom:10px;"><h3 style="margin:0; font-size:1.3rem;">Amount Paid: ₹${amount}</h3></div><div style="text-align:center; font-size:0.8rem; margin-top:20px;">Generated by Viraasat ERP</div>`;
+            printSec.offsetHeight; window.print();
+        }
+
+        function sendWASalarySlip(sName, empId, amount, type, sPhone) {
+            let d = new Date(); let dStr = d.toLocaleDateString('en-IN') + ' ' + d.toLocaleTimeString('en-IN');
+            let slipText = `*VIRAASAT UDAIPUR - SALARY SLIP*\n\n*Name:* ${sName}\n*Emp ID:* ${empId}\n*Date:* ${dStr}\n-----------------------\n*Transaction Type:* ${type}\n*Amount Paid:* ₹${amount}\n-----------------------\n_Recorded automatically by Viraasat ERP._`;
+            window.open(`https://wa.me/91${sPhone}?text=${encodeURIComponent(slipText)}`, '_blank');
         }
 
         // ==========================================
-        // FETCH DATA (Universal Mapped for Both D1 & Old Formats)
+        // GOOGLE SHEET AUTO-SYNC (Nightly Backup)
+        // ==========================================
+        function autoSyncGoogleSheet() {
+            if(typeof GOOGLE_SHEET_API === 'undefined' || GOOGLE_SHEET_API.length < 10) return;
+            try {
+                let lastSync = localStorage.getItem('viraasat_last_gsync');
+                let now = new Date();
+                let todayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+                
+                // Trigger sync only if it's past 3 AM and hasn't been synced today
+                if (now.getHours() >= 3 && lastSync !== todayKey) {
+                    let yest = new Date(now); yest.setDate(yest.getDate() - 1);
+                    let yestIso = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, '0')}-${String(yest.getDate()).padStart(2, '0')}`;
+                    
+                    let syncSales = salesHistory.filter(s => String(s.date || s.isodate || '').includes(yestIso));
+                    let syncExp = expenseHistory.filter(e => String(e.date || e.isodate || '').includes(yestIso));
+                    
+                    if(syncSales.length > 0 || syncExp.length > 0) {
+                        fetch(GOOGLE_SHEET_API, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ type: 'daily_backup', sales: syncSales, expenses: syncExp, date: yestIso }) })
+                        .then(() => { localStorage.setItem('viraasat_last_gsync', todayKey); }).catch(e => console.log('G-Sheet Sync Deferred.'));
+                    } else {
+                        localStorage.setItem('viraasat_last_gsync', todayKey); // No data to sync
+                    }
+                }
+            } catch(e) {}
+        }
+        setInterval(autoSyncGoogleSheet, 3600000); // Check every hour
+
+        // ==========================================
+        // FETCH DATA (Universal Mapped)
         // ==========================================
         async function fetchData() {
             let loader = document.getElementById('loader');
@@ -1239,7 +1214,7 @@
                 runningTables = {}; 
                 (tablesRes.tables || []).forEach(t => { if (t.status === 'occupied') { runningTables[`Table ${t.table_number || t.Table_Number}`] = []; } });
 
-                // Map Orders (Safe Date Mappings)
+                // Map Orders (Safe Date & Time Parsing)
                 salesHistory = (ordersRes.orders || ordersRes.sales || []).filter(o => o.order_status !== 'deleted' && o.status !== 'deleted').map(o => {
                     let dStr = o.created_at || o.Date || o.isodate || new Date().toISOString();
                     let d;
@@ -1249,13 +1224,16 @@
                     } else { d = new Date(dStr); }
                     if(isNaN(d.getTime())) d = new Date();
 
+                    let tStr = o.time || o.Time;
+                    if(!tStr) { tStr = d.toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit', hour12: true}); }
+
                     return {
                         id: o.id || o.Order_ID, 
                         orderid: o.order_number || o.Order_ID || o.id, 
-                        table: o.table_number ? `Table ${o.table_number}` : (o.order_type || o.Table_Number || o.table || 'Table'),
+                        table: o.table_number ? `Table ${o.table_number}` : (o.order_type || o.Table_Number || 'Table'),
                         date: `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`,
                         isodate: dStr, 
-                        time: o.time || o.Time || d.toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit', hour12: true}),
+                        time: tStr,
                         totalamount: o.grand_total || o.Total_Amount || o.amount || o.total, 
                         total: o.grand_total || o.Total_Amount || o.amount || o.total,
                         items: o.items_string || o.items || o.Items, 
@@ -1286,6 +1264,7 @@
 
                 populateDropdown(); populateStaffDropdown(); renderEmployeeList(); renderTableGrid(); renderStockDashboard(); checkStockDisplay(); renderLiveSales(); generateOverview(); renderExpensesListUI();
                 if(window.isUserAdmin) fetchApprovals();
+                setTimeout(autoSyncGoogleSheet, 5000); // Trigger auto-sync check on load
                 
             } catch(err) { 
                 console.error("Fetch Error:", err); 
@@ -1301,12 +1280,9 @@
         function generateOverview() {
             try {
                 let totalSalesAmount = 0; let totalExpensesAmount = 0; let totalSalaryPaid = 0;
-                let revenueToday = 0; let ordersToday = 0; let staffExpenseMap = {};
+                let tDate = new Date(); let todayIso = `${tDate.getFullYear()}-${String(tDate.getMonth() + 1).padStart(2, '0')}-${String(tDate.getDate()).padStart(2, '0')}`; let todayGb = tDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+                let revenueToday = 0; let ordersToday = 0; let expenseCategories = {}; let staffExpenseMap = {};
                 let itemStats = {}; let catStats = {};
-                
-                let tDate = new Date();
-                let todayIso = `${tDate.getFullYear()}-${String(tDate.getMonth() + 1).padStart(2, '0')}-${String(tDate.getDate()).padStart(2, '0')}`;
-                
                 rawChartSalesData = {}; rawChartExpenseData = {};
 
                 salesHistory.forEach(sale => { 
@@ -1361,8 +1337,8 @@
                 let tsEl = document.getElementById('kpiTotalSales'); if(tsEl) tsEl.innerText = `₹ ${totalSalesAmount.toLocaleString('en-IN')}`;
                 let teEl = document.getElementById('kpiTotalExpenses'); if(teEl) teEl.innerText = `₹ ${totalExpensesAmount.toLocaleString('en-IN')}`;
                 let npEl = document.getElementById('kpiNetProfit'); if(npEl) npEl.innerText = `₹ ${netProfit.toLocaleString('en-IN')}`;
-                let salEl = document.getElementById('kpiTotalSalary'); if(salEl) salEl.innerText = `₹ ${totalSalaryPaid.toLocaleString('en-IN')}`;
-                let stfEl = document.getElementById('kpiTotalStaff'); if(stfEl) stfEl.innerText = staffData.filter(s=>s.is_active!==0).length;
+                let saEl = document.getElementById('kpiTotalSalary'); if(saEl) saEl.innerText = `₹ ${totalSalaryPaid.toLocaleString('en-IN')}`;
+                let sfEl = document.getElementById('kpiTotalStaff'); if(sfEl) sfEl.innerText = staffData.filter(s=>s.is_active!==0 && String(s.is_active)!=='0' && s.is_active!==false).length;
 
                 // Donut Chart
                 const dCtx = document.getElementById('categoryDonut');
@@ -1595,7 +1571,7 @@
             haptic();
             let reason = prompt("Enter specific reason for invoice cancellation:");
             if(!reason) return;
-            window.tempOrdId = currentViewingSale.id || currentViewingSale.orderid;
+            window.tempOrdId = currentViewingSale.id || currentViewingSale.orderid || currentViewingSale.Order_ID;
             window.tempOrdReason = reason;
             showCustomConfirm(`Confirm cancellation request for #${window.tempOrdId}?`, "reqOrdDelConf", null);
         }
@@ -1619,6 +1595,7 @@
         }
 
         function fetchApprovals() {
+            if(!window.isUserAdmin) return;
             fetch(`${API_BASE}/approvals`).then(r=>r.json()).then(data => {
                 let card = document.getElementById('adminApprovalsCard'); let list = document.getElementById('adminApprovalsList');
                 if(!data.success || !data.requests || !data.requests.length) { if(card) card.style.display = 'none'; return; }
@@ -1670,7 +1647,7 @@
             
             let filteredSales = salesHistory.filter(sale => {
                 if (!startDateInput && !endDateInput) return true;
-                let sDateStr = sale.date || sale.isodate;
+                let sDateStr = sale.date || sale.isodate || sale.Date;
                 if (!sDateStr) return true;
                 
                 let sDateIso = "";
@@ -1685,7 +1662,7 @@
             
             let displayTotal = filteredSales.reduce((acc, curr) => { 
                 if(curr.status === 'deleted' || curr.status === 'cancelled' || curr.status === 'deletion_pending') return acc; 
-                return acc + parseAmount(getVal(curr, ['totalamount', 'total', 'amount']));
+                return acc + parseAmount(getVal(curr, ['totalamount', 'total', 'amount', 'Total_Amount']));
             }, 0);
             
             let tBox = document.getElementById('totalSalesBox');
@@ -1694,11 +1671,11 @@
             if(filteredSales.length === 0) { if(salesGrid) salesGrid.innerHTML = "<p style='color:var(--text-muted); font-size:0.9rem; text-align:center;'>No orders found.</p>"; return; }
             
             let tableCounts = {};
-            [...filteredSales].reverse().forEach(sale => { let tName = getVal(sale, ['tablenumber', 'table', 'tablename']) || "Table"; tableCounts[tName] = (tableCounts[tName] || 0) + 1; sale.sessionIndex = tableCounts[tName]; });
+            [...filteredSales].reverse().forEach(sale => { let tName = getVal(sale, ['tablenumber', 'table', 'tablename', 'table_number']) || "Table"; tableCounts[tName] = (tableCounts[tName] || 0) + 1; sale.sessionIndex = tableCounts[tName]; });
             
             filteredSales.forEach(sale => {
-                let sOrderId = getVal(sale, ['orderid', 'id']) || 'N/A'; let tName = getVal(sale, ['tablenumber', 'table', 'tablename']) || "Table"; let sessionLabel = sale.sessionIndex > 1 ? ` (S${sale.sessionIndex})` : "";
-                let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getSaleItemsText(sale); let sDate = getVal(sale, ['date', 'isodate']) || ''; let sTime = getVal(sale, ['time']) || '';
+                let sOrderId = getVal(sale, ['orderid', 'id', 'order_number']) || 'N/A'; let tName = getVal(sale, ['tablenumber', 'table', 'tablename', 'table_number']) || "Table"; let sessionLabel = sale.sessionIndex > 1 ? ` (S${sale.sessionIndex})` : "";
+                let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount', 'Total_Amount'])); let sItems = getSaleItemsText(sale); let sDate = getVal(sale, ['date', 'isodate']) || ''; let sTime = getVal(sale, ['time', 'Time']) || '';
                 
                 let cleanItemsView = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
                 let statusFlag = sale.status === 'deletion_pending' ? `<span style="background:#FEE2E2; color:#D03B3B; font-size:0.65rem; padding:4px 8px; border-radius:6px; font-weight:700;">APPROVAL PENDING</span>` : (sale.status === 'deleted' || sale.status === 'cancelled' ? `<span style="background:#FEE2E2; color:#D03B3B; font-size:0.65rem; padding:4px 8px; border-radius:6px; font-weight:700;">CANCELLED</span>` : '');
@@ -1707,7 +1684,7 @@
             });
             
             filteredSales.slice(0, 3).forEach(sale => {
-                let sOrderId = getVal(sale, ['orderid', 'id']) || 'N/A'; let tName = getVal(sale, ['tablenumber', 'table', 'tablename']) || "Table"; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sItems = getSaleItemsText(sale); let sTime = getVal(sale, ['time']) || ''; let iconStr = tName.includes('Takeaway') ? '🛍️' : (tName.includes('Delivery') ? '🛵' : '🍽️'); 
+                let sOrderId = getVal(sale, ['orderid', 'id', 'order_number']) || 'N/A'; let tName = getVal(sale, ['tablenumber', 'table', 'tablename', 'table_number']) || "Table"; let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount', 'Total_Amount'])); let sItems = getSaleItemsText(sale); let sTime = getVal(sale, ['time', 'Time']) || ''; let iconStr = tName.includes('Takeaway') ? '🛍️' : (tName.includes('Delivery') ? '🛵' : '🍽️'); 
                 
                 let cleanItemsView = sItems.replace(/,?\s*\[Discount Applied:.*?\]/g, '').replace(/,?\s*\[Mode:.*?\]/g, '').replace(/,?\s*\[Address:.*?\]/g, '').trim().replace(/,+$/, '');
                 let itemCount = cleanItemsView.split(', ').length;
@@ -1916,30 +1893,30 @@
         // =====================================
         function openOrderDetails(orderId) {
             haptic();
-            let sale = salesHistory.find(s => String(s.orderid).trim() === String(orderId).trim() || String(s.id).trim() === String(orderId).trim()); 
+            let sale = salesHistory.find(s => String(s.orderid).trim() === String(orderId).trim() || String(s.id).trim() === String(orderId).trim() || String(s.Order_ID).trim() === String(orderId).trim()); 
             if(!sale) return; 
             currentViewingSale = sale;
             
-            let sTable = sale.table || sale.tablename || sale.tablenumber || 'Table'; 
-            let sDate = sale.date || sale.isodate || ''; 
-            let sTime = sale.time || ''; 
-            let sTotal = parseAmount(sale.totalamount || sale.total || sale.amount); 
-            let sPhone = sale.phone || sale.customerphone || ''; 
+            let sTable = sale.table || sale.tablename || sale.tablenumber || sale.Table_Number || 'Table'; 
+            let sDate = sale.date || sale.isodate || sale.Date || ''; 
+            let sTime = sale.time || sale.Time || ''; 
+            let sTotal = parseAmount(sale.totalamount || sale.total || sale.amount || sale.Total_Amount); 
+            let sPhone = sale.phone || sale.customerphone || sale.Phone || ''; 
 
             let mom = document.getElementById('modalOrderMeta');
             if(mom) mom.innerHTML = `<b>Table:</b> ${sTable}<br><b>ID:</b> #${orderId}<br><b>Time:</b> ${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}`;
             
             let modalItemsHtml = "";
-            let parsedItemsArr = extractItemsList(sale.itemsstring || sale.items_string || sale.items);
+            let parsedItemsArr = extractItemsList(sale.itemsstring || sale.items_string || sale.items || sale.Items);
             
             parsedItemsArr.forEach(i => {
-                let total = i.total;
+                let total = i.total; let iName = i.name ? String(i.name) : "Item";
                 if (total === null || isNaN(total)) { 
-                    let menuItem = menuData.find(m => { let mn = m.name || m.itemname; return mn && i.name && mn.toLowerCase() === i.name.toLowerCase(); }); 
+                    let menuItem = menuData.find(m => { let mn = m.name || m.itemname; return mn && iName && String(mn).toLowerCase() === iName.toLowerCase(); }); 
                     if (menuItem) total = parseInt(menuItem.price || 0) * i.qty; 
                 }
                 let totalStr = (total !== null && !isNaN(total)) ? `₹${total}` : "-"; 
-                modalItemsHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid var(--border); padding-bottom:8px;"><span><b style="color:var(--text-dark);">${i.qty}x</b> <span style="font-weight:500; color:var(--text-muted);">${i.name}</span></span> <span style="font-weight:600; color:var(--text-dark);">${totalStr}</span></div>`;
+                modalItemsHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid var(--border); padding-bottom:8px;"><span><b style="color:var(--text-dark);">${i.qty}x</b> <span style="font-weight:500; color:var(--text-muted);">${iName}</span></span> <span style="font-weight:600; color:var(--text-dark);">${totalStr}</span></div>`;
             });
             
             let moi = document.getElementById('modalOrderItems'); if(moi) moi.innerHTML = modalItemsHtml; 
@@ -1989,7 +1966,7 @@
             try {
                 let sale = currentViewingSale;
                 if(!sale) return;
-                let sOrderId = sale.orderid || sale.id || 'N/A'; let sTable = sale.table || sale.tablename || 'Table'; let sDate = sale.date || sale.isodate || ''; let sTime = sale.time || ''; let sTotal = parseAmount(sale.totalamount || sale.total || sale.amount); let sItems = sale.items || sale.itemsstring || sale.items_string;
+                let sOrderId = sale.orderid || sale.id || sale.Order_ID || 'N/A'; let sTable = sale.table || sale.tablename || sale.Table_Number || 'Table'; let sDate = sale.date || sale.isodate || sale.Date || ''; let sTime = sale.time || sale.Time || ''; let sTotal = parseAmount(sale.totalamount || sale.total || sale.amount || sale.Total_Amount); let sItems = sale.items || sale.itemsstring || sale.items_string || sale.Items;
                 
                 let printSec = document.getElementById('printSection'); 
                 let dStr = `${cleanDisplayDate(sDate)} ${cleanDisplayTime(sTime)}`; 
@@ -2004,9 +1981,9 @@
                 let parsedItemsArr = extractItemsList(sItems);
 
                 parsedItemsArr.forEach(i => {
-                    let totalVal = i.total; let priceVal = null;
-                    if (totalVal === null || isNaN(totalVal)) { let menuItem = menuData.find(m => { let mn = m.name || m.itemname; return mn && i.name && mn.toLowerCase() === i.name.toLowerCase(); }); if (menuItem) { priceVal = parseInt(menuItem.price || 0); totalVal = priceVal * i.qty; } } else { priceVal = totalVal / i.qty; }
-                    itemsHtml += `<tr><td class="col-item" style="text-align: left; width: 50%;">${i.name}</td><td class="col-price" style="text-align: center; width: 15%;">${priceVal?priceVal:"-"}</td><td class="col-qty" style="text-align: center; width: 15%;">${i.qty}</td><td class="col-amt" style="text-align: right; width: 20%; font-weight:bold;">${totalVal?totalVal:"-"}</td></tr>`;
+                    let totalVal = i.total; let priceVal = null; let iName = i.name ? String(i.name) : "Item";
+                    if (totalVal === null || isNaN(totalVal)) { let menuItem = menuData.find(m => { let mn = m.name || m.itemname; return mn && iName && String(mn).toLowerCase() === iName.toLowerCase(); }); if (menuItem) { priceVal = parseInt(menuItem.price || 0); totalVal = priceVal * i.qty; } } else { priceVal = totalVal / i.qty; }
+                    itemsHtml += `<tr><td class="col-item" style="text-align: left; width: 50%;">${iName}</td><td class="col-price" style="text-align: center; width: 15%;">${priceVal?priceVal:"-"}</td><td class="col-qty" style="text-align: center; width: 15%;">${i.qty}</td><td class="col-amt" style="text-align: right; width: 20%; font-weight:bold;">${totalVal?totalVal:"-"}</td></tr>`;
                 });
                 
                 printSec.innerHTML = `<div style="text-align: center; margin-bottom: 10px;"><h2 style="font-size: 1.2rem; margin: 0; padding: 0; font-weight: bold;">VIRAASAT UDAIPUR</h2><p style="font-size: 0.8rem; margin: 2px 0;">A Taste Of Royal Mewar</p><p style="font-size: 0.8rem; margin: 2px 0;">Contact: +91 7852041644</p><p style="font-size: 0.8rem; margin: 2px 0;">Udaipur, Rajasthan</p></div><div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; margin-bottom: 10px; font-size: 0.85rem;"><div style="display: flex; justify-content: space-between;"><span>Invoice No: #${sOrderId}</span> <span>(DUPLICATE)</span></div><div style="margin-top:2px;">Table: ${sTable}</div>${modeStr?`<div style="margin-top:2px;">Payment Mode: ${modeStr}</div>`:""}${addStr?`<div style="margin-top:2px;">Address: ${addStr}</div>`:""}</div><table style="width: 100%; font-size: 0.85rem; text-align: left; border-collapse: collapse;"><thead><tr><th class="col-item" style="text-align: left; width: 50%;">ITEM</th><th class="col-price" style="text-align: center; width: 15%;">PRICE</th><th class="col-qty" style="text-align: center; width: 15%;">QTY</th><th class="col-amt" style="text-align: right; width: 20%;">AMT</th></tr></thead><tbody>${itemsHtml}</tbody></table><div style="border-top: 1px dashed #000; margin-top: 10px; padding-top: 5px; font-size: 0.9rem;">${histDiscount > 0 ? `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Discount:</span><span>-₹${histDiscount}</span></div>` : ''}<div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;"><span>TOTAL (FOOD):</span><span>₹${sTotal}</span></div></div><div style="border-bottom: 1px dashed #000; margin-bottom: 10px; padding-bottom: 5px;"></div><div style="text-align: center; font-size: 0.85rem; font-weight: bold; margin-top: 10px;">THANK YOU FOR DINING WITH US!</div><div style="text-align: center; font-size: 0.75rem; margin-top: 5px;">Print Date: ${dStr}</div>`;
@@ -2043,16 +2020,16 @@
             let phone = document.getElementById('modalCustomerPhone').value.trim();
             if (!phone || phone.length < 10) { showCustomAlert("Please enter a valid 10-digit customer phone number."); return; }
             
-            let sOrderId = sale.orderid || sale.id || 'N/A'; let sTable = sale.table || sale.tablename || 'Table'; let sDate = sale.date || sale.isodate || ''; let sTime = sale.time || ''; let sTotal = parseAmount(sale.totalamount || sale.total || sale.amount); let sItems = getSaleItemsText(sale); let histDiscount = 0; 
+            let sOrderId = sale.orderid || sale.id || sale.Order_ID || 'N/A'; let sTable = sale.table || sale.tablename || sale.Table_Number || 'Table'; let sDate = sale.date || sale.isodate || sale.Date || ''; let sTime = sale.time || sale.Time || ''; let sTotal = parseAmount(sale.totalamount || sale.total || sale.amount || sale.Total_Amount); let sItems = getSaleItemsText(sale); let histDiscount = 0; 
             let text = `*VIRAASAT UDAIPUR*\n_A Taste Of Royal Mewar_\n\n*Invoice No:* ${sOrderId}\n*Table:* ${sTable}\n*Date:* ${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}\n----------------------------------------\n*ITEMS*\n`;
             
-            if (typeof sItems === 'string') { let dMatch = sItems.match(/\[Discount Applied:\s*-?₹?(\d+)\]/); if(dMatch) histDiscount = parseInt(dMatch[1]); }
+            if (typeof sale.items === 'string' || typeof sale.items_string === 'string') { let dMatch = (sale.items || sale.items_string || "").match(/\[Discount Applied:\s*-?₹?(\d+)\]/); if(dMatch) histDiscount = parseInt(dMatch[1]); }
             
-            let parsedItemsArr = extractItemsList(sale.items || sale.itemsstring || sale.items_string);
+            let parsedItemsArr = extractItemsList(sale.items || sale.itemsstring || sale.items_string || sale.Items);
             parsedItemsArr.forEach(i => {
-                let totalVal = i.total; 
-                if (totalVal === null || isNaN(totalVal)) { let menuItem = menuData.find(m => { let mn = m.name || m.itemname; return mn && i.name && mn.toLowerCase() === i.name.toLowerCase(); }); if (menuItem) { totalVal = parseInt(menuItem.price || 0) * i.qty; } } 
-                text += `▪ ${i.name} (x${i.qty})  ~  *₹${totalVal || '-' }*\n`;
+                let totalVal = i.total; let iName = i.name ? String(i.name) : "Item";
+                if (totalVal === null || isNaN(totalVal)) { let menuItem = menuData.find(m => { let mn = m.name || m.itemname; return mn && iName && String(mn).toLowerCase() === iName.toLowerCase(); }); if (menuItem) { totalVal = parseInt(menuItem.price || 0) * i.qty; } } 
+                text += `▪ ${iName} (x${i.qty})  ~  *₹${totalVal || '-' }*\n`;
             });
             text += `----------------------------------------\n`;
             if (histDiscount > 0) { text += `*Discount:*  -₹${histDiscount}\n`; }
@@ -2071,18 +2048,17 @@
             const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
         }
 
-        function exportRegistrySales() { downloadCSV(salesHistory.map(s => ({ Date: s.date, Time: s.time, Order_ID: s.orderid, Table: s.table, Amount: s.amount, Payment: s.payment_method })), 'Viraasat-Registry-Sales.csv'); }
+        function exportRegistrySales() { downloadCSV(salesHistory.map(s => ({ Date: s.date, Time: s.time, Order_ID: s.orderid || s.Order_ID, Table: s.table || s.Table_Number, Amount: s.amount || s.Total_Amount, Payment: s.payment_method || extractPaymentMode(s.items) })), 'Viraasat-Registry-Sales.csv'); }
         function exportItemSales() {
             let itemStats = {};
             salesHistory.forEach(sale => { 
                 if(sale.status === 'deleted' || sale.status === 'deletion_pending') return;
-                let parsedItemsArr = extractItemsList(sale.itemsstring || sale.items_string || sale.items);
-                parsedItemsArr.forEach(i => { itemStats[i.name] = (itemStats[i.name]||0) + i.qty; });
+                let parsedItemsArr = extractItemsList(sale.itemsstring || sale.items_string || sale.items || sale.Items);
+                parsedItemsArr.forEach(i => { let n = i.name ? String(i.name) : "Item"; itemStats[n] = (itemStats[n]||0) + i.qty; });
             });
             downloadCSV(Object.entries(itemStats).sort((a,b)=>b[1]-a[1]).map(([Item, Qty]) => ({Item, Units_Sold: Qty})), 'Viraasat-Item-Analytics.csv');
         }
         function exportExpensesTable() { downloadCSV(expenseHistory.map(e => ({ Date: cleanDisplayDate(getVal(e,['date','isodate'])), Category: getVal(e,['category']), Description: getVal(e,['description','note'])||'—', Amount: parseAmount(getVal(e,['amount','total'])) })), 'Viraasat-Expenses-Report.csv'); }
-        function exportAllData() { downloadCSV(salesHistory.map(s=>({Date:s.date,Time:s.time,Order_ID:s.orderid,Table:s.table,Amount:s.amount,Status:s.status})), 'Viraasat-Master-Sales.csv'); }
         
         async function runFullImport() {
             haptic();
@@ -2093,7 +2069,7 @@
             if(loader) { loader.style.display = 'flex'; document.getElementById('loaderText').innerText = "Importing Database... (This may take a minute)"; }
             
             try {
-                let file = fileInput.files[0]; let data = await file.arrayBuffer(); let wb = XLSX.read(data, { type: 'array' });
+                let file = fileInput.files[0]; let data = await file.arrayBuffer(); let wb = XLSX.read(data, { type: 'array', cellDates: true });
                 let getSheet = (name) => wb.Sheets[name] ? XLSX.utils.sheet_to_json(wb.Sheets[name], {defval:'', raw:false}) : [];
                 
                 let menu = getSheet('Menu'); let stock = getSheet('Stock'); let staff = getSheet('Staff'); let expenses = getSheet('Expenses');
@@ -2102,29 +2078,35 @@
 
                 // Import Menu
                 for(let m of menu) { 
-                    if(m.Item_Name) await fetch(`${API_BASE}/menu`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ category: m.Category || 'Uncategorized', name: m.Item_Name, price: m.Price || 0 }) }); 
+                    if(m.Item_Name || m.name || m.Name) await fetch(`${API_BASE}/menu`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ category: m.Category || m.category || 'Uncategorized', name: m.Item_Name || m.name || m.Name, price: m.Price || m.price || 0, is_available: 1 }) }); 
                 }
                 // Import Stock
                 for(let s of stock) { 
-                    if(s.Item_Name) await fetch(`${API_BASE}/stock`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name: s.Item_Name, quantity: s.Current_Stock || 0 }) }); 
+                    if(s.Item_Name || s.name || s.Name) await fetch(`${API_BASE}/stock`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name: s.Item_Name || s.name || s.Name, quantity: s.Current_Stock || s.quantity || s.Quantity || 0 }) }); 
                 }
                 // Import Staff
                 for(let st of staff) { 
-                    if(st.Name) await fetch(`${API_BASE}/staff`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name: st.Name, mobile: st.Mobile || '', role: st.Role || 'Staff', salary: st['Monthly Salary'] || 0, join_date: st['Join Date'] || '' }) }); 
+                    if(st.Name || st.name) await fetch(`${API_BASE}/staff`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ name: st.Name || st.name, mobile: st.Mobile || st.mobile || '', role: st.Role || st.role || 'Staff', salary: st['Monthly Salary'] || st.salary || st.Salary || 0, join_date: st['Join Date'] || st.join_date || '' }) }); 
                 }
                 // Import Expenses
                 for(let e of expenses) { 
-                    if(e.Amount) await fetch(`${API_BASE}/expenses`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ category: e.Category || 'Other', amount: e.Amount, description: e.Description || '', expense_date: e.Date }) }); 
+                    if(e.Amount || e.amount) await fetch(`${API_BASE}/expenses`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ category: e.Category || e.category || 'Other', amount: e.Amount || e.amount, description: e.Description || e.description || '', expense_date: e.Date || e.date }) }); 
                 }
                 // Import Historical Sales
                 for(let sale of allSales) {
-                    if(!sale.Total_Amount) continue;
-                    let dateVal = sale.Date; let timeVal = sale.Time || "12:00:00"; let isoDate = dateVal;
-                    if(dateVal && !String(dateVal).includes("T")) { isoDate = `${dateVal}T${timeVal}`; }
+                    let total = sale.Total_Amount || sale.total || sale.totalamount || sale.Amount || sale.amount;
+                    if(!total) continue;
+                    let dateVal = sale.Date || sale.date; let timeVal = sale.Time || sale.time;
+                    let parsedTime = "12:00:00"; 
+                    if(timeVal && !String(timeVal).includes("GMT")) parsedTime = timeVal; // Handle missing time
+                    
+                    let isoDate = dateVal;
+                    if(dateVal && !String(dateVal).includes("T")) { isoDate = `${dateVal}T${parsedTime}`; }
+                    if(!dateVal) { isoDate = new Date().toISOString(); } // Handle missing date
 
                     await fetch(`${API_BASE}/orders/checkout`, { 
                         method: 'POST', headers: {'Content-Type':'application/json'}, 
-                        body: JSON.stringify({ order_number: sale.Order_ID || "ORD"+Math.floor(Math.random()*900000), table_number: sale.Table_Number, customer_phone: sale.Phone || "NA", items_string: sale.Items, total: sale.Total_Amount, discount: sale.Discount || 0, payment_method: "Cash", created_at: isoDate }) 
+                        body: JSON.stringify({ order_number: sale.Order_ID || sale.orderid || sale.id || "ORD"+Math.floor(Math.random()*900000), table_number: sale.Table_Number || sale.table || sale.tablenumber, customer_phone: sale.Phone || sale.phone || "NA", items_string: sale.Items || sale.items || sale.itemsstring, total: total, discount: sale.Discount || sale.discount || 0, payment_method: sale.Payment_Mode || sale.payment_method || "Cash", created_at: isoDate }) 
                     });
                 }
                 
@@ -2132,7 +2114,7 @@
                 showCustomAlert("Database Import Complete! Everything has been synced to API."); 
                 setTimeout(() => window.location.reload(), 2000);
             } catch(e) {
-                console.error(e); showCustomAlert("Import Error: " + e.message);
+                console.error(e); showCustomAlert("Import Error: Check file format.");
             } finally {
                 if(loader) loader.style.display = 'none'; document.getElementById('loaderText').innerText = "Syncing...";
             }
