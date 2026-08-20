@@ -1390,7 +1390,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
                     });
                 }else failed.push(['/menu',results[1].reason]);
                 if(results[2].status==='fulfilled'){const ts=normalizeArray(results[2].value,['tables','data','result']);tableSections=[{title:'Hut Seating',tables:[]},{title:'Ground Seating',tables:[]},{title:'Terrace Seating',tables:[]}];const amap={'Hut Seating':0,'Ground Seating':1,'Terrace Seating':2};runningTables={};ts.forEach(t=>{const n=String(t.table_number??t.tableNumber??'').trim();if(!n)return;const i=amap[String(t.seating_area||t.seatingArea||'').trim()]??1;if(!tableSections[i].tables.includes(n))tableSections[i].tables.push(n);runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied'?[{__d1Occupied:true,orderId:t.current_order_id||t.currentOrderId}]:[];});if(!ts.length)tableSections=[{title:'Hut Seating',tables:['1','2','3','4']},{title:'Ground Seating',tables:['5','6','7']},{title:'Terrace Seating',tables:['8','9','10']}];}else failed.push(['/tables',results[2].reason]);
-                if(results[3].status==='fulfilled')salesHistory=normalizeArray(results[3].value,['orders','sales','data','result']).map(mapD1Order).filter(Boolean).filter(o=>!['kot','cancelled','deleted'].includes(String(o.order_status||'').toLowerCase()));else failed.push(['/orders',results[3].reason]);
+                if(results[3].status==='fulfilled')salesHistory=normalizeArray(results[3].value,['orders','sales','data','result']).map(mapD1Order).filter(Boolean).filter(o=>!['kot','cancelled','deleted'].includes(String(o.order_status||'').toLowerCase())).sort((a,b)=>orderTimestamp(b)-orderTimestamp(a));else failed.push(['/orders',results[3].reason]);
                 Object.keys(runningTables).forEach(key=>{const arr=runningTables[key];if(Array.isArray(arr)&&arr[0]?.__d1Occupied){const oid=String(arr[0].orderId||'');const order=salesHistory.find(o=>String(o.id||'')===oid||String(o.orderid||'')===oid);runningTables[key]=order?parseSaleItems(order):[];}});
                 if(results[4].status==='fulfilled')expenseHistory=normalizeArray(results[4].value,['expenses','data','result']);else failed.push(['/expenses',results[4].reason]);
                 if(results[5].status==='fulfilled'){const raw=normalizeArray(results[5].value,['stock','items','data','result']);stockData={};stockMeta={};raw.forEach(x=>{const name=String(getVal(x,['name','itemname','item','stockname'])||'').trim();if(!name)return;stockData[name]=Number(getVal(x,['quantity','qty','stock','currentstock','currentquantity']))||0;stockMeta[name]={id:getVal(x,['id']),name,unit:getVal(x,['unit'])||'pcs',low_stock_level:Number(getVal(x,['low_stock_level','lowstocklevel']))||5,created_at:getVal(x,['created_at'])||'',updated_at:getVal(x,['updated_at'])||''};});}else failed.push(['/stock',results[5].reason]);
@@ -2180,7 +2180,7 @@ Tables, billing and existing local UI remain visible.`);}
                     <button class="admin-module" onclick="document.getElementById('adminStockSearch').focus()"><b>Inventory</b><span>Update stock & thresholds</span></button>
                     <button class="admin-module" onclick="document.getElementById('adminStaffSearch').focus()"><b>Employees</b><span>${active} active staff</span></button>
                     <button class="admin-module" onclick="document.getElementById('userMobile').focus()"><b>Users</b><span>Register / revoke access</span></button>
-                    <button class="admin-module" onclick="document.getElementById('adminMenuName').focus()"><b>Menu</b><span>Add & export menu</span></button>
+                    <button class="admin-module" onclick="document.querySelector('#premiumPanel-settings .upload-label input[type=file]')?.click()"><b>Menu</b><span>Upload menu to D1</span></button>
                     <button class="admin-module" onclick="exportFullDatabaseWorkbook()"><b>Export</b><span>Download complete workbook</span></button>
                 </div>
             </div>
@@ -2247,20 +2247,12 @@ Tables, billing and existing local UI remain visible.`);}
             </div>
 
             <div class="premium-card admin-card">
-                <div class="premium-card-head"><h3>Menu Management</h3><span>${menuData.length} items</span></div>
-                <div class="admin-form-grid">
-                    <input id="adminMenuName" placeholder="Item name">
-                    <input id="adminMenuPrice" type="number" inputmode="numeric" placeholder="Price ₹">
-                    <input id="adminMenuCategory" placeholder="Category" value="Main Course">
-                    <button class="premium-btn" onclick="adminAddMenuUnified()">Add Menu Item</button>
-                </div>
+                <div class="premium-card-head"><h3>Menu Upload</h3><span>${menuData.length} items</span></div>
+                <div class="admin-help">Upload the menu file in .xlsx, .xls or .csv format. Menu data is saved to D1.</div>
                 <div class="premium-toolbar compact-toolbar" style="margin-top:8px">
-                    
                     <label class="premium-btn alt upload-label">Upload Menu<input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleMenuUpload(this.files[0])"></label>
-                    <button class="premium-btn light" onclick="exportMenu()">Export Menu</button>
                 </div>
             </div>
-
             <div class="premium-card admin-card">
                 <div class="premium-card-head"><h3>Pending Approvals</h3><span>Protected actions</span></div>
                 <div id="pendingApprovalsBox" class="premium-empty">Checking approvals...</div>
