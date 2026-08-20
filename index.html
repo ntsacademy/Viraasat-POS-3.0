@@ -11,10 +11,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="apple-touch-icon" href="icon.png">
+    <link rel="icon" type="image/png" href="icon.png">
     
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;0,800;1,600&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script async src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script async src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
     <style>
         :root {
@@ -31,21 +32,12 @@
             --danger: #D03B3B;
             --success: #10B981;
             
-            --occ-bg: #FFF5F7;
-            --occ-border: #FF748D;
-            --occ-gradient: linear-gradient(135deg, #FFB183 0%, #FF5F8E 100%);
+            --occ-bg: #FFF4F6;
+            --occ-border: #FF5F8E;
+            --occ-gradient: linear-gradient(135deg, #FF9A7A 0%, #FF5F8E 100%);
             
             --shadow-soft: 0 4px 18px rgba(0,0,0,0.03); 
             --border-radius: 14px;      
-            
-            /* Screenshot Exact Colors */
-            --card-purple: #F4F0FB;
-            --card-peach: #FEF0E6;
-            --card-mint: #E8F5E9;
-            --card-blue: #EAF2FF;
-            --btn-pink: #E21B70;
-            --btn-green: #10B981;
-            --accent-gold: #B48E5D;
         }
 
         html { font-size: 16px; touch-action: manipulation; background-color: #FFFFFF; overscroll-behavior-y: contain; } 
@@ -62,24 +54,19 @@
             max-width: 600px; margin: 0 auto; position: relative;
         } 
 
-        /* CSS Graphic Logo Styling */
-        .logo-graphic { display: none; font-family: 'Playfair Display', serif; font-size: 1.8rem; font-weight: 800; color: var(--primary); position: relative; line-height: 1; letter-spacing: 0.5px;}
-        .logo-graphic::after { content: '™'; font-size: 0.6rem; position: absolute; top: 0; right: -12px; color: var(--accent-gold); font-family: 'Poppins', sans-serif;}
-        .logo-accent { display: block; width: 40px; height: 3px; background: var(--accent-gold); margin: 6px 0 0 2px; border-radius: 2px; }
-        
+        /* Custom Logo Classes */
         .brand-logo-img { height: 38px; width: auto; object-fit: contain; }
-
-        .splash-logo-container { font-size: 3rem; text-align: center; margin-bottom: 8px;}
         .splash-logo-img { height: 90px; width: auto; margin-bottom: 15px; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.08)); }
 
         .top-app-bar { padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 50; background: var(--bg-color); }
         .brand-container { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
-        .page-subtitle { font-family: 'Poppins', sans-serif; font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-top: 6px; }
+        .brand-name { font-family: 'Playfair Display', serif; font-size: 1.6rem; font-weight: 800; color: var(--text-dark); letter-spacing: 0.5px; line-height: 1.1; }
+        .page-subtitle { font-size: 0.85rem; font-weight: 500; color: var(--text-dark); margin-top: 2px; transition: opacity 0.5s ease; }
         
         .icon-btn { background: var(--surface); border: 1px solid var(--border); width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text-dark); box-shadow: var(--shadow-soft); transition: 0.1s;}
         .icon-btn:active { transform: scale(0.95); }
 
-        main { flex: 1; padding: 0 0 calc(90px + env(safe-area-inset-bottom)) 0; overflow-y: auto; -webkit-overflow-scrolling: touch; position: relative; z-index: 10; }
+        main { flex: 1; padding: 0 0 calc(90px + env(safe-area-inset-bottom)) 0; overflow-y: auto; -webkit-overflow-scrolling: touch; position: relative; }
         .tab-content { display: none; animation: fadeIn 0.2s ease; padding: 0 20px; }
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
@@ -90,23 +77,23 @@
         .date-badge { background: var(--surface); border: 1px solid var(--border); padding: 8px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; color: var(--text-dark); display: flex; align-items: center; gap: 6px; box-shadow: var(--shadow-soft); }
 
         .quick-action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-        .quick-card { background: var(--surface); border: 1px solid transparent; border-radius: var(--border-radius); padding: 16px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.1s;}
-        .quick-card:active { transform: scale(0.98); filter: brightness(0.95); }
+        .quick-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; display: flex; align-items: center; gap: 12px; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.1s;}
+        .quick-card:active { transform: scale(0.98); background: #FAF8F5; }
         .quick-card.occupied { background: var(--occ-bg) !important; border-color: var(--occ-border) !important; }
-        .qc-icon { width: 44px; height: 44px; border-radius: 12px; background: rgba(255,255,255,0.6); display: flex; align-items: center; justify-content: center; color: var(--text-dark); flex-shrink: 0; }
+        .qc-icon { width: 44px; height: 44px; border-radius: 12px; background: #F8F6F0; border: 1px solid #ECE7DD; display: flex; align-items: center; justify-content: center; color: var(--text-dark); flex-shrink: 0; }
         .qc-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
         .qc-info h4 { font-size: 0.95rem; font-weight: 700; color: var(--text-dark); }
         .status-dot { font-size: 0.7rem; font-weight: 700; color: var(--success); display: flex; align-items: center; gap: 4px; }
         .status-dot.occ { color: #E11D48; }
 
         .section-header { display: flex; justify-content: space-between; align-items: center; margin: 24px 0 12px 0; }
-        .section-header h4 { font-weight: 800; font-size: 0.9rem; color: var(--text-dark); text-transform: uppercase; letter-spacing: 0.5px; }
-        .section-header span { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); cursor: pointer; }
+        .section-header h4 { font-weight: 700; font-size: 0.82rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+        .section-header span { font-size: 0.8rem; font-weight: 600; color: var(--text-dark); cursor: pointer; }
 
         .table-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 24px; }
         .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px 10px; display: flex; flex-direction: column; align-items: center; text-align: center; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.15s; }
         .table-card:active { transform: scale(0.96); }
-        .table-card.occupied { background: var(--occ-bg) !important; border: 1.5px solid var(--occ-border) !important; }
+        .table-card.occupied { background: var(--occ-bg) !important; border: 1.5px solid var(--occ-border) !important; box-shadow: 0 5px 16px rgba(255,95,142,.10); }
         .tc-name { font-size: 0.95rem; font-weight: 700; color: var(--text-dark); margin-bottom: 6px; }
         .tc-sub { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; margin-bottom: 8px;}
         
@@ -114,36 +101,27 @@
         .status-avail { color: #10B981; background: #E6F4EA; border: 1px solid #C6E7D2; }
         .status-occ { background: var(--occ-gradient) !important; color: #FFFFFF !important; box-shadow: 0 3px 8px rgba(255, 95, 142, 0.3); border: none !important; }
 
-        /* Dashboard KPI Cards Setup */
         .home-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
-        .hkpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; box-shadow: var(--shadow-soft); display: flex; flex-direction: column; cursor: pointer; transition: 0.1s;}
-        .hkpi-card:active { transform: scale(0.98); filter: brightness(0.97); }
-        .hkpi-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--text-muted); font-size: 0.78rem; font-weight: 700; text-transform: uppercase;}
+        .hkpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; box-shadow: var(--shadow-soft); display: flex; flex-direction: column; }
+        .hkpi-top { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; color: var(--text-muted); font-size: 0.78rem; font-weight: 600; }
         .hkpi-top svg { width: 16px; height: 16px; color: var(--text-dark); }
-        .hkpi-val { font-size: 1.6rem; font-weight: 800; color: var(--text-dark); margin-bottom: 8px; transition: font-size 0.2s;}
-        .hkpi-sub { font-size: 0.75rem; font-weight: 700; color: var(--text-dark); display: inline-block; padding: 4px 10px; border-radius: 8px; background: rgba(255,255,255,0.7); width: max-content; }
-        .hkpi-sub.green-text { color: var(--success); background: transparent; padding: 0; }
-
-        /* Exact colors */
-        .bg-purple { background-color: var(--card-purple) !important; border-color: transparent !important; }
-        .bg-peach { background-color: var(--card-peach) !important; border-color: transparent !important; }
-        .bg-mint { background-color: var(--card-mint) !important; border-color: transparent !important; }
-        .bg-blue { background-color: var(--card-blue) !important; border-color: transparent !important; }
+        .hkpi-val { font-size: 1.35rem; font-weight: 800; color: var(--text-dark); margin-bottom: 4px; transition: font-size 0.2s;}
+        .hkpi-sub { font-size: 0.72rem; font-weight: 600; color: var(--success); }
 
         .h-order-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--border-radius); padding: 16px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; box-shadow: var(--shadow-soft); cursor: pointer; transition: 0.1s; }
-        .h-order-card:active { transform: scale(0.98); background: var(--primary-light); }
-        .ho-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--primary-light); display: flex; align-items: center; justify-content: center; color: var(--text-dark); flex-shrink: 0; }
+        .h-order-card:active { transform: scale(0.98); }
+        .ho-icon { width: 42px; height: 42px; border-radius: 12px; background: #F8F6F0; display: flex; align-items: center; justify-content: center; color: var(--text-dark); flex-shrink: 0; }
         .ho-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
-        .ho-title { font-size: 0.95rem; font-weight: 800; color: var(--text-dark); }
+        .ho-title { font-size: 0.92rem; font-weight: 700; color: var(--text-dark); }
         .ho-sub { font-size: 0.75rem; color: var(--text-muted); font-weight: 500; }
         .ho-badge { background: #E6F4EA; color: #10B981; font-size: 0.65rem; font-weight: 700; padding: 4px 10px; border-radius: 12px; letter-spacing: 0.5px; }
 
-        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; padding: 10px 4px calc(10px + env(safe-area-inset-bottom)) 4px; border-top: 1px solid var(--border); z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.03); border-radius: 20px 20px 0 0; }
-        .nav-item { background: transparent; border: none; color: #6B7280; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: inherit; font-size: 0.6rem; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; padding: 6px 0; }
+        .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background: var(--surface); display: flex; justify-content: space-around; align-items: center; padding: 10px 8px calc(10px + env(safe-area-inset-bottom)) 8px; border-top: 1px solid var(--border); z-index: 1000; box-shadow: 0 -4px 20px rgba(0,0,0,0.03); border-radius: 20px 20px 0 0; }
+        .nav-item { background: transparent; border: none; color: var(--text-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-family: inherit; font-size: 0.65rem; font-weight: 600; cursor: pointer; flex: 1; transition: 0.2s; padding: 6px 0; }
         .nav-item svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: 0.2s; }
-        .nav-item.active { color: var(--btn-pink); font-weight: 800; }
-        .nav-item.active .icon-container { background: #FDE8D7; width: 50px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
-        .nav-item.active svg { stroke: var(--btn-pink); stroke-width: 2.2; }
+        .nav-item.active { color: #E21B70; font-weight: 800; }
+        .nav-item.active .icon-container { background: #FDE8D7; width: 56px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+        .nav-item.active svg { stroke: #E21B70; stroke-width: 2.2; }
 
         .card { background: var(--surface); border-radius: var(--border-radius); padding: 20px; border: 1px solid var(--border); margin-bottom: 16px; box-shadow: var(--shadow-soft); }
         .form-group { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
@@ -186,7 +164,6 @@
         .sales-card { background: var(--surface); border-radius: var(--border-radius); padding: 18px; border: 1px solid var(--border); cursor: pointer; transition: 0.1s;}
         .sales-card:active { transform: scale(0.98); }
 
-        /* P&L Grid */
         .trend-kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
         .trend-kpi-card { padding: 16px; border-radius: var(--border-radius); border: 1px solid var(--border); background: var(--surface); display: flex; flex-direction: column; box-shadow: var(--shadow-soft);}
         .trend-kpi-card.full-width { grid-column: span 2; }
@@ -201,12 +178,12 @@
         @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
         .sheet-handle { width: 36px; height: 4px; background: #E0E0E0; border-radius: 2px; margin: 0 auto 20px auto; }
         
-        /* Loader Fix */
         #loader { text-align: center; color: var(--text-muted); font-weight: 600; font-size: 0.9rem; margin: 40px 0; display: none; align-items: center; justify-content: center; gap: 10px;}
         .spinner { width: 18px; height: 18px; border: 2px solid var(--border); border-top-color: var(--text-dark); border-radius: 50%; animation: spin 0.8s linear infinite; }
 
-        #splashScreen { position: fixed; inset: 0; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.4s; pointer-events: auto; }
-        
+        #splashScreen { position: fixed; inset: 0; background: var(--bg-color); z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.4s; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
         @media screen { #printSection { display: none !important; } }
         @media print {
             body { background-color: white; margin: 0; padding: 0; display: block; height: auto; overflow: visible; max-width: none; box-shadow: none;}
@@ -223,8 +200,8 @@
 
     <script>
         // GOOGLE SHEET SYNC CONFIGURATION
-        // Yahan par apna Google Apps Script Web App URL daalein.
-        // POS auto-sync karega raat 3 baje (agar open ho) ya manual sync button se.
+        // Ye POS automatically raat 3 baje D1 API se data nikal kar 
+        // is Google Sheet url par JSON bhej dega (backup ke liye).
         const GOOGLE_SHEET_API = "https://script.google.com/macros/s/AKfycbz2JlJYUw75cp9-r98_oKqm65z3l_OD-d0KMy7QZOpQ6XvUPLy0OLcBLT-KetLUoKsL/exec"; 
         
         // Brand Logo Fallback
@@ -233,22 +210,20 @@
 
     <div id="splashScreen">
         <div class="splash-logo-container">
-            <img src="icon.png" alt="Viraasat Logo" class="splash-logo-img" id="splashLogoImg" onerror="this.style.display='none'; document.getElementById('splashLogoGraphic').style.display='block';">
-            <div class="logo-graphic" id="splashLogoGraphic">Viraasat<div class="logo-accent"></div></div>
+            <img src="icon.png" alt="Viraasat Logo" class="splash-logo-img" id="splashLogoImg">
+            <div class="brand-name" id="splashLogoText" style="display:none; font-size:2.8rem; margin-bottom:15px;">VIRAASAT</div>
         </div>
-        <div class="splash-subtitle" style="margin-top: 20px; font-family: 'Poppins', sans-serif; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase;">Premium POS</div>
+        <div class="splash-subtitle" style="margin-top: 0;">Premium POS</div>
         <div class="spinner" style="margin-top: 20px;"></div>
     </div>
-    
-    <div id="loader"><div class="spinner"></div><div id="loaderText">Syncing...</div></div>
 
     <!-- LOGIN SCREEN -->
     <div id="loginScreen" style="display: none; position: absolute; inset: 0; background: var(--bg-color); z-index: 9999; flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
         <div style="width: 100%; max-width: 400px; background: var(--surface); padding: 40px 24px; border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow-soft);">
             <div style="text-align: center; margin-bottom: 30px;">
-                <img src="icon.png" alt="Viraasat Logo" class="splash-logo-img" style="height:70px" id="loginLogoImg" onerror="this.style.display='none'; document.getElementById('loginLogoGraphic').style.display='inline-block';">
-                <div class="logo-graphic" id="loginLogoGraphic" style="font-size: 2.2rem;">Viraasat<div class="logo-accent" style="margin: 8px auto 0;"></div></div>
-                <p style="color: var(--text-muted); font-weight: 600; font-size: 0.8rem; margin-top: 16px; text-transform: uppercase; letter-spacing: 1px;">Authorized Access Only</p>
+                <img src="icon.png" alt="Viraasat Logo" class="splash-logo-img" style="height:70px" id="loginLogoImg">
+                <div class="brand-name" id="loginLogoText" style="display:none; font-size:2.2rem; margin-bottom:12px;">VIRAASAT</div>
+                <p style="color: var(--text-muted); font-weight: 600; font-size: 0.8rem; margin-top: 4px; text-transform: uppercase; letter-spacing: 1px;">Authorized Access Only</p>
             </div>
             <div class="form-group">
                 <div class="input-box"><label>Mobile Number</label><input type="tel" id="loginMobile" placeholder="Enter registered number" inputmode="numeric"></div>
@@ -329,14 +304,7 @@
         </div>
     </div>
 
-    <!-- CUSTOM THREE BUTTON MODAL (For Salary Print) -->
-    <div id="expenseDetailsModal" class="modal-overlay" style="z-index:100000; align-items:center; background:rgba(0,0,0,.55);">
-        <div class="modal-card expense-detail-modal-card" style="max-width:560px; width:calc(100% - 28px); background:#fff !important; opacity:1 !important; color:#211d1a !important; padding:20px; border-radius:18px;">
-            <div class="modal-header" style="margin-bottom:14px;"><h3 style="margin:0;color:#211d1a;">Expense Details</h3><button class="icon-btn" onclick="document.getElementById('expenseDetailsModal').style.display='none'">×</button></div>
-            <div id="expenseDetailsBody" style="background:#fff !important; color:#211d1a !important;"></div>
-        </div>
-    </div>
-
+    <!-- CUSTOM THREE BUTTON MODAL -->
     <div id="salaryActionModal" class="modal-overlay" style="z-index: 100000; align-items: center;">
         <div class="bottom-sheet" style="max-width: 320px; border-radius: 16px; padding: 24px; text-align: center; margin: 0 20px; transform: none; animation: fadeIn 0.2s ease-out; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
             <h3 id="salaryActionMessage" style="font-size:1.1rem; font-weight:700; margin-bottom: 24px; color: var(--text-dark); line-height: 1.5;">Payout Recorded!</h3>
@@ -363,11 +331,11 @@
     <!-- TOP BAR -->
     <header class="top-app-bar" id="appHeader" style="display: none;">
         <div class="brand-container">
-            <img src="icon.png" alt="Brand Logo" class="brand-logo-img" id="topNavLogoImg" onerror="this.style.display='none'; document.getElementById('topNavLogoGraphic').style.display='inline-block';">
-            <div class="logo-graphic" id="topNavLogoGraphic" style="font-size: 1.4rem;">Viraasat<div class="logo-accent" style="width:30px; margin-top:4px;"></div></div>
+            <img src="icon.png" alt="Brand Logo" class="brand-logo-img" id="topNavLogoImg">
+            <div class="brand-name" id="topNavLogoText" style="display:none; font-size:1.6rem;">VIRAASAT</div>
             <div class="page-subtitle" id="pageMainTitle" style="transition: opacity 0.5s ease; font-family: 'Playfair Display', serif; font-size: 0.85rem; font-style: italic; font-weight: 700; color: #A67C52;">Premium POS</div>
         </div>
-        <button class="icon-btn" onclick="haptic(); fetchData();" title="Refresh Data">
+        <button class="icon-btn" onclick="fetchData()" title="Refresh Data">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M1 20v-6h6"></path><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"></path></svg>
         </button>
     </header>
@@ -403,6 +371,7 @@
             </div>
 
             <div class="section-header" style="margin-top: 8px;"><h4>Dining Zones</h4></div>
+            
             <div id="tableGrid"></div>
 
             <!-- TODAY'S SALE & AVG VALUE (Exact Screenshot Order) -->
@@ -429,7 +398,7 @@
                 </div>
             </div>
 
-            <button class="btn btn-outline" onclick="showAddTableModal()" style="margin: 20px 0; font-weight:600; width:100%; border-radius:10px;">+ Deploy New Table</button>
+            <button class="btn btn-outline" onclick="openModal('addTableModal')" style="margin: 20px 0; font-weight:600; width:100%; border-radius:10px;">+ Deploy New Table</button>
 
             <div class="section-header"><h4>Recent Orders</h4> <span id="btnViewAllOrders" onclick="switchMainTab('salesDashboard', document.getElementById('navOrders'))">View All ›</span></div>
             <div id="homeRecentOrders"></div>
@@ -446,9 +415,9 @@
                     <div class="input-box"><label>End Date</label><input type="date" id="filterEndDate" onchange="renderLiveSales()"></div>
                 </div>
                 <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:8px; margin-bottom: 12px;">
-                    <button id="btnFilterToday" class="filter-btn" style="background:var(--text-dark); color:#FFF; border-color:var(--text-dark);" onclick="haptic(); setTodayFilter()">Today</button>
-                    <button id="btnFilterYesterday" class="filter-btn" onclick="haptic(); setYesterdayFilter()">Yesterday</button>
-                    <button id="btnFilterClear" class="filter-btn" style="color: var(--danger); border-color: var(--danger); background:transparent;" onclick="haptic(); resetDateFilter()">Reset</button>
+                    <button id="btnFilterToday" class="filter-btn" style="background:var(--text-dark); color:#FFF; border-color:var(--text-dark);" onclick="setTodayFilter()">Today</button>
+                    <button id="btnFilterYesterday" class="filter-btn" onclick="setYesterdayFilter()">Yesterday</button>
+                    <button id="btnFilterClear" class="filter-btn" style="color: var(--danger); border-color: var(--danger); background:transparent;" onclick="resetDateFilter()">Reset</button>
                 </div>
                 <div style="display:flex; gap:8px;">
                     <div style="flex:1; background:var(--text-dark); border-radius:8px; font-weight:700; font-size:1.1rem; text-align:center; color:#FFF; display:flex; align-items:center; justify-content:center; height:50px;" id="totalSalesBox">Total Sales: ₹ 0</div>
@@ -500,7 +469,6 @@
                 <div id="staffExpenseList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
             </div>
 
-            <!-- Employee Advance Log in P&L -->
             <div class="card" style="border:1px solid var(--border); box-shadow:none;">
                 <div class="section-header" style="margin-top:0;"><h4>Staff Advance Details</h4></div>
                 <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:16px;">Staff advance and salary details.</p>
@@ -513,7 +481,7 @@
             </div>
         </div>
 
-        <!-- EXPENSES VIEW -->
+        <!-- TAB 4: EXPENSES VIEW -->
         <div id="expenses" class="tab-content" style="padding-top: 10px;">
             <div class="greeting-sec"><h2 style="font-size:1.4rem;">Expenditure Log</h2><p>Track operational costs.</p></div>
             <div class="card" style="border:1px solid var(--border); box-shadow:none;">
@@ -532,7 +500,6 @@
 
             <div class="section-header" style="margin-bottom:16px;"><h4>Expense Ledger</h4> <span onclick="exportExpensesTable()">Export ›</span></div>
             
-            <!-- Date Filter Dropdown -->
             <div class="input-box" style="margin-bottom: 16px;">
                 <label>Filter Expenses By Date</label>
                 <select id="expenseDateFilter" onchange="renderExpensesListUI()">
@@ -546,14 +513,12 @@
                 </select>
             </div>
 
-            <!-- Progress Bar -->
             <div class="card" style="padding: 16px; border:1px solid var(--border); box-shadow:none; margin-bottom: 20px;">
                 <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-dark); margin-bottom: 8px;">Category Breakdown</div>
                 <div id="expenseProgressBar" style="width: 100%; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; display: flex; margin-top: 8px;"></div>
                 <div id="expenseProgressLegend" style="display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; font-size:0.75rem; font-weight:600;"></div>
             </div>
 
-            <!-- Expense Filters -->
             <div class="swipe-filters" id="expenseFilters">
                 <button class="filter-chip active" onclick="renderExpensesListUI(this, 'All')">All</button>
                 <button class="filter-chip" onclick="renderExpensesListUI(this, 'Raw Material')">Raw Material</button>
@@ -593,6 +558,16 @@
                 </div>
             </div>
 
+            <!-- BRAND LOGO UPDATE -->
+            <div class="card">
+                <div class="section-header" style="margin-top:0;"><h4>Update Brand Logo</h4></div>
+                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:12px;">Enter a direct image URL (PNG/JPG) to change the app logo.</p>
+                <div class="form-group" style="margin-bottom:0;">
+                    <div class="input-box"><input type="url" id="customLogoUrl" placeholder="https://example.com/logo.png"></div>
+                    <button class="btn" style="margin-top:12px;" onclick="saveCustomLogo()">Update Logo</button>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="section-header" style="margin-top:0;"><h4>System Restoration</h4></div>
                 <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:12px;">Download the template below, add your historical records, and execute master import.</p>
@@ -601,16 +576,6 @@
                 <div class="form-group" style="margin-bottom:0;">
                     <input type="file" id="fullImportInput" accept=".xlsx,.xls,.csv" style="padding:10px; border:1px dashed var(--border); background:#FFF;">
                     <button class="btn" style="margin-top:10px; background:var(--success);" onclick="runFullImport()">Execute Master Import</button>
-                </div>
-            </div>
-
-            <!-- BRAND LOGO UPDATE -->
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Update Brand Logo</h4></div>
-                <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:12px;">Enter a direct image URL (PNG/JPG) to change the app logo.</p>
-                <div class="form-group" style="margin-bottom:0;">
-                    <div class="input-box"><input type="url" id="customLogoUrl" placeholder="https://example.com/logo.png"></div>
-                    <button class="btn" style="margin-top:12px;" onclick="saveCustomLogo()">Update Logo</button>
                 </div>
             </div>
 
@@ -774,7 +739,7 @@
                 <button class="btn btn-outline" onclick="haptic(); printBill('final')">Print Final Bill</button>
                 <button class="btn btn-outline" style="border-color:#10B981; color:#10B981;" onclick="sendWA_Customer()">WhatsApp Bill</button>
                 <button class="btn btn-outline" onclick="clearTableWithoutCheckout()" style="color:var(--danger); border-color:var(--danger);">Clear Table (Cancel)</button>
-                <button class="btn" style="margin-top:8px; height: 60px; font-size:1.1rem; background:var(--btn-pink);" onclick="openPaymentModal()">Checkout</button>
+                <button class="btn" style="margin-top:8px; height: 60px; font-size:1.1rem; background:var(--btn-pink);" onclick="openModal('paymentModal')">Checkout</button>
             </div>
         </div>
     </main>
@@ -797,7 +762,7 @@
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></div>
             <span>Expenses</span>
         </button>
-        <button class="nav-item" id="navAdmin" onclick="switchMainTab('usersManager', this)" style="display:none;">
+        <button class="nav-item" id="navUsers" onclick="switchMainTab('usersManager', this)" style="display:none;">
             <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg></div>
             <span>Admin</span>
         </button>
@@ -815,9 +780,7 @@
 
     <script>
         const API_BASE = '/api'; 
-        
-        const APP_VERSION = "D1 Hybrid Master V5.5"; 
-        
+        const APP_VERSION = "FINAL_V5.5_STABLE"; 
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
         let menuData = []; let stockData = {}; let runningTables = {}; 
@@ -843,19 +806,30 @@
 
         // INITIALIZE CUSTOM LOGO
         function initLogo() {
-            let savedLogo = localStorage.getItem('viraasat_custom_logo') || defaultLogo;
-            document.querySelectorAll('img[alt="Viraasat Logo"], img[alt="Brand Logo"], .splash-logo-img').forEach(img => {
-                img.src = savedLogo;
-                img.style.display = 'inline-block';
-            });
-            document.querySelectorAll('.logo-graphic').forEach(el => el.style.display = 'none');
+            let savedLogo = localStorage.getItem('viraasat_custom_logo');
+            if(savedLogo) {
+                document.querySelectorAll('.splash-logo-img, .brand-logo-img').forEach(img => {
+                    img.src = savedLogo;
+                    img.style.display = 'inline-block';
+                });
+                document.querySelectorAll('.logo-graphic').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('.brand-name').forEach(el => el.style.display = 'none');
+            } else {
+                document.querySelectorAll('.splash-logo-img, .brand-logo-img').forEach(img => {
+                    img.src = defaultLogo;
+                    img.style.display = 'inline-block';
+                });
+            }
         }
 
         function saveCustomLogo() {
             haptic();
             let url = document.getElementById('customLogoUrl').value.trim();
-            if(!url) { url = defaultLogo; }
-            localStorage.setItem('viraasat_custom_logo', url);
+            if(url) { 
+                localStorage.setItem('viraasat_custom_logo', url);
+            } else {
+                localStorage.removeItem('viraasat_custom_logo');
+            }
             initLogo();
             showCustomAlert("Brand logo updated successfully!");
         }
@@ -1160,13 +1134,12 @@
         // GOOGLE SHEET AUTO-SYNC (Nightly Backup)
         // ==========================================
         function autoSyncGoogleSheet() {
-            if(typeof GOOGLE_SHEET_API === 'undefined' || GOOGLE_SHEET_API.length < 10) return;
+            if(!window.isUserAdmin || !GOOGLE_SHEET_API || GOOGLE_SHEET_API.length < 10) return;
             try {
                 let lastSync = localStorage.getItem('viraasat_last_gsync');
                 let now = new Date();
                 let todayKey = `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
                 
-                // Trigger sync only if it's past 3 AM and hasn't been synced today
                 if (now.getHours() >= 3 && lastSync !== todayKey) {
                     let yest = new Date(now); yest.setDate(yest.getDate() - 1);
                     let yestIso = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, '0')}-${String(yest.getDate()).padStart(2, '0')}`;
@@ -1175,10 +1148,10 @@
                     let syncExp = expenseHistory.filter(e => String(e.date || e.isodate || '').includes(yestIso));
                     
                     if(syncSales.length > 0 || syncExp.length > 0) {
-                        fetch(GOOGLE_SHEET_API, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ type: 'daily_backup', sales: syncSales, expenses: syncExp, date: yestIso }) })
-                        .then(() => { localStorage.setItem('viraasat_last_gsync', todayKey); }).catch(e => console.log('G-Sheet Sync Deferred.'));
+                        fetch(GOOGLE_SHEET_API, { method: 'POST', body: JSON.stringify({ type: 'daily_backup', sales: syncSales, expenses: syncExp, date: yestIso }) })
+                        .then(() => { localStorage.setItem('viraasat_last_gsync', todayKey); }).catch(e => console.log('G-Sheet Auto-Sync Deferred.'));
                     } else {
-                        localStorage.setItem('viraasat_last_gsync', todayKey); // No data to sync
+                        localStorage.setItem('viraasat_last_gsync', todayKey); 
                     }
                 }
             } catch(e) {}
@@ -1264,7 +1237,7 @@
 
                 populateDropdown(); populateStaffDropdown(); renderEmployeeList(); renderTableGrid(); renderStockDashboard(); checkStockDisplay(); renderLiveSales(); generateOverview(); renderExpensesListUI();
                 if(window.isUserAdmin) fetchApprovals();
-                setTimeout(autoSyncGoogleSheet, 5000); // Trigger auto-sync check on load
+                setTimeout(autoSyncGoogleSheet, 5000); 
                 
             } catch(err) { 
                 console.error("Fetch Error:", err); 
@@ -1703,342 +1676,6 @@
             });
         }
 
-        function renderTableGrid() {
-            const gridContainer = document.getElementById('tableGrid'); if(!gridContainer) return; gridContainer.innerHTML = ""; let activeCount = 0; let totalCount = 0;
-            tableSections.forEach((section) => {
-                gridContainer.innerHTML += `<div class="section-header" style="margin-top:0;"><h4>${section.title}</h4></div>`; let gridHTML = '<div class="table-grid" style="margin-bottom:24px;">'; 
-                section.tables.forEach(i => { 
-                    let tName = "Table " + i; let isOccupied = runningTables.hasOwnProperty(tName) && runningTables[tName] && runningTables[tName].length > 0;
-                    if(isOccupied) activeCount++; totalCount++;
-                    let statusStr = isOccupied ? "OCCUPIED" : "AVAILABLE"; let statusCls = isOccupied ? "status-occ" : "status-avail"; let cardCls = isOccupied ? "table-card occupied" : "table-card";
-                    gridHTML += `<div class="${cardCls}" onclick="openTable('${i}')" style="width:100%; min-width:auto; padding:20px 10px;"><div class="tc-name">Table ${i}</div><div class="tc-status ${statusCls}">${statusStr}</div><div class="tc-sub" style="margin-top:8px;">Dining Area</div></div>`;
-                }); 
-                gridContainer.innerHTML += gridHTML + '</div>';
-            });
-            
-            let ha = document.getElementById('homeActiveTables'); if(ha) ha.innerText = `${activeCount} / ${totalCount}`;
-            let tkOccupied = runningTables.hasOwnProperty("Takeaway") && runningTables["Takeaway"] && runningTables["Takeaway"].length > 0; 
-            let ct = document.getElementById('cardTakeaway'); if(ct) ct.className = tkOccupied ? "quick-card occupied" : "quick-card bg-mint";
-            let delOccupied = runningTables.hasOwnProperty("Home Delivery") && runningTables["Home Delivery"] && runningTables["Home Delivery"].length > 0; 
-            let cd = document.getElementById('cardDelivery'); if(cd) cd.className = delOccupied ? "quick-card occupied" : "quick-card bg-blue";
-            let ts = document.getElementById('takeawayStatus'); if(ts) ts.innerText = tkOccupied ? "Engaged" : "Ready";
-            let ds = document.getElementById('deliveryStatus'); if(ds) ds.innerText = delOccupied ? "Engaged" : "Ready";
-        }
-
-        function confirmAddTable() { 
-            haptic();
-            let catIdx = document.getElementById('newTableCategory').value; let tNum = document.getElementById('newTableNumber').value.trim(); 
-            if(!tNum) { showCustomAlert("Please enter a table number."); return; } 
-            let isDuplicate = false; tableSections.forEach(sec => { if(sec.tables.includes(tNum)) isDuplicate = true; }); 
-            if(isDuplicate) { showCustomAlert("Table " + tNum + " already exists!"); return; } 
-            tableSections[catIdx].tables.push(tNum); localStorage.setItem('viraasat_table_sections', JSON.stringify(tableSections)); closeModal('addTableModal'); renderTableGrid(); 
-        }
-
-        function switchMainTab(tabName, btnElement, skipHistory = false) {
-            haptic();
-            let htmlMap = { 'tableDashboard': `Premium POS`, 'salesDashboard': `Live sale`, 'trendView': `P&L Dashboard`, 'expenses': `Expenses`, 'usersManager': `Admin`, 'logsDashboard': `Audit Logs` };
-            if(!skipHistory) { try { history.pushState({view: tabName}, '', '#' + tabName); } catch(e){} }
-            
-            document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display = 'none'; tab.classList.remove('active'); });
-            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active')); 
-            
-            if(btnElement) btnElement.classList.add('active');
-            let ah = document.getElementById('appHeader'); if(ah) ah.style.display = (tabName === 'tableDashboard') ? 'flex' : 'none';
-            
-            let tn = document.getElementById(tabName);
-            if(tn) { tn.style.display = 'block'; setTimeout(() => tn.classList.add('active'), 10); }
-            let abn = document.getElementById('appBottomNav'); if(abn) abn.style.display = 'flex';
-            
-            let tickerEl = document.getElementById('pageMainTitle');
-            if(tickerEl) {
-                if(tabName === 'tableDashboard') {
-                    tickerEl.style.color = '#A67C52';
-                    tickerEl.style.fontFamily = "'Playfair Display', serif";
-                    tickerEl.style.fontStyle = 'italic';
-                    tickerEl.style.fontWeight = '700';
-                    tickerEl.innerText = royalTaglines[tickerIndex];
-                } else {
-                    tickerEl.style.color = 'var(--text-muted)';
-                    tickerEl.style.fontFamily = "inherit";
-                    tickerEl.style.fontStyle = 'normal';
-                    tickerEl.style.fontWeight = '500';
-                    tickerEl.innerText = htmlMap[tabName];
-                }
-            }
-
-            if(tabName === 'trendView') setTimeout(generateTrends, 100);
-            if(tabName === 'expenses') renderExpensesListUI();
-            if(tabName === 'logsDashboard') renderLogs();
-        }
-
-        function openTable(num) {
-            haptic();
-            try { history.pushState({view: 'billing'}, '', '#billing'); } catch(e){}
-            activeTableNumber = (num === 'Takeaway' || num === 'Home Delivery') ? num : "Table " + num;
-            let bt = document.getElementById('billingTitle'); if(bt) bt.innerText = activeTableNumber;
-            let dab = document.getElementById('deliveryAddressBox'); if(dab) dab.style.display = (num === 'Home Delivery') ? 'flex' : 'none';
-            
-            currentBill = (runningTables[activeTableNumber] && Array.isArray(runningTables[activeTableNumber])) ? JSON.parse(JSON.stringify(runningTables[activeTableNumber])) : [];
-            let dv = document.getElementById('discountValue'); if(dv) dv.value = 0; 
-            let cp = document.getElementById('customerPhone'); if(cp) cp.value = ""; 
-            let da = document.getElementById('deliveryAddress'); if(da) da.value = ""; 
-            let ss = document.getElementById('stockStatus'); if(ss) ss.style.display = "none"; 
-            
-            updateBillTable();
-            document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display = 'none'; tab.classList.remove('active'); });
-            let ah = document.getElementById('appHeader'); if(ah) ah.style.display = 'none';
-            let bv = document.getElementById('billingView'); if(bv) { bv.style.display = 'block'; setTimeout(() => bv.classList.add('active'), 10); }
-            let abn = document.getElementById('appBottomNav'); if(abn) abn.style.display = 'none';
-        }
-
-        function goBackToTables(skipHistory = false) {
-            haptic();
-            if(!skipHistory) { try { history.pushState({view: 'tableDashboard'}, '', '#home'); } catch(e){} }
-            document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display = 'none'; tab.classList.remove('active'); });
-            let ah = document.getElementById('appHeader'); if(ah) ah.style.display = 'flex';
-            let td = document.getElementById('tableDashboard'); if(td) { td.style.display = 'block'; setTimeout(() => td.classList.add('active'), 10); }
-            let abn = document.getElementById('appBottomNav'); if(abn) abn.style.display = 'flex'; 
-            renderTableGrid(); 
-        }
-
-        // =====================================
-        // BILLING OPERATIONS
-        // =====================================
-        function addToBill() {
-            haptic();
-            let itemName = document.getElementById('itemInput').value; let qty = parseInt(document.getElementById('itemQty').value) || 1;
-            if (!itemName) { showCustomAlert("Please select an item from registry."); return; }
-            let selectedItem = menuData.find(i => getVal(i, ['itemname', 'name']).trim().toLowerCase() === itemName.trim().toLowerCase());
-            if (!selectedItem) { showCustomAlert("Item absent from registry. Use Custom Entry."); return; }
-            let itemPrice = parseInt(getVal(selectedItem, ['price'])); let existingItem = currentBill.find(i => i.name === getVal(selectedItem, ['itemname', 'name']));
-            if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ name: getVal(selectedItem, ['itemname', 'name']), price: itemPrice, qty: qty, total: itemPrice * qty }); }
-            updateBillTable();
-        }
-
-        function addCustomItem() {
-            haptic();
-            let name = document.getElementById('customName').value; let price = parseInt(document.getElementById('customPrice').value); let qty = parseInt(document.getElementById('customQty').value) || 1;
-            if (!name || !price || price <= 0) { showCustomAlert("Parameters invalid."); return; }
-            let existingItem = currentBill.find(i => i.name === name + " (Custom)");
-            if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ name: name + " (Custom)", price: price, qty: qty, total: price * qty }); }
-            updateBillTable(); document.getElementById('customName').value = ""; document.getElementById('customPrice').value = ""; document.getElementById('customQty').value = 1;
-        }
-
-        function changeQty(index, amount) { haptic(); currentBill[index].qty += amount; if(currentBill[index].qty <= 0) { currentBill.splice(index, 1); } else { currentBill[index].total = currentBill[index].price * currentBill[index].qty; } updateBillTable(); }
-        function removeItem(index) { haptic(); currentBill.splice(index, 1); updateBillTable(); }
-
-        function updateBillTable() {
-            let tbody = document.getElementById('billTableBody'); if(!tbody) return; tbody.innerHTML = ""; let subTotal = 0;
-            currentBill.forEach((item, index) => {
-                subTotal += (item.total || 0);
-                tbody.innerHTML += `<div class="record-card" style="flex-direction:row; align-items:center; justify-content:space-between; box-shadow:none; border:1px solid var(--border); background:var(--surface); border-radius:12px; padding:12px; margin-bottom:8px;"><div style="display:flex; flex-direction:column; flex:1;"><div style="font-weight: 800; font-size: 0.95rem; color: var(--text-dark); margin-bottom:4px;">${item.name}</div><div style="font-size: 0.75rem; color: var(--text-muted); font-weight:600;">₹${item.price} / unit</div></div><div style="display: flex; align-items: center; gap: 12px;"><div style="display: flex; align-items: center; border: 1px solid var(--border); border-radius: 8px; background: var(--primary-light);"><button onclick="changeQty(${index}, -1)" style="width: 32px; height: 32px; background: transparent; border: none; font-weight: 700; font-size: 1.2rem; cursor: pointer; color: var(--text-dark);">−</button><span style="width: 32px; text-align: center; font-weight: 800; font-size: 0.95rem; line-height: 32px;">${item.qty}</span><button onclick="changeQty(${index}, 1)" style="width: 32px; height: 32px; background: transparent; border: none; font-weight: 700; font-size: 1.2rem; cursor: pointer; color: var(--text-dark);">+</button></div><div style="font-weight: 800; font-size: 1.1rem; color: var(--primary); min-width: 50px; text-align: right;">₹${item.total}</div><button onclick="removeItem(${index})" style="background: transparent; border: none; color: var(--danger); cursor: pointer; padding: 6px;"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg></button></div></div>`;
-            });
-            let st = document.getElementById('subTotal'); if(st) st.innerText = `₹ ${subTotal}`; 
-            let dv = document.getElementById('discountValue'); let discount = dv ? (parseInt(dv.value) || 0) : 0;
-            let gt = document.getElementById('grandTotal'); if(gt) gt.innerText = (subTotal - discount) > 0 ? `₹ ${subTotal - discount}` : "₹ 0";
-            let ii = document.getElementById('itemInput'); if(ii) ii.value = ""; 
-            let iq = document.getElementById('itemQty'); if(iq) iq.value = 1;
-        }
-
-        function clearTableWithoutCheckout() {
-            showCustomConfirm(`Are you sure you want to clear ${activeTableNumber}?`, "clearTableConf", null);
-        }
-
-        window.clearTableConf = function() {
-            fetch(`${API_BASE}/tables/clear`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table_number: activeTableNumber }) })
-            .then(res => res.json()).then(data => { logAction(`Cleared Table ${activeTableNumber}`, localStorage.getItem('viraasat_user')); delete runningTables[activeTableNumber]; currentBill = []; goBackToTables(); }).catch(e => { delete runningTables[activeTableNumber]; currentBill = []; goBackToTables(); });
-        }
-
-        function saveKOT() {
-            haptic();
-            if (currentBill.length === 0) { showCustomAlert("Invoice is empty."); return; }
-            let btn = document.getElementById('btnKOT'); if(btn) { btn.innerText = "Registering..."; btn.disabled = true; }
-            let isNew = !runningTables.hasOwnProperty(activeTableNumber);
-            fetch(`${API_BASE}/orders`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table_number: activeTableNumber, items: currentBill, order_status: "pending" }) })
-            .then(r=>r.json()).then(data => { logAction(`Saved KOT for ${activeTableNumber}`, localStorage.getItem('viraasat_user')); runningTables[activeTableNumber] = currentBill; if(btn) { btn.innerText = "Save KOT"; btn.disabled = false; } goBackToTables(); }).catch(err => { if(btn) { btn.innerText = "Save KOT"; btn.disabled = false; } });
-        }
-
-        function openPaymentModal() { haptic(); if (currentBill.length === 0) return; let pm = document.getElementById('paymentModal'); if(pm) pm.style.display = 'flex'; }
-        
-        function selectPaymentMode(mode) { haptic(); selectedPaymentMode = mode; document.querySelectorAll('.pay-btn').forEach(btn => btn.classList.remove('selected')); let pm = document.getElementById('pay' + mode); if(pm) pm.classList.add('selected'); }
-
-        function processFinalCheckout() {
-            haptic();
-            let btn = document.getElementById('btnFinalCheckout'); if(btn) { btn.innerText = "Processing..."; btn.disabled = true; }
-            let cp = document.getElementById('customerPhone'); let phone = cp ? cp.value || "NA" : "NA"; 
-            let dab = document.getElementById('deliveryAddressBox'); let da = document.getElementById('deliveryAddress'); let address = (dab && dab.style.display === 'flex' && da) ? da.value : "";
-            let dv = document.getElementById('discountValue'); let discount = dv ? parseInt(dv.value) || 0 : 0; 
-            let orderId = "ORD" + Math.floor(Math.random() * 900000000 + 100000000);
-            
-            let itemsString = currentBill.map(i => `${i.name} (x${i.qty}) ₹${i.total}`).join(", ");
-            if (discount > 0) itemsString += `, [Discount Applied: -₹${discount}]`; 
-            itemsString += `, [Mode: ${selectedPaymentMode}]`; 
-            if(address) itemsString += `, [Address: ${address}]`;
-
-            let gt = document.getElementById('grandTotal'); let grandTotal = gt ? parseInt(gt.innerText.replace(/[^0-9.-]/g, '')) || 0 : 0;
-
-            fetch(`${API_BASE}/orders/checkout`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ table_number: activeTableNumber, customer_phone: phone, items_string: itemsString, rawItems: currentBill, total: grandTotal, discount: discount, payment_method: selectedPaymentMode }) })
-            .then(res => res.json()).then(data => {
-                delete runningTables[activeTableNumber]; 
-                logAction(`Checked Out Order #${orderId} for ₹${grandTotal}`, localStorage.getItem('viraasat_user'));
-                let now = new Date(); let fDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-                salesHistory.unshift({ date: fDate, isodate: fDate, time: now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}), orderid: orderId, items: itemsString, total: grandTotal, table: activeTableNumber });
-                
-                if(btn) { btn.innerText = "✔ Confirm Checkout"; btn.disabled = false; } closeModal('paymentModal'); generateTrends(); goBackToTables(); fetchData();
-            }).catch(err => { if(btn) { btn.innerText = "✔ Confirm Checkout"; btn.disabled = false; } });
-        }
-
-        // =====================================
-        // DISPLAY ORDER DETAILS (FIXED CRASH)
-        // =====================================
-        function openOrderDetails(orderId) {
-            haptic();
-            let sale = salesHistory.find(s => String(s.orderid).trim() === String(orderId).trim() || String(s.id).trim() === String(orderId).trim() || String(s.Order_ID).trim() === String(orderId).trim()); 
-            if(!sale) return; 
-            currentViewingSale = sale;
-            
-            let sTable = sale.table || sale.tablename || sale.tablenumber || sale.Table_Number || 'Table'; 
-            let sDate = sale.date || sale.isodate || sale.Date || ''; 
-            let sTime = sale.time || sale.Time || ''; 
-            let sTotal = parseAmount(sale.totalamount || sale.total || sale.amount || sale.Total_Amount); 
-            let sPhone = sale.phone || sale.customerphone || sale.Phone || ''; 
-
-            let mom = document.getElementById('modalOrderMeta');
-            if(mom) mom.innerHTML = `<b>Table:</b> ${sTable}<br><b>ID:</b> #${orderId}<br><b>Time:</b> ${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}`;
-            
-            let modalItemsHtml = "";
-            let parsedItemsArr = extractItemsList(sale.itemsstring || sale.items_string || sale.items || sale.Items);
-            
-            parsedItemsArr.forEach(i => {
-                let total = i.total; let iName = i.name ? String(i.name) : "Item";
-                if (total === null || isNaN(total)) { 
-                    let menuItem = menuData.find(m => { let mn = m.name || m.itemname; return mn && iName && String(mn).toLowerCase() === iName.toLowerCase(); }); 
-                    if (menuItem) total = parseInt(menuItem.price || 0) * i.qty; 
-                }
-                let totalStr = (total !== null && !isNaN(total)) ? `₹${total}` : "-"; 
-                modalItemsHtml += `<div style="display:flex; justify-content:space-between; margin-bottom:8px; border-bottom:1px solid var(--border); padding-bottom:8px;"><span><b style="color:var(--text-dark);">${i.qty}x</b> <span style="font-weight:500; color:var(--text-muted);">${iName}</span></span> <span style="font-weight:600; color:var(--text-dark);">${totalStr}</span></div>`;
-            });
-            
-            let moi = document.getElementById('modalOrderItems'); if(moi) moi.innerHTML = modalItemsHtml; 
-            let mot = document.getElementById('modalOrderTotal'); if(mot) mot.innerText = `₹ ${sTotal}`; 
-            let mcp = document.getElementById('modalCustomerPhone'); if(mcp) mcp.value = sPhone; 
-            
-            let delBtn = document.getElementById('btnRequestDelete');
-            if(delBtn) {
-                if(sale.status === 'deletion_pending' || sale.status === 'deleted' || sale.status === 'cancelled') { 
-                    delBtn.innerText = "Cancellation Actioned"; delBtn.disabled = true; delBtn.style.opacity = 0.5; 
-                } else { 
-                    delBtn.innerText = "Request Deletion (Admin Approval)"; delBtn.disabled = false; delBtn.style.opacity = 1; 
-                }
-            }
-            
-            openModal('orderDetailsModal');
-        }
-
-        // =====================================
-        // DIRECT PRINT / WHATSAPP COMMANDS
-        // =====================================
-        function printBill(type) {
-            haptic();
-            try {
-                if (currentBill.length === 0) { showCustomAlert("Cart is empty! Nothing to print."); return; }
-                let printSec = document.getElementById('printSection'); let d = new Date(); let dStr = d.toLocaleDateString('en-IN') + ' ' + d.toLocaleTimeString('en-IN');
-                
-                if(type === 'kot') {
-                    let itemsHtml = currentBill.map(i => `<div style="font-size:1.1rem; font-weight:bold; margin-bottom:5px; border-bottom:1px dashed #ccc; padding-bottom:5px;">[ ${i.qty} ] x ${i.name}</div>`).join("");
-                    printSec.innerHTML = `<div style="text-align:center; margin-bottom:10px;"><h2 style="margin:0; font-size:1.5rem;">K.O.T</h2><h3 style="margin:5px 0;">Table: ${activeTableNumber}</h3><p style="margin:0; font-size:0.8rem;">Date: ${dStr}</p></div><div style="border-top:2px dashed #000; padding-top:10px;">${itemsHtml}</div>`;
-                } else {
-                    let discountEl = document.getElementById('discountValue'); let discount = discountEl ? (parseInt(discountEl.value) || 0) : 0; 
-                    let grandTotalEl = document.getElementById('grandTotal'); let grandTotal = grandTotalEl ? (parseInt(grandTotalEl.innerText.replace(/[^0-9.-]/g, '')) || 0) : 0;
-                    let addBox = document.getElementById('deliveryAddressBox'); let addInput = document.getElementById('deliveryAddress'); let addStr = (addBox && addBox.style.display === 'flex' && addInput) ? addInput.value : "";
-                    
-                    let itemsHtml = currentBill.map(i => `<tr><td class="col-item" style="text-align: left; width: 50%;">${i.name}</td><td class="col-price" style="text-align: center; width: 15%;">${i.price}</td><td class="col-qty" style="text-align: center; width: 15%;">${i.qty}</td><td class="col-amt" style="text-align: right; width: 20%; font-weight:bold;">${i.total}</td></tr>`).join("");
-                    
-                    printSec.innerHTML = `<div style="text-align: center; margin-bottom: 10px;"><h2 style="font-size: 1.2rem; margin: 0; padding: 0; font-weight: bold;">VIRAASAT UDAIPUR</h2><p style="font-size: 0.8rem; margin: 2px 0;">A Taste Of Royal Mewar</p><p style="font-size: 0.8rem; margin: 2px 0;">Contact: +91 7852041644</p><p style="font-size: 0.8rem; margin: 2px 0;">Udaipur, Rajasthan</p></div><div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; margin-bottom: 10px; font-size: 0.85rem;"><div style="display: flex; justify-content: space-between;"><span>Invoice No: INV-${Math.floor(Math.random() * 9000 + 1000)}</span> <span>${d.toLocaleDateString('en-IN')}</span></div><div style="margin-top:2px;">Table: ${activeTableNumber}</div>${addStr?`<div style="margin-top:2px;">Address: ${addStr}</div>`:""}</div><table style="width: 100%; font-size: 0.85rem; text-align: left; border-collapse: collapse;"><thead><tr><th class="col-item" style="text-align: left; width: 50%;">ITEM</th><th class="col-price" style="text-align: center; width: 15%;">PRICE</th><th class="col-qty" style="text-align: center; width: 15%;">QTY</th><th class="col-amt" style="text-align: right; width: 20%;">AMT</th></tr></thead><tbody>${itemsHtml}</tbody></table><div style="border-top: 1px dashed #000; margin-top: 10px; padding-top: 5px; font-size: 0.9rem;">${discount > 0 ? `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Discount:</span><span>-₹${discount}</span></div>` : ''}<div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;"><span>TOTAL (FOOD):</span><span>₹${grandTotal}</span></div></div><div style="text-align: center; font-size: 0.85rem; font-weight: bold; margin-top: 20px;">THANK YOU FOR DINING WITH US!</div>`;
-                }
-                
-                printSec.offsetHeight; window.print();
-            } catch (e) { console.log(e); }
-        }
-
-        function printHistoricalBill() {
-            haptic();
-            try {
-                let sale = currentViewingSale;
-                if(!sale) return;
-                let sOrderId = sale.orderid || sale.id || sale.Order_ID || 'N/A'; let sTable = sale.table || sale.tablename || sale.Table_Number || 'Table'; let sDate = sale.date || sale.isodate || sale.Date || ''; let sTime = sale.time || sale.Time || ''; let sTotal = parseAmount(sale.totalamount || sale.total || sale.amount || sale.Total_Amount); let sItems = sale.items || sale.itemsstring || sale.items_string || sale.Items;
-                
-                let printSec = document.getElementById('printSection'); 
-                let dStr = `${cleanDisplayDate(sDate)} ${cleanDisplayTime(sTime)}`; 
-                let itemsHtml = ""; let histDiscount = 0; let modeStr = ""; let addStr = "";
-                
-                if (typeof sItems === 'string') {
-                    let dMatch = sItems.match(/\[Discount Applied:\s*-?₹?(\d+)\]/); if(dMatch) histDiscount = parseInt(dMatch[1]);
-                    let mMatch = sItems.match(/\[Mode:\s*(.+?)\]/); if(mMatch) modeStr = mMatch[1];
-                    let aMatch = sItems.match(/\[Address:\s*(.+?)\]/); if(aMatch) addStr = aMatch[1];
-                }
-
-                let parsedItemsArr = extractItemsList(sItems);
-
-                parsedItemsArr.forEach(i => {
-                    let totalVal = i.total; let priceVal = null; let iName = i.name ? String(i.name) : "Item";
-                    if (totalVal === null || isNaN(totalVal)) { let menuItem = menuData.find(m => { let mn = m.name || m.itemname; return mn && iName && String(mn).toLowerCase() === iName.toLowerCase(); }); if (menuItem) { priceVal = parseInt(menuItem.price || 0); totalVal = priceVal * i.qty; } } else { priceVal = totalVal / i.qty; }
-                    itemsHtml += `<tr><td class="col-item" style="text-align: left; width: 50%;">${iName}</td><td class="col-price" style="text-align: center; width: 15%;">${priceVal?priceVal:"-"}</td><td class="col-qty" style="text-align: center; width: 15%;">${i.qty}</td><td class="col-amt" style="text-align: right; width: 20%; font-weight:bold;">${totalVal?totalVal:"-"}</td></tr>`;
-                });
-                
-                printSec.innerHTML = `<div style="text-align: center; margin-bottom: 10px;"><h2 style="font-size: 1.2rem; margin: 0; padding: 0; font-weight: bold;">VIRAASAT UDAIPUR</h2><p style="font-size: 0.8rem; margin: 2px 0;">A Taste Of Royal Mewar</p><p style="font-size: 0.8rem; margin: 2px 0;">Contact: +91 7852041644</p><p style="font-size: 0.8rem; margin: 2px 0;">Udaipur, Rajasthan</p></div><div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; margin-bottom: 10px; font-size: 0.85rem;"><div style="display: flex; justify-content: space-between;"><span>Invoice No: #${sOrderId}</span> <span>(DUPLICATE)</span></div><div style="margin-top:2px;">Table: ${sTable}</div>${modeStr?`<div style="margin-top:2px;">Payment Mode: ${modeStr}</div>`:""}${addStr?`<div style="margin-top:2px;">Address: ${addStr}</div>`:""}</div><table style="width: 100%; font-size: 0.85rem; text-align: left; border-collapse: collapse;"><thead><tr><th class="col-item" style="text-align: left; width: 50%;">ITEM</th><th class="col-price" style="text-align: center; width: 15%;">PRICE</th><th class="col-qty" style="text-align: center; width: 15%;">QTY</th><th class="col-amt" style="text-align: right; width: 20%;">AMT</th></tr></thead><tbody>${itemsHtml}</tbody></table><div style="border-top: 1px dashed #000; margin-top: 10px; padding-top: 5px; font-size: 0.9rem;">${histDiscount > 0 ? `<div style="display:flex; justify-content:space-between; margin-bottom:5px;"><span>Discount:</span><span>-₹${histDiscount}</span></div>` : ''}<div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem;"><span>TOTAL (FOOD):</span><span>₹${sTotal}</span></div></div><div style="border-bottom: 1px dashed #000; margin-bottom: 10px; padding-bottom: 5px;"></div><div style="text-align: center; font-size: 0.85rem; font-weight: bold; margin-top: 10px;">THANK YOU FOR DINING WITH US!</div><div style="text-align: center; font-size: 0.75rem; margin-top: 5px;">Print Date: ${dStr}</div>`;
-                
-                printSec.offsetHeight; window.print();
-            } catch (e) { console.log(e); }
-        }
-
-        function sendWA_Customer() {
-            haptic();
-            if (currentBill.length === 0) { showCustomAlert("Cart is empty! Please add items first."); return; }
-            let phone = document.getElementById('customerPhone').value.trim();
-            if (!phone || phone.length < 10) { showCustomAlert("Please enter a valid 10-digit customer phone number."); return; }
-            
-            let discount = parseInt(document.getElementById('discountValue').value) || 0; 
-            let grandTotal = parseInt(document.getElementById('grandTotal').innerText.replace(/[^0-9.-]/g, '')) || 0;
-            let d = new Date(); let dateStr = d.toLocaleDateString('en-IN'); let timeStr = d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
-            let invoiceNo = "INV-" + Math.floor(Math.random() * 9000 + 1000);
-            
-            let text = `*VIRAASAT UDAIPUR*\n_A Taste Of Royal Mewar_\n\n*Invoice No:* ${invoiceNo}\n*Table:* ${activeTableNumber}\n*Date:* ${dateStr} • ${timeStr}\n----------------------------------------\n*ITEMS*\n`;
-            currentBill.forEach(item => { text += `▪ ${item.name} (x${item.qty})  ~  *₹${item.total}*\n`; });
-            text += `----------------------------------------\n`;
-            if (discount > 0) { text += `*Discount:*  -₹${discount}\n`; }
-            text += `*TOTAL AMOUNT:  ₹${grandTotal}*\n----------------------------------------\n\nThank you for dining with us! 🙏\n\n⭐ *We would love to hear your feedback:*\nhttps://g.page/r/CSJLAggbIn1JEBM/review`;
-            
-            let waLink = `https://wa.me/91${phone}?text=${encodeURIComponent(text)}`; 
-            window.open(waLink, '_blank');
-        }
-
-        function sendWA_HistoricalBill() {
-            haptic();
-            let sale = currentViewingSale;
-            if(!sale) return;
-            let phone = document.getElementById('modalCustomerPhone').value.trim();
-            if (!phone || phone.length < 10) { showCustomAlert("Please enter a valid 10-digit customer phone number."); return; }
-            
-            let sOrderId = sale.orderid || sale.id || sale.Order_ID || 'N/A'; let sTable = sale.table || sale.tablename || sale.Table_Number || 'Table'; let sDate = sale.date || sale.isodate || sale.Date || ''; let sTime = sale.time || sale.Time || ''; let sTotal = parseAmount(sale.totalamount || sale.total || sale.amount || sale.Total_Amount); let sItems = getSaleItemsText(sale); let histDiscount = 0; 
-            let text = `*VIRAASAT UDAIPUR*\n_A Taste Of Royal Mewar_\n\n*Invoice No:* ${sOrderId}\n*Table:* ${sTable}\n*Date:* ${cleanDisplayDate(sDate)} • ${cleanDisplayTime(sTime)}\n----------------------------------------\n*ITEMS*\n`;
-            
-            if (typeof sale.items === 'string' || typeof sale.items_string === 'string') { let dMatch = (sale.items || sale.items_string || "").match(/\[Discount Applied:\s*-?₹?(\d+)\]/); if(dMatch) histDiscount = parseInt(dMatch[1]); }
-            
-            let parsedItemsArr = extractItemsList(sale.items || sale.itemsstring || sale.items_string || sale.Items);
-            parsedItemsArr.forEach(i => {
-                let totalVal = i.total; let iName = i.name ? String(i.name) : "Item";
-                if (totalVal === null || isNaN(totalVal)) { let menuItem = menuData.find(m => { let mn = m.name || m.itemname; return mn && iName && String(mn).toLowerCase() === iName.toLowerCase(); }); if (menuItem) { totalVal = parseInt(menuItem.price || 0) * i.qty; } } 
-                text += `▪ ${iName} (x${i.qty})  ~  *₹${totalVal || '-' }*\n`;
-            });
-            text += `----------------------------------------\n`;
-            if (histDiscount > 0) { text += `*Discount:*  -₹${histDiscount}\n`; }
-            text += `*TOTAL AMOUNT:  ₹${sTotal}*\n----------------------------------------\n\nThank you for dining with us! 🙏\n\n⭐ *We would love to hear your feedback:*\nhttps://g.page/r/CSJLAggbIn1JEBM/review`;
-            
-            let waLink = `https://wa.me/91${phone}?text=${encodeURIComponent(text)}`; 
-            window.open(waLink, '_blank');
-        }
-
         // =====================================
         // EXPORT FUNCTIONS
         // =====================================
@@ -2092,17 +1729,17 @@
                 for(let e of expenses) { 
                     if(e.Amount || e.amount) await fetch(`${API_BASE}/expenses`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ category: e.Category || e.category || 'Other', amount: e.Amount || e.amount, description: e.Description || e.description || '', expense_date: e.Date || e.date }) }); 
                 }
-                // Import Historical Sales
+                // Import Historical Sales (Bulletproof Date/Time Handling)
                 for(let sale of allSales) {
                     let total = sale.Total_Amount || sale.total || sale.totalamount || sale.Amount || sale.amount;
                     if(!total) continue;
                     let dateVal = sale.Date || sale.date; let timeVal = sale.Time || sale.time;
                     let parsedTime = "12:00:00"; 
-                    if(timeVal && !String(timeVal).includes("GMT")) parsedTime = timeVal; // Handle missing time
+                    if(timeVal && !String(timeVal).includes("GMT")) parsedTime = timeVal; // Handle missing time from excel
                     
                     let isoDate = dateVal;
                     if(dateVal && !String(dateVal).includes("T")) { isoDate = `${dateVal}T${parsedTime}`; }
-                    if(!dateVal) { isoDate = new Date().toISOString(); } // Handle missing date
+                    if(!dateVal) { isoDate = new Date().toISOString(); } 
 
                     await fetch(`${API_BASE}/orders/checkout`, { 
                         method: 'POST', headers: {'Content-Type':'application/json'}, 
