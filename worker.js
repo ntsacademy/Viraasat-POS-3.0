@@ -1352,6 +1352,15 @@ var worker_default = {
       return;
     }
     try {
+      // Keep the shared audit trail for the latest 7 days only.
+      // This is automatic; there is no UI clear/delete action.
+      if (await tableExists(db, "audit_logs")) {
+        const auditCols = await getColumns(db, "audit_logs");
+        const auditTimeCol = auditCols.includes("timestamp") ? "timestamp" : auditCols.includes("created_at") ? "created_at" : null;
+        if (auditTimeCol) {
+          await db.prepare(`DELETE FROM audit_logs WHERE datetime(${auditTimeCol}) < datetime('now','-7 days')`).run();
+        }
+      }
       const result = await runGoogleSheetBackup(db, env, "Automatic");
       console.log("Scheduled Google Sheet backup completed", result);
     } catch (error) {
@@ -1811,11 +1820,11 @@ var worker_default = {
           if (!orderColsForDelete.length) {
             return json({success:false,error:"Orders table not found"},500);
           }
+          // Do not select a hard-coded orders.items column: older D1 schemas may not have it.
           const orderSelect = [
             orderColsForDelete.includes("id") ? "id" : "rowid AS id",
             orderColsForDelete.includes("table_number") ? "table_number" : "NULL AS table_number",
-            orderColsForDelete.includes("order_type") ? "order_type" : "'' AS order_type",
-            orderColsForDelete.includes("items") ? "items" : "NULL AS items"
+            orderColsForDelete.includes("order_type") ? "order_type" : "'' AS order_type"
           ].join(", ");
           const orderWhere = orderColsForDelete.includes("order_number")
             ? "order_number=? OR CAST(id AS TEXT)=?"
@@ -1825,7 +1834,10 @@ var worker_default = {
             : [targetOrder];
           const o = await db.prepare(`SELECT ${orderSelect} FROM orders WHERE ${orderWhere} ORDER BY id DESC LIMIT 1`).bind(...orderBind).first();
           let orderItems=[];
-          try { const parsed=JSON.parse(o?.items||'[]'); if(Array.isArray(parsed)) orderItems=parsed; } catch {}
+          if (orderColsForDelete.includes("items")) {
+            const itemRow = await db.prepare(`SELECT items FROM orders WHERE ${orderWhere} ORDER BY id DESC LIMIT 1`).bind(...orderBind).first();
+            try { const parsed=JSON.parse(itemRow?.items||'[]'); if(Array.isArray(parsed)) orderItems=parsed; } catch {}
+          }
           if (!orderItems.length && o?.id && await tableExists(db,"order_items")) {
             const itemCols=await getColumns(db,"order_items");
             const n=itemCols.includes('item_name')?'item_name':itemCols.includes('name')?'name':"''";
@@ -2309,6 +2321,7 @@ var worker_default = {
         return json({success:true,id,is_active:active});
       }
       if (path === "/api/import/full" && method === "POST") {
+        await ensureSupportTables(db);
         const body = await request.json();
         const sales = Array.isArray(body.sales) ? body.sales : (Array.isArray(body.Sales) ? body.Sales : []);
         const menu = Array.isArray(body.menu) ? body.menu : (Array.isArray(body.Menu) ? body.Menu : []);
