@@ -1892,7 +1892,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
         }
 
         const d = new Date();
-        document.getElementById('currentDateStr').innerText = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        document.getElementById('currentDateStr').innerText = cleanDisplayDate(d.toISOString());
         
         function getVal(obj, possibleKeys) {
             if (!obj) return '';
@@ -3316,6 +3316,11 @@ Tables, billing and existing local UI remain visible.`);}
             const s=String(value??'').trim();
             if(!s)return '';
             if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+            const dmy=s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2}|\d{4})(?:\s.*)?$/);
+            if(dmy){
+                const day=Number(dmy[1]), month=Number(dmy[2]), year=dmy[3].length===2?2000+Number(dmy[3]):Number(dmy[3]);
+                if(day>=1&&day<=31&&month>=1&&month<=12) return `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+            }
             const d=new Date(s);
             if(!isNaN(d.getTime()))return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
             return s;
@@ -3698,8 +3703,18 @@ Tables, billing and existing local UI remain visible.`);}
             if(foundStockKey !== undefined) { let currentQty = parseInt(stockData[foundStockKey]); statusDiv.style.color = ""; statusDiv.style.backgroundColor = ""; statusDiv.style.border = ""; statusDiv.className = currentQty > 5 ? "stock-tag" : "stock-tag low"; statusDiv.innerHTML = currentQty > 5 ? `Available: <span>${currentQty}</span>` : `Low Stock: <span>${currentQty}</span>`; statusDiv.style.display = "inline-flex"; statusDiv.style.marginTop = "8px"; } else { statusDiv.style.display = "none"; statusDiv.innerHTML = ""; } 
         }
 
-        function cleanDisplayDate(dStr) { 
-            if (!dStr) return ""; try { let d = new Date(dStr); if (isNaN(d.getTime())) return dStr.split(" ")[0]; return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }); } catch(e) { return dStr; } 
+        function cleanDisplayDate(dStr) {
+            if (!dStr) return "";
+            try {
+                const raw = String(dStr).trim();
+                const m = raw.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2}|\d{4})/);
+                if (m) return `${String(m[1]).padStart(2,'0')}-${String(m[2]).padStart(2,'0')}-${String(m[3]).slice(-2).padStart(2,'0')}`;
+                const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+                if (iso) return `${iso[3]}-${iso[2]}-${iso[1].slice(-2)}`;
+                const d = new Date(raw);
+                if (isNaN(d.getTime())) return raw.split(" " )[0];
+                return `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getFullYear()).slice(-2)}`;
+            } catch(e) { return dStr; }
         }
 
         function cleanDisplayTime(tStr) { 
