@@ -489,6 +489,34 @@
         .ho-title,.ho-sub{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
         .premium-card-head>*{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis}
         @media(max-width:600px){#salesGrid{max-height:52dvh}.premium-toolbar{margin-right:-2px}.premium-toolbar>*{flex:0 0 auto}.premium-toolbar input,.premium-toolbar select{width:145px!important}.premium-toolbar .premium-btn{width:auto!important;min-width:110px}.admin-order-items{-webkit-line-clamp:4}}
+
+        /* ===== FINAL DASHBOARD CARD CONTAINMENT + LIVE STOCK UX ===== */
+        .dashboard-list-scroll{max-height:292px;overflow-y:auto;overflow-x:hidden;min-width:0;padding-right:2px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+        .dashboard-list-scroll::-webkit-scrollbar{width:5px}.dashboard-list-scroll::-webkit-scrollbar-thumb{background:#D8D2CA;border-radius:99px}
+        .dashboard-list-scroll .premium-table-wrap{overflow-x:auto;max-height:none}
+        .dashboard-list-scroll .premium-table{width:100%;min-width:0}
+        .dashboard-list-scroll .premium-table th,.dashboard-list-scroll .premium-table td{overflow-wrap:anywhere;word-break:break-word}
+        .dashboard-list-scroll .mobile-sale-card{min-width:0;overflow:hidden}
+        .expense-history-scroll{max-height:300px;border:1px solid var(--border);border-radius:12px;padding:8px;background:#FCFAF7}
+        .expense-history-scroll #expenseHistoryList{min-width:0}
+        .expense-history-scroll .card{box-shadow:none}
+        .premium-card-head{flex-wrap:wrap}
+        .premium-card-head h3,.premium-card-head span{min-width:0;overflow-wrap:anywhere;max-width:100%}
+        .premium-card-head .premium-btn,.premium-card-head button{flex:0 0 auto;max-width:100%;white-space:nowrap}
+        .premium-toolbar,.sales-filter-chips,.filter-row,.filter-actions{min-width:0;max-width:100%}
+        .premium-toolbar{flex-wrap:wrap;overflow:hidden}
+        .premium-toolbar>*{min-width:0;max-width:100%;box-sizing:border-box}
+        .filter-btn,.premium-btn,.btn{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .sales-filter-chips{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:thin}
+        .admin-mini-list{max-height:292px;overflow-y:auto;overflow-x:hidden}
+        @media(max-width:600px){
+          .dashboard-list-scroll{max-height:280px}
+          .expense-history-scroll{max-height:280px}
+          .premium-card-head{align-items:flex-start}
+          .premium-card-head span{white-space:normal}
+          .premium-card-head .premium-btn,.premium-card-head button{width:auto;max-width:48%}
+          .filter-btn,.premium-btn,.btn{min-width:0}
+        }
 </style>
 </head>
 <body>
@@ -1397,20 +1425,25 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
         let d1RefreshInFlight=false;
         let tableBagSyncTimer=null;
         async function syncCurrentTableBag(){
-            const tableNumber=String(activeTableNumber||'').replace(/^Table\s+/,'').trim();
-            if(!/^\d+$/.test(tableNumber)) return;
+            if(!activeTableNumber)return;
             const items=Array.isArray(currentBill)?JSON.parse(JSON.stringify(currentBill)):[];
             runningTables[activeTableNumber]=items;
             renderTableGrid();
-            try{
+            const tableNumber=String(activeTableNumber).replace(/^Table\s+/,'').trim();
+            if(/^\d+$/.test(tableNumber)){
                 await d1Post('/tables/sync-bag',{table_number:tableNumber,items});
-            }catch(e){
-                console.warn('Live table bag sync failed',e);
+            }else{
+                const key=activeTableNumber==='Home Delivery'?'Home Delivery':'Takeaway';
+                await d1Post('/stock/sync-bag',{reservation_key:key,items});
             }
+            renderStockDashboard();
+            checkStockDisplay();
+            await fetchData(true);
         }
-        function queueTableBagSync(){
+        function queueTableBagSync(immediate=false){
             clearTimeout(tableBagSyncTimer);
-            tableBagSyncTimer=setTimeout(()=>{syncCurrentTableBag();},120);
+            const run=()=>syncCurrentTableBag().catch(e=>console.warn('Bag sync failed',e));
+            if(immediate) run(); else tableBagSyncTimer=setTimeout(run,80);
         }
 
         async function fetchData(silent=false){
@@ -1623,7 +1656,7 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
             const lifetime=salesHistory.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);
             const avg=todaySales.length?todayAmount/todaySales.length:0;
             const modes={}; salesHistory.forEach(s=>{const m=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'Unknown';modes[m]=(modes[m]||0)+parseAmount(getVal(s,['grand_total','totalamount','total','amount']));});
-            const recent=salesHistory.slice().sort((a,b)=>orderTimestamp(b)-orderTimestamp(a)).slice(0,8);
+            const recent=salesHistory.slice().sort((a,b)=>orderTimestamp(b)-orderTimestamp(a));
             panel.innerHTML=`
             <div class="premium-kpis">
                 <div class="pkpi"><div class="label">Today's Sale</div><div class="value">${money(todayAmount)}</div><div class="delta">${todaySales.length} orders</div></div>
@@ -1641,15 +1674,15 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
             <div class="premium-grid-2">
                 <div class="premium-card">
                     <div class="premium-card-head"><h3>Recent Sales</h3><span>Latest 8 orders</span></div>
-                    <div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Order</th><th>Time</th><th>Table</th><th>Mode</th><th>Total</th></tr></thead><tbody>
+                    <div class="dashboard-list-scroll"><div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Order</th><th>Time</th><th>Table</th><th>Mode</th><th>Total</th></tr></thead><tbody>
                     ${recent.map(s=>`<tr onclick="openOrderDetails('${esc(getVal(s,['orderid','order_number','id']))}')" style="cursor:pointer"><td><b>#${esc(getVal(s,['orderid','order_number','id']))}</b></td><td>${esc(saleDateKey(s))}<br>${esc(saleTimeText(s))}</td><td>${esc(getVal(s,['tablenumber','table','tablename','table_number'])||'—')}</td><td><span class="pill ${String(getVal(s,['payment_method'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))).toLowerCase().includes('cash')?'gold':'gray'}">${esc(getVal(s,['payment_method'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—')}</span></td><td><b>${money(getVal(s,['grand_total','totalamount','total','amount']))}</b></td></tr>`).join('')}
-                    </tbody></table></div>
-                    <div class="mobile-sale-list admin-recent-mobile">${recent.map(s=>`<div class="mobile-sale-card" onclick="openOrderDetails('${esc(getVal(s,['orderid','order_number','id']))}')"><div class="mobile-sale-top"><div class="mobile-sale-id">#${esc(getVal(s,['orderid','order_number','id']))}</div><div class="mobile-sale-total">${money(getVal(s,['grand_total','totalamount','total','amount']))}</div></div><div class="mobile-sale-meta"><span>${esc(saleDateKey(s))}</span><span>${esc(saleTimeText(s))}</span><span>${esc(getVal(s,['tablenumber','table','table_number'])||'—')}</span><span>${esc(getVal(s,['payment_method'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—')}</span></div><div class="mobile-sale-items">${parseSaleItems(s).slice(0,3).map(it=>`<div class="mobile-sale-item"><span>${esc(it.name)} ×${it.qty}</span><b>${money(it.amount)}</b></div>`).join('')||'<span>No item details</span>'}</div></div>`).join('')}</div>
+                    </tbody></table></div></div>
+                    <div class="mobile-sale-list admin-recent-mobile dashboard-list-scroll">${recent.map(s=>`<div class="mobile-sale-card" onclick="openOrderDetails('${esc(getVal(s,['orderid','order_number','id']))}')"><div class="mobile-sale-top"><div class="mobile-sale-id">#${esc(getVal(s,['orderid','order_number','id']))}</div><div class="mobile-sale-total">${money(getVal(s,['grand_total','totalamount','total','amount']))}</div></div><div class="mobile-sale-meta"><span>${esc(saleDateKey(s))}</span><span>${esc(saleTimeText(s))}</span><span>${esc(getVal(s,['tablenumber','table','table_number'])||'—')}</span><span>${esc(getVal(s,['payment_method'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—')}</span></div><div class="mobile-sale-items">${parseSaleItems(s).slice(0,3).map(it=>`<div class="mobile-sale-item"><span>${esc(it.name)} ×${it.qty}</span><b>${money(it.amount)}</b></div>`).join('')||'<span>No item details</span>'}</div></div>`).join('')}</div>
                 </div>
                 <div>
                     <div class="premium-card">
                         <div class="premium-card-head"><h3>Payment Mix</h3><span>Lifetime</span></div>
-                        ${Object.entries(modes).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="item-rank"><div class="item-rank-info"><div class="item-rank-name">${esc(k)}</div><div class="mini-bar"><i style="width:${lifetime?Math.min(100,(v/lifetime)*100):0}%"></i></div></div><div class="item-rank-val">${money(v)}</div></div>`).join('')||'<div class="premium-empty">No payment data</div>'}
+                        <div class="dashboard-list-scroll">${Object.entries(modes).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="item-rank"><div class="item-rank-info"><div class="item-rank-name">${esc(k)}</div><div class="mini-bar"><i style="width:${lifetime?Math.min(100,(v/lifetime)*100):0}%"></i></div></div><div class="item-rank-val">${money(v)}</div></div>`).join('')||'<div class="premium-empty">No payment data</div>'}
                     </div>
                     <div class="premium-card">
                         <div class="premium-card-head"><h3>Quick Actions</h3></div>
@@ -1726,7 +1759,7 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
                 <button class="premium-btn light" onclick="exportPremiumSales()">Export</button>
             </div>
             <div id="psSummary" class="sales-summary-grid"></div>
-            <div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Time</th><th>Order</th><th>Table</th><th>Items</th><th>Mode</th><th>Discount</th><th>Total</th></tr></thead><tbody id="psBody"></tbody></table></div>
+            <div class="dashboard-list-scroll"><div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Time</th><th>Order</th><th>Table</th><th>Items</th><th>Mode</th><th>Discount</th><th>Total</th></tr></thead><tbody id="psBody"></tbody></table></div>
             <div id="psMobileList" class="mobile-sale-list"></div></div>`;
             renderPremiumSalesRows();
         }
@@ -2011,8 +2044,8 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
             const totalSale=salesHistory.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0); const totalDiscount=salesHistory.reduce((a,s)=>a+parseAmount(getVal(s,['discount'])),0);
             panel.innerHTML=`
             <div class="sales-summary-grid"><div class="report-stat"><div class="rlabel">Overall Sale</div><div class="rvalue">${money(totalSale)}</div></div><div class="report-stat"><div class="rlabel">Discount</div><div class="rvalue">${money(totalDiscount)}</div></div><div class="report-stat"><div class="rlabel">Orders</div><div class="rvalue">${salesHistory.length}</div></div></div>
-            <div class="premium-card"><div class="premium-card-head"><h3>Top Selling Items</h3><span>Sorted by sales value</span></div><div class="admin-help">Highest-selling items are shown first. Sales % = item's value ÷ total item sales. Qty % = item's quantity ÷ total units sold.</div><div class="top-selling-list">${top.map((x,i)=>{const ss=totalItemSales?x.sales/totalItemSales*100:0;const qs=totalItemQty?x.qty/totalItemQty*100:0;return `<div class="item-rank"><div class="item-rank-no">${i+1}</div><div class="item-rank-info"><div class="item-rank-name">${esc(x.name)}</div><div class="item-rank-sub">${x.qty} units • ${x.orders} orders • Qty ${qs.toFixed(1)}%</div><div class="mini-bar"><i style="width:${Math.min(100,ss)}%"></i></div></div><div style="text-align:right"><div class="item-rank-val">${money(x.sales)}</div><small style="font-size:.6rem;color:var(--text-muted)">${ss.toFixed(1)}%</small></div></div>`}).join('')||'<div class="premium-empty">No item sales found.</div>'}</div></div>
-            <div class="premium-card"><div class="premium-card-head"><h3>Daily Business Report</h3><button class="premium-btn light" onclick="exportDailyReport()">Export</button></div><div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Orders</th><th>Sales</th><th>Discount</th><th>AOV</th></tr></thead><tbody>${days.map(([d,x])=>`<tr><td>${d}</td><td>${x.orders}</td><td><b>${money(x.sales)}</b></td><td>${money(x.discount)}</td><td>${money(x.sales/x.orders)}</td></tr>`).join('')||'<tr><td colspan="5"><div class="premium-empty">No sales.</div></td></tr>'}</tbody></table></div></div>`;
+            <div class="premium-card"><div class="premium-card-head"><h3>Top Selling Items</h3><span>Sorted by sales value</span></div><div class="admin-help">Highest-selling items are shown first. Sales % = item's value ÷ total item sales. Qty % = item's quantity ÷ total units sold.</div><div class="dashboard-list-scroll top-selling-list">${top.map((x,i)=>{const ss=totalItemSales?x.sales/totalItemSales*100:0;const qs=totalItemQty?x.qty/totalItemQty*100:0;return `<div class="item-rank"><div class="item-rank-no">${i+1}</div><div class="item-rank-info"><div class="item-rank-name">${esc(x.name)}</div><div class="item-rank-sub">${x.qty} units • ${x.orders} orders • Qty ${qs.toFixed(1)}%</div><div class="mini-bar"><i style="width:${Math.min(100,ss)}%"></i></div></div><div style="text-align:right"><div class="item-rank-val">${money(x.sales)}</div><small style="font-size:.6rem;color:var(--text-muted)">${ss.toFixed(1)}%</small></div></div>`}).join('')||'<div class="premium-empty">No item sales found.</div>'}</div></div>
+            <div class="premium-card"><div class="premium-card-head"><h3>Daily Business Report</h3><button class="premium-btn light" onclick="exportDailyReport()">Export</button></div><div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Orders</th><th>Sales</th><th>Discount</th><th>AOV</th></tr></thead><tbody>${days.map(([d,x])=>`<tr><td>${d}</td><td>${x.orders}</td><td><b>${money(x.sales)}</b></td><td>${money(x.discount)}</td><td>${money(x.sales/x.orders)}</td></tr>`).join('')||'<tr><td colspan="5"><div class="premium-empty">No sales.</div></td></tr>'}</tbody></table></div></div></div>`;
         }
         function exportDailyReport(){const by={};salesHistory.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!by[d])by[d]={orders:0,sales:0};by[d].orders++;by[d].sales+=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));});downloadCSV(Object.entries(by).sort((a,b)=>a[0].localeCompare(b[0])).map(([Date,x])=>({Date,Orders:x.orders,Sales:Math.round(x.sales),AOV:Math.round(x.sales/x.orders)})),'Viraasat-Daily-Report.csv');}
 
@@ -2024,7 +2057,7 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
                 renderExpenseHistoryList();
                 const panel=document.getElementById('premiumPanel-expenses');
                 if(!panel)return;
-                const rows=(expenseHistory||[]).slice().sort((a,b)=>expenseTimestamp(b)-expenseTimestamp(a)).slice(0,20);
+                const rows=(expenseHistory||[]).slice().sort((a,b)=>expenseTimestamp(b)-expenseTimestamp(a));
                 const total=rows.reduce((a,e)=>a+parseAmount(getVal(e,['amount','total'])),0);
                 panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Expenses</h3><span>Latest first • click for details</span></div><div class="report-stat" style="margin-bottom:12px"><div class="rlabel">Recent Total</div><div class="rvalue">${money(total)}</div></div><div class="admin-mini-list">${rows.map(e=>{const eid=getVal(e,['id'])||`${expenseDateKey(e)}-${getVal(e,['category'])}-${getVal(e,['amount'])}`;return `<div class="admin-mini-row expense-click-card" onclick="openExpenseDetails('${esc(eid)}')"><div><b>${esc(getVal(e,['category'])||'Other')}</b><small>${esc(expenseDateKey(e))} • ${esc(expenseTimeText(e)||'')}</small></div><strong style="color:var(--danger)">- ${money(getVal(e,['amount','total']))}</strong></div>`}).join('')||'<div class="premium-empty">No expenses recorded.</div>'}</div></div>`;
             }catch(e){console.error('Premium expenses render failed',e);}
@@ -2638,6 +2671,8 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
             const seen=new Set();
             menuData.forEach(item=>{
                 const itemName=String(getVal(item,['itemname','name'])||'').trim();
+                // Hide generated custom-menu records from the normal POS item picker.
+                if(/\(custom\)$/i.test(itemName))return;
                 const key=itemName.toLowerCase();
                 if(!key||seen.has(key))return;
                 seen.add(key);
@@ -2650,7 +2685,7 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
         function renderStockDashboard() { 
             let stockDiv = document.getElementById('dashboardStockList'); if(!stockDiv) return; stockDiv.innerHTML = ""; let keys = Object.keys(stockData); 
             if(keys.length === 0) { stockDiv.innerHTML = "<p style='color:var(--text-muted); font-size:0.85rem;'>No stock tracked.</p>"; return; } 
-            keys.forEach(key => { let qty = parseInt(stockData[key]); let tagClass = qty <= 5 ? 'stock-tag low' : 'stock-tag'; stockDiv.innerHTML += `<div class="${tagClass}">${key}: <span>${qty}</span></div>`; }); 
+            keys.forEach(key => { let qty = Number(stockData[key]); let tagClass = qty <= 5 ? 'stock-tag low' : 'stock-tag'; let label=qty<0?'NEGATIVE STOCK':'STOCK'; stockDiv.innerHTML += `<div class="${tagClass}" title="${label}">${esc(key)}: <span>${qty}</span></div>`; }); 
         }
 
         function checkStockDisplay() { 
@@ -2788,7 +2823,7 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
             let itemPrice = parseInt(getVal(selectedItem, ['price'])); let existingItem = currentBill.find(i => i.name === getVal(selectedItem, ['itemname', 'name']));
             if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ id:Number(getVal(selectedItem,['id','menu_item_id']))||null, menu_item_id:Number(getVal(selectedItem,['id','menu_item_id']))||null, name: getVal(selectedItem, ['itemname', 'name']), price: itemPrice, qty: qty, total: itemPrice * qty }); }
             updateBillTable();
-            queueTableBagSync();
+            queueTableBagSync(true);
         }
 
         function addCustomItem() {
@@ -2796,10 +2831,10 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
             if (!name || !price || price <= 0) { showCustomAlert("Enter valid custom item."); return; }
             let existingItem = currentBill.find(i => i.name === name + " (Custom)");
             if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ name: name + " (Custom)", price: price, qty: qty, total: price * qty }); }
-            updateBillTable(); queueTableBagSync(); document.getElementById('customName').value = ""; document.getElementById('customPrice').value = ""; document.getElementById('customQty').value = 1;
+            updateBillTable(); queueTableBagSync(true); document.getElementById('customName').value = ""; document.getElementById('customPrice').value = ""; document.getElementById('customQty').value = 1;
         }
 
-        function changeQty(index, amount) { currentBill[index].qty += amount; if(currentBill[index].qty <= 0) { currentBill.splice(index, 1); } else { currentBill[index].total = currentBill[index].price * currentBill[index].qty; } updateBillTable(); queueTableBagSync(); }
+        function changeQty(index, amount) { currentBill[index].qty += amount; if(currentBill[index].qty <= 0) { currentBill.splice(index, 1); } else { currentBill[index].total = currentBill[index].price * currentBill[index].qty; } updateBillTable(); queueTableBagSync(true); }
 
         function updateBillTable() {
             let tbody = document.getElementById('billTableBody'); tbody.innerHTML = ""; let subTotal = 0;
@@ -2812,7 +2847,7 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
             document.getElementById('itemInput').value = ""; document.getElementById('itemQty').value = 1; document.getElementById('stockStatus').style.display = "none";
         }
 
-        function removeItem(index) { currentBill.splice(index, 1); updateBillTable(); queueTableBagSync(); }
+        function removeItem(index) { currentBill.splice(index, 1); updateBillTable(); queueTableBagSync(true); }
 
         function clearTableWithoutCheckout() {
             showCustomConfirm(`Are you sure you want to clear ${activeTableNumber}?`, async()=>{
@@ -2895,7 +2930,6 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
                 const data=await d1Post('/orders/checkout',{order_number:orderId,...ctx,customer_phone:phone,items:preparedItems,items_string:itemsString,subtotal,discount,grand_total:grandTotal,total:grandTotal,payment_method:selectedPaymentMode,payment_status:'paid',order_status:'completed',delivery_address:address});
                 auditLog('Checkout', orderId);
                 delete runningTables[activeTableNumber];
-                currentBill.forEach(item=>{const key=Object.keys(stockData).find(k=>k.trim().toLowerCase()===item.name.trim().toLowerCase());if(key!==undefined)stockData[key]=Number(stockData[key])-Number(item.qty||0);});
                 const now=new Date();
                 salesHistory.unshift({date:now.toISOString(),isodate:now.toISOString(),time:now.toISOString(),orderid:orderId,items:itemsString,total:grandTotal,table:activeTableNumber,tablenumber:activeTableNumber,phone:phone,payment_method:selectedPaymentMode,order_status:'completed'});
                 btn.innerText='Confirm Checkout';btn.disabled=false;document.getElementById('paymentModal').style.display='none';await fetchData(true);generateTrends();goBackToTables();
