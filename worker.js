@@ -224,6 +224,22 @@ async function ensureSupportTables(db) {
   await ensureColumn(db, "deletion_requests", "reviewed_by", "TEXT");
   await ensureColumn(db, "deletion_requests", "reviewed_at", "TEXT");
   await ensureColumn(db, "deletion_requests", "created_at", "TEXT DEFAULT CURRENT_TIMESTAMP");
+
+  // Shared audit trail: D1 is authoritative so every logged-in user sees the
+  // same action history. Older schemas are upgraded safely.
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      action TEXT,
+      details TEXT,
+      user TEXT,
+      timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+  await ensureColumn(db, "audit_logs", "action", "TEXT");
+  await ensureColumn(db, "audit_logs", "details", "TEXT");
+  await ensureColumn(db, "audit_logs", "user", "TEXT");
+  await ensureColumn(db, "audit_logs", "timestamp", "TEXT");
 }
 __name(ensureSupportTables, "ensureSupportTables");
 async function getMenu(db) {
@@ -1634,6 +1650,9 @@ var worker_default = {
           VALUES (?, ?, ?, 'pending')
         `).bind(orderId, requestedBy, reason).run();
 
+        await db.prepare(`INSERT INTO audit_logs (action,details,user,timestamp) VALUES (?,?,?,?)`)
+          .bind("Order Delete Requested",`${orderId} • ${reason}`,requestedBy,new Date().toISOString()).run();
+
         const orderCols = await getColumns(db,"orders");
         if (orderCols.includes("order_status")) {
           await db.prepare(`
@@ -1647,6 +1666,36 @@ var worker_default = {
           id:inserted.meta?.last_row_id ?? inserted.lastInsertRowid ?? null,
           message:"Deletion request submitted for approval"
         });
+      }
+      if (path === "/api/audit-logs" && method === "GET") {
+        await ensureSupportTables(db);
+        const requestedLimit = num(url.searchParams.get("limit") || 500, 500);
+        const limit = Math.min(Math.max(requestedLimit, 1), 500);
+        const cols = await getColumns(db, "audit_logs");
+        const idExpr = cols.includes("id") ? "id" : "rowid AS id";
+        const actionExpr = cols.includes("action") ? "action" : cols.includes("event") ? "event AS action" : "'' AS action";
+        const detailsExpr = cols.includes("details") ? "details" : cols.includes("description") ? "description AS details" : "'' AS details";
+        const userExpr = cols.includes("user") ? "user" : cols.includes("username") ? "username AS user" : cols.includes("created_by") ? "created_by AS user" : "'Admin' AS user";
+        const timeExpr = cols.includes("timestamp") ? "timestamp" : cols.includes("created_at") ? "created_at AS timestamp" : "CURRENT_TIMESTAMP AS timestamp";
+        const result = await db.prepare(`SELECT ${idExpr},${actionExpr},${detailsExpr},${userExpr},${timeExpr} FROM audit_logs ORDER BY ${cols.includes("id") ? "id" : "rowid"} DESC LIMIT ?`).bind(limit).all();
+        return json({success:true,count:(result.results||[]).length,logs:result.results||[]});
+      }
+      if (path === "/api/audit-logs" && method === "POST") {
+        await ensureSupportTables(db);
+        const body = await request.json().catch(()=>({}));
+        const action = clean(body.action);
+        if (!action) return json({success:false,error:"Audit action is required"},400);
+        const details = clean(body.details);
+        const user = clean(body.user || body.username || body.created_by) || "Admin";
+        const timestamp = clean(body.timestamp) || new Date().toISOString();
+        const cols = await getColumns(db,"audit_logs");
+        const fields=[], values=[];
+        for (const [column,value] of [["action",action],["details",details],["user",user],["timestamp",timestamp]]) {
+          if (cols.includes(column)) { fields.push(column); values.push(value); }
+        }
+        if (!fields.length) return json({success:false,error:"Audit log schema unavailable"},500);
+        const r = await db.prepare(`INSERT INTO audit_logs (${fields.join(",")}) VALUES (${fields.map(()=>"?").join(",")})`).bind(...values).run();
+        return json({success:true,id:r.meta?.last_row_id ?? r.lastInsertRowid ?? null});
       }
       if (path === "/api/approvals" && method === "GET") {
         await ensureSupportTables(db);
@@ -1731,6 +1780,8 @@ var worker_default = {
             SET status=?, reviewed_by=?, reviewed_at=CURRENT_TIMESTAMP
             WHERE id=?
           `).bind(status, reviewedBy, requestId).run();
+          await db.prepare(`INSERT INTO audit_logs (action,details,user,timestamp) VALUES (?,?,?,?)`)
+            .bind(`Approval ${status}`,`${targetOrder} • request ${requestId}`,reviewedBy,new Date().toISOString()).run();
 
           if (status === "approved") {
             return json({success:true,message:`Staff removal approved and removed from POS.`,staff_id:staffId,status,affected:1});
@@ -1744,6 +1795,8 @@ var worker_default = {
           SET status=?, reviewed_by=?, reviewed_at=CURRENT_TIMESTAMP
           WHERE id=?
         `).bind(status, reviewedBy, requestId).run();
+        await db.prepare(`INSERT INTO audit_logs (action,details,user,timestamp) VALUES (?,?,?,?)`)
+          .bind(`Approval ${status}`,`${targetOrder} • request ${requestId}`,reviewedBy,new Date().toISOString()).run();
 
         const orderCols = await getColumns(db,"orders");
         if (orderCols.includes("order_status")) {
@@ -1754,7 +1807,23 @@ var worker_default = {
           `).bind(nextStatus, targetOrder, targetOrder).run();
         }
         if (status === "approved") {
-          const o = await db.prepare(`SELECT id, table_number, items FROM orders WHERE order_number=? OR CAST(id AS TEXT)=? ORDER BY id DESC LIMIT 1`).bind(targetOrder,targetOrder).first();
+          const orderColsForDelete = await getColumns(db,"orders");
+          if (!orderColsForDelete.length) {
+            return json({success:false,error:"Orders table not found"},500);
+          }
+          const orderSelect = [
+            orderColsForDelete.includes("id") ? "id" : "rowid AS id",
+            orderColsForDelete.includes("table_number") ? "table_number" : "NULL AS table_number",
+            orderColsForDelete.includes("order_type") ? "order_type" : "'' AS order_type",
+            orderColsForDelete.includes("items") ? "items" : "NULL AS items"
+          ].join(", ");
+          const orderWhere = orderColsForDelete.includes("order_number")
+            ? "order_number=? OR CAST(id AS TEXT)=?"
+            : "CAST(id AS TEXT)=?";
+          const orderBind = orderColsForDelete.includes("order_number")
+            ? [targetOrder,targetOrder]
+            : [targetOrder];
+          const o = await db.prepare(`SELECT ${orderSelect} FROM orders WHERE ${orderWhere} ORDER BY id DESC LIMIT 1`).bind(...orderBind).first();
           let orderItems=[];
           try { const parsed=JSON.parse(o?.items||'[]'); if(Array.isArray(parsed)) orderItems=parsed; } catch {}
           if (!orderItems.length && o?.id && await tableExists(db,"order_items")) {
