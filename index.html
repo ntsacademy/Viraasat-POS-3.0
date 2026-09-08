@@ -2224,10 +2224,19 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
             const controller = new AbortController();
             const timer = setTimeout(() => controller.abort(), timeoutMs);
             try {
-                const response = await fetch(`${D1_API_BASE}${path}`, { method:'GET', headers:{'Accept':'application/json'}, cache:'no-store', signal:controller.signal });
-                const data = await response.json().catch(()=>({}));
-                if (!response.ok || data.success === false) throw new Error(data.error || `D1 API error (${response.status})`);
-                return data;
+                let lastError;
+                for(let attempt=0; attempt<3; attempt++){
+                    try{
+                        const response = await fetch(`${D1_API_BASE}${path}`, { method:'GET', headers:{'Accept':'application/json'}, cache:'no-store', signal:controller.signal });
+                        const data = await response.json().catch(()=>({}));
+                        if (!response.ok || data.success === false) throw new Error(data.error || `D1 API error (${response.status})`);
+                        return data;
+                    }catch(e){
+                        lastError=e;
+                        if(attempt<2) await new Promise(r=>setTimeout(r,350*(attempt+1)));
+                    }
+                }
+                throw lastError || new Error('D1 GET failed');
             } finally { clearTimeout(timer); }
         }
         async function d1Post(path, body, timeoutMs = API_TIMEOUT_MS) {
@@ -2307,7 +2316,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
         }
 
         async function fetchData(){
-            const loader=document.getElementById('loader');const expDate=document.getElementById('expDate');if(expDate&&!expDate.value)expDate.value=localISODate(new Date());const ef=document.getElementById('expFilterFrom'),et=document.getElementById('expFilterTo');if(ef&&et){ef.value='';et.value='';}loader.style.display='flex';loader.innerHTML='<div class="spinner"></div> <span>Syncing...</span>';
+            const loader=document.getElementById('loader');const expDate=document.getElementById('expDate');if(expDate&&!expDate.value)expDate.value=localISODate(new Date());const ef=document.getElementById('expFilterFrom'),et=document.getElementById('expFilterTo');if(ef&&et){ef.value='';et.value='';}loader.style.display='flex';loader.innerHTML='<div class="spinner"></div> <span>Syncing Viraasat D1...</span>';
             const defs=[['/dashboard',d1Get('/dashboard')],['/menu',d1Get('/menu')],['/tables',d1Get('/tables')],['/orders',d1Get('/orders?limit=5000')],['/expenses',d1Get('/expenses?limit=2000')],['/stock',d1Get('/stock')],['/staff',d1Get('/staff')],['/stock/history',d1Get('/stock/history?limit=100')]];const results=await Promise.allSettled(defs.map(x=>x[1]));const failed=[];
             try{
                 if(results[0].status==='fulfilled'){const dash=results[0].value||{};const summary=dash.summary||{};d1DashboardSummary={...summary};const ts=dash.tables||{};document.getElementById('homeTodaySale').innerText=`₹${Math.round(Number(summary.today_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeAvgOrder').innerText=`₹${Math.round(Number(summary.average_order)||0).toLocaleString('en-IN')}`;document.getElementById('homeOverallSale').innerText=`₹${Math.round(Number(summary.overall_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeActiveTables').innerText=`${Number(ts.occupied)||0} / ${Number(ts.total)||tableSections.reduce((a,x)=>a+x.tables.length,0)}`;}else failed.push(['/dashboard',results[0].reason]);
@@ -3310,8 +3319,20 @@ Tables, billing and existing local UI remain visible.`);}
         }
 
         function normalizeWorkbookDate(value){
+            // IMPORTANT: Excel dates are calendar dates, not instants in time.
+            // Never pass them through timezone conversion. SheetJS may expose a
+            // cell-date as a Date object, so prefer UTC calendar components first.
             if(value instanceof Date && !isNaN(value.getTime())){
-                return `${value.getFullYear()}-${String(value.getMonth()+1).padStart(2,'0')}-${String(value.getDate()).padStart(2,'0')}`;
+                const y=value.getUTCFullYear(),m=value.getUTCMonth()+1,d=value.getUTCDate();
+                if(y>=1900&&m>=1&&d>=1) return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            }
+            // Raw Excel serial date (when cellDates:false or a workbook was saved
+            // with numeric date cells). Excel epoch is 1899-12-30.
+            if(typeof value==='number' && Number.isFinite(value) && value>=1 && value<100000){
+                const whole=Math.floor(value);
+                const excelEpoch=Date.UTC(1899,11,30);
+                const dt=new Date(excelEpoch + whole*86400000);
+                return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth()+1).padStart(2,'0')}-${String(dt.getUTCDate()).padStart(2,'0')}`;
             }
             const s=String(value??'').trim();
             if(!s)return '';
@@ -3328,7 +3349,10 @@ Tables, billing and existing local UI remain visible.`);}
 
         function normalizeWorkbookTime(value){
             if(value instanceof Date && !isNaN(value.getTime())){
-                return value.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',hour12:true});
+                // Keep Excel time-of-day independent of browser timezone.
+                const h=value.getUTCHours(), m=value.getUTCMinutes();
+                const ap=h>=12?'PM':'AM', hh=h%12||12;
+                return `${hh}:${String(m).padStart(2,'0')} ${ap}`;
             }
             if(typeof value==='number' && value>=0 && value<1){
                 const total=Math.round(value*24*60);let h=Math.floor(total/60)%24;const m=total%60;const ap=h>=12?'PM':'AM';let hh=h%12||12;return `${hh}:${String(m).padStart(2,'0')} ${ap}`;
@@ -3358,7 +3382,7 @@ Tables, billing and existing local UI remain visible.`);}
 
         function importSheetRows(file, preferredSheet){
             return file.arrayBuffer().then(buf=>{
-                const wb=XLSX.read(buf,{type:'array',cellDates:true});
+                const wb=XLSX.read(buf,{type:'array',cellDates:false});
                 const sheet=wb.SheetNames.includes(preferredSheet)?preferredSheet:wb.SheetNames[0];
                 if(!sheet)throw new Error('Workbook has no sheet.');
                 return {wb,sheet,rows:workbookRows(wb,sheet)};
@@ -3464,7 +3488,7 @@ Tables, billing and existing local UI remain visible.`);}
             if(status)status.innerHTML='Reading workbook...';
             try{
                 const buf=await file.arrayBuffer();
-                const wb=XLSX.read(buf,{type:'array',cellDates:true});
+                const wb=XLSX.read(buf,{type:'array',cellDates:false});
                 const salesRows=workbookRows(wb,'Sales');
                 const menuRows=workbookRows(wb,'Menu');
                 const staffRows=workbookRows(wb,'Staff');
