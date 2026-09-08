@@ -472,52 +472,487 @@
         }
 
     
-        /* ===== LIVE POS / CARD CONTAINMENT FIX ===== */
-        .card,.premium-card,.sales-card,.admin-order-card,.quick-card,.table-card,.pkpi,.trend-kpi-card,.hkpi-card{min-width:0;max-width:100%;overflow:hidden}
-        .btn,.premium-btn,.filter-btn,.premium-tab,.nav-item{min-width:0;max-width:100%;white-space:normal;overflow:hidden;text-overflow:ellipsis;word-break:break-word}
-        .premium-toolbar{min-width:0;overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap;padding-bottom:3px}
-        .premium-toolbar>*{min-width:0;flex:0 1 auto}
-        .premium-toolbar input,.premium-toolbar select{min-width:120px}
-        .filter-btn{flex:0 0 auto;white-space:nowrap}
-        #salesGrid{max-height:58dvh;overflow-y:auto;overflow-x:hidden;padding-right:2px;align-content:start}
-        #salesGrid .admin-order-card{min-width:0;width:100%;overflow:hidden}
-        .admin-order-items{overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;word-break:break-word;overflow-wrap:anywhere}
-        .admin-order-bottom>*{min-width:0;max-width:48%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .stock-tag{max-width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .stock-tag span{flex-shrink:0}
-        .h-order-card .ho-info{min-width:0}
-        .ho-title,.ho-sub{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .premium-card-head>*{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis}
-        @media(max-width:600px){#salesGrid{max-height:52dvh}.premium-toolbar{margin-right:-2px}.premium-toolbar>*{flex:0 0 auto}.premium-toolbar input,.premium-toolbar select{width:145px!important}.premium-toolbar .premium-btn{width:auto!important;min-width:110px}.admin-order-items{-webkit-line-clamp:4}}
+/* ============================================================
+   VIRAASAT POS — MOBILE UI CLEANUP / CARD SCROLL FINAL
+   UI / presentation only.
+   No D1, API, stock, KOT, checkout, table, order or expense
+   business logic is changed by this block.
+   ============================================================ */
 
-        /* ===== FINAL DASHBOARD CARD CONTAINMENT + LIVE STOCK UX ===== */
-        .dashboard-list-scroll{max-height:292px;overflow-y:auto;overflow-x:hidden;min-width:0;padding-right:2px;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
-        .dashboard-list-scroll::-webkit-scrollbar{width:5px}.dashboard-list-scroll::-webkit-scrollbar-thumb{background:#D8D2CA;border-radius:99px}
-        .dashboard-list-scroll .premium-table-wrap{overflow-x:auto;max-height:none}
-        .dashboard-list-scroll .premium-table{width:100%;min-width:0}
-        .dashboard-list-scroll .premium-table th,.dashboard-list-scroll .premium-table td{overflow-wrap:anywhere;word-break:break-word}
-        .dashboard-list-scroll .mobile-sale-card{min-width:0;overflow:hidden}
-        .expense-history-scroll{max-height:300px;border:1px solid var(--border);border-radius:12px;padding:8px;background:#FCFAF7}
-        .expense-history-scroll #expenseHistoryList{min-width:0}
-        .expense-history-scroll .card{box-shadow:none}
-        .premium-card-head{flex-wrap:wrap}
-        .premium-card-head h3,.premium-card-head span{min-width:0;overflow-wrap:anywhere;max-width:100%}
-        .premium-card-head .premium-btn,.premium-card-head button{flex:0 0 auto;max-width:100%;white-space:nowrap}
-        .premium-toolbar,.sales-filter-chips,.filter-row,.filter-actions{min-width:0;max-width:100%}
-        .premium-toolbar{flex-wrap:wrap;overflow:hidden}
-        .premium-toolbar>*{min-width:0;max-width:100%;box-sizing:border-box}
-        .filter-btn,.premium-btn,.btn{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-        .sales-filter-chips{overflow-x:auto;flex-wrap:nowrap;scrollbar-width:thin}
-        .admin-mini-list{max-height:292px;overflow-y:auto;overflow-x:hidden}
-        @media(max-width:600px){
-          .dashboard-list-scroll{max-height:280px}
-          .expense-history-scroll{max-height:280px}
-          .premium-card-head{align-items:flex-start}
-          .premium-card-head span{white-space:normal}
-          .premium-card-head .premium-btn,.premium-card-head button{width:auto;max-width:48%}
-          .filter-btn,.premium-btn,.btn{min-width:0}
-        }
-</style>
+/* Prevent any dashboard child from creating page-level overflow. */
+#premiumDashboard,
+#premiumDashboard .premium-shell,
+#premiumDashboard .premium-panel,
+#premiumDashboard .premium-card,
+#premiumDashboard .premium-card-head,
+#premiumDashboard .premium-toolbar,
+#premiumDashboard .premium-grid-2,
+#premiumDashboard .premium-grid-3,
+#premiumDashboard .premium-kpis,
+#premiumDashboard .admin-insight-grid,
+#premiumDashboard .admin-form-grid,
+#premiumDashboard .admin-module-grid {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Dashboard tab buttons stay inside their own area; no page horizontal scroll. */
+#premiumDashboard .premium-tabs {
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    position: static !important;
+    box-sizing: border-box !important;
+}
+#premiumDashboard .premium-tab {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+/* Card headers: title and right-side action never push outside the card. */
+#premiumDashboard .premium-card-head {
+    align-items: center !important;
+}
+#premiumDashboard .premium-card-head h3,
+#premiumDashboard .premium-card-head > span,
+#premiumDashboard .premium-card-head > div {
+    min-width: 0 !important;
+    max-width: 100% !important;
+}
+#premiumDashboard .premium-card-head h3 {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+#premiumDashboard .premium-card-head > span {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+/* Toolbars / filters: contained, predictable rows. */
+#premiumDashboard .premium-toolbar {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+}
+#premiumDashboard .premium-toolbar input,
+#premiumDashboard .premium-toolbar select,
+#premiumDashboard .premium-toolbar .premium-btn,
+#premiumDashboard .premium-toolbar label {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+#premiumDashboard .premium-toolbar input,
+#premiumDashboard .premium-toolbar select {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+#premiumDashboard .premium-toolbar .premium-btn,
+#premiumDashboard .premium-toolbar label {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+/* Filter chip rows may scroll themselves, but the page never scrolls sideways. */
+#premiumDashboard .sales-filter-chips,
+#premiumDashboard .filter-chip-row {
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+}
+#premiumDashboard .sales-filter-chips::-webkit-scrollbar,
+#premiumDashboard .filter-chip-row::-webkit-scrollbar {
+    display: none;
+}
+#premiumDashboard .sales-filter-chips .filter-btn,
+#premiumDashboard .filter-chip-row .filter-btn {
+    flex: 0 0 auto !important;
+}
+
+/* ------------------------------------------------------------
+   INTERNAL LIST SCROLL
+   Keep headers/filters visible while only the data area scrolls.
+   Height is intentionally limited to roughly five compact rows.
+   ------------------------------------------------------------ */
+#premiumDashboard #expenseHistoryList,
+#premiumDashboard #piRankList,
+#premiumDashboard #inventoryInsightRows,
+#premiumDashboard #adminStockMiniList,
+#premiumDashboard #adminStaffRows,
+#premiumDashboard #adminUsersRows,
+#premiumDashboard #approvalList,
+#premiumDashboard #stockHistoryList,
+#premiumDashboard #orderList,
+#premiumDashboard .top-selling-list,
+#premiumDashboard .admin-staff-list,
+#premiumDashboard .admin-user-list {
+    max-height: 340px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding-right: 4px !important;
+    box-sizing: border-box !important;
+    scrollbar-width: thin !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+}
+
+/* Sales Register: mobile cards scroll inside the Sales card. */
+#premiumDashboard #psMobileList {
+    max-height: 520px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding-right: 3px !important;
+    box-sizing: border-box !important;
+    scrollbar-width: thin !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+}
+
+/* Desktop/table variants also remain contained. */
+#premiumDashboard .premium-table-wrap {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+/* ------------------------------------------------------------
+   STOCK CARDS
+   ------------------------------------------------------------ */
+#premiumDashboard #pStockGrid {
+    max-height: 340px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 2px 4px 2px 1px !important;
+    box-sizing: border-box !important;
+    scrollbar-width: thin !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+}
+#premiumDashboard #pStockGrid .stock-box {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+}
+#premiumDashboard #pStockGrid .stock-box-name {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+/* ------------------------------------------------------------
+   EXPENSE HISTORY ROWS
+   ------------------------------------------------------------ */
+#premiumDashboard #expenseHistoryList .expense-click-card,
+#premiumDashboard .admin-mini-list .expense-click-card {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+}
+#premiumDashboard #expenseHistoryList .expense-click-card > div,
+#premiumDashboard .admin-mini-list .expense-click-card > div {
+    min-width: 0 !important;
+}
+#premiumDashboard #expenseHistoryList strong,
+#premiumDashboard .admin-mini-list .expense-click-card strong {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+}
+
+/* ------------------------------------------------------------
+   ITEM RANKINGS / TOP SELLERS
+   ------------------------------------------------------------ */
+#premiumDashboard .top-selling-list .item-rank,
+#premiumDashboard #piRankList .item-rank {
+    min-width: 0 !important;
+}
+#premiumDashboard .item-rank-info {
+    min-width: 0 !important;
+}
+#premiumDashboard .item-rank-name,
+#premiumDashboard .item-rank-sub {
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+#premiumDashboard .item-rank-name {
+    white-space: nowrap !important;
+}
+#premiumDashboard .item-rank-sub {
+    white-space: nowrap !important;
+}
+#premiumDashboard .item-rank > div:last-child {
+    flex: 0 0 auto !important;
+    min-width: 64px !important;
+}
+
+/* ------------------------------------------------------------
+   SALES ORDER CARDS
+   ------------------------------------------------------------ */
+#premiumDashboard .mobile-sale-card,
+#premiumDashboard .admin-order-card {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+}
+#premiumDashboard .mobile-sale-top,
+#premiumDashboard .mobile-sale-meta,
+#premiumDashboard .mobile-sale-items {
+    min-width: 0 !important;
+    max-width: 100% !important;
+}
+#premiumDashboard .mobile-sale-id,
+#premiumDashboard .mobile-sale-total,
+#premiumDashboard .mobile-sale-item span {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+#premiumDashboard .mobile-sale-id,
+#premiumDashboard .mobile-sale-total {
+    white-space: nowrap !important;
+}
+#premiumDashboard .mobile-sale-item span {
+    white-space: nowrap !important;
+}
+
+/* ------------------------------------------------------------
+   ADMIN FORMS
+   ------------------------------------------------------------ */
+#premiumDashboard .admin-form-grid {
+    width: 100% !important;
+}
+#premiumDashboard .admin-form-grid input,
+#premiumDashboard .admin-form-grid select,
+#premiumDashboard .admin-form-grid button,
+#premiumDashboard .admin-form-grid .premium-btn {
+    min-width: 0 !important;
+    max-width: 100% !important;
+}
+#premiumDashboard .admin-help {
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+}
+
+/* Custom file picker: make the native expense receipt control look intentional. */
+#expReceipt {
+    width: 100% !important;
+    height: 44px !important;
+    padding: 7px 8px !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 10px !important;
+    background: #FAFAFA !important;
+    color: var(--text-muted) !important;
+    font-family: inherit !important;
+    font-size: .78rem !important;
+    box-sizing: border-box !important;
+}
+#expReceipt::file-selector-button {
+    height: 30px !important;
+    margin-right: 8px !important;
+    padding: 0 12px !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
+    background: #211A17 !important;
+    color: #fff !important;
+    font-family: inherit !important;
+    font-weight: 800 !important;
+    font-size: .72rem !important;
+    cursor: pointer !important;
+}
+#expReceipt::-webkit-file-upload-button {
+    height: 30px !important;
+    margin-right: 8px !important;
+    padding: 0 12px !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 8px !important;
+    background: #211A17 !important;
+    color: #fff !important;
+    font-family: inherit !important;
+    font-weight: 800 !important;
+    font-size: .72rem !important;
+}
+
+/* Logo upload button uses the same clean treatment. */
+#premiumDashboard .upload-label {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+/* ------------------------------------------------------------
+   MOBILE FINAL SIZING
+   ------------------------------------------------------------ */
+@media (max-width: 600px) {
+    #premiumDashboard {
+        overflow-x: hidden !important;
+    }
+
+    #premiumDashboard .premium-shell {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+
+    #premiumDashboard .premium-card {
+        width: 100% !important;
+        margin-bottom: 12px !important;
+        padding: 12px !important;
+        border-radius: 15px !important;
+    }
+
+    #premiumDashboard .premium-card-head {
+        gap: 8px !important;
+        margin-bottom: 10px !important;
+    }
+
+    #premiumDashboard .premium-card-head h3 {
+        font-size: .80rem !important;
+    }
+
+    #premiumDashboard .premium-card-head > span {
+        font-size: .60rem !important;
+    }
+
+    /* Three-column summary cards remain aligned. */
+    #premiumDashboard .sales-summary-grid {
+        width: 100% !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 6px !important;
+    }
+
+    #premiumDashboard .sales-summary-grid .report-stat {
+        min-width: 0 !important;
+        overflow: hidden !important;
+    }
+
+    /* Two-column stock cards, but the entire list scrolls inside its card. */
+    #premiumDashboard #pStockGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 7px !important;
+    }
+
+    /* Admin stock mini-list: compact five-row viewport. */
+    #premiumDashboard #adminStockMiniList,
+    #premiumDashboard #inventoryInsightRows {
+        max-height: 315px !important;
+    }
+
+    /* Expense / ranking lists: about five compact records visible. */
+    #premiumDashboard #expenseHistoryList,
+    #premiumDashboard #piRankList,
+    #premiumDashboard .top-selling-list {
+        max-height: 335px !important;
+    }
+
+    /* Sales register: contained list; never let orders push the whole page sideways. */
+    #premiumDashboard #psMobileList {
+        max-height: 520px !important;
+    }
+
+    /* Toolbar controls stack cleanly instead of escaping the card. */
+    #premiumDashboard .premium-toolbar {
+        gap: 7px !important;
+    }
+
+    #premiumDashboard .premium-toolbar input,
+    #premiumDashboard .premium-toolbar select,
+    #premiumDashboard .premium-toolbar .premium-btn {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* Search + Export / similar controls use full-width rows on narrow screens. */
+    #premiumDashboard .compact-toolbar {
+        width: 100% !important;
+        grid-template-columns: minmax(0, 1fr) minmax(64px, 86px) !important;
+    }
+
+    #premiumDashboard .compact-toolbar > * {
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+
+    /* Filter buttons: contained row with horizontal scrolling only inside filters. */
+    #premiumDashboard .sales-filter-chips {
+        flex-wrap: nowrap !important;
+        max-width: 100% !important;
+    }
+
+    /* Dashboard tab labels never wrap or overflow. */
+    #premiumDashboard .premium-tabs {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 6px !important;
+    }
+
+    #premiumDashboard .premium-tab {
+        width: 100% !important;
+        padding-left: 3px !important;
+        padding-right: 3px !important;
+        font-size: .62rem !important;
+    }
+
+    /* File input is comfortable on Android/iPhone. */
+    #expReceipt {
+        height: 46px !important;
+        font-size: .72rem !important;
+    }
+
+    #expReceipt::file-selector-button,
+    #expReceipt::-webkit-file-upload-button {
+        max-width: 46% !important;
+        padding-left: 9px !important;
+        padding-right: 9px !important;
+        font-size: .68rem !important;
+    }
+
+    /* Keep the fixed bottom navigation clear of the final scroll content. */
+    main {
+        padding-bottom: calc(104px + env(safe-area-inset-bottom)) !important;
+    }
+}
+
+/* Very narrow Android screens. */
+@media (max-width: 380px) {
+    #premiumDashboard .premium-card {
+        padding: 10px !important;
+    }
+
+    #premiumDashboard .sales-summary-grid {
+        gap: 5px !important;
+    }
+
+    #premiumDashboard .sales-summary-grid .rvalue {
+        font-size: .80rem !important;
+    }
+
+    #premiumDashboard .compact-toolbar {
+        grid-template-columns: minmax(0, 1fr) minmax(60px, 72px) !important;
+    }
+
+    #premiumDashboard #expenseHistoryList,
+    #premiumDashboard #piRankList,
+    #premiumDashboard .top-selling-list,
+    #premiumDashboard #adminStockMiniList,
+    #premiumDashboard #inventoryInsightRows {
+        max-height: 300px !important;
+    }
+}
+
+    </style>
 </head>
 <body>
 
@@ -933,7 +1368,7 @@
         const D1_API_BASE = '/api';
         const API_TIMEOUT_MS = 10000;
         
-const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0"; 
+const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6"; 
         
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
@@ -1105,8 +1540,6 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
 
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startApp, { once: true });
         else startApp();
-        // Shared D1 live view: refresh quietly so table/stock/dashboard changes from other users appear automatically.
-        setInterval(()=>{if(localStorage.getItem('viraasat_user'))fetchData(true);},4000);
         // Absolute safety net: never leave the splash screen covering the POS.
         setTimeout(() => { if (!appStarted) startApp(); hideSplashScreen(); }, 2500);
 
@@ -1247,12 +1680,12 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
             });
         }
 
-        async function updateStockAdmin() {
+        function updateStockAdmin() {
             let item = document.getElementById('adminStockItem').value.trim(); let qty = parseInt(document.getElementById('adminStockQty').value);
             if(!item || isNaN(qty)) { showCustomAlert("Please enter valid item and quantity."); return; }
             stockData[item] = qty; renderStockDashboard(); checkStockDisplay(); showCustomAlert("Stock updated to " + qty + " for " + item);
             document.getElementById('adminStockItem').value = ""; document.getElementById('adminStockQty').value = "";
-            try{await d1Post('/stock', { name: item, quantity: qty, unit: 'pcs', low_stock_level: 5 }); await fetchData(true);}catch(e){showCustomAlert('Stock save failed: '+e.message);}
+            d1Post('/stock', { name: item, quantity: qty, unit: 'pcs', low_stock_level: 5 }).catch(e => showCustomAlert('Stock saved locally but D1 sync failed: ' + e.message));
         }
 
         async function addMenuItemUI() {
@@ -1422,34 +1855,8 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
             };
         }
 
-        let d1RefreshInFlight=false;
-        let tableBagSyncTimer=null;
-        async function syncCurrentTableBag(){
-            if(!activeTableNumber)return;
-            const items=Array.isArray(currentBill)?JSON.parse(JSON.stringify(currentBill)):[];
-            runningTables[activeTableNumber]=items;
-            renderTableGrid();
-            const tableNumber=String(activeTableNumber).replace(/^Table\s+/,'').trim();
-            if(/^\d+$/.test(tableNumber)){
-                await d1Post('/tables/sync-bag',{table_number:tableNumber,items});
-            }else{
-                const key=activeTableNumber==='Home Delivery'?'Home Delivery':'Takeaway';
-                await d1Post('/stock/sync-bag',{reservation_key:key,items});
-            }
-            renderStockDashboard();
-            checkStockDisplay();
-            await fetchData(true);
-        }
-        function queueTableBagSync(immediate=false){
-            clearTimeout(tableBagSyncTimer);
-            const run=()=>syncCurrentTableBag().catch(e=>console.warn('Bag sync failed',e));
-            if(immediate) run(); else tableBagSyncTimer=setTimeout(run,80);
-        }
-
-        async function fetchData(silent=false){
-            if(d1RefreshInFlight)return;
-            d1RefreshInFlight=true;
-            const loader=document.getElementById('loader');const expDate=document.getElementById('expDate');if(expDate&&!expDate.value)expDate.value=localISODate(new Date());const ef=document.getElementById('expFilterFrom'),et=document.getElementById('expFilterTo');if(!silent&&ef&&et){ef.value='';et.value='';}if(!silent){loader.style.display='flex';loader.innerHTML='<div class="spinner"></div> <span>Syncing Viraasat D1...</span>';}
+        async function fetchData(){
+            const loader=document.getElementById('loader');const expDate=document.getElementById('expDate');if(expDate&&!expDate.value)expDate.value=localISODate(new Date());const ef=document.getElementById('expFilterFrom'),et=document.getElementById('expFilterTo');if(ef&&et){ef.value='';et.value='';}loader.style.display='flex';loader.innerHTML='<div class="spinner"></div> <span>Syncing Viraasat D1...</span>';
             const defs=[['/dashboard',d1Get('/dashboard')],['/menu',d1Get('/menu')],['/tables',d1Get('/tables')],['/orders',d1Get('/orders?limit=1000')],['/expenses',d1Get('/expenses?limit=2000')],['/stock',d1Get('/stock')],['/staff',d1Get('/staff')],['/stock/history',d1Get('/stock/history?limit=100')]];const results=await Promise.allSettled(defs.map(x=>x[1]));const failed=[];
             try{
                 if(results[0].status==='fulfilled'){const dash=results[0].value||{};const summary=dash.summary||{},ts=dash.tables||{};document.getElementById('homeTodaySale').innerText=`₹${Math.round(Number(summary.today_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeAvgOrder').innerText=`₹${Math.round(Number(summary.average_order)||0).toLocaleString('en-IN')}`;document.getElementById('homeOverallSale').innerText=`₹${Math.round(Number(summary.overall_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeActiveTables').innerText=`${Number(ts.occupied)||0} / ${Number(ts.total)||tableSections.reduce((a,x)=>a+x.tables.length,0)}`;}else failed.push(['/dashboard',results[0].reason]);
@@ -1463,7 +1870,7 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
                         seen.add(key); return true;
                     });
                 }else failed.push(['/menu',results[1].reason]);
-                if(results[2].status==='fulfilled'){const ts=normalizeArray(results[2].value,['tables','data','result']);tableSections=[{title:'Hut Seating',tables:[]},{title:'Ground Seating',tables:[]},{title:'Terrace Seating',tables:[]}];const amap={'Hut Seating':0,'Ground Seating':1,'Terrace Seating':2};runningTables={};ts.forEach(t=>{const n=String(t.table_number??t.tableNumber??'').trim();if(!n)return;const i=amap[String(t.seating_area||t.seatingArea||'').trim()]??1;if(!tableSections[i].tables.includes(n))tableSections[i].tables.push(n);const rawBag=t.current_items??t.currentItems??'';let bag=[];try{const parsed=typeof rawBag==='string'?JSON.parse(rawBag||'[]'):rawBag;if(Array.isArray(parsed))bag=parsed;}catch(e){bag=[];}runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied'?(bag.length?bag:[{__d1Occupied:true,orderId:t.current_order_id||t.currentOrderId}]):[];});if(!ts.length)tableSections=[{title:'Hut Seating',tables:['1','2','3','4']},{title:'Ground Seating',tables:['5','6','7']},{title:'Terrace Seating',tables:['8','9','10']}];}else failed.push(['/tables',results[2].reason]);
+                if(results[2].status==='fulfilled'){const ts=normalizeArray(results[2].value,['tables','data','result']);tableSections=[{title:'Hut Seating',tables:[]},{title:'Ground Seating',tables:[]},{title:'Terrace Seating',tables:[]}];const amap={'Hut Seating':0,'Ground Seating':1,'Terrace Seating':2};runningTables={};ts.forEach(t=>{const n=String(t.table_number??t.tableNumber??'').trim();if(!n)return;const i=amap[String(t.seating_area||t.seatingArea||'').trim()]??1;if(!tableSections[i].tables.includes(n))tableSections[i].tables.push(n);runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied'?[{__d1Occupied:true,orderId:t.current_order_id||t.currentOrderId}]:[];});if(!ts.length)tableSections=[{title:'Hut Seating',tables:['1','2','3','4']},{title:'Ground Seating',tables:['5','6','7']},{title:'Terrace Seating',tables:['8','9','10']}];}else failed.push(['/tables',results[2].reason]);
                 if(results[3].status==='fulfilled')salesHistory=normalizeArray(results[3].value,['orders','sales','data','result']).map(mapD1Order).filter(Boolean).filter(o=>!['kot','cancelled','deleted'].includes(String(o.order_status||'').toLowerCase())).sort((a,b)=>orderTimestamp(b)-orderTimestamp(a));else failed.push(['/orders',results[3].reason]);
                 Object.keys(runningTables).forEach(key=>{const arr=runningTables[key];if(Array.isArray(arr)&&arr[0]?.__d1Occupied){const oid=String(arr[0].orderId||'');const order=salesHistory.find(o=>String(o.id||'')===oid||String(o.orderid||'')===oid);runningTables[key]=order?parseSaleItems(order):[];}});
                 if(results[4].status==='fulfilled')expenseHistory=normalizeArray(results[4].value,['expenses','data','result']);else failed.push(['/expenses',results[4].reason]);
@@ -1479,8 +1886,12 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
                 ];
                 renderSteps.forEach(([name,fn])=>{try{if(typeof fn==='function')fn();}catch(err){console.error(`UI render failed: ${name}`,err);}});
                 hideSplashScreen();
-                if(failed.length){const messages=failed.map(([path,e])=>`${path}: ${e?.message||e}`).join(' | ');console.warn('Partial D1 sync',failed);if(!silent){try{await d1Get('/test-db',5000);}catch(he){console.error('D1 health',he);}showCustomAlert(`Some D1 endpoints failed.\n\n${messages}\n\nTables, billing and existing local UI remain visible.`);}}
-            }catch(error){console.error('D1 Sync Error',error);renderTableGrid();renderStockDashboard();renderLiveSales();renderPremiumDashboard();renderExpenseHistoryList();hideSplashScreen();if(!silent)showCustomAlert(`D1 sync failed: ${error.message||error}`);}finally{d1RefreshInFlight=false;if(!silent)setTimeout(()=>{loader.style.display='none';},700);}
+                if(failed.length){const messages=failed.map(([path,e])=>`${path}: ${e?.message||e}`).join(' | ');console.warn('Partial D1 sync',failed);try{await d1Get('/test-db',5000);}catch(he){console.error('D1 health',he);}showCustomAlert(`Some D1 endpoints failed.
+
+${messages}
+
+Tables, billing and existing local UI remain visible.`);}
+            }catch(error){console.error('D1 Sync Error',error);renderTableGrid();renderStockDashboard();renderLiveSales();renderPremiumDashboard();renderExpenseHistoryList();hideSplashScreen();showCustomAlert(`D1 sync failed: ${error.message||error}`);}finally{setTimeout(()=>{loader.style.display='none';},700);}
         }
 
         function normalizeSheetSale(row){
@@ -1656,7 +2067,7 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
             const lifetime=salesHistory.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);
             const avg=todaySales.length?todayAmount/todaySales.length:0;
             const modes={}; salesHistory.forEach(s=>{const m=getVal(s,['payment_method','paymentmode','mode'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'Unknown';modes[m]=(modes[m]||0)+parseAmount(getVal(s,['grand_total','totalamount','total','amount']));});
-            const recent=salesHistory.slice().sort((a,b)=>orderTimestamp(b)-orderTimestamp(a));
+            const recent=salesHistory.slice().sort((a,b)=>orderTimestamp(b)-orderTimestamp(a)).slice(0,8);
             panel.innerHTML=`
             <div class="premium-kpis">
                 <div class="pkpi"><div class="label">Today's Sale</div><div class="value">${money(todayAmount)}</div><div class="delta">${todaySales.length} orders</div></div>
@@ -1674,15 +2085,15 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
             <div class="premium-grid-2">
                 <div class="premium-card">
                     <div class="premium-card-head"><h3>Recent Sales</h3><span>Latest 8 orders</span></div>
-                    <div class="dashboard-list-scroll"><div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Order</th><th>Time</th><th>Table</th><th>Mode</th><th>Total</th></tr></thead><tbody>
+                    <div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Order</th><th>Time</th><th>Table</th><th>Mode</th><th>Total</th></tr></thead><tbody>
                     ${recent.map(s=>`<tr onclick="openOrderDetails('${esc(getVal(s,['orderid','order_number','id']))}')" style="cursor:pointer"><td><b>#${esc(getVal(s,['orderid','order_number','id']))}</b></td><td>${esc(saleDateKey(s))}<br>${esc(saleTimeText(s))}</td><td>${esc(getVal(s,['tablenumber','table','tablename','table_number'])||'—')}</td><td><span class="pill ${String(getVal(s,['payment_method'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))).toLowerCase().includes('cash')?'gold':'gray'}">${esc(getVal(s,['payment_method'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—')}</span></td><td><b>${money(getVal(s,['grand_total','totalamount','total','amount']))}</b></td></tr>`).join('')}
-                    </tbody></table></div></div>
-                    <div class="mobile-sale-list admin-recent-mobile dashboard-list-scroll">${recent.map(s=>`<div class="mobile-sale-card" onclick="openOrderDetails('${esc(getVal(s,['orderid','order_number','id']))}')"><div class="mobile-sale-top"><div class="mobile-sale-id">#${esc(getVal(s,['orderid','order_number','id']))}</div><div class="mobile-sale-total">${money(getVal(s,['grand_total','totalamount','total','amount']))}</div></div><div class="mobile-sale-meta"><span>${esc(saleDateKey(s))}</span><span>${esc(saleTimeText(s))}</span><span>${esc(getVal(s,['tablenumber','table','table_number'])||'—')}</span><span>${esc(getVal(s,['payment_method'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—')}</span></div><div class="mobile-sale-items">${parseSaleItems(s).slice(0,3).map(it=>`<div class="mobile-sale-item"><span>${esc(it.name)} ×${it.qty}</span><b>${money(it.amount)}</b></div>`).join('')||'<span>No item details</span>'}</div></div>`).join('')}</div>
+                    </tbody></table></div>
+                    <div class="mobile-sale-list admin-recent-mobile">${recent.map(s=>`<div class="mobile-sale-card" onclick="openOrderDetails('${esc(getVal(s,['orderid','order_number','id']))}')"><div class="mobile-sale-top"><div class="mobile-sale-id">#${esc(getVal(s,['orderid','order_number','id']))}</div><div class="mobile-sale-total">${money(getVal(s,['grand_total','totalamount','total','amount']))}</div></div><div class="mobile-sale-meta"><span>${esc(saleDateKey(s))}</span><span>${esc(saleTimeText(s))}</span><span>${esc(getVal(s,['tablenumber','table','table_number'])||'—')}</span><span>${esc(getVal(s,['payment_method'])||extractPaymentMode(getVal(s,['items_string','itemsstring','items']))||'—')}</span></div><div class="mobile-sale-items">${parseSaleItems(s).slice(0,3).map(it=>`<div class="mobile-sale-item"><span>${esc(it.name)} ×${it.qty}</span><b>${money(it.amount)}</b></div>`).join('')||'<span>No item details</span>'}</div></div>`).join('')}</div>
                 </div>
                 <div>
                     <div class="premium-card">
                         <div class="premium-card-head"><h3>Payment Mix</h3><span>Lifetime</span></div>
-                        <div class="dashboard-list-scroll">${Object.entries(modes).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="item-rank"><div class="item-rank-info"><div class="item-rank-name">${esc(k)}</div><div class="mini-bar"><i style="width:${lifetime?Math.min(100,(v/lifetime)*100):0}%"></i></div></div><div class="item-rank-val">${money(v)}</div></div>`).join('')||'<div class="premium-empty">No payment data</div>'}
+                        ${Object.entries(modes).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div class="item-rank"><div class="item-rank-info"><div class="item-rank-name">${esc(k)}</div><div class="mini-bar"><i style="width:${lifetime?Math.min(100,(v/lifetime)*100):0}%"></i></div></div><div class="item-rank-val">${money(v)}</div></div>`).join('')||'<div class="premium-empty">No payment data</div>'}
                     </div>
                     <div class="premium-card">
                         <div class="premium-card-head"><h3>Quick Actions</h3></div>
@@ -1759,7 +2170,7 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
                 <button class="premium-btn light" onclick="exportPremiumSales()">Export</button>
             </div>
             <div id="psSummary" class="sales-summary-grid"></div>
-            <div class="dashboard-list-scroll"><div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Time</th><th>Order</th><th>Table</th><th>Items</th><th>Mode</th><th>Discount</th><th>Total</th></tr></thead><tbody id="psBody"></tbody></table></div>
+            <div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Time</th><th>Order</th><th>Table</th><th>Items</th><th>Mode</th><th>Discount</th><th>Total</th></tr></thead><tbody id="psBody"></tbody></table></div>
             <div id="psMobileList" class="mobile-sale-list"></div></div>`;
             renderPremiumSalesRows();
         }
@@ -1934,7 +2345,6 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
                 stockHistory.unshift({item_name:name,old_quantity:old,new_quantity:qty,change_quantity:qty-old,action:'UPDATE',note,updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});
                 auditLog('Stock Updated',`${name}: ${old} → ${qty}`);
                 renderStockDashboard();renderPremiumInventory();
-                await fetchData(true);
                 showCustomAlert('Stock updated successfully.');
             }catch(e){showCustomAlert('Stock update failed: '+(e?.message||e));}
         }
@@ -1965,7 +2375,6 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
                 stockHistory.unshift({item_name:name,old_quantity:0,new_quantity:qty,change_quantity:qty,action:'ADD',note:'New stock item',updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});
                 auditLog('Stock Item Added',`${name}: ${qty} pcs`);
                 populateDropdown();renderStockDashboard();renderPremiumInventory();
-                await fetchData(true);
                 showCustomAlert('New stock item added. It is now available in Inventory and POS Menu.');
             }catch(e){showCustomAlert('New stock item failed: '+(e?.message||e));}
         }
@@ -2044,8 +2453,8 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
             const totalSale=salesHistory.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0); const totalDiscount=salesHistory.reduce((a,s)=>a+parseAmount(getVal(s,['discount'])),0);
             panel.innerHTML=`
             <div class="sales-summary-grid"><div class="report-stat"><div class="rlabel">Overall Sale</div><div class="rvalue">${money(totalSale)}</div></div><div class="report-stat"><div class="rlabel">Discount</div><div class="rvalue">${money(totalDiscount)}</div></div><div class="report-stat"><div class="rlabel">Orders</div><div class="rvalue">${salesHistory.length}</div></div></div>
-            <div class="premium-card"><div class="premium-card-head"><h3>Top Selling Items</h3><span>Sorted by sales value</span></div><div class="admin-help">Highest-selling items are shown first. Sales % = item's value ÷ total item sales. Qty % = item's quantity ÷ total units sold.</div><div class="dashboard-list-scroll top-selling-list">${top.map((x,i)=>{const ss=totalItemSales?x.sales/totalItemSales*100:0;const qs=totalItemQty?x.qty/totalItemQty*100:0;return `<div class="item-rank"><div class="item-rank-no">${i+1}</div><div class="item-rank-info"><div class="item-rank-name">${esc(x.name)}</div><div class="item-rank-sub">${x.qty} units • ${x.orders} orders • Qty ${qs.toFixed(1)}%</div><div class="mini-bar"><i style="width:${Math.min(100,ss)}%"></i></div></div><div style="text-align:right"><div class="item-rank-val">${money(x.sales)}</div><small style="font-size:.6rem;color:var(--text-muted)">${ss.toFixed(1)}%</small></div></div>`}).join('')||'<div class="premium-empty">No item sales found.</div>'}</div></div>
-            <div class="premium-card"><div class="premium-card-head"><h3>Daily Business Report</h3><button class="premium-btn light" onclick="exportDailyReport()">Export</button></div><div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Orders</th><th>Sales</th><th>Discount</th><th>AOV</th></tr></thead><tbody>${days.map(([d,x])=>`<tr><td>${d}</td><td>${x.orders}</td><td><b>${money(x.sales)}</b></td><td>${money(x.discount)}</td><td>${money(x.sales/x.orders)}</td></tr>`).join('')||'<tr><td colspan="5"><div class="premium-empty">No sales.</div></td></tr>'}</tbody></table></div></div></div>`;
+            <div class="premium-card"><div class="premium-card-head"><h3>Top Selling Items</h3><span>Sorted by sales value</span></div><div class="admin-help">Highest-selling items are shown first. Sales % = item's value ÷ total item sales. Qty % = item's quantity ÷ total units sold.</div><div class="top-selling-list">${top.map((x,i)=>{const ss=totalItemSales?x.sales/totalItemSales*100:0;const qs=totalItemQty?x.qty/totalItemQty*100:0;return `<div class="item-rank"><div class="item-rank-no">${i+1}</div><div class="item-rank-info"><div class="item-rank-name">${esc(x.name)}</div><div class="item-rank-sub">${x.qty} units • ${x.orders} orders • Qty ${qs.toFixed(1)}%</div><div class="mini-bar"><i style="width:${Math.min(100,ss)}%"></i></div></div><div style="text-align:right"><div class="item-rank-val">${money(x.sales)}</div><small style="font-size:.6rem;color:var(--text-muted)">${ss.toFixed(1)}%</small></div></div>`}).join('')||'<div class="premium-empty">No item sales found.</div>'}</div></div>
+            <div class="premium-card"><div class="premium-card-head"><h3>Daily Business Report</h3><button class="premium-btn light" onclick="exportDailyReport()">Export</button></div><div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Orders</th><th>Sales</th><th>Discount</th><th>AOV</th></tr></thead><tbody>${days.map(([d,x])=>`<tr><td>${d}</td><td>${x.orders}</td><td><b>${money(x.sales)}</b></td><td>${money(x.discount)}</td><td>${money(x.sales/x.orders)}</td></tr>`).join('')||'<tr><td colspan="5"><div class="premium-empty">No sales.</div></td></tr>'}</tbody></table></div></div>`;
         }
         function exportDailyReport(){const by={};salesHistory.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!by[d])by[d]={orders:0,sales:0};by[d].orders++;by[d].sales+=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));});downloadCSV(Object.entries(by).sort((a,b)=>a[0].localeCompare(b[0])).map(([Date,x])=>({Date,Orders:x.orders,Sales:Math.round(x.sales),AOV:Math.round(x.sales/x.orders)})),'Viraasat-Daily-Report.csv');}
 
@@ -2057,7 +2466,7 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
                 renderExpenseHistoryList();
                 const panel=document.getElementById('premiumPanel-expenses');
                 if(!panel)return;
-                const rows=(expenseHistory||[]).slice().sort((a,b)=>expenseTimestamp(b)-expenseTimestamp(a));
+                const rows=(expenseHistory||[]).slice().sort((a,b)=>expenseTimestamp(b)-expenseTimestamp(a)).slice(0,20);
                 const total=rows.reduce((a,e)=>a+parseAmount(getVal(e,['amount','total'])),0);
                 panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Expenses</h3><span>Latest first • click for details</span></div><div class="report-stat" style="margin-bottom:12px"><div class="rlabel">Recent Total</div><div class="rvalue">${money(total)}</div></div><div class="admin-mini-list">${rows.map(e=>{const eid=getVal(e,['id'])||`${expenseDateKey(e)}-${getVal(e,['category'])}-${getVal(e,['amount'])}`;return `<div class="admin-mini-row expense-click-card" onclick="openExpenseDetails('${esc(eid)}')"><div><b>${esc(getVal(e,['category'])||'Other')}</b><small>${esc(expenseDateKey(e))} • ${esc(expenseTimeText(e)||'')}</small></div><strong style="color:var(--danger)">- ${money(getVal(e,['amount','total']))}</strong></div>`}).join('')||'<div class="premium-empty">No expenses recorded.</div>'}</div></div>`;
             }catch(e){console.error('Premium expenses render failed',e);}
@@ -2671,10 +3080,9 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
             const seen=new Set();
             menuData.forEach(item=>{
                 const itemName=String(getVal(item,['itemname','name'])||'').trim();
-                // Hide generated custom-menu records from the normal POS item picker.
-                if(/\(custom\)$/i.test(itemName))return;
                 const key=itemName.toLowerCase();
-                if(!key||seen.has(key))return;
+                // UI-only: generated/custom labels are not shown in the normal menu picker.
+                if(!key||key.includes('(custom)')||seen.has(key))return;
                 seen.add(key);
                 const option=document.createElement('option');
                 option.value=itemName;
@@ -2685,7 +3093,7 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
         function renderStockDashboard() { 
             let stockDiv = document.getElementById('dashboardStockList'); if(!stockDiv) return; stockDiv.innerHTML = ""; let keys = Object.keys(stockData); 
             if(keys.length === 0) { stockDiv.innerHTML = "<p style='color:var(--text-muted); font-size:0.85rem;'>No stock tracked.</p>"; return; } 
-            keys.forEach(key => { let qty = Number(stockData[key]); let tagClass = qty <= 5 ? 'stock-tag low' : 'stock-tag'; let label=qty<0?'NEGATIVE STOCK':'STOCK'; stockDiv.innerHTML += `<div class="${tagClass}" title="${label}">${esc(key)}: <span>${qty}</span></div>`; }); 
+            keys.forEach(key => { let qty = parseInt(stockData[key]); let tagClass = qty <= 5 ? 'stock-tag low' : 'stock-tag'; stockDiv.innerHTML += `<div class="${tagClass}">${key}: <span>${qty}</span></div>`; }); 
         }
 
         function checkStockDisplay() { 
@@ -2823,7 +3231,6 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
             let itemPrice = parseInt(getVal(selectedItem, ['price'])); let existingItem = currentBill.find(i => i.name === getVal(selectedItem, ['itemname', 'name']));
             if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ id:Number(getVal(selectedItem,['id','menu_item_id']))||null, menu_item_id:Number(getVal(selectedItem,['id','menu_item_id']))||null, name: getVal(selectedItem, ['itemname', 'name']), price: itemPrice, qty: qty, total: itemPrice * qty }); }
             updateBillTable();
-            queueTableBagSync(true);
         }
 
         function addCustomItem() {
@@ -2831,10 +3238,10 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
             if (!name || !price || price <= 0) { showCustomAlert("Enter valid custom item."); return; }
             let existingItem = currentBill.find(i => i.name === name + " (Custom)");
             if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ name: name + " (Custom)", price: price, qty: qty, total: price * qty }); }
-            updateBillTable(); queueTableBagSync(true); document.getElementById('customName').value = ""; document.getElementById('customPrice').value = ""; document.getElementById('customQty').value = 1;
+            updateBillTable(); document.getElementById('customName').value = ""; document.getElementById('customPrice').value = ""; document.getElementById('customQty').value = 1;
         }
 
-        function changeQty(index, amount) { currentBill[index].qty += amount; if(currentBill[index].qty <= 0) { currentBill.splice(index, 1); } else { currentBill[index].total = currentBill[index].price * currentBill[index].qty; } updateBillTable(); queueTableBagSync(true); }
+        function changeQty(index, amount) { currentBill[index].qty += amount; if(currentBill[index].qty <= 0) { currentBill.splice(index, 1); } else { currentBill[index].total = currentBill[index].price * currentBill[index].qty; } updateBillTable(); }
 
         function updateBillTable() {
             let tbody = document.getElementById('billTableBody'); tbody.innerHTML = ""; let subTotal = 0;
@@ -2847,14 +3254,14 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
             document.getElementById('itemInput').value = ""; document.getElementById('itemQty').value = 1; document.getElementById('stockStatus').style.display = "none";
         }
 
-        function removeItem(index) { currentBill.splice(index, 1); updateBillTable(); queueTableBagSync(true); }
+        function removeItem(index) { currentBill.splice(index, 1); updateBillTable(); }
 
         function clearTableWithoutCheckout() {
             showCustomConfirm(`Are you sure you want to clear ${activeTableNumber}?`, async()=>{
                 try{
                     const tableNumber=activeTableNumber.replace(/^Table\s+/,'');
                     if(/^\d+$/.test(tableNumber)) await d1Post('/tables/clear',{table_number:tableNumber});
-                    delete runningTables[activeTableNumber]; currentBill=[]; await fetchData(true); goBackToTables();
+                    delete runningTables[activeTableNumber]; currentBill=[]; goBackToTables();
                 }catch(e){showCustomAlert('Could not clear table: '+e.message);}
             },null);
         }
@@ -2905,7 +3312,6 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
                 const preparedItems=await prepareOrderItems(); const data=await d1Post('/orders',{order_number:orderNumber,...ctx,items:preparedItems,items_string:preparedItems.map(i=>`${i.name} (x${i.qty}) ₹${i.total}`).join(', '),subtotal,discount:0,grand_total:subtotal,total:subtotal,payment_method:'Cash',payment_status:'unpaid',order_status:'cancelled'});
                 runningTables[activeTableNumber]=preparedItems;
                 auditLog('KOT Saved', orderNumber);
-                await fetchData(true);
                 btn.innerText='Save KOT'; btn.disabled=false; goBackToTables();
             }catch(e){
                 btn.innerText='Save KOT'; btn.disabled=false; showCustomAlert('KOT save failed: '+e.message);
@@ -2930,9 +3336,10 @@ const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0";
                 const data=await d1Post('/orders/checkout',{order_number:orderId,...ctx,customer_phone:phone,items:preparedItems,items_string:itemsString,subtotal,discount,grand_total:grandTotal,total:grandTotal,payment_method:selectedPaymentMode,payment_status:'paid',order_status:'completed',delivery_address:address});
                 auditLog('Checkout', orderId);
                 delete runningTables[activeTableNumber];
+                currentBill.forEach(item=>{const key=Object.keys(stockData).find(k=>k.trim().toLowerCase()===item.name.trim().toLowerCase());if(key!==undefined)stockData[key]=Math.max(0,Number(stockData[key])-Number(item.qty||0));});
                 const now=new Date();
                 salesHistory.unshift({date:now.toISOString(),isodate:now.toISOString(),time:now.toISOString(),orderid:orderId,items:itemsString,total:grandTotal,table:activeTableNumber,tablenumber:activeTableNumber,phone:phone,payment_method:selectedPaymentMode,order_status:'completed'});
-                btn.innerText='Confirm Checkout';btn.disabled=false;document.getElementById('paymentModal').style.display='none';await fetchData(true);generateTrends();goBackToTables();
+                btn.innerText='Confirm Checkout';btn.disabled=false;document.getElementById('paymentModal').style.display='none';generateTrends();goBackToTables();
                 showCustomAlert('Checkout completed successfully.');
             }catch(e){btn.innerText='Confirm Checkout';btn.disabled=false;showCustomAlert('Checkout failed: '+e.message);}
         }
