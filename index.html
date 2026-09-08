@@ -1280,6 +1280,127 @@
     }
 }
 
+
+/* ============================================================
+   VIRAASAT POS — FINAL VISIBILITY / SCROLL CHAIN / IMPORT UI
+   Preserve existing business logic; presentation + import controls only.
+   ============================================================ */
+#premiumDashboard .premium-card,
+#premiumDashboard .admin-card,
+#premiumDashboard .premium-card-head,
+#premiumDashboard .premium-card-head h3,
+#premiumDashboard .premium-card-head > span,
+#premiumDashboard .admin-help,
+#premiumDashboard .admin-mini-list,
+#premiumDashboard .admin-staff-list,
+#premiumDashboard .admin-user-list,
+#premiumDashboard .audit-row,
+#premiumDashboard .approval-row,
+#premiumDashboard .mobile-sale-card,
+#premiumDashboard .expense-click-card {
+    min-width:0 !important;
+    box-sizing:border-box !important;
+}
+#premiumDashboard .premium-card-head h3,
+#premiumDashboard .premium-card-head > span {
+    overflow:visible !important;
+    white-space:normal !important;
+    overflow-wrap:anywhere !important;
+    word-break:break-word !important;
+}
+#premiumDashboard .audit-row,
+#premiumDashboard .approval-row,
+#premiumDashboard .admin-mini-row,
+#premiumDashboard .admin-staff-row,
+#premiumDashboard .admin-user-row {
+    height:auto !important;
+    min-height:52px !important;
+    flex:0 0 auto !important;
+    overflow:visible !important;
+}
+#premiumDashboard .audit-row b,
+#premiumDashboard .audit-row span,
+#premiumDashboard .approval-row b,
+#premiumDashboard .approval-row small,
+#premiumDashboard .admin-mini-row b,
+#premiumDashboard .admin-mini-row small,
+#premiumDashboard .admin-staff-main b,
+#premiumDashboard .admin-staff-main small,
+#premiumDashboard .admin-user-row b,
+#premiumDashboard .admin-user-row small {
+    white-space:normal !important;
+    overflow:visible !important;
+    text-overflow:clip !important;
+    overflow-wrap:anywhere !important;
+    word-break:break-word !important;
+    line-height:1.35 !important;
+}
+#premiumDashboard .audit-row > span { margin-top:4px !important; }
+#premiumDashboard .expense-click-card {
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) auto !important;
+    gap:10px !important;
+    align-items:center !important;
+    width:100% !important;
+}
+#premiumDashboard .expense-click-card > div { min-width:0 !important; }
+#premiumDashboard .expense-click-card > strong {
+    min-width:0 !important;
+    max-width:100% !important;
+    white-space:nowrap !important;
+    text-align:right !important;
+    overflow:visible !important;
+    flex:0 0 auto !important;
+}
+#premiumDashboard .mobile-sale-card { overflow:hidden !important; }
+#premiumDashboard .mobile-sale-id,
+#premiumDashboard .mobile-sale-total,
+#premiumDashboard .mobile-sale-meta,
+#premiumDashboard .mobile-sale-items { min-width:0 !important; }
+#premiumDashboard .mobile-sale-id { overflow-wrap:anywhere !important; white-space:normal !important; }
+#premiumDashboard .mobile-sale-total { white-space:nowrap !important; }
+
+/* Every internal list has a finite viewport, but page scrolling must continue. */
+#premiumDashboard #auditLogsBox,
+#premiumDashboard #pendingApprovalsBox,
+#premiumDashboard #adminStockMiniList,
+#premiumDashboard #adminStaffRows,
+#premiumDashboard #adminUsersRows,
+#premiumDashboard #psMobileList,
+#premiumDashboard #piRankList,
+#premiumDashboard .top-selling-list,
+#premiumDashboard #expenseHistoryList,
+#premiumDashboard #pStockGrid,
+#premiumDashboard #inventoryInsightRows {
+    max-height:340px !important;
+    overflow-y:auto !important;
+    overflow-x:hidden !important;
+    -webkit-overflow-scrolling:touch !important;
+    overscroll-behavior-y:auto !important;
+    touch-action:pan-y !important;
+    scrollbar-width:thin !important;
+}
+#premiumDashboard #auditLogsBox { max-height:360px !important; }
+#premiumDashboard #psMobileList { max-height:520px !important; }
+#premiumDashboard #expenseHistoryList { max-height:420px !important; }
+#premiumDashboard .premium-table-wrap { overflow:auto !important; max-width:100% !important; }
+
+/* Import cards */
+.import-check-box { border:1px solid var(--border); border-radius:12px; padding:10px; background:#FFFCFA; margin-top:8px; }
+.import-check-status { font-size:.66rem; line-height:1.45; color:var(--text-muted); overflow-wrap:anywhere; }
+.import-check-status.ok { color:#0B8F55; }
+.import-check-status.bad { color:#C92E48; }
+.import-preview { margin-top:7px; font-size:.60rem; color:var(--text-muted); line-height:1.45; max-height:100px; overflow:auto; }
+.import-file-label { min-width:0 !important; max-width:100% !important; }
+@media(max-width:600px){
+    #premiumDashboard .premium-card { overflow:visible !important; }
+    #premiumDashboard #auditLogsBox { max-height:360px !important; }
+    #premiumDashboard #pendingApprovalsBox { max-height:320px !important; overflow-y:auto !important; }
+    #premiumDashboard .import-file-label { width:100% !important; }
+    #premiumDashboard .import-actions { display:grid !important; grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important; gap:6px !important; }
+    #premiumDashboard .import-actions > * { min-width:0 !important; }
+}
+
 </style>
 </head>
 <body>
@@ -2482,6 +2603,15 @@ Tables, billing and existing local UI remain visible.`);}
         function renderPremiumSales(){
             const panel=document.getElementById('premiumPanel-sales');if(!panel)return;
             panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Sales Register</h3><span id="psCount">0 orders</span></div>
+            <div class="premium-card import-card" style="margin-bottom:10px;background:#FFFCFA">
+                <div class="premium-card-head" style="margin-bottom:8px"><h3>Upload Sale Orders</h3><span>D1 format check required</span></div>
+                <div class="admin-help">Use the Sales sample format exactly. Required: Date, Order_ID, Items, Total_Amount. Time, Phone, Table_Number, Discount and Payment_Mode are supported. Existing Order_IDs are skipped safely.</div>
+                <div class="import-actions">
+                    <label class="premium-btn alt upload-label import-file-label">Choose Sales File<input id="salesImportFile" type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="checkSalesImportFile(this.files[0])"></label>
+                    <button class="premium-btn light" onclick="downloadSalesImportSample()">Download Sales Sample</button>
+                </div>
+                <div id="salesImportStatus" class="import-check-box"><div class="import-check-status">No file selected. The file is checked completely before anything is written to D1.</div></div>
+            </div>
             <div class="sales-filter-chips">
                 <button class="filter-btn" onclick="setPremiumSalesRange('today')">Today</button>
                 <button class="filter-btn" onclick="setPremiumSalesRange('yesterday')">Yesterday</button>
@@ -2796,7 +2926,17 @@ Tables, billing and existing local UI remain visible.`);}
                 if(!panel)return;
                 const rows=(expenseHistory||[]).slice().sort((a,b)=>expenseTimestamp(b)-expenseTimestamp(a)).slice(0,20);
                 const total=rows.reduce((a,e)=>a+parseAmount(getVal(e,['amount','total'])),0);
-                panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Expenses</h3><span>Latest first • click for details</span></div><div class="report-stat" style="margin-bottom:12px"><div class="rlabel">Recent Total</div><div class="rvalue">${money(total)}</div></div><div class="admin-mini-list">${rows.map(e=>{const eid=getVal(e,['id'])||`${expenseDateKey(e)}-${getVal(e,['category'])}-${getVal(e,['amount'])}`;return `<div class="admin-mini-row expense-click-card" onclick="openExpenseDetails('${esc(eid)}')"><div><b>${esc(getVal(e,['category'])||'Other')}</b><small>${esc(expenseDateKey(e))} • ${esc(expenseTimeText(e)||'')}</small></div><strong style="color:var(--danger)">- ${money(getVal(e,['amount','total']))}</strong></div>`}).join('')||'<div class="premium-empty">No expenses recorded.</div>'}</div></div>`;
+                panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Expenses</h3><span>Latest first • click for details</span></div>
+                <div class="premium-card import-card" style="margin-bottom:10px;background:#FFFCFA">
+                    <div class="premium-card-head" style="margin-bottom:8px"><h3>Upload Expenses</h3><span>D1 format check required</span></div>
+                    <div class="admin-help">Use the Expenses sample format exactly. Required: Date, Category, Amount. Description is optional. The file is fully validated before D1 import.</div>
+                    <div class="import-actions">
+                        <label class="premium-btn alt upload-label import-file-label">Choose Expenses File<input id="expenseImportFile" type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="checkExpenseImportFile(this.files[0])"></label>
+                        <button class="premium-btn light" onclick="downloadExpenseImportSample()">Download Expense Sample</button>
+                    </div>
+                    <div id="expenseImportStatus" class="import-check-box"><div class="import-check-status">No file selected. The file is checked completely before anything is written to D1.</div></div>
+                </div>
+                <div class="report-stat" style="margin-bottom:12px"><div class="rlabel">Recent Total</div><div class="rvalue">${money(total)}</div></div><div class="admin-mini-list">${rows.map(e=>{const eid=getVal(e,['id'])||`${expenseDateKey(e)}-${getVal(e,['category'])}-${getVal(e,['amount'])}`;return `<div class="admin-mini-row expense-click-card" onclick="openExpenseDetails('${esc(eid)}')"><div><b>${esc(getVal(e,['category'])||'Other')}</b><small>${esc(expenseDateKey(e))} • ${esc(expenseTimeText(e)||'')}</small></div><strong style="color:var(--danger)">- ${money(getVal(e,['amount','total']))}</strong></div>`}).join('')||'<div class="premium-empty">No expenses recorded.</div>'}</div></div>`;
             }catch(e){console.error('Premium expenses render failed',e);}
         }
 
@@ -2979,7 +3119,7 @@ Tables, billing and existing local UI remain visible.`);}
                     status,
                     reviewed_by:localStorage.getItem('viraasat_user')||'Admin'
                 });
-                auditLog('Approval '+status,orderId);
+                // Worker records the approval action once in shared D1 Audit Logs.
                 renderPremiumAdmin();
                 fetchData();
                 showCustomAlert(result?.message||`Request ${status}.`);
@@ -3080,7 +3220,7 @@ Tables, billing and existing local UI remain visible.`);}
             </div>
 
             <div class="premium-card admin-card">
-                <div class="premium-card-head"><h3>Audit Logs</h3><button class="premium-btn light" onclick="clearAuditLogs()">Clear</button></div>
+                <div class="premium-card-head"><h3>Audit Logs</h3><span>Shared • last 7 days</span></div>
                 <div id="auditLogsBox"></div>
             </div>
             `;
@@ -3206,6 +3346,108 @@ Tables, billing and existing local UI remain visible.`);}
                 discount:parseAmount(r.Discount??r.discount),
                 payment_method:String(r.Payment_Mode??r.payment_method??r.Mode??r.mode??'').trim()
             })).filter(r=>r.order_id);
+        }
+
+
+        function importSheetRows(file, preferredSheet){
+            return file.arrayBuffer().then(buf=>{
+                const wb=XLSX.read(buf,{type:'array',cellDates:true});
+                const sheet=wb.SheetNames.includes(preferredSheet)?preferredSheet:wb.SheetNames[0];
+                if(!sheet)throw new Error('Workbook has no sheet.');
+                return {wb,sheet,rows:workbookRows(wb,sheet)};
+            });
+        }
+        function normalizedHeaders(rows){
+            const first=rows?.[0]||{};
+            return Object.keys(first).map(k=>k.toLowerCase().replace(/[^a-z0-9]/g,''));
+        }
+        function hasImportHeader(rows, aliases){
+            const heads=new Set(normalizedHeaders(rows));
+            return aliases.some(x=>heads.has(String(x).toLowerCase().replace(/[^a-z0-9]/g,'')));
+        }
+        function validateSalesImportRows(rows){
+            const errors=[], seen=new Set(), normalized=[];
+            const required=[['Date',['date']],['Order_ID',['order_id','orderid','order_number','ordernumber']],['Items',['items','items_string','itemsstring']],['Total_Amount',['total_amount','totalamount','total']]];
+            required.forEach(([label,a])=>{if(!hasImportHeader(rows,a))errors.push(`Missing required column: ${label}`);});
+            rows.forEach((r,i)=>{
+                const line=i+2, date=normalizeWorkbookDate(getVal(r,['date'])), oid=String(getVal(r,['order_id','orderid','order_number','ordernumber'])||'').trim();
+                const items=String(getVal(r,['items','items_string','itemsstring'])||'').trim();
+                const amount=parseAmount(getVal(r,['total_amount','totalamount','total','amount']));
+                if(!date)errors.push(`Row ${line}: Date is required.`);
+                if(!oid)errors.push(`Row ${line}: Order_ID is required.`);
+                if(!items)errors.push(`Row ${line}: Items is required.`);
+                if(amount<=0)errors.push(`Row ${line}: Total_Amount must be greater than 0.`);
+                if(oid){if(seen.has(oid))errors.push(`Row ${line}: duplicate Order_ID ${oid} in file.`);seen.add(oid);}
+                normalized.push({Date:date,Time:normalizeWorkbookTime(getVal(r,['time'])),Order_ID:oid,Phone:String(getVal(r,['phone','customer_phone','customerphone'])||'NA').trim()||'NA',Items:items,Total_Amount:amount,Table_Number:String(getVal(r,['table_number','tablenumber','table'])||'').trim(),Discount:parseAmount(getVal(r,['discount'])),Payment_Mode:String(getVal(r,['payment_mode','paymentmode','mode'])||extractPaymentMode(items)||'').trim()});
+            });
+            return {errors,rows:normalized.filter(x=>x.Order_ID)};
+        }
+        function validateExpenseImportRows(rows){
+            const errors=[], normalized=[];
+            const required=[['Date',['date']],['Category',['category']],['Amount',['amount','total']]];
+            required.forEach(([label,a])=>{if(!hasImportHeader(rows,a))errors.push(`Missing required column: ${label}`);});
+            rows.forEach((r,i)=>{
+                const line=i+2,date=normalizeWorkbookDate(getVal(r,['date','expense_date'])),category=String(getVal(r,['category'])||'').trim(),amount=parseAmount(getVal(r,['amount','total'])),description=String(getVal(r,['description','note'])||'').trim();
+                if(!date)errors.push(`Row ${line}: Date is required.`);
+                if(!category)errors.push(`Row ${line}: Category is required.`);
+                if(amount<=0)errors.push(`Row ${line}: Amount must be greater than 0.`);
+                normalized.push({Date:date,Category:category,Description:description,Amount:amount});
+            });
+            return {errors,rows:normalized.filter(x=>x.Category&&x.Amount>0)};
+        }
+        function setImportStatus(id,ok,message,preview=''){
+            const el=document.getElementById(id);if(!el)return;
+            el.innerHTML=`<div class="import-check-status ${ok?'ok':'bad'}">${message}</div>${preview?`<div class="import-preview">${preview}</div>`:''}`;
+        }
+        async function checkSalesImportFile(file){
+            if(!file)return; if(typeof XLSX==='undefined'){showCustomAlert('Excel engine is not loaded. Refresh the POS and try again.');return;}
+            try{
+                const {rows}=await importSheetRows(file,'Sales');
+                if(!rows.length)throw new Error('No data rows found.');
+                const v=validateSalesImportRows(rows);
+                const existing=new Set((salesHistory||[]).map(s=>String(getVal(s,['orderid','order_number','id'])||'').trim()).filter(Boolean));
+                const already=v.rows.filter(r=>existing.has(r.Order_ID)).length;
+                if(v.errors.length){setImportStatus('salesImportStatus',false,`Check failed: ${v.errors.length} issue(s). Nothing was uploaded.`,v.errors.slice(0,12).map(esc).join('<br>')+(v.errors.length>12?'<br>…more':''));return;}
+                setImportStatus('salesImportStatus',true,`Checked ${v.rows.length} sale row(s). ${already} existing Order_ID(s) will be skipped.`,v.rows.slice(0,3).map(r=>`#${esc(r.Order_ID)} • ${esc(r.Date)} • ${money(r.Total_Amount)}`).join('<br>'));
+                if(!window.confirm(`Validation passed for ${v.rows.length} sale orders. Upload now? Existing Order_IDs will not be duplicated.`))return;
+                const result=await d1Post('/import/full',{sales:v.rows},60000);
+                const imported=Number(result?.imported?.orders||0), skipped=Number(result?.skipped?.orders||0);
+                await fetchData(); renderPremiumSales();
+                auditLog('Sales Import',`Imported ${imported}, skipped ${skipped}`);
+                setImportStatus('salesImportStatus',true,`Upload complete: ${imported} imported, ${skipped} skipped. D1 remains the master.`,'' );
+                const input=document.getElementById('salesImportFile');if(input)input.value='';
+            }catch(e){console.error('Sales import check failed',e);setImportStatus('salesImportStatus',false,`Upload failed: ${e?.message||e}`);}
+        }
+        function downloadSalesImportSample(){
+            if(typeof XLSX==='undefined'){showCustomAlert('Excel engine is not loaded. Refresh the POS and try again.');return;}
+            const wb=XLSX.utils.book_new();
+            const rows=[{Date:'2026-09-08',Time:'10:33 AM',Order_ID:'ORD-IMPORT-001',Phone:'NA',Items:'Tea (x2) ₹40, Classic Mild (x1) ₹30, [Mode: UPI]',Total_Amount:70,Table_Number:'Table 1',Discount:0,Payment_Mode:'UPI'}];
+            XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Sales');
+            XLSX.writeFile(wb,'Viraasat-Sales-Import-Sample.xlsx');
+        }
+        async function checkExpenseImportFile(file){
+            if(!file)return; if(typeof XLSX==='undefined'){showCustomAlert('Excel engine is not loaded. Refresh the POS and try again.');return;}
+            try{
+                const {rows}=await importSheetRows(file,'Expenses');
+                if(!rows.length)throw new Error('No data rows found.');
+                const v=validateExpenseImportRows(rows);
+                if(v.errors.length){setImportStatus('expenseImportStatus',false,`Check failed: ${v.errors.length} issue(s). Nothing was uploaded.`,v.errors.slice(0,12).map(esc).join('<br>')+(v.errors.length>12?'<br>…more':''));return;}
+                setImportStatus('expenseImportStatus',true,`Checked ${v.rows.length} expense row(s). Ready for upload.`,v.rows.slice(0,3).map(r=>`${esc(r.Date)} • ${esc(r.Category)} • ${money(r.Amount)}`).join('<br>'));
+                if(!window.confirm(`Validation passed for ${v.rows.length} expense rows. Upload now?`))return;
+                const result=await d1Post('/import/full',{expenses:v.rows},60000);
+                const imported=Number(result?.imported?.expenses||0);
+                await fetchData(); renderPremiumExpenses();
+                auditLog('Expenses Import',`Imported ${imported} rows`);
+                setImportStatus('expenseImportStatus',true,`Upload complete: ${imported} expense row(s) imported. D1 remains the master.`,'' );
+                const input=document.getElementById('expenseImportFile');if(input)input.value='';
+            }catch(e){console.error('Expense import check failed',e);setImportStatus('expenseImportStatus',false,`Upload failed: ${e?.message||e}`);}
+        }
+        function downloadExpenseImportSample(){
+            if(typeof XLSX==='undefined'){showCustomAlert('Excel engine is not loaded. Refresh the POS and try again.');return;}
+            const wb=XLSX.utils.book_new();
+            const rows=[{Date:'2026-09-08',Category:'Raw Material',Description:'Vegetables',Amount:537}];
+            XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Expenses');
+            XLSX.writeFile(wb,'Viraasat-Expenses-Import-Sample.xlsx');
         }
 
         async function handleFullDatabaseImport(file){
@@ -3759,7 +4001,7 @@ Tables, billing and existing local UI remain visible.`);}
                         reason:'Deletion requested from POS',
                         requested_by:localStorage.getItem('viraasat_user')||'Admin'
                     });
-                    auditLog('Order Delete Requested',id);
+                    // Worker records the delete request once in the shared D1 audit trail.
                     document.getElementById('orderDetailsModal').style.display='none';
                     showCustomAlert('Deletion request submitted for Admin approval.');
                 }catch(e){
