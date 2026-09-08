@@ -1835,6 +1835,8 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
         let selectedPaymentMode = "Cash";
         let rawChartSalesData = {}; 
         let rawChartExpenseData = {};
+        // D1 dashboard summary is authoritative for home KPIs.
+        let d1DashboardSummary = null;
         
         // --- GLOBAL CURRENT HISTORICAL SALE ---
         let currentViewingSale = null;
@@ -2306,9 +2308,9 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
 
         async function fetchData(){
             const loader=document.getElementById('loader');const expDate=document.getElementById('expDate');if(expDate&&!expDate.value)expDate.value=localISODate(new Date());const ef=document.getElementById('expFilterFrom'),et=document.getElementById('expFilterTo');if(ef&&et){ef.value='';et.value='';}loader.style.display='flex';loader.innerHTML='<div class="spinner"></div> <span>Syncing Viraasat D1...</span>';
-            const defs=[['/dashboard',d1Get('/dashboard')],['/menu',d1Get('/menu')],['/tables',d1Get('/tables')],['/orders',d1Get('/orders?limit=1000')],['/expenses',d1Get('/expenses?limit=2000')],['/stock',d1Get('/stock')],['/staff',d1Get('/staff')],['/stock/history',d1Get('/stock/history?limit=100')]];const results=await Promise.allSettled(defs.map(x=>x[1]));const failed=[];
+            const defs=[['/dashboard',d1Get('/dashboard')],['/menu',d1Get('/menu')],['/tables',d1Get('/tables')],['/orders',d1Get('/orders?limit=5000')],['/expenses',d1Get('/expenses?limit=2000')],['/stock',d1Get('/stock')],['/staff',d1Get('/staff')],['/stock/history',d1Get('/stock/history?limit=100')]];const results=await Promise.allSettled(defs.map(x=>x[1]));const failed=[];
             try{
-                if(results[0].status==='fulfilled'){const dash=results[0].value||{};const summary=dash.summary||{},ts=dash.tables||{};document.getElementById('homeTodaySale').innerText=`₹${Math.round(Number(summary.today_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeAvgOrder').innerText=`₹${Math.round(Number(summary.average_order)||0).toLocaleString('en-IN')}`;document.getElementById('homeOverallSale').innerText=`₹${Math.round(Number(summary.overall_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeActiveTables').innerText=`${Number(ts.occupied)||0} / ${Number(ts.total)||tableSections.reduce((a,x)=>a+x.tables.length,0)}`;}else failed.push(['/dashboard',results[0].reason]);
+                if(results[0].status==='fulfilled'){const dash=results[0].value||{};const summary=dash.summary||{};d1DashboardSummary={...summary};const ts=dash.tables||{};document.getElementById('homeTodaySale').innerText=`₹${Math.round(Number(summary.today_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeAvgOrder').innerText=`₹${Math.round(Number(summary.average_order)||0).toLocaleString('en-IN')}`;document.getElementById('homeOverallSale').innerText=`₹${Math.round(Number(summary.overall_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeActiveTables').innerText=`${Number(ts.occupied)||0} / ${Number(ts.total)||tableSections.reduce((a,x)=>a+x.tables.length,0)}`;}else failed.push(['/dashboard',results[0].reason]);
                 if(results[1].status==='fulfilled'){
                     const rawMenu=normalizeArray(results[1].value,['items','menu','data','result']);
                     const seen=new Set();
@@ -3631,6 +3633,14 @@ Tables, billing and existing local UI remain visible.`);}
                 const advanceEl=document.getElementById('staffAdvanceDetails'); if(advanceEl){ const staffRows=expenseHistory.filter(exp=>['Staff Salary','Payroll'].includes(String(getVal(exp,['category'])||''))).slice(0,30); advanceEl.innerHTML=staffRows.length?staffRows.map(exp=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:6px;gap:8px"><span>${esc(getVal(exp,['date','isodate'])||'')} • ${esc(getVal(exp,['description','note'])||'Staff')}</span><b>₹${parseAmount(getVal(exp,['amount','total'])).toLocaleString('en-IN')}</b></div>`).join(''):'<span style="color:var(--text-muted)">No staff advances or payroll entries.</span>'; }
 
                 let avgToday = ordersToday > 0 ? Math.floor(revenueToday / ordersToday) : 0;
+                // The D1 dashboard endpoint is the single source of truth for KPI totals.
+                // Local salesHistory remains the detailed register, but must not override D1 totals.
+                if(d1DashboardSummary){
+                    revenueToday=Number(d1DashboardSummary.today_sales)||0;
+                    ordersToday=Number(d1DashboardSummary.today_orders)||0;
+                    avgToday=Math.round(Number(d1DashboardSummary.average_order)||0);
+                    totalSalesAmount=Number(d1DashboardSummary.overall_sales)||0;
+                }
                 let hasSalesAccess = true; if (typeof window.isUserAdmin !== 'undefined') { hasSalesAccess = window.isUserAdmin || (window.userPerms && window.userPerms.orders); }
 
                 if (hasSalesAccess) {
