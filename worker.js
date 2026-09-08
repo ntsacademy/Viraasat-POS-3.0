@@ -100,7 +100,12 @@ async function ensureColumn(db, table, column, definition) {
   }
 }
 __name(ensureColumn, "ensureColumn");
+let supportSchemaReady = null;
 async function ensureSupportTables(db) {
+  // Prevent concurrent GET /dashboard, /stock and /staff requests in the same
+  // Worker isolate from running the same D1 migrations/index creation together.
+  if (supportSchemaReady) return supportSchemaReady;
+  supportSchemaReady = (async () => {
   // Live POS table bag: keeps the current unsaved cart in D1 so every user sees it.
   if (await tableExists(db, "restaurant_tables")) {
     await ensureColumn(db, "restaurant_tables", "current_items", "TEXT");
@@ -247,6 +252,11 @@ async function ensureSupportTables(db) {
   await ensureColumn(db, "audit_logs", "details", "TEXT");
   await ensureColumn(db, "audit_logs", "user", "TEXT");
   await ensureColumn(db, "audit_logs", "timestamp", "TEXT");
+  })().catch((error) => {
+    supportSchemaReady = null;
+    throw error;
+  });
+  return supportSchemaReady;
 }
 __name(ensureSupportTables, "ensureSupportTables");
 async function getMenu(db) {
@@ -486,7 +496,6 @@ async function getExpenses(db, limit = 1e3) {
 }
 __name(getExpenses, "getExpenses");
 async function getStock(db) {
-  await ensureSupportTables(db);
   const result = await db.prepare(`
     SELECT
       id,
@@ -504,7 +513,6 @@ async function getStock(db) {
 }
 __name(getStock, "getStock");
 async function getStaff(db) {
-  await ensureSupportTables(db);
   // Portal should show only active staff. Removed/inactive staff remain in D1
   // for historical integrity but must not reappear after a refresh.
   const result = await db.prepare(`
@@ -755,6 +763,10 @@ async function runGoogleSheetBackup(db, env, backupType = "Manual") {
 }
 
 async function getDashboard(db) {
+  // Run schema/migration work once, sequentially. The old version called
+  // ensureSupportTables() concurrently from stock + staff + other readers,
+  // which could cause D1 connection loss while migrations/indexes were running.
+  await ensureSupportTables(db);
   const [
     orders,
     expenses,
@@ -1974,6 +1986,7 @@ var worker_default = {
         });
       }
       if (path === "/api/stock" && method === "GET") {
+        await ensureSupportTables(db);
         return json({
           success: true,
           stock: await getStock(db)
@@ -2381,73 +2394,156 @@ var worker_default = {
         }
 
         let ordersImported = 0, orderItemsImported = 0, ordersSkipped = 0;
+
+        // IMPORT SAFETY / PERFORMANCE:
+        // D1 limits the number of API requests a single Worker invocation can make.
+        // The old importer executed SELECT/INSERT statements one-by-one for every
+        // order and every item. Large files therefore hit the D1 request limit.
+        // Keep the same import semantics, but use D1 batch() so one batch counts as
+        // one database API request. Dates are kept as calendar strings; no Date()
+        // parsing is used here, so an imported 08-09-26 cannot shift to another day.
+        const normalizeImportDate = (value) => {
+          // Excel serial dates are calendar values. Convert by Excel epoch only;
+          // never use JS Date parsing/timezone conversion for the calendar day.
+          if (typeof value === "number" && Number.isFinite(value) && value >= 1 && value < 100000) {
+            const whole = Math.floor(value);
+            const dt = new Date(Date.UTC(1899, 11, 30) + whole * 86400000);
+            return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth()+1).padStart(2,"0")}-${String(dt.getUTCDate()).padStart(2,"0")}`;
+          }
+          const s = clean(value);
+          if (!s) return "";
+          if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+          const m = s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2}|\d{4})/);
+          if (m) {
+            const day = Number(m[1]), month = Number(m[2]);
+            const year = m[3].length === 2 ? 2000 + Number(m[3]) : Number(m[3]);
+            if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+              return `${year}-${String(month).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
+            }
+          }
+          return s;
+        };
+        const IMPORT_BATCH_SIZE = 80;
+
+        // First resolve all existing orders in a small number of batched SELECTs.
+        // This preserves the old duplicate-protection behaviour without one SELECT
+        // per row.
+        const saleRows = [];
+        const orderNumberSeen = new Set();
         for (const row of sales) {
           const orderNumber = clean(row.order_number || row.orderNumber || row.Order_ID || row.order_id || row["Order ID"] || row["Order_ID"]);
-          if (!orderNumber) { ordersSkipped++; continue; }
-
-          let existing = await db.prepare(`SELECT id FROM orders WHERE order_number=? LIMIT 1`).bind(orderNumber).first();
-          const itemsValue = row.items || row.Items || row.items_string || row.itemsString || row["Items"] || "";
-          const items = parseImportedItems(itemsValue);
-
-          if (existing) {
-            const count = await db.prepare(`SELECT COUNT(*) AS count FROM order_items WHERE order_id=?`).bind(existing.id).first();
-            if (num(count?.count, 0) > 0) { ordersSkipped++; continue; }
-            for (const item of items) {
-              const key = item.name.toLowerCase();
-              let mi = menuCache.get(key);
-              if (!mi) {
-                const r = await db.prepare(`INSERT INTO menu_items (name,category,price,gst_percent,is_available) VALUES (?, 'Imported', ?, 0, 1)`).bind(item.name, num(item.price)).run();
-                mi = { id: r.meta?.last_row_id ?? r.lastInsertRowid, name:item.name, price:num(item.price), gst_percent:0 };
-                menuCache.set(key, mi);
-              }
-              const qty = num(item.qty, 1);
-              const price = item.price > 0 ? item.price : num(mi.price, 0);
-              const total = item.total > 0 ? item.total : price * qty;
-              await db.prepare(`INSERT INTO order_items (order_id,menu_item_id,item_name,quantity,price,gst_percent,total) VALUES (?,?,?,?,?,?,?)`).bind(existing.id, mi.id, item.name, qty, price, num(mi.gst_percent,0), total).run();
-              orderItemsImported++;
-            }
+          if (!orderNumber || orderNumberSeen.has(orderNumber)) {
+            if (!orderNumber) ordersSkipped++;
+            else ordersSkipped++;
             continue;
           }
+          orderNumberSeen.add(orderNumber);
+          saleRows.push({ row, orderNumber });
+        }
 
-          const total = num(row.grand_total ?? row.total ?? row.Total_Amount ?? row["Total Amount"] ?? row.amount, 0);
-          const discount = num(row.discount ?? row.Discount ?? row["Discount"], 0);
-          const payment = clean(row.payment_method || row.paymentMethod || row.Mode || row.mode).replace(/\[Mode:/gi, "").replace(/\]/g, "").trim() || "Cash";
-          const table = clean(row.table_number || row.tableNumber || row.Table_Number || row["Table Number"] || row.table) || "Takeaway";
-          const date = clean(row.date || row.Date || row.order_date || row["Date"]);
-          const time = clean(row.time || row.Time || row.order_time || row["Time"]);
-          const created = date ? `${date} ${time}`.trim() : new Date().toISOString();
-          const type = table.toLowerCase() === "takeaway" ? "Takeaway" : "Dine-in";
-
-          let r;
-          try {
-            r = await db.prepare(`INSERT INTO orders (order_number,order_type,customer_name,table_number,subtotal,discount,gst,total,payment_method,payment_status,order_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(orderNumber,type,null,table,Math.max(total + discount,0),discount,0,total,payment,"paid","completed",created,created).run();
-          } catch (insertError) {
-            if (/unique|constraint/i.test(String(insertError?.message || insertError))) {
-              ordersSkipped++;
-              continue;
-            }
-            throw insertError;
-          }
-          const orderId = r.meta?.last_row_id ?? r.lastInsertRowid;
-          if (!orderId) throw new Error(`Order ID was not created for ${orderNumber}`);
-          ordersImported++;
-
-          for (const item of items) {
-            const key = item.name.toLowerCase();
-            let mi = menuCache.get(key);
-            if (!mi) {
-              const mr = await db.prepare(`INSERT INTO menu_items (name,category,price,gst_percent,is_available) VALUES (?, 'Imported', ?, 0, 1)`).bind(item.name, num(item.price)).run();
-              mi = { id: mr.meta?.last_row_id ?? mr.lastInsertRowid, name:item.name, price:num(item.price), gst_percent:0 };
-              menuCache.set(key, mi);
-            }
-            const qty = num(item.qty,1);
-            const price = item.price > 0 ? item.price : num(mi.price,0);
-            const itemTotal = item.total > 0 ? item.total : price * qty;
-            await db.prepare(`INSERT INTO order_items (order_id,menu_item_id,item_name,quantity,price,gst_percent,total) VALUES (?,?,?,?,?,?,?)`).bind(orderId,mi.id,item.name,qty,price,num(mi.gst_percent,0),itemTotal).run();
-            orderItemsImported++;
+        const existingOrders = new Map();
+        for (let offset = 0; offset < saleRows.length; offset += IMPORT_BATCH_SIZE) {
+          const chunk = saleRows.slice(offset, offset + IMPORT_BATCH_SIZE);
+          const qs = chunk.map(() => "?").join(",");
+          const stmt = db.prepare(`
+            SELECT o.id, o.order_number, COUNT(oi.rowid) AS item_count
+            FROM orders o
+            LEFT JOIN order_items oi ON oi.order_id=o.id
+            WHERE o.order_number IN (${qs})
+            GROUP BY o.id, o.order_number
+          `).bind(...chunk.map(x => x.orderNumber));
+          const result = await db.batch([stmt]);
+          for (const r of (result?.[0]?.results || [])) {
+            existingOrders.set(String(r.order_number), {
+              id: r.id,
+              itemCount: num(r.item_count, 0)
+            });
           }
         }
 
+        // Prepare missing menu items first. Existing menu cache is retained.
+        const missingMenu = new Map();
+        for (const entry of saleRows) {
+          const itemsValue = entry.row.items || entry.row.Items || entry.row.items_string || entry.row.itemsString || entry.row["Items"] || "";
+          for (const item of parseImportedItems(itemsValue)) {
+            const key = item.name.toLowerCase();
+            if (!menuCache.has(key) && !missingMenu.has(key)) missingMenu.set(key, item);
+          }
+        }
+        const missingMenuRows = [...missingMenu.values()];
+        for (let offset = 0; offset < missingMenuRows.length; offset += IMPORT_BATCH_SIZE) {
+          const chunk = missingMenuRows.slice(offset, offset + IMPORT_BATCH_SIZE);
+          const statements = chunk.map(item => db.prepare(
+            `INSERT INTO menu_items (name,category,price,gst_percent,is_available) VALUES (?, 'Imported', ?, 0, 1)`
+          ).bind(item.name, num(item.price)));
+          const results = await db.batch(statements);
+          for (let i = 0; i < chunk.length; i++) {
+            const item = chunk[i];
+            const r = results?.[i];
+            const id = r?.meta?.last_row_id ?? r?.lastInsertRowid;
+            if (!id) throw new Error(`Menu item ID was not created for ${item.name}`);
+            const mi = { id, name:item.name, price:num(item.price), gst_percent:0 };
+            menuCache.set(item.name.toLowerCase(), mi);
+          }
+        }
+
+        // Insert new orders in batches. Item rows are inserted after this step so
+        // every order has a stable D1 row id.
+        const newEntries = saleRows.filter(x => !existingOrders.has(x.orderNumber));
+        const insertedEntries = [];
+        for (let offset = 0; offset < newEntries.length; offset += IMPORT_BATCH_SIZE) {
+          const chunk = newEntries.slice(offset, offset + IMPORT_BATCH_SIZE);
+          const statements = chunk.map(({row, orderNumber}) => {
+            const total = num(row.grand_total ?? row.total ?? row.Total_Amount ?? row["Total Amount"] ?? row.amount, 0);
+            const discount = num(row.discount ?? row.Discount ?? row["Discount"], 0);
+            const payment = clean(row.payment_method || row.paymentMethod || row.Payment_Mode || row.Mode || row.mode).replace(/\[Mode:/gi, "").replace(/\]/g, "").trim() || "Cash";
+            const table = clean(row.table_number || row.tableNumber || row.Table_Number || row["Table Number"] || row.table) || "Takeaway";
+            const date = normalizeImportDate(row.date || row.Date || row.order_date || row["Date"]);
+            const time = clean(row.time || row.Time || row.order_time || row["Time"]);
+            const created = date ? `${date}${time ? ` ${time}` : ""}` : new Date().toISOString();
+            const type = table.toLowerCase() === "takeaway" ? "Takeaway" : "Dine-in";
+            return db.prepare(`INSERT INTO orders (order_number,order_type,customer_name,table_number,subtotal,discount,gst,total,payment_method,payment_status,order_status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+              .bind(orderNumber,type,null,table,Math.max(total + discount,0),discount,0,total,payment,"paid","completed",created,created);
+          });
+          const results = await db.batch(statements);
+          for (let i = 0; i < chunk.length; i++) {
+            const r = results?.[i];
+            const orderId = r?.meta?.last_row_id ?? r?.lastInsertRowid;
+            if (!orderId) throw new Error(`Order ID was not created for ${chunk[i].orderNumber}`);
+            insertedEntries.push({ ...chunk[i], orderId });
+            ordersImported++;
+          }
+        }
+
+        // Existing orders with zero items keep the previous behaviour: populate
+        // their missing order items instead of creating a duplicate order.
+        const itemEntries = [];
+        for (const entry of saleRows) {
+          const existing = existingOrders.get(entry.orderNumber);
+          const orderId = existing?.id ?? insertedEntries.find(x => x.orderNumber === entry.orderNumber)?.orderId;
+          if (!orderId) continue;
+          if (existing && existing.itemCount > 0) {
+            ordersSkipped++;
+            continue;
+          }
+          const itemsValue = entry.row.items || entry.row.Items || entry.row.items_string || entry.row.itemsString || entry.row["Items"] || "";
+          for (const item of parseImportedItems(itemsValue)) {
+            const mi = menuCache.get(item.name.toLowerCase());
+            if (!mi) continue;
+            const qty = num(item.qty,1);
+            const price = item.price > 0 ? item.price : num(mi.price,0);
+            const itemTotal = item.total > 0 ? item.total : price * qty;
+            itemEntries.push({orderId,item,qty,price,itemTotal,mi});
+          }
+        }
+        for (let offset = 0; offset < itemEntries.length; offset += IMPORT_BATCH_SIZE) {
+          const chunk = itemEntries.slice(offset, offset + IMPORT_BATCH_SIZE);
+          const statements = chunk.map(({orderId,item,qty,price,itemTotal,mi}) => db.prepare(
+            `INSERT INTO order_items (order_id,menu_item_id,item_name,quantity,price,gst_percent,total) VALUES (?,?,?,?,?,?,?)`
+          ).bind(orderId,mi.id,item.name,qty,price,num(mi.gst_percent,0),itemTotal));
+          await db.batch(statements);
+          orderItemsImported += chunk.length;
+        }
         await ensureSupportTables(db);
         let staffImported = 0;
         for (const row of staffRows) {
