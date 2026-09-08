@@ -3919,6 +3919,7 @@ Tables, billing and existing local UI remain visible.`);}
             if(num === 'Home Delivery') { document.getElementById('deliveryAddressBox').style.display = 'flex'; } else { document.getElementById('deliveryAddressBox').style.display = 'none'; }
             
             currentBill = (runningTables[activeTableNumber] && Array.isArray(runningTables[activeTableNumber])) ? JSON.parse(JSON.stringify(runningTables[activeTableNumber])) : [];
+            lastSyncedBag = cloneBag(currentBill); bagSyncPending=null;
             document.getElementById('discountValue').value = 0; document.getElementById('customerPhone').value = ""; document.getElementById('deliveryAddress').value = ""; document.getElementById('stockStatus').style.display = "none"; 
             
             updateBillTable();
@@ -3939,25 +3940,104 @@ Tables, billing and existing local UI remain visible.`);}
         function haptic(ms=12){try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}}
         document.addEventListener('click',e=>{const el=e.target.closest('button,[role="button"],.quick-card,.table-card,.premium-tab,.h-order-card,.stock-box'); if(el)haptic(10);},{passive:true});
 
+        // ------------------------------------------------------------
+        // BAG SYNC / TABLE OCCUPANCY / STOCK RESERVATION
+        // D1 remains the source of truth. Every bag mutation is synced so
+        // dining tables become OCCUPIED immediately and stock is reserved
+        // exactly once. The Worker endpoints are already deployed in v7.
+        // ------------------------------------------------------------
+        let bagSyncTimer=null;
+        let bagSyncRequest=0;
+        let bagSyncPromise=Promise.resolve();
+        let lastSyncedBag=[];
+
+        function cloneBag(items){
+            return Array.isArray(items) ? JSON.parse(JSON.stringify(items)) : [];
+        }
+        function bagQtyMap(items){
+            const map={};
+            cloneBag(items).forEach(it=>{
+                const name=String(it?.name||it?.item_name||'').trim();
+                const qty=Number(it?.qty??it?.quantity??0)||0;
+                if(name && qty>0){ const k=name.toLowerCase(); map[k]=(map[k]||0)+qty; }
+            });
+            return map;
+        }
+        function applyLocalStockDelta(previousItems,nextItems){
+            const before=bagQtyMap(previousItems), after=bagQtyMap(nextItems);
+            const keys=new Set([...Object.keys(before),...Object.keys(after)]);
+            keys.forEach(k=>{
+                const delta=(after[k]||0)-(before[k]||0);
+                if(!delta)return;
+                const key=Object.keys(stockData).find(n=>n.trim().toLowerCase()===k);
+                if(key!==undefined) stockData[key]=Math.max(0,Number(stockData[key]||0)-delta);
+            });
+            renderStockDashboard();
+            checkStockDisplay();
+        }
+        async function syncCurrentBagNow(){
+            const requestId=++bagSyncRequest;
+            const items=cloneBag(currentBill);
+            const tableNumber=String(activeTableNumber||'').replace(/^Table\s+/,'').trim();
+            try{
+                if(/^\d+$/.test(tableNumber)){
+                    await d1Post('/tables/sync-bag',{table_number:tableNumber,items});
+                }else{
+                    const key=activeTableNumber==='Home Delivery'?'Home Delivery':'Takeaway';
+                    await d1Post('/stock/sync-bag',{reservation_key:key,items});
+                }
+                if(requestId===bagSyncRequest){
+                    applyLocalStockDelta(lastSyncedBag,items);
+                    lastSyncedBag=cloneBag(items);
+                    bagSyncPending=null;
+                }
+            }catch(e){
+                if(requestId===bagSyncRequest){
+                    bagSyncPending=true;
+                    console.warn('Bag sync failed; checkout will retry.',e);
+                }
+            }
+        }
+        function queueBagSync(){
+            clearTimeout(bagSyncTimer);
+            bagSyncTimer=setTimeout(()=>{
+                bagSyncPromise=syncCurrentBagNow();
+            },120);
+        }
+        async function flushBagSyncBeforeCheckout(){
+            clearTimeout(bagSyncTimer);
+            bagSyncPromise=syncCurrentBagNow();
+            await bagSyncPromise;
+        }
+
         function addToBill() {
+            const before=cloneBag(currentBill);
             let itemName = document.getElementById('itemInput').value; let qty = parseInt(document.getElementById('itemQty').value) || 1;
             if (!itemName) { showCustomAlert("Please select an item!"); return; }
             let selectedItem = menuData.find(i => getVal(i, ['itemname', 'name']).trim().toLowerCase() === itemName.trim().toLowerCase());
             if (!selectedItem) { showCustomAlert("Item not in menu. Use Custom Item box."); return; }
             let itemPrice = parseInt(getVal(selectedItem, ['price'])); let existingItem = currentBill.find(i => i.name === getVal(selectedItem, ['itemname', 'name']));
             if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ id:Number(getVal(selectedItem,['id','menu_item_id']))||null, menu_item_id:Number(getVal(selectedItem,['id','menu_item_id']))||null, name: getVal(selectedItem, ['itemname', 'name']), price: itemPrice, qty: qty, total: itemPrice * qty }); }
-            updateBillTable();
+            runningTables[activeTableNumber]=cloneBag(currentBill);
+            updateBillTable(); renderTableGrid(); queueBagSync();
         }
 
         function addCustomItem() {
+            const before=cloneBag(currentBill);
             let name = document.getElementById('customName').value; let price = parseInt(document.getElementById('customPrice').value); let qty = parseInt(document.getElementById('customQty').value) || 1;
             if (!name || !price || price <= 0) { showCustomAlert("Enter valid custom item."); return; }
             let existingItem = currentBill.find(i => i.name === name + " (Custom)");
             if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ name: name + " (Custom)", price: price, qty: qty, total: price * qty }); }
-            updateBillTable(); document.getElementById('customName').value = ""; document.getElementById('customPrice').value = ""; document.getElementById('customQty').value = 1;
+            runningTables[activeTableNumber]=cloneBag(currentBill);
+            updateBillTable(); renderTableGrid(); queueBagSync(); document.getElementById('customName').value = ""; document.getElementById('customPrice').value = ""; document.getElementById('customQty').value = 1;
         }
 
-        function changeQty(index, amount) { currentBill[index].qty += amount; if(currentBill[index].qty <= 0) { currentBill.splice(index, 1); } else { currentBill[index].total = currentBill[index].price * currentBill[index].qty; } updateBillTable(); }
+        function changeQty(index, amount) {
+            const before=cloneBag(currentBill);
+            currentBill[index].qty += amount; if(currentBill[index].qty <= 0) { currentBill.splice(index, 1); } else { currentBill[index].total = currentBill[index].price * currentBill[index].qty; }
+            runningTables[activeTableNumber]=cloneBag(currentBill);
+            updateBillTable(); renderTableGrid(); queueBagSync();
+        }
 
         function updateBillTable() {
             let tbody = document.getElementById('billTableBody'); tbody.innerHTML = ""; let subTotal = 0;
@@ -3970,13 +4050,24 @@ Tables, billing and existing local UI remain visible.`);}
             document.getElementById('itemInput').value = ""; document.getElementById('itemQty').value = 1; document.getElementById('stockStatus').style.display = "none";
         }
 
-        function removeItem(index) { currentBill.splice(index, 1); updateBillTable(); }
+        function removeItem(index) {
+            const before=cloneBag(currentBill);
+            currentBill.splice(index, 1);
+            runningTables[activeTableNumber]=cloneBag(currentBill);
+            updateBillTable(); renderTableGrid(); queueBagSync();
+        }
 
         function clearTableWithoutCheckout() {
             showCustomConfirm(`Are you sure you want to clear ${activeTableNumber}?`, async()=>{
                 try{
+                    clearTimeout(bagSyncTimer);
+                    ++bagSyncRequest;
                     const tableNumber=activeTableNumber.replace(/^Table\s+/,'');
+                    const before=cloneBag(currentBill);
                     if(/^\d+$/.test(tableNumber)) await d1Post('/tables/clear',{table_number:tableNumber});
+                    else await d1Post('/stock/sync-bag',{reservation_key:activeTableNumber==='Home Delivery'?'Home Delivery':'Takeaway',items:[]});
+                    applyLocalStockDelta(before,[]);
+                    lastSyncedBag=[]; bagSyncPending=null; bagSyncPromise=Promise.resolve();
                     delete runningTables[activeTableNumber]; currentBill=[]; goBackToTables();
                 }catch(e){showCustomAlert('Could not clear table: '+e.message);}
             },null);
@@ -4049,10 +4140,13 @@ Tables, billing and existing local UI remain visible.`);}
                 const preparedItems=await prepareOrderItems();
                 const itemsString=preparedItems.map(i=>`${i.name} (x${i.qty}) ₹${i.total}`).join(', ');
                 const ctx=orderContext();
+                // Make the bag reservation authoritative before checkout. This prevents
+                // double stock deduction: stock is reserved on Add/Qty/Remove and
+                // the Worker checkout endpoint only reconciles any remaining delta.
+                await flushBagSyncBeforeCheckout();
                 const data=await d1Post('/orders/checkout',{order_number:orderId,...ctx,customer_phone:phone,items:preparedItems,items_string:itemsString,subtotal,discount,grand_total:grandTotal,total:grandTotal,payment_method:selectedPaymentMode,payment_status:'paid',order_status:'completed',delivery_address:address});
                 auditLog('Checkout', orderId);
                 delete runningTables[activeTableNumber];
-                currentBill.forEach(item=>{const key=Object.keys(stockData).find(k=>k.trim().toLowerCase()===item.name.trim().toLowerCase());if(key!==undefined)stockData[key]=Math.max(0,Number(stockData[key])-Number(item.qty||0));});
                 const now=new Date();
                 salesHistory.unshift({date:now.toISOString(),isodate:now.toISOString(),time:now.toISOString(),orderid:orderId,items:itemsString,total:grandTotal,table:activeTableNumber,tablenumber:activeTableNumber,phone:phone,payment_method:selectedPaymentMode,order_status:'completed'});
                 btn.innerText='Confirm Checkout';btn.disabled=false;document.getElementById('paymentModal').style.display='none';generateTrends();goBackToTables();
