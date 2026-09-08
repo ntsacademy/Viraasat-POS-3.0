@@ -40,7 +40,7 @@
             --border-radius: 14px;      
         }
 
-        html { font-size: 16px; touch-action: manipulation; background-color: #FFFFFF; overscroll-behavior-y: contain; } 
+        html { font-size: 16px; touch-action: manipulation; background-color: #FFFFFF; overscroll-behavior-y: auto; } 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
         input, textarea, select { user-select: auto; -webkit-user-select: auto; }
         ::-webkit-scrollbar { display: none; }
@@ -49,7 +49,7 @@
             font-family: 'Nunito', system-ui, -apple-system, sans-serif; 
             background-color: var(--bg-color); color: var(--text-dark); 
             display: flex; flex-direction: column; height: 100dvh; 
-            overflow: hidden; overscroll-behavior-y: contain; 
+            overflow: hidden; overscroll-behavior-y: auto; 
             padding-top: env(safe-area-inset-top); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right);
             max-width: 600px; margin: 0 auto; position: relative;
         } 
@@ -604,7 +604,7 @@
     box-sizing: border-box !important;
     scrollbar-width: thin !important;
     -webkit-overflow-scrolling: touch !important;
-    overscroll-behavior: contain !important;
+    overscroll-behavior: auto !important;
 }
 
 /* Sales Register: mobile cards scroll inside the Sales card. */
@@ -616,7 +616,7 @@
     box-sizing: border-box !important;
     scrollbar-width: thin !important;
     -webkit-overflow-scrolling: touch !important;
-    overscroll-behavior: contain !important;
+    overscroll-behavior: auto !important;
 }
 
 /* Desktop/table variants also remain contained. */
@@ -638,7 +638,7 @@
     box-sizing: border-box !important;
     scrollbar-width: thin !important;
     -webkit-overflow-scrolling: touch !important;
-    overscroll-behavior: contain !important;
+    overscroll-behavior: auto !important;
 }
 #premiumDashboard #pStockGrid .stock-box {
     min-width: 0 !important;
@@ -794,6 +794,54 @@
     white-space: nowrap !important;
 }
 
+/* Shared list scrolling: internal lists scroll, then the page continues naturally. */
+#premiumDashboard #expenseHistoryList,
+#premiumDashboard #adminStockMiniList,
+#premiumDashboard #inventoryInsightRows,
+#premiumDashboard #piRankList,
+#premiumDashboard .top-selling-list,
+#premiumDashboard #psMobileList {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+}
+#premiumDashboard .expense-click-card {
+    min-height: 82px !important;
+    height: auto !important;
+    overflow: visible !important;
+}
+#premiumDashboard .expense-click-card > div:first-child {
+    min-width: 0 !important;
+    align-items: flex-start !important;
+}
+#premiumDashboard .expense-click-card > div:first-child > div {
+    min-width: 0 !important;
+    overflow-wrap: anywhere !important;
+}
+#premiumDashboard .expense-click-card strong {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+    text-align: right !important;
+    max-width: 42% !important;
+}
+#premiumDashboard .expense-click-card [style*="font-size:.72rem"] {
+    overflow-wrap: anywhere !important;
+}
+
+
+/* Mobile filter pills stay on one line and scroll horizontally; text never gets clipped. */
+#premiumDashboard .sales-filter-chips .filter-btn,
+#premiumDashboard .filter-chip-row .filter-btn,
+#premiumDashboard .filter-btn {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+    overflow: visible !important;
+    min-width: max-content !important;
+}
+
 /* ------------------------------------------------------------
    MOBILE FINAL SIZING
    ------------------------------------------------------------ */
@@ -890,6 +938,21 @@
     #premiumDashboard .sales-filter-chips {
         flex-wrap: nowrap !important;
         max-width: 100% !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        overscroll-behavior-x: contain !important;
+        scrollbar-width: none !important;
+    }
+    #premiumDashboard .sales-filter-chips::-webkit-scrollbar { display:none !important; }
+    #premiumDashboard #expenseHistoryList {
+        max-height: 420px !important;
+        overflow-y: auto !important;
+        overscroll-behavior-y: auto !important;
+    }
+    #premiumDashboard #adminStockMiniList {
+        max-height: 330px !important;
+        overflow-y: auto !important;
+        overscroll-behavior-y: auto !important;
     }
 
     /* Dashboard tab labels never wrap or overflow. */
@@ -2825,6 +2888,7 @@ Tables, billing and existing local UI remain visible.`);}
         // D1 is the shared source when the Worker route is available.
         // localStorage remains only as a temporary offline fallback.
         let auditSyncInFlight = false;
+        let auditLiveTimer = null;
         let auditInitialSyncDone = false;
         function getLocalAuditLogs(){
             try{return JSON.parse(localStorage.getItem('viraasat_audit_logs')||'[]')}catch(e){return[]}
@@ -2853,10 +2917,11 @@ Tables, billing and existing local UI remain visible.`);}
                 const rows=Array.isArray(data?.logs)?data.logs:(Array.isArray(data?.data)?data.data:[]);
                 if(rows.length){
                     saveLocalAuditLogs(rows.map(x=>({
+                        id:x.id,
                         action:String(x.action||''),
                         details:String(x.details||''),
                         timestamp:x.timestamp||x.created_at||new Date().toISOString(),
-                        user:String(x.user||x.username||'Admin')
+                        user:String(x.user||x.username||x.created_by||'Admin')
                     })));
                 }else{
                     saveLocalAuditLogs([]);
@@ -2866,6 +2931,16 @@ Tables, billing and existing local UI remain visible.`);}
             }finally{
                 auditSyncInFlight=false;
             }
+        }
+        async function refreshAuditLogsUI(){
+            try{
+                const ok=await syncAuditLogsFromServer();
+                if(!ok)return;
+                const logBox=document.getElementById('auditLogsBox');
+                if(!logBox)return;
+                const logs=getLocalAuditLogs();
+                logBox.innerHTML=logs.length?logs.slice(0,40).map(l=>`<div class="audit-row"><b>${esc(l.action)}</b><span>${esc(l.details)} • ${esc(l.user)} • ${new Date(l.timestamp).toLocaleString('en-IN')}</span></div>`).join(''):'<div class="premium-empty">No activity logged yet.</div>';
+            }catch(e){ console.warn('Audit UI refresh failed:',e); }
         }
         async function clearAuditLogs(){
             if(!window.confirm('Are you sure you want to clear all Audit Logs? This action cannot be undone.'))return;
@@ -3015,6 +3090,11 @@ Tables, billing and existing local UI remain visible.`);}
             if(!auditInitialSyncDone){
                 auditInitialSyncDone=true;
                 syncAuditLogsFromServer().then(()=>{ if(document.getElementById('premiumPanel-settings')) renderPremiumAdmin(); });
+                if(!auditLiveTimer){
+                    auditLiveTimer=setInterval(()=>{
+                        if(document.getElementById('premiumPanel-settings')) refreshAuditLogsUI();
+                    },5000);
+                }
             }
             pendingPromise.then(result=>{
                 const box=document.getElementById('pendingApprovalsBox'); if(!box)return;
