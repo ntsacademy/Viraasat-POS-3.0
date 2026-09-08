@@ -471,7 +471,25 @@
             .pkpi .value { font-size:1rem; }
         }
 
-    </style>
+    
+        /* ===== LIVE POS / CARD CONTAINMENT FIX ===== */
+        .card,.premium-card,.sales-card,.admin-order-card,.quick-card,.table-card,.pkpi,.trend-kpi-card,.hkpi-card{min-width:0;max-width:100%;overflow:hidden}
+        .btn,.premium-btn,.filter-btn,.premium-tab,.nav-item{min-width:0;max-width:100%;white-space:normal;overflow:hidden;text-overflow:ellipsis;word-break:break-word}
+        .premium-toolbar{min-width:0;overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap;padding-bottom:3px}
+        .premium-toolbar>*{min-width:0;flex:0 1 auto}
+        .premium-toolbar input,.premium-toolbar select{min-width:120px}
+        .filter-btn{flex:0 0 auto;white-space:nowrap}
+        #salesGrid{max-height:58dvh;overflow-y:auto;overflow-x:hidden;padding-right:2px;align-content:start}
+        #salesGrid .admin-order-card{min-width:0;width:100%;overflow:hidden}
+        .admin-order-items{overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;word-break:break-word;overflow-wrap:anywhere}
+        .admin-order-bottom>*{min-width:0;max-width:48%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .stock-tag{max-width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .stock-tag span{flex-shrink:0}
+        .h-order-card .ho-info{min-width:0}
+        .ho-title,.ho-sub{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .premium-card-head>*{min-width:0;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+        @media(max-width:600px){#salesGrid{max-height:52dvh}.premium-toolbar{margin-right:-2px}.premium-toolbar>*{flex:0 0 auto}.premium-toolbar input,.premium-toolbar select{width:145px!important}.premium-toolbar .premium-btn{width:auto!important;min-width:110px}.admin-order-items{-webkit-line-clamp:4}}
+</style>
 </head>
 <body>
 
@@ -887,7 +905,7 @@
         const D1_API_BASE = '/api';
         const API_TIMEOUT_MS = 10000;
         
-const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6"; 
+const APP_VERSION = "D1-LIVE-BAG-STOCK-FIX-7.0"; 
         
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
@@ -1059,6 +1077,8 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
 
         if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', startApp, { once: true });
         else startApp();
+        // Shared D1 live view: refresh quietly so table/stock/dashboard changes from other users appear automatically.
+        setInterval(()=>{if(localStorage.getItem('viraasat_user'))fetchData(true);},4000);
         // Absolute safety net: never leave the splash screen covering the POS.
         setTimeout(() => { if (!appStarted) startApp(); hideSplashScreen(); }, 2500);
 
@@ -1199,12 +1219,12 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
             });
         }
 
-        function updateStockAdmin() {
+        async function updateStockAdmin() {
             let item = document.getElementById('adminStockItem').value.trim(); let qty = parseInt(document.getElementById('adminStockQty').value);
             if(!item || isNaN(qty)) { showCustomAlert("Please enter valid item and quantity."); return; }
             stockData[item] = qty; renderStockDashboard(); checkStockDisplay(); showCustomAlert("Stock updated to " + qty + " for " + item);
             document.getElementById('adminStockItem').value = ""; document.getElementById('adminStockQty').value = "";
-            d1Post('/stock', { name: item, quantity: qty, unit: 'pcs', low_stock_level: 5 }).catch(e => showCustomAlert('Stock saved locally but D1 sync failed: ' + e.message));
+            try{await d1Post('/stock', { name: item, quantity: qty, unit: 'pcs', low_stock_level: 5 }); await fetchData(true);}catch(e){showCustomAlert('Stock save failed: '+e.message);}
         }
 
         async function addMenuItemUI() {
@@ -1374,8 +1394,29 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
             };
         }
 
-        async function fetchData(){
-            const loader=document.getElementById('loader');const expDate=document.getElementById('expDate');if(expDate&&!expDate.value)expDate.value=localISODate(new Date());const ef=document.getElementById('expFilterFrom'),et=document.getElementById('expFilterTo');if(ef&&et){ef.value='';et.value='';}loader.style.display='flex';loader.innerHTML='<div class="spinner"></div> <span>Syncing Viraasat D1...</span>';
+        let d1RefreshInFlight=false;
+        let tableBagSyncTimer=null;
+        async function syncCurrentTableBag(){
+            const tableNumber=String(activeTableNumber||'').replace(/^Table\s+/,'').trim();
+            if(!/^\d+$/.test(tableNumber)) return;
+            const items=Array.isArray(currentBill)?JSON.parse(JSON.stringify(currentBill)):[];
+            runningTables[activeTableNumber]=items;
+            renderTableGrid();
+            try{
+                await d1Post('/tables/sync-bag',{table_number:tableNumber,items});
+            }catch(e){
+                console.warn('Live table bag sync failed',e);
+            }
+        }
+        function queueTableBagSync(){
+            clearTimeout(tableBagSyncTimer);
+            tableBagSyncTimer=setTimeout(()=>{syncCurrentTableBag();},120);
+        }
+
+        async function fetchData(silent=false){
+            if(d1RefreshInFlight)return;
+            d1RefreshInFlight=true;
+            const loader=document.getElementById('loader');const expDate=document.getElementById('expDate');if(expDate&&!expDate.value)expDate.value=localISODate(new Date());const ef=document.getElementById('expFilterFrom'),et=document.getElementById('expFilterTo');if(!silent&&ef&&et){ef.value='';et.value='';}if(!silent){loader.style.display='flex';loader.innerHTML='<div class="spinner"></div> <span>Syncing Viraasat D1...</span>';}
             const defs=[['/dashboard',d1Get('/dashboard')],['/menu',d1Get('/menu')],['/tables',d1Get('/tables')],['/orders',d1Get('/orders?limit=1000')],['/expenses',d1Get('/expenses?limit=2000')],['/stock',d1Get('/stock')],['/staff',d1Get('/staff')],['/stock/history',d1Get('/stock/history?limit=100')]];const results=await Promise.allSettled(defs.map(x=>x[1]));const failed=[];
             try{
                 if(results[0].status==='fulfilled'){const dash=results[0].value||{};const summary=dash.summary||{},ts=dash.tables||{};document.getElementById('homeTodaySale').innerText=`₹${Math.round(Number(summary.today_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeAvgOrder').innerText=`₹${Math.round(Number(summary.average_order)||0).toLocaleString('en-IN')}`;document.getElementById('homeOverallSale').innerText=`₹${Math.round(Number(summary.overall_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeActiveTables').innerText=`${Number(ts.occupied)||0} / ${Number(ts.total)||tableSections.reduce((a,x)=>a+x.tables.length,0)}`;}else failed.push(['/dashboard',results[0].reason]);
@@ -1389,7 +1430,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
                         seen.add(key); return true;
                     });
                 }else failed.push(['/menu',results[1].reason]);
-                if(results[2].status==='fulfilled'){const ts=normalizeArray(results[2].value,['tables','data','result']);tableSections=[{title:'Hut Seating',tables:[]},{title:'Ground Seating',tables:[]},{title:'Terrace Seating',tables:[]}];const amap={'Hut Seating':0,'Ground Seating':1,'Terrace Seating':2};runningTables={};ts.forEach(t=>{const n=String(t.table_number??t.tableNumber??'').trim();if(!n)return;const i=amap[String(t.seating_area||t.seatingArea||'').trim()]??1;if(!tableSections[i].tables.includes(n))tableSections[i].tables.push(n);runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied'?[{__d1Occupied:true,orderId:t.current_order_id||t.currentOrderId}]:[];});if(!ts.length)tableSections=[{title:'Hut Seating',tables:['1','2','3','4']},{title:'Ground Seating',tables:['5','6','7']},{title:'Terrace Seating',tables:['8','9','10']}];}else failed.push(['/tables',results[2].reason]);
+                if(results[2].status==='fulfilled'){const ts=normalizeArray(results[2].value,['tables','data','result']);tableSections=[{title:'Hut Seating',tables:[]},{title:'Ground Seating',tables:[]},{title:'Terrace Seating',tables:[]}];const amap={'Hut Seating':0,'Ground Seating':1,'Terrace Seating':2};runningTables={};ts.forEach(t=>{const n=String(t.table_number??t.tableNumber??'').trim();if(!n)return;const i=amap[String(t.seating_area||t.seatingArea||'').trim()]??1;if(!tableSections[i].tables.includes(n))tableSections[i].tables.push(n);const rawBag=t.current_items??t.currentItems??'';let bag=[];try{const parsed=typeof rawBag==='string'?JSON.parse(rawBag||'[]'):rawBag;if(Array.isArray(parsed))bag=parsed;}catch(e){bag=[];}runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied'?(bag.length?bag:[{__d1Occupied:true,orderId:t.current_order_id||t.currentOrderId}]):[];});if(!ts.length)tableSections=[{title:'Hut Seating',tables:['1','2','3','4']},{title:'Ground Seating',tables:['5','6','7']},{title:'Terrace Seating',tables:['8','9','10']}];}else failed.push(['/tables',results[2].reason]);
                 if(results[3].status==='fulfilled')salesHistory=normalizeArray(results[3].value,['orders','sales','data','result']).map(mapD1Order).filter(Boolean).filter(o=>!['kot','cancelled','deleted'].includes(String(o.order_status||'').toLowerCase())).sort((a,b)=>orderTimestamp(b)-orderTimestamp(a));else failed.push(['/orders',results[3].reason]);
                 Object.keys(runningTables).forEach(key=>{const arr=runningTables[key];if(Array.isArray(arr)&&arr[0]?.__d1Occupied){const oid=String(arr[0].orderId||'');const order=salesHistory.find(o=>String(o.id||'')===oid||String(o.orderid||'')===oid);runningTables[key]=order?parseSaleItems(order):[];}});
                 if(results[4].status==='fulfilled')expenseHistory=normalizeArray(results[4].value,['expenses','data','result']);else failed.push(['/expenses',results[4].reason]);
@@ -1405,12 +1446,8 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
                 ];
                 renderSteps.forEach(([name,fn])=>{try{if(typeof fn==='function')fn();}catch(err){console.error(`UI render failed: ${name}`,err);}});
                 hideSplashScreen();
-                if(failed.length){const messages=failed.map(([path,e])=>`${path}: ${e?.message||e}`).join(' | ');console.warn('Partial D1 sync',failed);try{await d1Get('/test-db',5000);}catch(he){console.error('D1 health',he);}showCustomAlert(`Some D1 endpoints failed.
-
-${messages}
-
-Tables, billing and existing local UI remain visible.`);}
-            }catch(error){console.error('D1 Sync Error',error);renderTableGrid();renderStockDashboard();renderLiveSales();renderPremiumDashboard();renderExpenseHistoryList();hideSplashScreen();showCustomAlert(`D1 sync failed: ${error.message||error}`);}finally{setTimeout(()=>{loader.style.display='none';},700);}
+                if(failed.length){const messages=failed.map(([path,e])=>`${path}: ${e?.message||e}`).join(' | ');console.warn('Partial D1 sync',failed);if(!silent){try{await d1Get('/test-db',5000);}catch(he){console.error('D1 health',he);}showCustomAlert(`Some D1 endpoints failed.\n\n${messages}\n\nTables, billing and existing local UI remain visible.`);}}
+            }catch(error){console.error('D1 Sync Error',error);renderTableGrid();renderStockDashboard();renderLiveSales();renderPremiumDashboard();renderExpenseHistoryList();hideSplashScreen();if(!silent)showCustomAlert(`D1 sync failed: ${error.message||error}`);}finally{d1RefreshInFlight=false;if(!silent)setTimeout(()=>{loader.style.display='none';},700);}
         }
 
         function normalizeSheetSale(row){
@@ -1864,6 +1901,7 @@ Tables, billing and existing local UI remain visible.`);}
                 stockHistory.unshift({item_name:name,old_quantity:old,new_quantity:qty,change_quantity:qty-old,action:'UPDATE',note,updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});
                 auditLog('Stock Updated',`${name}: ${old} → ${qty}`);
                 renderStockDashboard();renderPremiumInventory();
+                await fetchData(true);
                 showCustomAlert('Stock updated successfully.');
             }catch(e){showCustomAlert('Stock update failed: '+(e?.message||e));}
         }
@@ -1894,6 +1932,7 @@ Tables, billing and existing local UI remain visible.`);}
                 stockHistory.unshift({item_name:name,old_quantity:0,new_quantity:qty,change_quantity:qty,action:'ADD',note:'New stock item',updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});
                 auditLog('Stock Item Added',`${name}: ${qty} pcs`);
                 populateDropdown();renderStockDashboard();renderPremiumInventory();
+                await fetchData(true);
                 showCustomAlert('New stock item added. It is now available in Inventory and POS Menu.');
             }catch(e){showCustomAlert('New stock item failed: '+(e?.message||e));}
         }
@@ -2749,6 +2788,7 @@ Tables, billing and existing local UI remain visible.`);}
             let itemPrice = parseInt(getVal(selectedItem, ['price'])); let existingItem = currentBill.find(i => i.name === getVal(selectedItem, ['itemname', 'name']));
             if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ id:Number(getVal(selectedItem,['id','menu_item_id']))||null, menu_item_id:Number(getVal(selectedItem,['id','menu_item_id']))||null, name: getVal(selectedItem, ['itemname', 'name']), price: itemPrice, qty: qty, total: itemPrice * qty }); }
             updateBillTable();
+            queueTableBagSync();
         }
 
         function addCustomItem() {
@@ -2756,10 +2796,10 @@ Tables, billing and existing local UI remain visible.`);}
             if (!name || !price || price <= 0) { showCustomAlert("Enter valid custom item."); return; }
             let existingItem = currentBill.find(i => i.name === name + " (Custom)");
             if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ name: name + " (Custom)", price: price, qty: qty, total: price * qty }); }
-            updateBillTable(); document.getElementById('customName').value = ""; document.getElementById('customPrice').value = ""; document.getElementById('customQty').value = 1;
+            updateBillTable(); queueTableBagSync(); document.getElementById('customName').value = ""; document.getElementById('customPrice').value = ""; document.getElementById('customQty').value = 1;
         }
 
-        function changeQty(index, amount) { currentBill[index].qty += amount; if(currentBill[index].qty <= 0) { currentBill.splice(index, 1); } else { currentBill[index].total = currentBill[index].price * currentBill[index].qty; } updateBillTable(); }
+        function changeQty(index, amount) { currentBill[index].qty += amount; if(currentBill[index].qty <= 0) { currentBill.splice(index, 1); } else { currentBill[index].total = currentBill[index].price * currentBill[index].qty; } updateBillTable(); queueTableBagSync(); }
 
         function updateBillTable() {
             let tbody = document.getElementById('billTableBody'); tbody.innerHTML = ""; let subTotal = 0;
@@ -2772,14 +2812,14 @@ Tables, billing and existing local UI remain visible.`);}
             document.getElementById('itemInput').value = ""; document.getElementById('itemQty').value = 1; document.getElementById('stockStatus').style.display = "none";
         }
 
-        function removeItem(index) { currentBill.splice(index, 1); updateBillTable(); }
+        function removeItem(index) { currentBill.splice(index, 1); updateBillTable(); queueTableBagSync(); }
 
         function clearTableWithoutCheckout() {
             showCustomConfirm(`Are you sure you want to clear ${activeTableNumber}?`, async()=>{
                 try{
                     const tableNumber=activeTableNumber.replace(/^Table\s+/,'');
                     if(/^\d+$/.test(tableNumber)) await d1Post('/tables/clear',{table_number:tableNumber});
-                    delete runningTables[activeTableNumber]; currentBill=[]; goBackToTables();
+                    delete runningTables[activeTableNumber]; currentBill=[]; await fetchData(true); goBackToTables();
                 }catch(e){showCustomAlert('Could not clear table: '+e.message);}
             },null);
         }
@@ -2830,6 +2870,7 @@ Tables, billing and existing local UI remain visible.`);}
                 const preparedItems=await prepareOrderItems(); const data=await d1Post('/orders',{order_number:orderNumber,...ctx,items:preparedItems,items_string:preparedItems.map(i=>`${i.name} (x${i.qty}) ₹${i.total}`).join(', '),subtotal,discount:0,grand_total:subtotal,total:subtotal,payment_method:'Cash',payment_status:'unpaid',order_status:'cancelled'});
                 runningTables[activeTableNumber]=preparedItems;
                 auditLog('KOT Saved', orderNumber);
+                await fetchData(true);
                 btn.innerText='Save KOT'; btn.disabled=false; goBackToTables();
             }catch(e){
                 btn.innerText='Save KOT'; btn.disabled=false; showCustomAlert('KOT save failed: '+e.message);
@@ -2854,10 +2895,10 @@ Tables, billing and existing local UI remain visible.`);}
                 const data=await d1Post('/orders/checkout',{order_number:orderId,...ctx,customer_phone:phone,items:preparedItems,items_string:itemsString,subtotal,discount,grand_total:grandTotal,total:grandTotal,payment_method:selectedPaymentMode,payment_status:'paid',order_status:'completed',delivery_address:address});
                 auditLog('Checkout', orderId);
                 delete runningTables[activeTableNumber];
-                currentBill.forEach(item=>{const key=Object.keys(stockData).find(k=>k.trim().toLowerCase()===item.name.trim().toLowerCase());if(key!==undefined)stockData[key]=Math.max(0,Number(stockData[key])-Number(item.qty||0));});
+                currentBill.forEach(item=>{const key=Object.keys(stockData).find(k=>k.trim().toLowerCase()===item.name.trim().toLowerCase());if(key!==undefined)stockData[key]=Number(stockData[key])-Number(item.qty||0);});
                 const now=new Date();
                 salesHistory.unshift({date:now.toISOString(),isodate:now.toISOString(),time:now.toISOString(),orderid:orderId,items:itemsString,total:grandTotal,table:activeTableNumber,tablenumber:activeTableNumber,phone:phone,payment_method:selectedPaymentMode,order_status:'completed'});
-                btn.innerText='Confirm Checkout';btn.disabled=false;document.getElementById('paymentModal').style.display='none';generateTrends();goBackToTables();
+                btn.innerText='Confirm Checkout';btn.disabled=false;document.getElementById('paymentModal').style.display='none';await fetchData(true);generateTrends();goBackToTables();
                 showCustomAlert('Checkout completed successfully.');
             }catch(e){btn.innerText='Confirm Checkout';btn.disabled=false;showCustomAlert('Checkout failed: '+e.message);}
         }
