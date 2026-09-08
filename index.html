@@ -3661,15 +3661,16 @@ Tables, billing and existing local UI remain visible.`);}
                 document.getElementById('staffExpenseList').innerHTML = staffHtml || "<span style='color:var(--text-muted);'>No staff payments recorded.</span>";
                 const advanceEl=document.getElementById('staffAdvanceDetails'); if(advanceEl){ const staffRows=expenseHistory.filter(exp=>['Staff Salary','Payroll'].includes(String(getVal(exp,['category'])||''))).slice(0,30); advanceEl.innerHTML=staffRows.length?staffRows.map(exp=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:6px;gap:8px"><span>${esc(getVal(exp,['date','isodate'])||'')} • ${esc(getVal(exp,['description','note'])||'Staff')}</span><b>₹${parseAmount(getVal(exp,['amount','total'])).toLocaleString('en-IN')}</b></div>`).join(''):'<span style="color:var(--text-muted)">No staff advances or payroll entries.</span>'; }
 
-                let avgToday = ordersToday > 0 ? Math.floor(revenueToday / ordersToday) : 0;
-                // The D1 dashboard endpoint is the single source of truth for KPI totals.
-                // Local salesHistory remains the detailed register, but must not override D1 totals.
-                if(d1DashboardSummary){
-                    revenueToday=Number(d1DashboardSummary.today_sales)||0;
-                    ordersToday=Number(d1DashboardSummary.today_orders)||0;
-                    avgToday=Math.round(Number(d1DashboardSummary.average_order)||0);
-                    totalSalesAmount=Number(d1DashboardSummary.overall_sales)||0;
-                }
+                // KPI totals use the same canonical saleDateKey() as the Sales tab.
+                // This keeps Today's Sale, Today's Orders and the date-filtered Sales
+                // total on exactly the same calendar-day basis and avoids D1 summary
+                // timestamp/date mismatches for imported orders.
+                const canonicalToday = localISODate(new Date());
+                const canonicalTodaySales = salesHistory.filter(s => saleDateKey(s) === canonicalToday);
+                revenueToday = canonicalTodaySales.reduce((sum, s) => sum + parseAmount(getVal(s, ['grand_total','totalamount','total','amount'])), 0);
+                ordersToday = canonicalTodaySales.length;
+                avgToday = ordersToday ? Math.round(revenueToday / ordersToday) : 0;
+                totalSalesAmount = salesHistory.reduce((sum, s) => sum + parseAmount(getVal(s, ['grand_total','totalamount','total','amount'])), 0);
                 let hasSalesAccess = true; if (typeof window.isUserAdmin !== 'undefined') { hasSalesAccess = window.isUserAdmin || (window.userPerms && window.userPerms.orders); }
 
                 if (hasSalesAccess) {
