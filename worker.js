@@ -184,11 +184,10 @@ async function ensureSupportTables(db) {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `).run();
-
-  // IMPORTANT: upgrade older D1 schemas BEFORE any migration query references
-  // the newer columns. Older databases may have deletion_requests with only
-  // order_id/status, which previously made every endpoint using
-  // ensureSupportTables() fail with a D1/SQLite 503.
+  // Migration-safe: older Viraasat databases may already have deletion_requests
+  // without the newer review/request metadata columns. Upgrade the schema BEFORE
+  // creating indexes or copying legacy approval rows. This is important because
+  // ensureSupportTables() runs on dashboard, stock and staff endpoints.
   await ensureColumn(db, "deletion_requests", "requested_by", "TEXT");
   await ensureColumn(db, "deletion_requests", "reason", "TEXT");
   await ensureColumn(db, "deletion_requests", "status", "TEXT DEFAULT 'pending'");
@@ -198,7 +197,7 @@ async function ensureSupportTables(db) {
   await db.prepare(`CREATE INDEX IF NOT EXISTS idx_deletion_requests_pending ON deletion_requests(order_id,status)`).run();
 
   // Legacy compatibility: an earlier approval build used approval_requests.
-  // Keep it readable and migrate any unresolved requests into the canonical table.
+  // Upgrade the legacy table BEFORE reading its newer columns.
   await db.prepare(`
     CREATE TABLE IF NOT EXISTS approval_requests (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -211,6 +210,12 @@ async function ensureSupportTables(db) {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `).run();
+  await ensureColumn(db, "approval_requests", "reason", "TEXT");
+  await ensureColumn(db, "approval_requests", "requested_by", "TEXT");
+  await ensureColumn(db, "approval_requests", "status", "TEXT DEFAULT 'pending'");
+  await ensureColumn(db, "approval_requests", "reviewed_by", "TEXT");
+  await ensureColumn(db, "approval_requests", "reviewed_at", "TEXT");
+  await ensureColumn(db, "approval_requests", "created_at", "TEXT DEFAULT CURRENT_TIMESTAMP");
   await db.prepare(`CREATE INDEX IF NOT EXISTS idx_approval_requests_status ON approval_requests(status)`).run();
   await db.prepare(`
     INSERT INTO deletion_requests (order_id, requested_by, reason, status, reviewed_by, reviewed_at, created_at)
