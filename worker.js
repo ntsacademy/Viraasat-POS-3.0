@@ -101,6 +101,10 @@ async function ensureColumn(db, table, column, definition) {
 }
 __name(ensureColumn, "ensureColumn");
 async function ensureSupportTables(db) {
+  // Live POS table bag: keeps the current unsaved cart in D1 so every user sees it.
+  if (await tableExists(db, "restaurant_tables")) {
+    await ensureColumn(db, "restaurant_tables", "current_items", "TEXT");
+  }
   await db.prepare(`
     CREATE TABLE IF NOT EXISTS stock_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -253,13 +257,15 @@ async function getTables(db) {
   const seating = cols.includes("seating_area") ? "seating_area" : "'' AS seating_area";
   const status = cols.includes("status") ? "status" : "'available' AS status";
   const currentOrder = cols.includes("current_order_id") ? "current_order_id" : "NULL AS current_order_id";
+  const currentItems = cols.includes("current_items") ? "current_items" : "NULL AS current_items";
   const result = await db.prepare(`
     SELECT
       ${id},
       ${tableNumber},
       ${seating},
       ${status},
-      ${currentOrder}
+      ${currentOrder},
+      ${currentItems}
     FROM restaurant_tables
     ORDER BY CAST(table_number AS INTEGER)
   `).all();
@@ -268,47 +274,43 @@ async function getTables(db) {
 __name(getTables, "getTables");
 async function getOrderItemsMap(db, orderIds) {
   const map = {};
-  if (!orderIds.length || !await tableExists(db, "order_items")) {
-    return map;
-  }
-  const cols = await getColumns(
-    db,
-    "order_items"
-  );
-  const has = /* @__PURE__ */ __name((c) => cols.includes(c), "has");
+  if (!orderIds.length || !await tableExists(db, "order_items")) return map;
+  const cols = await getColumns(db, "order_items");
+  const has = (c) => cols.includes(c);
   const nameExpr = has("item_name") ? "item_name" : has("name") ? "name" : "''";
   const qtyExpr = has("quantity") ? "quantity" : has("qty") ? "qty" : "1";
   const priceExpr = has("price") ? "price" : has("unit_price") ? "unit_price" : "0";
   const totalExpr = has("total") ? "total" : `(${priceExpr})*(${qtyExpr})`;
   const menuIdExpr = has("menu_item_id") ? "menu_item_id" : "NULL";
   const oidExpr = has("order_id") ? "order_id" : "NULL";
-  const qs = orderIds.map(() => "?").join(",");
-  const rows = await db.prepare(`
-    SELECT
-      ${oidExpr} AS order_id,
-      ${menuIdExpr} AS menu_item_id,
-      ${nameExpr} AS item_name,
-      ${qtyExpr} AS quantity,
-      ${priceExpr} AS price,
-      ${totalExpr} AS total
-    FROM order_items
-    WHERE order_id IN (${qs})
-    ORDER BY order_id DESC, rowid ASC
-  `).bind(...orderIds).all();
-  for (const r of rows.results || []) {
-    const key = String(r.order_id);
-    if (!map[key]) {
-      map[key] = [];
+
+  // Cloudflare D1/SQLite has a bound-variable limit. Never bind thousands of
+  // order IDs in one IN (...) clause; dashboard can request up to 5,000 orders.
+  const CHUNK_SIZE = 80;
+  for (let offset = 0; offset < orderIds.length; offset += CHUNK_SIZE) {
+    const chunk = orderIds.slice(offset, offset + CHUNK_SIZE);
+    const qs = chunk.map(() => "?").join(",");
+    const rows = await db.prepare(`
+      SELECT ${oidExpr} AS order_id, ${menuIdExpr} AS menu_item_id,
+             ${nameExpr} AS item_name, ${qtyExpr} AS quantity,
+             ${priceExpr} AS price, ${totalExpr} AS total
+      FROM order_items
+      WHERE order_id IN (${qs})
+      ORDER BY order_id DESC, rowid ASC
+    `).bind(...chunk).all();
+    for (const r of rows.results || []) {
+      const key = String(r.order_id);
+      if (!map[key]) map[key] = [];
+      map[key].push({
+        id: r.menu_item_id || null,
+        name: r.item_name || "",
+        qty: num(r.quantity, 1),
+        quantity: num(r.quantity, 1),
+        price: num(r.price),
+        unit_price: num(r.price),
+        total: num(r.total)
+      });
     }
-    map[key].push({
-      id: r.menu_item_id || null,
-      name: r.item_name || "",
-      qty: num(r.quantity, 1),
-      quantity: num(r.quantity, 1),
-      price: num(r.price),
-      unit_price: num(r.price),
-      total: num(r.total)
-    });
   }
   return map;
 }
@@ -802,7 +804,7 @@ async function getDashboard(db) {
   };
 }
 __name(getDashboard, "getDashboard");
-async function updateTable(db, tableNumber, status, orderId = null) {
+async function updateTable(db, tableNumber, status, orderId = null, currentItems = void 0) {
   if (!tableNumber || !await tableExists(
     db,
     "restaurant_tables"
@@ -826,6 +828,10 @@ async function updateTable(db, tableNumber, status, orderId = null) {
       "current_order_id=?"
     );
     values.push(orderId);
+  }
+  if (cols.includes("current_items") && currentItems !== void 0) {
+    updates.push("current_items=?");
+    values.push(currentItems === null ? null : String(currentItems));
   }
   if (cols.includes("updated_at")) {
     updates.push(
@@ -972,6 +978,24 @@ async function resolveMenuItemId(db, item) {
   );
 }
 __name(resolveMenuItemId, "resolveMenuItemId");
+async function decrementStockForItems(db, items, orderNumber) {
+  await ensureSupportTables(db);
+  if (!Array.isArray(items) || !items.length) return;
+  for (const item of items) {
+    const name = clean(item?.name || item?.item_name);
+    const qty = num(item?.qty ?? item?.quantity, 0);
+    if (!name || qty <= 0) continue;
+    const row = await db.prepare(`SELECT id, name, quantity FROM stock_items WHERE lower(name)=lower(?) LIMIT 1`).bind(name).first();
+    if (!row) continue; // Custom/non-stock item: do not create phantom inventory.
+    const oldQty = num(row.quantity, 0);
+    const newQty = oldQty - qty; // Intentionally allow negative stock.
+    await db.prepare(`UPDATE stock_items SET quantity=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(newQty, row.id).run();
+    await db.prepare(`INSERT INTO stock_history (stock_item_id,item_name,old_quantity,new_quantity,change_quantity,action,note,updated_by) VALUES (?,?,?,?,?,?,?,?)`).bind(
+      row.id, row.name || name, oldQty, newQty, -qty, "SALE", `Checkout ${orderNumber}`, "POS"
+    ).run();
+  }
+}
+__name(decrementStockForItems, "decrementStockForItems");
 async function createOrder(db, body) {
   const cols = await getColumns(
     db,
@@ -1440,6 +1464,19 @@ var worker_default = {
           success: true
         });
       }
+      if (path === "/api/tables/sync-bag" && method === "POST") {
+        await ensureSupportTables(db);
+        const body = await request.json();
+        const tableNumber = clean(body.table_number || body.tableNumber);
+        const items = Array.isArray(body.items) ? body.items : [];
+        if (!tableNumber || !/^\d+$/.test(tableNumber)) {
+          return json({ success:false, error:"Valid dining table number is required" },400);
+        }
+        const existingTable = await db.prepare(`SELECT current_order_id FROM restaurant_tables WHERE CAST(table_number AS TEXT)=? LIMIT 1`).bind(tableNumber).first();
+        const preservedOrderId = existingTable?.current_order_id ?? null;
+        await updateTable(db, tableNumber, items.length ? "occupied" : "available", items.length ? preservedOrderId : null, JSON.stringify(items));
+        return json({ success:true, table_number:tableNumber, status:items.length ? "occupied" : "available", current_order_id:items.length ? preservedOrderId : null, items });
+      }
       if (path === "/api/orders" && method === "GET") {
         const limit = url.searchParams.get(
           "limit"
@@ -1466,7 +1503,8 @@ var worker_default = {
             db,
             tableNumber,
             "occupied",
-            result.orderId
+            result.orderId,
+            JSON.stringify(Array.isArray(body.items) ? body.items : [])
           );
         }
         return json({
@@ -1490,8 +1528,12 @@ var worker_default = {
             db,
             tableNumber,
             "available",
+            null,
             null
           );
+          if (!result.duplicate) {
+            await decrementStockForItems(db, body.items || [], body.order_number || result.orderNumber || "Checkout");
+          }
         }
         return json({
           success: true,
