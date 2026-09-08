@@ -106,6 +106,13 @@ async function ensureSupportTables(db) {
     await ensureColumn(db, "restaurant_tables", "current_items", "TEXT");
   }
   await db.prepare(`
+    CREATE TABLE IF NOT EXISTS active_bag_reservations (
+      reservation_key TEXT PRIMARY KEY,
+      items TEXT,
+      updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+  await db.prepare(`
     CREATE TABLE IF NOT EXISTS stock_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
@@ -978,24 +985,69 @@ async function resolveMenuItemId(db, item) {
   );
 }
 __name(resolveMenuItemId, "resolveMenuItemId");
-async function decrementStockForItems(db, items, orderNumber) {
-  await ensureSupportTables(db);
-  if (!Array.isArray(items) || !items.length) return;
+function normalizeBagItems(items) {
+  const map = new Map();
+  if (!Array.isArray(items)) return map;
   for (const item of items) {
     const name = clean(item?.name || item?.item_name);
     const qty = num(item?.qty ?? item?.quantity, 0);
     if (!name || qty <= 0) continue;
-    const row = await db.prepare(`SELECT id, name, quantity FROM stock_items WHERE lower(name)=lower(?) LIMIT 1`).bind(name).first();
-    if (!row) continue; // Custom/non-stock item: do not create phantom inventory.
-    const oldQty = num(row.quantity, 0);
-    const newQty = oldQty - qty; // Intentionally allow negative stock.
-    await db.prepare(`UPDATE stock_items SET quantity=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(newQty, row.id).run();
-    await db.prepare(`INSERT INTO stock_history (stock_item_id,item_name,old_quantity,new_quantity,change_quantity,action,note,updated_by) VALUES (?,?,?,?,?,?,?,?)`).bind(
-      row.id, row.name || name, oldQty, newQty, -qty, "SALE", `Checkout ${orderNumber}`, "POS"
-    ).run();
+    const key = name.toLowerCase();
+    const prev = map.get(key);
+    if (prev) {
+      prev.qty += qty;
+      prev.total = num(prev.price) * prev.qty;
+    } else {
+      map.set(key, {
+        name,
+        qty,
+        price: num(item?.price ?? item?.unit_price, 0),
+        id: item?.id ?? item?.menu_item_id ?? null,
+        menu_item_id: item?.menu_item_id ?? item?.id ?? null
+      });
+    }
+  }
+  return map;
+}
+__name(normalizeBagItems, "normalizeBagItems");
+
+async function applyStockDelta(db, itemName, delta, note, action) {
+  const name = clean(itemName);
+  const amount = num(delta, 0);
+  if (!name || !amount) return;
+  const row = await db.prepare(`SELECT id, name, quantity FROM stock_items WHERE lower(name)=lower(?) LIMIT 1`).bind(name).first();
+  if (!row) return; // Custom/non-stock item: no phantom inventory.
+  const oldQty = num(row.quantity, 0);
+  const newQty = oldQty - amount; // positive delta = consume; negative delta = release.
+  await db.prepare(`UPDATE stock_items SET quantity=?, updated_at=CURRENT_TIMESTAMP WHERE id=?`).bind(newQty, row.id).run();
+  await db.prepare(`INSERT INTO stock_history (stock_item_id,item_name,old_quantity,new_quantity,change_quantity,action,note,updated_by) VALUES (?,?,?,?,?,?,?,?)`).bind(
+    row.id, row.name || name, oldQty, newQty, -amount, action || (amount > 0 ? "RESERVE" : "RELEASE"), note || "POS stock reservation", "POS"
+  ).run();
+}
+__name(applyStockDelta, "applyStockDelta");
+
+async function syncStockReservation(db, previousItems, nextItems, note) {
+  const before = normalizeBagItems(previousItems);
+  const after = normalizeBagItems(nextItems);
+  const keys = new Set([...before.keys(), ...after.keys()]);
+  for (const key of keys) {
+    const oldQty = num(before.get(key)?.qty, 0);
+    const newQty = num(after.get(key)?.qty, 0);
+    const delta = newQty - oldQty;
+    if (!delta) continue;
+    const item = after.get(key) || before.get(key);
+    await applyStockDelta(db, item.name, delta, note, delta > 0 ? "RESERVE" : "RELEASE");
   }
 }
-__name(decrementStockForItems, "decrementStockForItems");
+__name(syncStockReservation, "syncStockReservation");
+
+async function releaseStockForItems(db, items, note) {
+  const bag = normalizeBagItems(items);
+  for (const item of bag.values()) {
+    await applyStockDelta(db, item.name, -num(item.qty, 0), note || "Stock released", "RELEASE");
+  }
+}
+__name(releaseStockForItems, "releaseStockForItems");
 async function createOrder(db, body) {
   const cols = await getColumns(
     db,
@@ -1451,18 +1503,15 @@ var worker_default = {
         });
       }
       if (path === "/api/tables/clear" && method === "POST") {
+        await ensureSupportTables(db);
         const body = await request.json();
-        await updateTable(
-          db,
-          clean(
-            body.table_number || body.tableNumber
-          ),
-          "available",
-          null
-        );
-        return json({
-          success: true
-        });
+        const tableNumber = clean(body.table_number || body.tableNumber);
+        const existing = await db.prepare(`SELECT current_items FROM restaurant_tables WHERE CAST(table_number AS TEXT)=? LIMIT 1`).bind(tableNumber).first();
+        let previousItems=[];
+        try { const parsed=JSON.parse(existing?.current_items||'[]'); if(Array.isArray(parsed)) previousItems=parsed; } catch {}
+        await releaseStockForItems(db, previousItems, `Table ${tableNumber} cleared`);
+        await updateTable(db, tableNumber, "available", null, null);
+        return json({success:true});
       }
       if (path === "/api/tables/sync-bag" && method === "POST") {
         await ensureSupportTables(db);
@@ -1470,12 +1519,32 @@ var worker_default = {
         const tableNumber = clean(body.table_number || body.tableNumber);
         const items = Array.isArray(body.items) ? body.items : [];
         if (!tableNumber || !/^\d+$/.test(tableNumber)) {
-          return json({ success:false, error:"Valid dining table number is required" },400);
+          return json({success:false,error:"Valid dining table number is required"},400);
         }
-        const existingTable = await db.prepare(`SELECT current_order_id FROM restaurant_tables WHERE CAST(table_number AS TEXT)=? LIMIT 1`).bind(tableNumber).first();
+        const existingTable = await db.prepare(`SELECT current_order_id, current_items FROM restaurant_tables WHERE CAST(table_number AS TEXT)=? LIMIT 1`).bind(tableNumber).first();
         const preservedOrderId = existingTable?.current_order_id ?? null;
+        let previousItems = [];
+        try { const parsed = JSON.parse(existingTable?.current_items || '[]'); if (Array.isArray(parsed)) previousItems = parsed; } catch {}
+        await syncStockReservation(db, previousItems, items, `Table ${tableNumber} bag changed`);
         await updateTable(db, tableNumber, items.length ? "occupied" : "available", items.length ? preservedOrderId : null, JSON.stringify(items));
-        return json({ success:true, table_number:tableNumber, status:items.length ? "occupied" : "available", current_order_id:items.length ? preservedOrderId : null, items });
+        return json({success:true,table_number:tableNumber,status:items.length?"occupied":"available",current_order_id:items.length?preservedOrderId:null,items});
+      }
+      if (path === "/api/stock/sync-bag" && method === "POST") {
+        await ensureSupportTables(db);
+        const body = await request.json();
+        const key = clean(body.reservation_key || body.reservationKey);
+        const items = Array.isArray(body.items) ? body.items : [];
+        if (!key) return json({success:false,error:"Reservation key is required"},400);
+        const existing = await db.prepare(`SELECT items FROM active_bag_reservations WHERE reservation_key=? LIMIT 1`).bind(key).first();
+        let previousItems=[];
+        try { const parsed=JSON.parse(existing?.items||'[]'); if(Array.isArray(parsed)) previousItems=parsed; } catch {}
+        await syncStockReservation(db, previousItems, items, `${key} bag changed`);
+        if (items.length) {
+          await db.prepare(`INSERT INTO active_bag_reservations (reservation_key,items,updated_at) VALUES (?,?,CURRENT_TIMESTAMP) ON CONFLICT(reservation_key) DO UPDATE SET items=excluded.items,updated_at=CURRENT_TIMESTAMP`).bind(key,JSON.stringify(items)).run();
+        } else {
+          await db.prepare(`DELETE FROM active_bag_reservations WHERE reservation_key=?`).bind(key).run();
+        }
+        return json({success:true,reservation_key:key,items});
       }
       if (path === "/api/orders" && method === "GET") {
         const limit = url.searchParams.get(
@@ -1513,32 +1582,33 @@ var worker_default = {
         });
       }
       if (path === "/api/orders/checkout" && method === "POST") {
+        await ensureSupportTables(db);
         const body = await request.json();
         body.payment_status = "paid";
         body.order_status = "completed";
-        const result = await createOrder(
-          db,
-          body
-        );
-        const tableNumber = clean(
-          body.table_number || body.tableNumber
-        );
-        if (tableNumber && !result.duplicate) {
-          await updateTable(
-            db,
-            tableNumber,
-            "available",
-            null,
-            null
-          );
-          if (!result.duplicate) {
-            await decrementStockForItems(db, body.items || [], body.order_number || result.orderNumber || "Checkout");
-          }
+        const tableNumber = clean(body.table_number || body.tableNumber);
+        const preparedItems = Array.isArray(body.items) ? body.items : [];
+        if (tableNumber && /^\d+$/.test(tableNumber)) {
+          const existing = await db.prepare(`SELECT current_items FROM restaurant_tables WHERE CAST(table_number AS TEXT)=? LIMIT 1`).bind(tableNumber).first();
+          let reserved=[];
+          try { const parsed=JSON.parse(existing?.current_items||'[]'); if(Array.isArray(parsed)) reserved=parsed; } catch {}
+          // If the last Add-to-Bag sync has not completed yet, reconcile here. If it has, delta is zero.
+          await syncStockReservation(db, reserved, preparedItems, `Table ${tableNumber} checkout reconciliation`);
+        } else {
+          const key = tableNumber ? String(tableNumber) : (clean(body.order_type || body.orderType) === 'Delivery' ? 'Home Delivery' : 'Takeaway');
+          const existing = await db.prepare(`SELECT items FROM active_bag_reservations WHERE reservation_key=? LIMIT 1`).bind(key).first();
+          let reserved=[];
+          try { const parsed=JSON.parse(existing?.items||'[]'); if(Array.isArray(parsed)) reserved=parsed; } catch {}
+          await syncStockReservation(db, reserved, preparedItems, `${key} checkout reconciliation`);
         }
-        return json({
-          success: true,
-          ...result
-        });
+        const result = await createOrder(db, body);
+        if (tableNumber && /^\d+$/.test(tableNumber) && !result.duplicate) {
+          await updateTable(db, tableNumber, "available", null, null);
+        } else if (!tableNumber && !result.duplicate) {
+          const key = clean(body.order_type || body.orderType) === 'Delivery' ? 'Home Delivery' : 'Takeaway';
+          await db.prepare(`DELETE FROM active_bag_reservations WHERE reservation_key=?`).bind(key).run();
+        }
+        return json({success:true,...result});
       }
       if (path === "/api/orders/request-delete" && method === "POST") {
         await ensureSupportTables(db);
@@ -1682,6 +1752,38 @@ var worker_default = {
             UPDATE orders SET order_status=?
             WHERE order_number=? OR CAST(id AS TEXT)=?
           `).bind(nextStatus, targetOrder, targetOrder).run();
+        }
+        if (status === "approved") {
+          const o = await db.prepare(`SELECT id, table_number, items FROM orders WHERE order_number=? OR CAST(id AS TEXT)=? ORDER BY id DESC LIMIT 1`).bind(targetOrder,targetOrder).first();
+          let orderItems=[];
+          try { const parsed=JSON.parse(o?.items||'[]'); if(Array.isArray(parsed)) orderItems=parsed; } catch {}
+          if (!orderItems.length && o?.id && await tableExists(db,"order_items")) {
+            const itemCols=await getColumns(db,"order_items");
+            const n=itemCols.includes('item_name')?'item_name':itemCols.includes('name')?'name':"''";
+            const q=itemCols.includes('quantity')?'quantity':itemCols.includes('qty')?'qty':'1';
+            const p=itemCols.includes('price')?'price':itemCols.includes('unit_price')?'unit_price':'0';
+            const rs=await db.prepare(`SELECT ${n} AS item_name, ${q} AS quantity, ${p} AS price FROM order_items WHERE order_id=?`).bind(o.id).all();
+            orderItems=(rs.results||[]).map(r=>({name:r.item_name,qty:num(r.quantity,1),price:num(r.price)}));
+          }
+          let releasedFromActiveReservation=false;
+          if (o?.table_number && /^\d+$/.test(String(o.table_number))) {
+            const t=await db.prepare(`SELECT current_order_id,current_items FROM restaurant_tables WHERE CAST(table_number AS TEXT)=? LIMIT 1`).bind(String(o.table_number)).first();
+            const ownsActiveBag=String(t?.current_order_id??'')===String(o.id??'') && !!t?.current_items;
+            if (ownsActiveBag) {
+              let activeItems=[];
+              try { const parsed=JSON.parse(t.current_items||'[]'); if(Array.isArray(parsed)) activeItems=parsed; } catch {}
+              await releaseStockForItems(db, activeItems, `Order ${targetOrder} deleted`);
+              await updateTable(db,String(o.table_number),"available",null,null);
+              releasedFromActiveReservation=true;
+            }
+          }
+          if (!releasedFromActiveReservation) {
+            await releaseStockForItems(db, orderItems, `Order ${targetOrder} deleted`);
+            if (!o?.table_number && clean(o?.order_type || '') ) {
+              const key=clean(o.order_type)==='Delivery'?'Home Delivery':'Takeaway';
+              await db.prepare(`DELETE FROM active_bag_reservations WHERE reservation_key=?`).bind(key).run();
+            }
+          }
         }
 
         return json({ success:true, message:`Request ${status}`, order_id:targetOrder, status });
