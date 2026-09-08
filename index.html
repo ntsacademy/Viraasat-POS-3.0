@@ -952,7 +952,272 @@
     }
 }
 
-    </style>
+    
+/* ============================================================
+   VIRAASAT POS — MOBILE VISIBILITY + SCROLL CHAIN V2
+   UI-only. Existing business/D1/stock/order logic untouched.
+   ============================================================ */
+
+/* ---- IMPORTANT: nested lists must hand scrolling back to page ---- */
+#premiumDashboard #expenseHistoryList,
+#premiumDashboard #piRankList,
+#premiumDashboard #inventoryInsightRows,
+#premiumDashboard #adminStockMiniList,
+#premiumDashboard #adminStaffRows,
+#premiumDashboard #adminUsersRows,
+#premiumDashboard #approvalList,
+#premiumDashboard #stockHistoryList,
+#premiumDashboard #orderList,
+#premiumDashboard .top-selling-list,
+#premiumDashboard .admin-staff-list,
+#premiumDashboard .admin-user-list,
+#premiumDashboard #psMobileList,
+#premiumDashboard #pStockGrid {
+    overscroll-behavior-y: auto !important;
+    overscroll-behavior-x: none !important;
+    touch-action: pan-y !important;
+    -webkit-overflow-scrolling: touch !important;
+}
+
+/* Never let a nested card permanently capture the page at its scroll end. */
+#premiumDashboard .premium-card,
+#premiumDashboard .card,
+#premiumDashboard .admin-card {
+    overscroll-behavior: auto !important;
+}
+
+/* ---- Stock / expense rows: enough vertical room for BOTH lines ---- */
+#premiumDashboard #adminStockMiniList .admin-mini-row,
+#premiumDashboard #inventoryInsightRows .admin-mini-row,
+#premiumDashboard .admin-mini-list .admin-mini-row {
+    min-height: 48px !important;
+    height: auto !important;
+    flex: 0 0 auto !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+    align-items: center !important;
+}
+
+#premiumDashboard #adminStockMiniList .admin-mini-row > div,
+#premiumDashboard #inventoryInsightRows .admin-mini-row > div,
+#premiumDashboard .admin-mini-list .admin-mini-row > div {
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+}
+
+#premiumDashboard #adminStockMiniList .admin-mini-row b,
+#premiumDashboard #inventoryInsightRows .admin-mini-row b,
+#premiumDashboard .admin-mini-list .admin-mini-row b {
+    line-height: 1.2 !important;
+}
+
+#premiumDashboard #adminStockMiniList .admin-mini-row small,
+#premiumDashboard #inventoryInsightRows .admin-mini-row small,
+#premiumDashboard .admin-mini-list .admin-mini-row small {
+    line-height: 1.35 !important;
+    white-space: normal !important;
+    overflow: visible !important;
+}
+
+#premiumDashboard #adminStockMiniList .admin-mini-row > strong,
+#premiumDashboard .admin-mini-list .admin-mini-row > strong {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+    margin-left: 6px !important;
+}
+
+/* ---- Expense cards: title/date and amount must never overlap ---- */
+#premiumDashboard #expenseHistoryList .card {
+    min-height: 56px !important;
+    height: auto !important;
+    overflow: visible !important;
+}
+
+#premiumDashboard #expenseHistoryList .card > div:first-child {
+    display: grid !important;
+    grid-template-columns: minmax(0,1fr) auto !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+#premiumDashboard #expenseHistoryList .card > div:first-child > div:first-child {
+    min-width: 0 !important;
+}
+
+#premiumDashboard #expenseHistoryList .card strong {
+    min-width: 0 !important;
+    max-width: 42% !important;
+    white-space: nowrap !important;
+    text-align: right !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* ---- Sales / order cards: amount stays inside card ---- */
+#premiumDashboard .mobile-sale-card,
+#premiumDashboard .admin-order-card {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+@media (max-width:600px) {
+    /* Home Recent Orders: icon | order info | badge+amount */
+    .h-order-card {
+        display: grid !important;
+        grid-template-columns: 42px minmax(0,1fr) minmax(70px,auto) !important;
+        grid-template-rows: auto auto !important;
+        align-items: center !important;
+        column-gap: 10px !important;
+        row-gap: 4px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 12px !important;
+        overflow: hidden !important;
+    }
+
+    .h-order-card .ho-icon {
+        grid-column: 1 !important;
+        grid-row: 1 / span 2 !important;
+    }
+
+    .h-order-card .ho-info {
+        grid-column: 2 !important;
+        grid-row: 1 / span 2 !important;
+        min-width: 0 !important;
+    }
+
+    .h-order-card .ho-title,
+    .h-order-card .ho-sub {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .h-order-card .ho-title {
+        white-space: nowrap !important;
+    }
+
+    .h-order-card .ho-sub {
+        white-space: normal !important;
+        line-height: 1.25 !important;
+    }
+
+    .h-order-card .ho-badge {
+        grid-column: 3 !important;
+        grid-row: 1 !important;
+        justify-self: end !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+        padding: 4px 7px !important;
+        font-size: .58rem !important;
+    }
+
+    .h-order-card > div[style*="font-weight:800"] {
+        grid-column: 3 !important;
+        grid-row: 2 !important;
+        justify-self: end !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        font-size: .88rem !important;
+    }
+
+    .h-order-card > div:last-child {
+        display: none !important;
+    }
+
+    /* Compact filters remain visible; only their own row can scroll. */
+    #premiumDashboard .sales-filter-chips {
+        touch-action: pan-x !important;
+        overscroll-behavior-x: contain !important;
+        overscroll-behavior-y: auto !important;
+    }
+
+    /* Stock rows: two lines, never squeezed into a 30px strip. */
+    #premiumDashboard #adminStockMiniList .admin-mini-row {
+        min-height: 52px !important;
+        padding: 9px 8px !important;
+    }
+
+    /* Expense history: five-ish rows visible, then internal scroll. */
+    #premiumDashboard #expenseHistoryList,
+    #premiumDashboard .admin-mini-list {
+        scrollbar-width: thin !important;
+    }
+
+    #premiumDashboard #expenseHistoryList .card {
+        min-height: 56px !important;
+        margin-bottom: 7px !important;
+        padding: 11px !important;
+    }
+
+    /* Sales cards: metadata can wrap instead of pushing total outside. */
+    #premiumDashboard .mobile-sale-card {
+        padding: 11px !important;
+    }
+
+    #premiumDashboard .mobile-sale-top {
+        display: grid !important;
+        grid-template-columns: minmax(0,1fr) auto !important;
+        gap: 6px !important;
+        align-items: center !important;
+    }
+
+    #premiumDashboard .mobile-sale-total {
+        max-width: 100% !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    /* All dashboard lists: when this reaches the end, the document can continue. */
+    #premiumDashboard #expenseHistoryList,
+    #premiumDashboard #adminStockMiniList,
+    #premiumDashboard #inventoryInsightRows,
+    #premiumDashboard #piRankList,
+    #premiumDashboard .top-selling-list,
+    #premiumDashboard #psMobileList,
+    #premiumDashboard #pStockGrid {
+        overscroll-behavior-y: auto !important;
+        touch-action: pan-y !important;
+    }
+
+    /* Do not clip card content merely because a long label exists. */
+    #premiumDashboard .premium-card-head h3,
+    #premiumDashboard .premium-card-head span {
+        line-height: 1.25 !important;
+    }
+
+    /* Narrow screens: preserve readable amounts. */
+    @media (max-width:380px) {
+        .h-order-card {
+            grid-template-columns: 38px minmax(0,1fr) minmax(62px,auto) !important;
+            column-gap: 7px !important;
+            padding: 10px !important;
+        }
+
+        .h-order-card .ho-badge {
+            font-size: .52rem !important;
+            padding: 3px 5px !important;
+        }
+
+        .h-order-card > div[style*="font-weight:800"] {
+            font-size: .82rem !important;
+        }
+
+        #premiumDashboard #adminStockMiniList .admin-mini-row {
+            min-height: 50px !important;
+            padding: 8px 7px !important;
+        }
+    }
+}
+
+</style>
 </head>
 <body>
 
