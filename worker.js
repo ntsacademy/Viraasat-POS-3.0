@@ -184,6 +184,17 @@ async function ensureSupportTables(db) {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `).run();
+
+  // IMPORTANT: upgrade older D1 schemas BEFORE any migration query references
+  // the newer columns. Older databases may have deletion_requests with only
+  // order_id/status, which previously made every endpoint using
+  // ensureSupportTables() fail with a D1/SQLite 503.
+  await ensureColumn(db, "deletion_requests", "requested_by", "TEXT");
+  await ensureColumn(db, "deletion_requests", "reason", "TEXT");
+  await ensureColumn(db, "deletion_requests", "status", "TEXT DEFAULT 'pending'");
+  await ensureColumn(db, "deletion_requests", "reviewed_by", "TEXT");
+  await ensureColumn(db, "deletion_requests", "reviewed_at", "TEXT");
+  await ensureColumn(db, "deletion_requests", "created_at", "TEXT DEFAULT CURRENT_TIMESTAMP");
   await db.prepare(`CREATE INDEX IF NOT EXISTS idx_deletion_requests_pending ON deletion_requests(order_id,status)`).run();
 
   // Legacy compatibility: an earlier approval build used approval_requests.
@@ -215,15 +226,6 @@ async function ensureSupportTables(db) {
   // Mark legacy pending rows as migrated so the approval API never returns duplicate
   // request IDs from two tables (which previously caused Approve/Reject to target the wrong row).
   await db.prepare(`UPDATE approval_requests SET status='migrated' WHERE LOWER(COALESCE(status,'pending'))='pending'`).run();
-
-  // Migration-safe: older Viraasat databases may already have deletion_requests
-  // without the newer review/request metadata columns.
-  await ensureColumn(db, "deletion_requests", "requested_by", "TEXT");
-  await ensureColumn(db, "deletion_requests", "reason", "TEXT");
-  await ensureColumn(db, "deletion_requests", "status", "TEXT DEFAULT 'pending'");
-  await ensureColumn(db, "deletion_requests", "reviewed_by", "TEXT");
-  await ensureColumn(db, "deletion_requests", "reviewed_at", "TEXT");
-  await ensureColumn(db, "deletion_requests", "created_at", "TEXT DEFAULT CURRENT_TIMESTAMP");
 
   // Shared audit trail: D1 is authoritative so every logged-in user sees the
   // same action history. Older schemas are upgraded safely.
