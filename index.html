@@ -1385,6 +1385,55 @@
 #premiumDashboard #expenseHistoryList { max-height:420px !important; }
 #premiumDashboard .premium-table-wrap { overflow:auto !important; max-width:100% !important; }
 
+/* ============================================================
+   VIRAASAT FINAL V9 - EXPENSE + ITEM SALES SCROLL SAFETY
+   Long lists scroll inside their own card; reaching the end never
+   locks the surrounding page. Text/amount columns cannot overflow.
+   ============================================================ */
+#expenseHistoryList,
+#piRankList,
+#psMobileList,
+#premiumPanel-expenses .admin-mini-list{
+    max-height:360px !important;
+    overflow-y:auto !important;
+    overflow-x:hidden !important;
+    -webkit-overflow-scrolling:touch !important;
+    overscroll-behavior-y:contain !important;
+    touch-action:pan-y !important;
+    scrollbar-width:thin !important;
+    box-sizing:border-box !important;
+}
+#expenseHistoryList .expense-click-card,
+#premiumPanel-expenses .admin-mini-row,
+#piRankList .item-rank,
+#psMobileList .mobile-sale-card{
+    min-width:0 !important;
+    max-width:100% !important;
+    box-sizing:border-box !important;
+}
+#expenseHistoryList .expense-click-card strong,
+#premiumPanel-expenses .admin-mini-row > strong,
+#piRankList .item-rank-val,
+#psMobileList .mobile-sale-total{
+    flex-shrink:0 !important;
+    white-space:nowrap !important;
+    max-width:42% !important;
+}
+#expenseHistoryList .expense-click-card > div:first-child,
+#premiumPanel-expenses .admin-mini-row > div,
+#piRankList .item-rank-info,
+#psMobileList .mobile-sale-items{
+    min-width:0 !important;
+    overflow-wrap:anywhere !important;
+    word-break:break-word !important;
+}
+@media(max-width:600px){
+    #expenseHistoryList{max-height:320px !important;}
+    #piRankList{max-height:320px !important;}
+    #psMobileList{max-height:420px !important;}
+    #premiumPanel-expenses .admin-mini-list{max-height:320px !important;}
+}
+
 /* Import cards */
 .import-check-box { border:1px solid var(--border); border-radius:12px; padding:10px; background:#FFFCFA; margin-top:8px; }
 .import-check-status { font-size:.66rem; line-height:1.45; color:var(--text-muted); overflow-wrap:anywhere; }
@@ -2278,10 +2327,19 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
             return out;
         }
         function localISODate(value) {
-            const s=String(value||'').trim();
+            const s=String(value??'').trim();
             if(!s) return '';
-            const m=s.match(/^(\d{4}-\d{2}-\d{2})/);
-            if(m) return m[1];
+            // D1/Excel/user uploads: DD-MM-YY or DD-MM-YYYY must stay DD-MM-YYYY.
+            let m=s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2}|\d{4})(?:\s|T|$)/);
+            if(m){
+                const dd=String(m[1]).padStart(2,'0');
+                const mm=String(m[2]).padStart(2,'0');
+                const yy=String(m[3]);
+                const yyyy=yy.length===2 ? `20${yy}` : yy;
+                return `${yyyy}-${mm}-${dd}`;
+            }
+            m=s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})(?:\s|T|$)/);
+            if(m) return `${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
             const d=new Date(s);
             return isNaN(d.getTime()) ? '' : `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
         }
@@ -2316,7 +2374,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
         }
 
         async function fetchData(){
-            const loader=document.getElementById('loader');const expDate=document.getElementById('expDate');if(expDate&&!expDate.value)expDate.value=localISODate(new Date());const ef=document.getElementById('expFilterFrom'),et=document.getElementById('expFilterTo');if(ef&&et){ef.value='';et.value='';}loader.style.display='flex';loader.innerHTML='<div class="spinner"></div> <span>Syncing Viraasat D1...</span>';
+            const loader=document.getElementById('loader');const expDate=document.getElementById('expDate');if(expDate&&!expDate.value)expDate.value=localISODate(new Date());const ef=document.getElementById('expFilterFrom'),et=document.getElementById('expFilterTo');if(ef&&et){ef.value='';et.value='';}loader.style.display='flex';loader.innerHTML='<div class="spinner"></div> <span>Syncing...</span>';
             const defs=[['/dashboard',d1Get('/dashboard')],['/menu',d1Get('/menu')],['/tables',d1Get('/tables')],['/orders',d1Get('/orders?limit=5000')],['/expenses',d1Get('/expenses?limit=2000')],['/stock',d1Get('/stock')],['/staff',d1Get('/staff')],['/stock/history',d1Get('/stock/history?limit=100')]];const results=await Promise.allSettled(defs.map(x=>x[1]));const failed=[];
             try{
                 if(results[0].status==='fulfilled'){const dash=results[0].value||{};const summary=dash.summary||{};d1DashboardSummary={...summary};const ts=dash.tables||{};document.getElementById('homeTodaySale').innerText=`₹${Math.round(Number(summary.today_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeAvgOrder').innerText=`₹${Math.round(Number(summary.average_order)||0).toLocaleString('en-IN')}`;document.getElementById('homeOverallSale').innerText=`₹${Math.round(Number(summary.overall_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeActiveTables').innerText=`${Number(ts.occupied)||0} / ${Number(ts.total)||tableSections.reduce((a,x)=>a+x.tables.length,0)}`;}else failed.push(['/dashboard',results[0].reason]);
@@ -2697,12 +2755,33 @@ Tables, billing and existing local UI remain visible.`);}
 
         function buildItemSales(){
             const map={};
-            salesHistory.forEach(s=>parseSaleItems(s).forEach(it=>{
-                const key=it.name.toLowerCase();
-                if(!map[key])map[key]={name:it.name,qty:0,sales:0,orders:0};
-                map[key].qty+=it.qty;map[key].sales+=it.amount;map[key].orders+=1;
-            }));
-            return Object.values(map).sort((a,b)=>b.sales-a.sales);
+            const validOrders=(salesHistory||[]).filter(s=>{
+                const st=String(getVal(s,['order_status','status'])||'completed').toLowerCase();
+                return st!=='cancelled' && st!=='deleted' && st!=='kot';
+            });
+            validOrders.forEach(s=>{
+                const parsed=parseSaleItems(s);
+                const orderTotal=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));
+                const parsedTotal=parsed.reduce((a,it)=>a+parseAmount(it.amount),0);
+                parsed.forEach(it=>{
+                    const key=String(it.name||'').trim().toLowerCase();
+                    if(!key)return;
+                    if(!map[key])map[key]={name:String(it.name).trim(),qty:0,sales:0,orderSet:new Set()};
+                    map[key].qty+=Number(it.qty)||0;
+                    map[key].sales+=parseAmount(it.amount);
+                    map[key].orderSet.add(String(getVal(s,['orderid','order_number','id'])||'').trim());
+                });
+                // Never silently lose an order's sale value when item details are missing/incomplete.
+                // Keep the residual visible as a separate reconciled line instead of guessing an item.
+                const residual=orderTotal-parsedTotal;
+                if(residual>0){
+                    const key='__unmapped__';
+                    if(!map[key])map[key]={name:'Unmapped / Item details missing',qty:0,sales:0,orderSet:new Set()};
+                    map[key].sales+=residual;
+                    map[key].orderSet.add(String(getVal(s,['orderid','order_number','id'])||'').trim());
+                }
+            });
+            return Object.values(map).map(x=>({...x,orders:x.orderSet.size})).sort((a,b)=>b.sales-a.sales);
         }
 
         function renderPremiumItems(){
@@ -2923,7 +3002,7 @@ Tables, billing and existing local UI remain visible.`);}
             panel.innerHTML=`
             <div class="sales-summary-grid"><div class="report-stat"><div class="rlabel">Overall Sale</div><div class="rvalue">${money(totalSale)}</div></div><div class="report-stat"><div class="rlabel">Discount</div><div class="rvalue">${money(totalDiscount)}</div></div><div class="report-stat"><div class="rlabel">Orders</div><div class="rvalue">${salesHistory.length}</div></div></div>
             <div class="premium-card"><div class="premium-card-head"><h3>Top Selling Items</h3><span>Sorted by sales value</span></div><div class="admin-help">Highest-selling items are shown first. Sales % = item's value ÷ total item sales. Qty % = item's quantity ÷ total units sold.</div><div class="top-selling-list">${top.map((x,i)=>{const ss=totalItemSales?x.sales/totalItemSales*100:0;const qs=totalItemQty?x.qty/totalItemQty*100:0;return `<div class="item-rank"><div class="item-rank-no">${i+1}</div><div class="item-rank-info"><div class="item-rank-name">${esc(x.name)}</div><div class="item-rank-sub">${x.qty} units • ${x.orders} orders • Qty ${qs.toFixed(1)}%</div><div class="mini-bar"><i style="width:${Math.min(100,ss)}%"></i></div></div><div style="text-align:right"><div class="item-rank-val">${money(x.sales)}</div><small style="font-size:.6rem;color:var(--text-muted)">${ss.toFixed(1)}%</small></div></div>`}).join('')||'<div class="premium-empty">No item sales found.</div>'}</div></div>
-            <div class="premium-card"><div class="premium-card-head"><h3>Daily Business Report</h3><button class="premium-btn light" onclick="exportDailyReport()">Export</button></div><div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Orders</th><th>Sales</th><th>Discount</th><th>AOV</th></tr></thead><tbody>${days.map(([d,x])=>`<tr><td>${d}</td><td>${x.orders}</td><td><b>${money(x.sales)}</b></td><td>${money(x.discount)}</td><td>${money(x.sales/x.orders)}</td></tr>`).join('')||'<tr><td colspan="5"><div class="premium-empty">No sales.</div></td></tr>'}</tbody></table></div></div>`;
+            <div class="premium-card"><div class="premium-card-head"><h3>Daily Business Report</h3><button class="premium-btn light" onclick="exportDailyReport()">Export</button></div><div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Orders</th><th>Sales</th><th>Discount</th><th>AOV</th></tr></thead><tbody>${days.map(([d,x])=>`<tr><td>${cleanDisplayDate(d)}</td><td>${x.orders}</td><td><b>${money(x.sales)}</b></td><td>${money(x.discount)}</td><td>${money(x.sales/x.orders)}</td></tr>`).join('')||'<tr><td colspan="5"><div class="premium-empty">No sales.</div></td></tr>'}</tbody></table></div></div>`;
         }
         function exportDailyReport(){const by={};salesHistory.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!by[d])by[d]={orders:0,sales:0};by[d].orders++;by[d].sales+=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));});downloadCSV(Object.entries(by).sort((a,b)=>a[0].localeCompare(b[0])).map(([Date,x])=>({Date,Orders:x.orders,Sales:Math.round(x.sales),AOV:Math.round(x.sales/x.orders)})),'Viraasat-Daily-Report.csv');}
 
