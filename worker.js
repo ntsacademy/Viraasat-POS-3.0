@@ -768,11 +768,13 @@ async function getDashboard(db) {
     ).toLowerCase();
     return status !== "cancelled" && status !== "deleted";
   });
-  const todayOrders = validOrders.filter(
-    (order) => String(
-      order.created_at || ""
-    ).startsWith(today)
-  );
+  const todayOrders = validOrders.filter((order) => {
+    const raw = order.created_at || order.order_date || order.date || "";
+    if (!raw) return false;
+    // Imported and POS rows can contain ISO, SQL-style, or human-readable dates.
+    // Normalize through the same IST-aware helper instead of relying on startsWith().
+    return normalizeDate(raw) === today;
+  });
   const todaySales = todayOrders.reduce(
     (sum, order) => sum + num(order.grand_total),
     0
