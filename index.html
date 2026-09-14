@@ -2220,7 +2220,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
         }
 
         function populateStaffDropdown() {
-            let sel = document.getElementById('payStaffSelect'); sel.innerHTML = "<option value=''>Select Employee</option>";
+            let sel = document.getElementById('payStaffSelect'); if (!sel) return; sel.innerHTML = "<option value=''>Select Employee</option>";
             staffData.forEach(s => {
                 let sId = getVal(s, ['empid', 'employeeid']); let sName = getVal(s, ['name']);
                 if(sId && sName) { sel.innerHTML += `<option value="${sId}">${sName} (${sId})</option>`; }
@@ -2305,6 +2305,22 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
             try {
                 const response = await fetch(`${D1_API_BASE}${path}`, {
                     method:'POST',
+                    headers:{'Content-Type':'application/json','Accept':'application/json'},
+                    body:JSON.stringify(body),
+                    cache:'no-store',
+                    signal:controller.signal
+                });
+                const data = await response.json().catch(()=>({}));
+                if (!response.ok || data.success === false) throw new Error(data.error || `D1 API error (${response.status})`);
+                return data;
+            } finally { clearTimeout(timer); }
+        }
+        async function d1Put(path, body, timeoutMs = API_TIMEOUT_MS) {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            try {
+                const response = await fetch(`${D1_API_BASE}${path}`, {
+                    method:'PUT',
                     headers:{'Content-Type':'application/json','Accept':'application/json'},
                     body:JSON.stringify(body),
                     cache:'no-store',
@@ -2892,7 +2908,7 @@ Tables, billing and existing local UI remain visible.`);}
         }
         function exportStaff(){downloadCSV(staffData.map(s=>({Emp_ID:getVal(s,['empid','employeeid']),Name:getVal(s,['name']),Role:getVal(s,['role']),Mobile:getVal(s,['mobile','phone']),Monthly_Salary:parseAmount(getVal(s,['monthlysalary','salary'])),Date_of_Joining:getVal(s,['dateofjoining','joindate','date','doj']),Status:getStaffStatus(s)})),'Viraasat-Staff.csv');}
 
-        function downloadMenuSample(){downloadCSV([{Name:'Paneer Butter Masala',Category:'Main Course',Price:170,Active:'Yes',Stock:20},{Name:'Tea',Category:'Beverage',Price:20,Active:'Yes',Stock:50},{Name:'Aloo Paratha',Category:'Breakfast',Price:60,Active:'Yes',Stock:15}],'Viraasat-Menu-Sample.csv');}
+        function downloadMenuSample(){downloadCSV([{Name:'Paneer Butter Masala',Category:'Main Course',Price:170,Active:'Yes'},{Name:'Tea',Category:'Beverage',Price:20,Active:'Yes'},{Name:'Aloo Paratha',Category:'Breakfast',Price:60,Active:'Yes'}],'Viraasat-Menu-Sample.csv');}
         function exportMenu(){downloadCSV(menuData.map(m=>({Name:getVal(m,['itemname','name']),Category:getVal(m,['category','cat']),Price:parseAmount(getVal(m,['price'])),Active:getVal(m,['active','status'])||'Yes',Stock:stockData[getVal(m,['itemname','name'])]??''})),'Viraasat-Menu-Export.csv');}
         async function handleMenuUpload(file){
             if(!file)return;
@@ -3215,9 +3231,20 @@ Tables, billing and existing local UI remain visible.`);}
 
             <div class="premium-card admin-card">
                 <div class="premium-card-head"><h3>Menu Upload</h3><span>${menuData.length} items</span></div>
-                <div class="admin-help">Upload the menu file in .xlsx, .xls or .csv format. Menu data is saved to D1.</div>
+                <div class="admin-help">Use the exact sample format: <b>Name, Category, Price, Active</b>. Stock is managed separately in Stock Management. Accepted files: .xlsx, .xls or .csv. Menu data is saved to D1.</div>
                 <div class="premium-toolbar compact-toolbar" style="margin-top:8px">
                     <label class="premium-btn alt upload-label">Upload Menu<input type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="handleMenuUpload(this.files[0])"></label>
+                    <button class="premium-btn light" onclick="downloadMenuSample()">Download Menu Sample</button>
+                </div>
+            </div>
+            <div class="premium-card admin-card">
+                <div class="premium-card-head"><h3>Update Existing Menu Price</h3><span>Future billing only</span></div>
+                <div class="admin-help">Change the selling price for future bills. Existing orders, P&amp;L and history remain unchanged.</div>
+                <div class="admin-form-grid">
+                    <select id="adminFuturePriceItem" onchange="loadFutureMenuPrice()"><option value="">Select existing menu item</option></select>
+                    <input id="adminFutureCurrentPrice" type="text" readonly placeholder="Current price">
+                    <input id="adminFutureNewPrice" type="number" min="0.01" step="0.01" placeholder="New selling price">
+                    <button class="premium-btn" onclick="updateFutureMenuPrice()">Update Future Price</button>
                 </div>
             </div>
             <div class="premium-card admin-card">
@@ -3230,7 +3257,7 @@ Tables, billing and existing local UI remain visible.`);}
                 <div id="auditLogsBox"></div>
             </div>
             `;
-            renderAdminStockRows(); renderAdminStaffRows(); renderAdminUsersRows();
+            renderAdminStockRows(); renderAdminStaffRows(); renderAdminUsersRows(); renderFutureMenuPriceEditor();
             loadBackupStatus();
             loadViraasatLogo();
             if(!auditInitialSyncDone){
@@ -3276,6 +3303,36 @@ Tables, billing and existing local UI remain visible.`);}
             }).join(''):'<div class="premium-empty" style="grid-column:1/-1">No orders found.</div>';
         }
 
+        function renderFutureMenuPriceEditor(){
+            const sel=document.getElementById('adminFuturePriceItem'); if(!sel)return;
+            const current=sel.value;
+            const rows=(menuData||[]).slice().sort((a,b)=>String(getVal(a,['name','itemname'])).localeCompare(String(getVal(b,['name','itemname']))));
+            sel.innerHTML='<option value="">Select existing menu item</option>'+rows.map(m=>{const id=getVal(m,['id','menu_item_id']);const name=getVal(m,['name','itemname']);return id?`<option value="${esc(id)}">${esc(name)}</option>`:''}).join('');
+            if(current)sel.value=current;
+            loadFutureMenuPrice();
+        }
+        function loadFutureMenuPrice(){
+            const id=Number(document.getElementById('adminFuturePriceItem')?.value||0);
+            const item=(menuData||[]).find(m=>Number(getVal(m,['id','menu_item_id']))===id);
+            const el=document.getElementById('adminFutureCurrentPrice'); if(el)el.value=item?`₹${parseAmount(getVal(item,['price','sellingprice','rate'])).toFixed(2)}`:'';
+        }
+        async function updateFutureMenuPrice(){
+            if(!requireAdmin('menu price update'))return;
+            const id=Number(document.getElementById('adminFuturePriceItem')?.value||0);
+            const price=Number(document.getElementById('adminFutureNewPrice')?.value);
+            if(!id){showCustomAlert('Select an existing menu item.');return;}
+            if(!Number.isFinite(price)||price<=0){showCustomAlert('Enter a valid future selling price.');return;}
+            if(!confirm('Update this price for future bills only? Existing orders and history will remain unchanged.'))return;
+            try{
+                const result=await d1Put('/menu',{id,price});
+                const item=(menuData||[]).find(m=>Number(getVal(m,['id','menu_item_id']))===id);
+                if(item)item.price=price;
+                populateDropdown(); renderFutureMenuPriceEditor();
+                const input=document.getElementById('adminFutureNewPrice'); if(input)input.value='';
+                auditLog('Future Menu Price Updated',`${result.name||''} | ₹${result.old_price||0} → ₹${price}`);
+                showCustomAlert(result.message||'Future selling price updated successfully.');
+            }catch(e){showCustomAlert('Price update failed: '+(e?.message||e));}
+        }
         function renderAdminStockRows(){const el=document.getElementById('adminStockMiniList');if(!el)return;const rows=Object.entries(stockData).sort((a,b)=>Number(a[1])-Number(b[1])).slice(0,15);el.innerHTML=rows.map(([name,qty])=>{const low=Number(stockMeta[name]?.low_stock_level??5);return `<div class="admin-mini-row" onclick="loadAdminStockSelect('${esc(name)}')" style="cursor:pointer"><div><b>${esc(name)}</b><small>${Number(qty)<=0?'OUT OF STOCK':Number(qty)<=low?'Low stock':'Available'} • Last update ${stockMeta[name]?.updated_at?esc(cleanDisplayDate(stockMeta[name].updated_at)):'—'}</small></div><strong>${Number(qty)||0}</strong></div>`}).join('')||'<div class="premium-empty">No stock data.</div>';}
         function loadAdminStockSelect(name){if(!name){resetAdminStockForm(false);return;}const m=stockMeta[name]||{};const search=document.getElementById('adminStockSearch');if(search)search.value=name;const qty=document.getElementById('adminStockQty');if(qty){qty.value='';qty.placeholder=`Qty to Add (Current: ${Number(stockData[name]||0)})`;}const lowEl=document.getElementById('adminStockLow'); if(lowEl) lowEl.value=Number(m.low_stock_level??5);renderAdminStockRows();}
         function syncAdminStockSearch(v){const sel=document.getElementById('adminStockSelect');if(sel){const opt=[...sel.options].find(o=>o.value.toLowerCase()===String(v).trim().toLowerCase());sel.value=opt?opt.value:'';}}
