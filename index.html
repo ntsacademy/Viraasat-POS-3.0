@@ -1716,6 +1716,7 @@
                 </div>
                 <div class="chart-wrapper"><canvas id="trendChart"></canvas></div>
             </div>
+            <div id="pnlSettlementHost" style="margin-top:14px;"></div>
 
             <div class="card">
                 <div class="section-header" style="margin-top:0;"><h4>Staff Expense Breakdown</h4></div>
@@ -3008,6 +3009,7 @@ Tables, billing and existing local UI remain visible.`);}
             <div class="sales-summary-grid"><div class="report-stat"><div class="rlabel">Overall Sale</div><div class="rvalue">${money(totalSale)}</div></div><div class="report-stat"><div class="rlabel">Discount</div><div class="rvalue">${money(totalDiscount)}</div></div><div class="report-stat"><div class="rlabel">Orders</div><div class="rvalue">${salesHistory.length}</div></div></div>
             <div class="premium-card"><div class="premium-card-head"><h3>Top Selling Items</h3><span>Sorted by sales value</span></div><div class="admin-help">Highest-selling items are shown first. Sales % = item's value ÷ total item sales. Qty % = item's quantity ÷ total units sold.</div><div class="top-selling-list">${top.map((x,i)=>{const ss=totalItemSales?x.sales/totalItemSales*100:0;const qs=totalItemQty?x.qty/totalItemQty*100:0;return `<div class="item-rank"><div class="item-rank-no">${i+1}</div><div class="item-rank-info"><div class="item-rank-name">${esc(x.name)}</div><div class="item-rank-sub">${x.qty} units • ${x.orders} orders • Qty ${qs.toFixed(1)}%</div><div class="mini-bar"><i style="width:${Math.min(100,ss)}%"></i></div></div><div style="text-align:right"><div class="item-rank-val">${money(x.sales)}</div><small style="font-size:.6rem;color:var(--text-muted)">${ss.toFixed(1)}%</small></div></div>`}).join('')||'<div class="premium-empty">No item sales found.</div>'}</div></div>
             <div class="premium-card"><div class="premium-card-head"><h3>Daily Business Report</h3><button class="premium-btn light" onclick="exportDailyReport()">Export</button></div><div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Orders</th><th>Sales</th><th>Discount</th><th>AOV</th></tr></thead><tbody>${days.map(([d,x])=>`<tr><td>${cleanDisplayDate(d)}</td><td>${x.orders}</td><td><b>${money(x.sales)}</b></td><td>${money(x.discount)}</td><td>${money(x.sales/x.orders)}</td></tr>`).join('')||'<tr><td colspan="5"><div class="premium-empty">No sales.</div></td></tr>'}</tbody></table></div></div>`;
+            renderPnlSettlementPanel();
         }
         function exportDailyReport(){const by={};salesHistory.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!by[d])by[d]={orders:0,sales:0};by[d].orders++;by[d].sales+=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));});downloadCSV(Object.entries(by).sort((a,b)=>a[0].localeCompare(b[0])).map(([Date,x])=>({Date,Orders:x.orders,Sales:Math.round(x.sales),AOV:Math.round(x.sales/x.orders)})),'Viraasat-Daily-Report.csv');}
 
