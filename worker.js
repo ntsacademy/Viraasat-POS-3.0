@@ -124,6 +124,22 @@ async function ensureSupportTables(db) {
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `).run();
+  await ensureColumn(db, "stock_items", "category", "TEXT");
+  await ensureColumn(db, "stock_items", "purchase_rate", "REAL DEFAULT 0");
+  await ensureColumn(db, "stock_items", "menu_item_id", "INTEGER");
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS staff_advances (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      staff_id INTEGER,
+      staff_name TEXT NOT NULL,
+      amount REAL NOT NULL DEFAULT 0,
+      entry_type TEXT NOT NULL DEFAULT 'given',
+      entry_date TEXT NOT NULL,
+      note TEXT,
+      created_by TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
   await db.prepare(`
     CREATE TABLE IF NOT EXISTS pnl_settlements (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -589,7 +605,7 @@ async function getBackupData(db) {
     getAllOrdersForBackup(db),
     tableExists(db, "menu_items") ? db.prepare(`SELECT id,name,category,price,gst_percent,is_available,created_at,updated_at FROM menu_items ORDER BY id ASC`).all() : { results: [] },
     db.prepare(`SELECT id,name,mobile,role,salary,join_date,is_active,created_at,updated_at FROM staff ORDER BY id ASC`).all(),
-    db.prepare(`SELECT id,name,quantity,unit,low_stock_level,is_active,created_at,updated_at FROM stock_items ORDER BY id ASC`).all(),
+    db.prepare(`SELECT id,name,quantity,unit,low_stock_level,is_active,category,purchase_rate,menu_item_id,created_at,updated_at FROM stock_items ORDER BY id ASC`).all(),
     db.prepare(`SELECT id,category,amount,description,expense_date,created_at FROM expenses ORDER BY id ASC`).all(),
     db.prepare(`SELECT id,order_id,requested_by,reason,status,reviewed_by,reviewed_at,created_at FROM deletion_requests ORDER BY id ASC`).all()
   ]);
@@ -2012,16 +2028,21 @@ var worker_default = {
             quantity,
             unit,
             low_stock_level,
-            is_active
+            is_active,
+            category,
+            purchase_rate,
+            menu_item_id
           )
           VALUES
-          (?, ?, ?, ?, 1)
+          (?, ?, ?, ?, 1, ?, ?, ?)
           ON CONFLICT(name)
           DO UPDATE SET
             quantity=excluded.quantity,
             unit=excluded.unit,
-            low_stock_level=
-              excluded.low_stock_level,
+            low_stock_level=excluded.low_stock_level,
+            category=COALESCE(excluded.category, stock_items.category),
+            purchase_rate=CASE WHEN excluded.purchase_rate IS NULL THEN stock_items.purchase_rate ELSE excluded.purchase_rate END,
+            menu_item_id=COALESCE(excluded.menu_item_id, stock_items.menu_item_id),
             is_active=1,
             updated_at=
               CURRENT_TIMESTAMP
@@ -2029,7 +2050,10 @@ var worker_default = {
           name,
           qty,
           unit,
-          low
+          low,
+          clean(body.category) || null,
+          body.purchase_rate === undefined || body.purchase_rate === null || body.purchase_rate === '' ? null : num(body.purchase_rate),
+          body.menu_item_id ? num(body.menu_item_id) : null
         ).run();
         const current = await db.prepare(`
             SELECT
@@ -2076,6 +2100,22 @@ var worker_default = {
           new_quantity: qty,
           updated_at: current?.updated_at || null
         });
+      }
+      if (path === "/api/staff/advances" && method === "GET") {
+        await ensureSupportTables(db);
+        const rows = await db.prepare(`SELECT * FROM staff_advances ORDER BY entry_date DESC, id DESC LIMIT 1000`).all();
+        return json({success:true, advances:rows.results||[]});
+      }
+      if (path === "/api/staff/advances" && method === "POST") {
+        await ensureSupportTables(db);
+        const body=await request.json();
+        const staffName=clean(body.staff_name||body.staffName);
+        const amount=num(body.amount);
+        const type=clean(body.entry_type||body.type)||'given';
+        const date=clean(body.entry_date||body.date)||todayIST();
+        if(!staffName || !Number.isFinite(amount) || amount<=0) return json({success:false,error:'Staff name and positive amount required'},400);
+        const r=await db.prepare(`INSERT INTO staff_advances(staff_id,staff_name,amount,entry_type,entry_date,note,created_by) VALUES(?,?,?,?,?,?,?)`).bind(body.staff_id?num(body.staff_id):null,staffName,amount,type,date,clean(body.note)||null,clean(body.created_by)||'Admin').run();
+        return json({success:true,id:r.meta?.last_row_id||null});
       }
       if (path === "/api/staff" && method === "GET") {
         return json({
