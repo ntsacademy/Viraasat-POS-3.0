@@ -1429,7 +1429,7 @@ var worker_default = {
         return json({
           success:true,
           routes:[
-            "GET /api/health","GET /api/test-db","GET /api/dashboard","GET /api/menu","POST /api/menu",
+            "GET /api/health","GET /api/test-db","GET /api/dashboard","GET /api/menu","PUT /api/menu","POST /api/menu",
             "GET /api/tables","POST /api/tables/clear","GET /api/orders","POST /api/orders","POST /api/orders/checkout",
             "POST /api/orders/request-delete","GET /api/approvals","GET /api/approvals/debug","POST /api/approvals/resolve",
             "GET /api/expenses","POST /api/expenses","GET /api/staff","POST /api/staff","POST /api/staff/update",
@@ -1459,6 +1459,17 @@ var worker_default = {
           success: true,
           items: await getMenu(db)
         });
+      }
+      if (path === "/api/menu" && method === "PUT") {
+        const body = await request.json();
+        const id = Number(body.id);
+        const newPrice = Number(body.price);
+        if (!Number.isInteger(id) || id <= 0) return json({ success:false, error:"Valid menu item ID required" },400);
+        if (!Number.isFinite(newPrice) || newPrice <= 0) return json({ success:false, error:"Valid future selling price required" },400);
+        const existing = await db.prepare(`SELECT id, name, price FROM menu_items WHERE id = ? LIMIT 1`).bind(id).first();
+        if (!existing) return json({ success:false, error:"Menu item not found" },404);
+        await db.prepare(`UPDATE menu_items SET price = ? WHERE id = ?`).bind(newPrice,id).run();
+        return json({ success:true, id, name:existing.name, old_price:Number(existing.price||0), new_price:newPrice, message:"Future selling price updated successfully" });
       }
       if (path === "/api/menu" && method === "POST") {
         const body = await request.json();
