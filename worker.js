@@ -1811,7 +1811,7 @@ var worker_default = {
         const body = await request.json();
         const till = clean(body.till_date || body.tillDate);
         if (!/^\d{4}-\d{2}-\d{2}$/.test(till)) return json({success:false,error:"Valid till_date YYYY-MM-DD required"},400);
-        const today = new Date().toISOString().slice(0,10);
+        const today = todayIST();
         if (till > today) return json({success:false,error:"Settlement date cannot be in future"},400);
         const last = await db.prepare(`SELECT till_date FROM pnl_settlements ORDER BY id DESC LIMIT 1`).first();
         if (last?.till_date && till <= last.till_date) return json({success:false,error:`Settlement till date must be after last settlement (${last.till_date})`},400);
