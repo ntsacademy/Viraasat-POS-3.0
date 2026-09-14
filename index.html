@@ -3144,8 +3144,26 @@ Tables, billing and existing local UI remain visible.`);}
             </div>
             <div class="premium-card admin-card">
                 <div class="premium-card-head"><h3>Stock Management</h3><span>${Object.keys(stockData).length} items • Admin only</span></div>
-                <div class="admin-form-grid"><select id="adminStockSelect" onchange="loadAdminStockSelect(this.value)">${stockOptionHtml()}</select><input id="adminStockSearch" placeholder="Select item or enter NEW item name" oninput="syncAdminStockSearch(this.value)"><input id="adminStockQty" type="number" min="0" inputmode="numeric" placeholder="Qty to Add"><button class="premium-btn" onclick="adminUpdateStockUnified()">Add Stock</button><button class="premium-btn danger" onclick="recordStockLoss()">Record Loss</button><button class="premium-btn light" onclick="startNewStockItem()">Add New Item</button></div>
-                <div class="admin-help">Use the dropdown to select an existing item. Quantity correction and new stock-item creation are restricted to Admin.</div><div id="adminStockMiniList" class="admin-mini-list"></div>
+                <div class="admin-form-grid">
+                    <select id="adminStockSelect" onchange="loadAdminStockSelect(this.value)">${stockOptionHtml()}</select>
+                    <input id="adminStockSearch" placeholder="Select existing item or enter NEW item name" oninput="syncAdminStockSearch(this.value)">
+                    <input id="adminStockQty" type="number" min="0" inputmode="decimal" placeholder="Qty to Add / Opening Qty">
+                    <input id="adminStockUnit" placeholder="Unit (pcs/bottle/can/quarter)" value="pcs">
+                    <input id="adminStockLow" type="number" min="0" inputmode="decimal" placeholder="Low Stock Level" value="5">
+                    <button class="premium-btn" onclick="adminUpdateStockUnified()">Add Stock</button>
+                    <button class="premium-btn danger" onclick="recordStockLoss()">Record Loss</button>
+                    <button class="premium-btn light" onclick="startNewStockItem()">Add New Item</button>
+                </div>
+                <div id="newStockConfigBox" style="display:none;margin-top:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface)">
+                    <b>New Stock Item Configuration</b>
+                    <div class="admin-form-grid" style="margin-top:10px">
+                        <select id="newStockCategory"><option value="Beers">Beers</option><option value="Cigarettes">Cigarettes</option><option value="Beverages">Beverages</option></select>
+                        <input id="newStockSellingPrice" type="number" min="0" step="0.01" placeholder="Selling Price">
+                        <input id="newStockGST" type="number" min="0" step="0.01" placeholder="GST %" value="0">
+                    </div>
+                    <div class="admin-help" style="margin-top:8px">New item will be created once in Menu + Stock. Price/GST will be used by billing; quantity/unit/low-stock will be stored in Stock.</div>
+                </div>
+                <div class="admin-help">Existing item: select it and enter only the additional quantity. New item: click <b>Add New Item</b>, enter name, category, selling price, GST, unit, opening quantity and low-stock level.</div><div id="adminStockMiniList" class="admin-mini-list"></div>
             </div>
 
             <div class="premium-card admin-card">
@@ -3248,9 +3266,12 @@ Tables, billing and existing local UI remain visible.`);}
         function syncAdminStockSearch(v){const sel=document.getElementById('adminStockSelect');if(sel){const opt=[...sel.options].find(o=>o.value.toLowerCase()===String(v).trim().toLowerCase());sel.value=opt?opt.value:'';}}
         function startNewStockItem(){
             const sel=document.getElementById('adminStockSelect'); if(sel) sel.value='';
-            const search=document.getElementById('adminStockSearch'); if(search){search.value='';search.focus();}
-            const qty=document.getElementById('adminStockQty'); if(qty) qty.value='';
-            const q=document.getElementById('adminStockQty');if(q)q.placeholder='Opening Quantity'; showCustomAlert('Enter the new stock item name and opening quantity, then click Add Stock.');
+            const search=document.getElementById('adminStockSearch'); if(search){search.value='';search.placeholder='Enter NEW item name';search.focus();}
+            const qty=document.getElementById('adminStockQty'); if(qty){qty.value='';qty.placeholder='Opening Quantity';}
+            const box=document.getElementById('newStockConfigBox'); if(box) box.style.display='block';
+            const unit=document.getElementById('adminStockUnit'); if(unit) unit.value='pcs';
+            const low=document.getElementById('adminStockLow'); if(low) low.value='5';
+            showCustomAlert('New item mode enabled. Fill category, selling price, GST, unit, opening quantity and low-stock level, then click Add Stock.');
         }
         function resetAdminStockForm(clear=true){if(clear&&document.getElementById('adminStockSelect'))document.getElementById('adminStockSelect').value='';['adminStockSearch','adminStockQty'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});const lowEl=document.getElementById('adminStockLow'); if(lowEl) lowEl.value=5;}
         function renderAdminStaffRows(){
@@ -3273,7 +3294,48 @@ Tables, billing and existing local UI remain visible.`);}
             const entries=Object.entries(userPermissions||{});
             el.innerHTML=entries.map(([mobile,p])=>`<div class="admin-user-row"><div><b>${esc(mobile)}</b><small>${esc(p.role||'cashier')} • Sales ${p.orders?'Yes':'No'} • P&L ${p.analytics?'Yes':'No'} • Expenses ${p.expenses?'Yes':'No'}</small></div><button class="premium-btn danger" onclick="removeUser('${esc(mobile)}');renderAdminUsersRows()">Remove</button></div>`).join('')||'<div class="premium-empty">No additional POS users registered.</div>';
         }
-        async function adminUpdateStockUnified(){if(!requireAdmin('inventory update'))return;const selected=document.getElementById('adminStockSelect')?.value||'',typed=document.getElementById('adminStockSearch')?.value.trim()||'',name=typed||selected,qty=Number(document.getElementById('adminStockQty')?.value),low=Number(document.getElementById('adminStockLow')?.value||5);if(!name||!Number.isFinite(qty)||qty<0){showCustomAlert('Select an item or enter a new item name, then enter a valid quantity.');return;}const old=Number(stockData[name]??0),exists=Object.prototype.hasOwnProperty.call(stockData,name);try{const operation=exists?'add':'set'; const r=await d1Post('/stock',{name,quantity:qty,operation,unit:stockMeta[name]?.unit||'pcs',low_stock_level:low,note:exists?'Stock added':'New stock item',updated_by:localStorage.getItem('viraasat_user')||'Admin'});stockData[name]=Number(r.new_quantity??(exists?old+qty:qty));stockMeta[name]={...(stockMeta[name]||{}),name,unit:stockMeta[name]?.unit||'pcs',low_stock_level:low,updated_at:new Date().toISOString()};stockHistory.unshift({item_name:name,old_quantity:old,new_quantity:Number(r.new_quantity??(exists?old+qty:qty)),change_quantity:Number(r.new_quantity??(exists?old+qty:qty))-old,action:exists?'ADD':'ADD',note:exists?'Stock added':'New stock item',updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});auditLog(exists?'Stock Corrected':'Stock Item Added',`${name}: ${old} → ${qty}`);renderStockDashboard();renderPremiumInventory();renderPremiumAdmin();showCustomAlert(exists?'Stock corrected successfully.':'New stock item added successfully.');}catch(e){showCustomAlert('Stock update failed: '+e.message);}}
+        async function adminUpdateStockUnified(){
+            if(!requireAdmin('inventory update'))return;
+            const selected=document.getElementById('adminStockSelect')?.value||'';
+            const typed=document.getElementById('adminStockSearch')?.value.trim()||'';
+            const name=typed||selected;
+            const qty=Number(document.getElementById('adminStockQty')?.value);
+            const low=Number(document.getElementById('adminStockLow')?.value||5);
+            const unit=(document.getElementById('adminStockUnit')?.value||'pcs').trim()||'pcs';
+            if(!name||!Number.isFinite(qty)||qty<0){showCustomAlert('Select an item or enter a new item name, then enter a valid quantity.');return;}
+            const old=Number(stockData[name]??0),exists=Object.prototype.hasOwnProperty.call(stockData,name);
+            try{
+                if(!exists){
+                    const category=(document.getElementById('newStockCategory')?.value||'Beverages').trim();
+                    const sellingPrice=Number(document.getElementById('newStockSellingPrice')?.value);
+                    const gst=Number(document.getElementById('newStockGST')?.value||0);
+                    if(!document.getElementById('newStockConfigBox') || document.getElementById('newStockConfigBox').style.display==='none'){
+                        showCustomAlert('Click Add New Item first, then fill the complete configuration.');return;
+                    }
+                    if(!Number.isFinite(sellingPrice)||sellingPrice<0){showCustomAlert('Enter a valid Selling Price for the new item.');return;}
+                    const duplicate=menuData.find(m=>String(getVal(m,['name','itemname'])).trim().toLowerCase()===name.toLowerCase());
+                    let menuResult=duplicate ? {id:getVal(duplicate,['id','menu_item_id'])} : await d1Post('/menu',{name,category,price:sellingPrice,gst_percent:Number.isFinite(gst)&&gst>=0?gst:0,is_available:true});
+                    const r=await d1Post('/stock',{name,quantity:qty,operation:'set',unit,low_stock_level:low,note:'New stock item opening stock',updated_by:localStorage.getItem('viraasat_user')||'Admin'});
+                    stockData[name]=Number(r.new_quantity??qty);
+                    stockMeta[name]={id:r.id||null,name,unit,low_stock_level:low,updated_at:new Date().toISOString()};
+                    stockHistory.unshift({item_name:name,old_quantity:0,new_quantity:stockData[name],change_quantity:stockData[name],action:'ADD',note:'New stock item opening stock',updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});
+                    if(!duplicate){menuData.push({id:Number(menuResult.id||0),name,itemname:name,category,price:sellingPrice,gst_percent:gst,is_available:1});}
+                    populateDropdown();
+                    document.getElementById('newStockConfigBox').style.display='none';
+                    auditLog('New Stock + Menu Item Added',`${name} | ${category} | ₹${sellingPrice}`);
+                    renderStockDashboard();renderPremiumInventory();renderPremiumAdmin();
+                    showCustomAlert('New item created in Menu and Stock successfully. It is now available for billing.');
+                    return;
+                }
+                const r=await d1Post('/stock',{name,quantity:qty,operation:'add',unit:stockMeta[name]?.unit||unit,low_stock_level:low,note:'Stock added',updated_by:localStorage.getItem('viraasat_user')||'Admin'});
+                stockData[name]=Number(r.new_quantity??(old+qty));
+                stockMeta[name]={...(stockMeta[name]||{}),name,unit:stockMeta[name]?.unit||unit,low_stock_level:low,updated_at:new Date().toISOString()};
+                stockHistory.unshift({item_name:name,old_quantity:old,new_quantity:stockData[name],change_quantity:stockData[name]-old,action:'ADD',note:'Stock added',updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});
+                auditLog('Stock Added',`${name}: ${old} → ${stockData[name]}`);
+                renderStockDashboard();renderPremiumInventory();renderPremiumAdmin();
+                showCustomAlert(`Added ${qty} ${unit} to ${name}. Current stock: ${stockData[name]}`);
+            }catch(e){showCustomAlert('Stock update failed: '+(e?.message||e));}
+        }
         async function recordStockLoss(){
             if(!requireAdmin('stock loss'))return;
             const name=document.getElementById('adminStockSearch')?.value.trim()||document.getElementById('adminStockSelect')?.value||'';
