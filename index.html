@@ -2824,29 +2824,9 @@ Tables, billing and existing local UI remain visible.`);}
             </div>
 
             <div class="premium-card" style="margin-bottom:14px">
-                <div class="premium-card-head"><h3>Inventory Control</h3><span>Admin only</span></div>
-                <div class="admin-form-grid">
-                    <select id="invItemSelect" onchange="loadStockEditor(this.value)">${stockOptionHtml()}</select>
-                    <input id="invItemQty" type="number" min="0" inputmode="numeric" placeholder="Current quantity">
-                    
-                    <button class="premium-btn" onclick="saveInventoryItem()">Update Stock</button>
-                    <button class="premium-btn light" onclick="toggleNewStockForm()">+ Add New Stock Item</button>
-                </div>
-
-                <div id="newStockForm" style="display:none;margin-top:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#FFFBF8">
-                    <div class="admin-form-grid">
-                        <input id="newStockName" placeholder="New stock item name">
-                        <input id="newStockQty" type="number" min="0" inputmode="numeric" placeholder="Opening quantity">
-                        <input id="newStockPrice" type="number" min="0" inputmode="numeric" placeholder="Menu price ₹ (optional)">
-                        <input id="newStockCategory" placeholder="Menu category" value="Other">
-                        <button class="premium-btn" onclick="addNewStockItem()">Save New Item</button>
-                        <button class="premium-btn light" onclick="toggleNewStockForm(false)">Cancel</button>
-                    </div>
-                    <div class="admin-help">Adding a stock item also adds it to the POS menu if it is not already present. Unit is automatically PCS.</div>
-                </div>
-
-                <div class="admin-help" style="margin-top:8px">
-                    Last stock update: <b>${last?esc(cleanDisplayDate(last)+' '+cleanDisplayTime(last)):'No stock update recorded yet'}</b>
+                <div class="premium-card-head"><h3>Inventory Overview</h3><span>Read-only view</span></div>
+                <div class="admin-help">Stock quantity is updated from one single place only: <b>Admin → Stock Management</b>. This Inventory tab is reserved for current stock visibility and audit history, preventing duplicate update controls.</div>
+                <div class="admin-help" style="margin-top:8px">Last stock update: <b>${last?esc(cleanDisplayDate(last)+' '+cleanDisplayTime(last)):'No stock update recorded yet'}</b>
                     ${out.length?` • <span style="color:#B91C1C">${out.length} item(s) out of stock</span>`:''}
                 </div>
             </div>
@@ -2857,76 +2837,11 @@ Tables, billing and existing local UI remain visible.`);}
             </div>
 
             <div class="premium-card" style="margin-top:14px">
-                <div class="premium-card-head"><h3>Inventory Insights</h3><span>Latest updates first</span></div>
+                <div class="premium-card-head"><h3>Stock Audit History</h3><span>Latest updates first</span></div>
                 <div id="inventoryInsightRows"></div>
             </div>`;
 
             renderPremiumInventoryRows();renderInventoryInsights();
-        }
-
-        function loadStockEditor(name){
-            const qty=document.getElementById('invItemQty'),note=document.getElementById('invItemNote');
-            if(!name){if(qty)qty.value='';if(note)note.value='';return;}
-            if(qty)qty.value=Number(stockData[name]||0);
-            if(note)note.value='';
-        }
-
-        function toggleNewStockForm(force){
-            const box=document.getElementById('newStockForm');if(!box)return;
-            const show=typeof force==='boolean'?force:box.style.display==='none';
-            box.style.display=show?'block':'none';
-            if(!show){
-                ['newStockName','newStockQty','newStockPrice'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-                const c=document.getElementById('newStockCategory');if(c)c.value='Other';
-            }
-        }
-
-        async function saveInventoryItem(){
-            if(!requireAdmin('inventory update'))return;
-            const name=document.getElementById('invItemSelect')?.value||'';
-            const qty=Number(document.getElementById('invItemQty')?.value);
-            const note='Admin stock update';
-            if(!name||!Number.isFinite(qty)||qty<0){showCustomAlert('Select a stock item and enter a valid quantity.');return;}
-            const old=Number(stockData[name]??0);
-            try{
-                const r=await d1Post('/stock',{name,quantity:qty,operation:'add',unit:'pcs',low_stock_level:Number(stockMeta[name]?.low_stock_level??5),note:'Stock added',updated_by:localStorage.getItem('viraasat_user')||'Admin'});
-                stockData[name]=Number(r.new_quantity??(old+qty));
-                stockMeta[name]={...(stockMeta[name]||{}),name,unit:'pcs',updated_at:r.updated_at||new Date().toISOString()};
-                stockHistory.unshift({item_name:name,old_quantity:old,new_quantity:qty,change_quantity:Number(r.new_quantity??(old+qty))-old,action:'ADD',note,updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});
-                auditLog('Stock Updated',`${name}: ${old} → ${qty}`);
-                renderStockDashboard();renderPremiumInventory();
-                showCustomAlert('Stock updated successfully.');
-            }catch(e){showCustomAlert('Stock update failed: '+(e?.message||e));}
-        }
-
-        async function addNewStockItem(){
-            if(!requireAdmin('add stock item'))return;
-            const name=document.getElementById('newStockName')?.value.trim();
-            const qty=Number(document.getElementById('newStockQty')?.value);
-            const priceRaw=document.getElementById('newStockPrice')?.value;
-            const price=priceRaw===''?0:Number(priceRaw);
-            const category=document.getElementById('newStockCategory')?.value.trim()||'Other';
-            if(!name||!Number.isFinite(qty)||qty<0||!Number.isFinite(price)||price<0){showCustomAlert('Enter a valid item name, quantity and menu price.');return;}
-            const duplicate=Object.keys(stockData).some(k=>k.toLowerCase()===name.toLowerCase());
-            if(duplicate){showCustomAlert('This stock item already exists. Select it from the dropdown to update quantity.');return;}
-            try{
-                const stockResult=await d1Post('/stock',{name,quantity:qty,operation:'set',unit:'pcs',low_stock_level:5,note:'New stock item',updated_by:localStorage.getItem('viraasat_user')||'Admin'});
-                const menuExists=menuData.some(m=>String(getVal(m,['name','itemname'])||'').trim().toLowerCase()===name.toLowerCase());
-                if(!menuExists){
-                    try{
-                        const menuResult=await d1Post('/menu',{name,category,price,is_available:true});
-                        menuData.push({id:Number(menuResult.id||0),name,itemname:name,category,price,is_available:1});
-                    }catch(menuErr){
-                        console.warn('Stock added but menu auto-add failed',menuErr);
-                    }
-                }
-                stockData[name]=qty;
-                stockMeta[name]={id:stockResult.id||'',name,unit:'pcs',low_stock_level:5,updated_at:stockResult.updated_at||new Date().toISOString()};
-                stockHistory.unshift({item_name:name,old_quantity:0,new_quantity:qty,change_quantity:qty,action:'ADD',note:'New stock item',updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});
-                auditLog('Stock Item Added',`${name}: ${qty} pcs`);
-                populateDropdown();renderStockDashboard();renderPremiumInventory();
-                showCustomAlert('New stock item added. It is now available in Inventory and POS Menu.');
-            }catch(e){showCustomAlert('New stock item failed: '+(e?.message||e));}
         }
 
         function renderInventoryInsights(){const el=document.getElementById('inventoryInsightRows');if(!el)return;const rows=(stockHistory||[]).slice().sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')));el.innerHTML=rows.length?`<div class="premium-table-wrap" style="max-height:420px;overflow:auto"><table class="premium-table"><thead><tr><th>Date/Time</th><th>Item</th><th>Previous</th><th>Change</th><th>New</th><th>Action</th><th>By</th><th>Note</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.created_at?cleanDisplayDate(r.created_at)+' '+cleanDisplayTime(r.created_at):'—')}</td><td><b>${esc(r.item_name||r.name||'')}</b></td><td>${Number(r.old_quantity??0)}</td><td>${Number(r.change_quantity??0)>0?'+':''}${Number(r.change_quantity??0)}</td><td><b>${Number(r.new_quantity??r.quantity??0)}</b></td><td>${esc(r.action||'UPDATE')}</td><td>${esc(r.updated_by||'Admin')}</td><td>${esc(r.note||'')}</td></tr>`).join('')}</tbody></table></div>`:'<div class="premium-empty">No stock update history available yet.</div>';}
@@ -3037,63 +2952,19 @@ Tables, billing and existing local UI remain visible.`);}
             }catch(e){console.error('Premium expenses render failed',e);}
         }
 
-        // ===== LOGO =====
+        // ===== FIXED LOGO =====
         function applyViraasatLogo(src){
-            const value=String(src||'icon.png');
+            const value='icon.png';
             document.querySelectorAll('img[src="icon.png"], img[data-viraasat-logo="true"]').forEach(img=>{
                 img.src=value;
                 img.dataset.viraasatLogo='true';
             });
-            const preview=document.getElementById('viraasatLogoPreview');
-            if(preview)preview.src=value;
             const favicon=document.querySelector('link[rel="icon"]');
             if(favicon)favicon.href=value;
             const apple=document.querySelector('link[rel="apple-touch-icon"]');
             if(apple)apple.href=value;
         }
-        function loadViraasatLogo(){
-            try{
-                const saved=localStorage.getItem('viraasat_logo_src')||'icon.png';
-                applyViraasatLogo(saved);
-                const input=document.getElementById('viraasatLogoUrl');
-                if(input && /^https?:\/\//i.test(saved)) input.value=saved;
-            }catch(e){applyViraasatLogo('icon.png');}
-        }
-        function saveViraasatLogoUrl(){
-            const input=document.getElementById('viraasatLogoUrl');
-            const value=String(input?.value||'').trim();
-            if(!value){showCustomAlert('Please enter a logo image URL.');return;}
-            if(!/^https?:\/\//i.test(value) && !/^data:image\//i.test(value)){
-                showCustomAlert('Please enter a valid image URL starting with http:// or https://.');return;
-            }
-            localStorage.setItem('viraasat_logo_src',value);
-            applyViraasatLogo(value);
-            auditLog('Logo Updated','Logo URL updated');
-            showCustomAlert('Logo updated successfully.');
-        }
-        function handleViraasatLogoUpload(file){
-            if(!file)return;
-            if(!file.type.startsWith('image/')){showCustomAlert('Please select an image file.');return;}
-            if(file.size>2*1024*1024){showCustomAlert('Logo must be 2 MB or smaller.');return;}
-            const reader=new FileReader();
-            reader.onload=()=>{
-                const value=String(reader.result||'');
-                localStorage.setItem('viraasat_logo_src',value);
-                applyViraasatLogo(value);
-                const input=document.getElementById('viraasatLogoUrl');if(input)input.value='';
-                auditLog('Logo Updated','Logo image uploaded');
-                showCustomAlert('Logo uploaded successfully.');
-            };
-            reader.onerror=()=>showCustomAlert('Could not read the logo file.');
-            reader.readAsDataURL(file);
-        }
-        function resetViraasatLogo(){
-            localStorage.removeItem('viraasat_logo_src');
-            applyViraasatLogo('icon.png');
-            const input=document.getElementById('viraasatLogoUrl');if(input)input.value='';
-            auditLog('Logo Reset','Default logo restored');
-            showCustomAlert('Default logo restored.');
-        }
+        function loadViraasatLogo(){ applyViraasatLogo('icon.png'); }
 
         // ===== GOOGLE SHEET BACKUP =====
         async function runManualGoogleSheetBackup(){
@@ -3253,16 +3124,10 @@ Tables, billing and existing local UI remain visible.`);}
             </div>
 
             <div class="premium-card admin-card">
-                <div class="premium-card-head"><h3>Viraasat Logo</h3><span>POS + browser tab</span></div>
-                <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;min-width:0">
-                    <img id="viraasatLogoPreview" data-viraasat-logo="true" src="icon.png" alt="Logo preview" style="width:48px;height:48px;object-fit:contain;border:1px solid var(--border);border-radius:10px;background:#fff;padding:5px">
-                    <div class="admin-help" style="margin:0">Use either Upload Logo or Logo URL. The selected logo is applied to the POS and browser tab.</div>
-                </div>
-                <div class="admin-form-grid">
-                    <label class="premium-btn alt upload-label">Upload Logo<input type="file" accept="image/*" style="display:none" onchange="handleViraasatLogoUpload(this.files[0])"></label>
-                    <input id="viraasatLogoUrl" type="url" placeholder="Logo image URL">
-                    <button class="premium-btn" onclick="saveViraasatLogoUrl()">Use URL</button>
-                    <button class="premium-btn light" onclick="resetViraasatLogo()">Reset Logo</button>
+                <div class="premium-card-head"><h3>Viraasat Logo</h3><span>Fixed brand logo</span></div>
+                <div style="display:flex;align-items:center;gap:12px;min-width:0">
+                    <img data-viraasat-logo="true" src="icon.png" alt="Viraasat Logo" style="width:64px;height:64px;object-fit:contain;border:1px solid var(--border);border-radius:10px;background:#fff;padding:5px">
+                    <div class="admin-help" style="margin:0">Official Viraasat logo is fixed. Logo upload, URL change and reset options are disabled to keep branding consistent.</div>
                 </div>
             </div>
 
@@ -3368,9 +3233,9 @@ Tables, billing and existing local UI remain visible.`);}
         }
 
         function renderAdminStockRows(){const el=document.getElementById('adminStockMiniList');if(!el)return;const rows=Object.entries(stockData).sort((a,b)=>Number(a[1])-Number(b[1])).slice(0,15);el.innerHTML=rows.map(([name,qty])=>{const low=Number(stockMeta[name]?.low_stock_level??5);return `<div class="admin-mini-row" onclick="loadAdminStockSelect('${esc(name)}')" style="cursor:pointer"><div><b>${esc(name)}</b><small>${Number(qty)<=0?'OUT OF STOCK':Number(qty)<=low?'Low stock':'Available'} • Last update ${stockMeta[name]?.updated_at?esc(cleanDisplayDate(stockMeta[name].updated_at)):'—'}</small></div><strong>${Number(qty)||0}</strong></div>`}).join('')||'<div class="premium-empty">No stock data.</div>';}
-        function loadAdminStockSelect(name){if(!name){resetAdminStockForm(false);return;}const m=stockMeta[name]||{};document.getElementById('adminStockSearch').value=name;document.getElementById('adminStockQty').value=Number(stockData[name]||0);document.getElementById('adminStockLow').value=Number(m.low_stock_level??5);}
+        function loadAdminStockSelect(name){if(!name){resetAdminStockForm(false);return;}const m=stockMeta[name]||{};document.getElementById('adminStockSearch').value=name;document.getElementById('adminStockQty').value=Number(stockData[name]||0);const lowEl=document.getElementById('adminStockLow'); if(lowEl) lowEl.value=Number(m.low_stock_level??5);}
         function syncAdminStockSearch(v){const sel=document.getElementById('adminStockSelect');if(sel){const opt=[...sel.options].find(o=>o.value.toLowerCase()===String(v).trim().toLowerCase());sel.value=opt?opt.value:'';}}
-        function resetAdminStockForm(clear=true){if(clear&&document.getElementById('adminStockSelect'))document.getElementById('adminStockSelect').value='';['adminStockSearch','adminStockQty'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});document.getElementById('adminStockLow').value=5;}
+        function resetAdminStockForm(clear=true){if(clear&&document.getElementById('adminStockSelect'))document.getElementById('adminStockSelect').value='';['adminStockSearch','adminStockQty'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});const lowEl=document.getElementById('adminStockLow'); if(lowEl) lowEl.value=5;}
         function renderAdminStaffRows(){
             const el=document.getElementById('adminStaffRows'); if(!el)return;
             const q=(document.getElementById('adminStaffSearch')?.value||'').toLowerCase();
