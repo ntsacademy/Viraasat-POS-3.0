@@ -1698,7 +1698,7 @@
         <div id="trendView" class="tab-content" style="padding-top: 10px;">
             <div class="trend-kpi-grid">
                 <div class="trend-kpi-card full-width" style="background:var(--occ-bg); border-color:var(--occ-border);">
-                    <div class="kpi-title" style="color: #D03B3B;">Net Profit (All Time)</div>
+                    <div class="kpi-title" style="color: #D03B3B;">Net Profit (Current Unsettled Period)</div>
                     <div class="kpi-value" id="kpiNetProfit">₹ 0</div>
                 </div>
                 <div class="trend-kpi-card"><div class="kpi-title">Total Sales</div><div class="kpi-value" id="kpiTotalSales" style="color:var(--success);">₹ 0</div></div>
@@ -1876,7 +1876,12 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
         let stockMeta = {};
         let stockHistory = []; 
         let runningTables = {}; 
-        let salesHistory = []; 
+        let salesHistory = [];
+        let pnlSettlementRows = [];
+        function latestPnlSettlementTill(){ return (pnlSettlementRows||[]).slice().sort((a,b)=>String(b.till_date||'').localeCompare(String(a.till_date||'')))[0]?.till_date || ''; }
+        function getCurrentUnsettledSales(){ const till=latestPnlSettlementTill(); return (salesHistory||[]).filter(x=>!till || saleDateKey(x)>till); }
+        function getCurrentUnsettledExpenses(){ const till=latestPnlSettlementTill(); return (expenseHistory||[]).filter(x=>{ const d=expenseDateKey(x); return !till || !d || d>till; }); }
+        async function refreshPnlSettlementCache(){ try{ const r=await d1Get('/pnl/settlements'); pnlSettlementRows=Array.isArray(r?.settlements)?r.settlements:[]; }catch(e){ pnlSettlementRows=[]; } } 
         let expenseHistory = []; 
         let currentBill = []; 
         let staffData = [];
@@ -2376,7 +2381,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
 
         async function fetchData(){
             const loader=document.getElementById('loader');const expDate=document.getElementById('expDate');if(expDate&&!expDate.value)expDate.value=localISODate(new Date());const ef=document.getElementById('expFilterFrom'),et=document.getElementById('expFilterTo');if(ef&&et){ef.value='';et.value='';}loader.style.display='flex';loader.innerHTML='<div class="spinner"></div> <span>Syncing Viraasat D1...</span>';
-            const defs=[['/dashboard',d1Get('/dashboard')],['/menu',d1Get('/menu')],['/tables',d1Get('/tables')],['/orders',d1Get('/orders?limit=5000')],['/expenses',d1Get('/expenses?limit=2000')],['/stock',d1Get('/stock')],['/staff',d1Get('/staff')],['/stock/history',d1Get('/stock/history?limit=100')]];const results=await Promise.allSettled(defs.map(x=>x[1]));const failed=[];
+            await refreshPnlSettlementCache(); const defs=[['/dashboard',d1Get('/dashboard')],['/menu',d1Get('/menu')],['/tables',d1Get('/tables')],['/orders',d1Get('/orders?limit=5000')],['/expenses',d1Get('/expenses?limit=2000')],['/stock',d1Get('/stock')],['/staff',d1Get('/staff')],['/stock/history',d1Get('/stock/history?limit=100')]];const results=await Promise.allSettled(defs.map(x=>x[1]));const failed=[];
             try{
                 if(results[0].status==='fulfilled'){const dash=results[0].value||{};const summary=dash.summary||{};d1DashboardSummary={...summary};const ts=dash.tables||{};document.getElementById('homeTodaySale').innerText=`₹${Math.round(Number(summary.today_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeAvgOrder').innerText=`₹${Math.round(Number(summary.average_order)||0).toLocaleString('en-IN')}`;document.getElementById('homeOverallSale').innerText=`₹${Math.round(Number(summary.overall_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeActiveTables').innerText=`${Number(ts.occupied)||0} / ${Number(ts.total)||tableSections.reduce((a,x)=>a+x.tables.length,0)}`;}else failed.push(['/dashboard',results[0].reason]);
                 if(results[1].status==='fulfilled'){
@@ -2912,21 +2917,35 @@ Tables, billing and existing local UI remain visible.`);}
         function exportExpenses(){downloadCSV(expenseHistory.map(e=>({Date:getVal(e,['date','isodate']),Category:getVal(e,['category']),Description:getVal(e,['description','note']),Amount:parseAmount(getVal(e,['amount','total']))})),'Viraasat-Expenses.csv');}
 
         async function loadPnlSettlements(){try{const r=await d1Get('/pnl/settlements');return r.settlements||[];}catch(e){return [];}}
-        async function settlePnlTillDate(){if(!requireAdmin('P&L settlement'))return;const till=document.getElementById('pnlTillDate')?.value||new Date().toISOString().slice(0,10);if(!confirm(`Settle P&L till ${till}? This will close this period in the dashboard.`))return;try{const r=await d1Post('/pnl/settle',{till_date:till,settled_by:localStorage.getItem('viraasat_user')||'Admin'});showCustomAlert(`P&L settled till ${till}. Sales ₹${Number(r.sales_total||0).toLocaleString('en-IN')} | Expenses ₹${Number(r.expenses_total||0).toLocaleString('en-IN')}`);renderPremiumReports();}catch(e){showCustomAlert('P&L settlement failed: '+(e?.message||e));}}
-        async function renderPnlSettlementPanel(){const host=document.getElementById('pnlSettlementHost');if(!host)return;const rows=await loadPnlSettlements();host.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>P&L Settlement</h3><span>Settle till selected date</span></div><div class="admin-form-grid"><input id="pnlTillDate" type="date" value="${new Date().toISOString().slice(0,10)}" max="${new Date().toISOString().slice(0,10)}"><button class="premium-btn" onclick="settlePnlTillDate()">Settle Till Date</button></div><div class="admin-help">Settlement only closes the selected period; original orders and expenses remain available in history.</div><div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>From</th><th>Till</th><th>Sales</th><th>Expenses</th><th>P/L</th><th>Settled On</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.from_date||'Start')}</td><td>${esc(x.till_date)}</td><td>${money(x.sales_total)}</td><td>${money(x.expenses_total)}</td><td><b>${money(Number(x.sales_total||0)-Number(x.expenses_total||0))}</b></td><td>${esc(x.created_at||'')}</td></tr>`).join('')||'<tr><td colspan="6">No settlements yet.</td></tr>'}</tbody></table></div></div>`;}
+        async function settlePnlTillDate(){if(!requireAdmin('P&L settlement'))return;const till=document.getElementById('pnlTillDate')?.value||localISODate(new Date());if(!confirm(`Settle P&L till ${till}? This will close this period in the dashboard.`))return;try{const r=await d1Post('/pnl/settle',{till_date:till,settled_by:localStorage.getItem('viraasat_user')||'Admin'});await refreshPnlSettlementCache(); showCustomAlert(`P&L settled till ${till}. Sales ₹${Number(r.sales_total||0).toLocaleString('en-IN')} | Expenses ₹${Number(r.expenses_total||0).toLocaleString('en-IN')}`);generateTrends();renderPremiumReports();renderPnlSettlementPanel();}catch(e){showCustomAlert('P&L settlement failed: '+(e?.message||e));}}
+        async function renderPnlSettlementPanel(){
+            const host=document.getElementById('pnlSettlementHost'); if(!host)return;
+            await refreshPnlSettlementCache();
+            const rows=(pnlSettlementRows||[]).slice().sort((a,b)=>String(b.till_date||'').localeCompare(String(a.till_date||'')));
+            const last=latestPnlSettlementTill();
+            const from=last?new Date(new Date(last+'T00:00:00Z').getTime()+86400000).toISOString().slice(0,10):'Start';
+            host.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>P&L Settlement</h3><span>Current dashboard shows only unsettled data</span></div>
+            <div class="admin-help"><b>Current open period:</b> ${esc(from)} → Today. Settled data is excluded from the main KPIs and remains available below in history.</div>
+            <div class="admin-form-grid"><input id="pnlTillDate" type="date" value="${localISODate(new Date())}" max="${localISODate(new Date())}"><button class="premium-btn" onclick="settlePnlTillDate()">Settle Till Date</button></div>
+            <div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>From</th><th>Till</th><th>Sales</th><th>Expenses</th><th>P/L</th><th>Settled On</th><th>Details</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.from_date||'Start')}</td><td>${esc(x.till_date||'')}</td><td>${money(x.sales_total)}</td><td>${money(x.expenses_total)}</td><td><b>${money(Number(x.sales_total||0)-Number(x.expenses_total||0))}</b></td><td>${esc(x.created_at||'')}</td><td><button class="premium-btn light" onclick="viewSettlementDetails(${Number(x.id)||0})">View</button></td></tr>`).join('')||'<tr><td colspan="7">No settlements yet.</td></tr>'}</tbody></table></div></div>`;
+        }
+        async function viewSettlementDetails(id){ const row=(pnlSettlementRows||[]).find(x=>Number(x.id)===Number(id)); if(!row){showCustomAlert('Settlement details not found.');return;} const sales=(salesHistory||[]).filter(s=>{const d=saleDateKey(s);return (!row.from_date||d>=row.from_date)&&d<=row.till_date;}); const exps=(expenseHistory||[]).filter(e=>{const d=expenseDateKey(e);return (!row.from_date||!d||d>=row.from_date)&&(!d||d<=row.till_date);}); const saleTotal=sales.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0); const expTotal=exps.reduce((a,e)=>a+parseAmount(getVal(e,['amount','total'])),0); showCustomAlert(`Settled period: ${row.from_date||'Start'} to ${row.till_date}\nOrders: ${sales.length}\nSales: ₹${saleTotal.toLocaleString('en-IN')}\nExpenses: ₹${expTotal.toLocaleString('en-IN')}\nP/L: ₹${(saleTotal-expTotal).toLocaleString('en-IN')}\nSettled by: ${row.settled_by||'Admin'}\n\nOriginal settlement snapshot: Sales ₹${Number(row.sales_total||0).toLocaleString('en-IN')} | Expenses ₹${Number(row.expenses_total||0).toLocaleString('en-IN')}`); }
+
         function renderPremiumReports(){
             const panel=document.getElementById('premiumPanel-reports');if(!panel)return;
-            const byDate={}; salesHistory.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!byDate[d])byDate[d]={orders:0,sales:0,discount:0};byDate[d].orders++;byDate[d].sales+=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));byDate[d].discount+=parseAmount(getVal(s,['discount']));});
+            const reportSales=getCurrentUnsettledSales(); const reportExpenses=getCurrentUnsettledExpenses(); const byDate={}; reportSales.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!byDate[d])byDate[d]={orders:0,sales:0,discount:0};byDate[d].orders++;byDate[d].sales+=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));byDate[d].discount+=parseAmount(getVal(s,['discount']));});
             const days=Object.entries(byDate).sort((a,b)=>b[0].localeCompare(a[0]));
-            const items=buildItemSales(); const totalItemSales=items.reduce((a,x)=>a+x.sales,0); const totalItemQty=items.reduce((a,x)=>a+x.qty,0);
+            const items=buildItemSales(reportSales); const totalItemSales=items.reduce((a,x)=>a+x.sales,0); const totalItemQty=items.reduce((a,x)=>a+x.qty,0);
             const top=items.slice(0,15);
-            const totalSale=salesHistory.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0); const totalDiscount=salesHistory.reduce((a,s)=>a+parseAmount(getVal(s,['discount'])),0);
+            const totalSale=reportSales.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0); const totalDiscount=reportSales.reduce((a,s)=>a+parseAmount(getVal(s,['discount'])),0);
             panel.innerHTML=`
-            <div class="sales-summary-grid"><div class="report-stat"><div class="rlabel">Overall Sale</div><div class="rvalue">${money(totalSale)}</div></div><div class="report-stat"><div class="rlabel">Discount</div><div class="rvalue">${money(totalDiscount)}</div></div><div class="report-stat"><div class="rlabel">Orders</div><div class="rvalue">${salesHistory.length}</div></div></div>
+            <div class="sales-summary-grid"><div class="report-stat"><div class="rlabel">Overall Sale</div><div class="rvalue">${money(totalSale)}</div></div><div class="report-stat"><div class="rlabel">Discount</div><div class="rvalue">${money(totalDiscount)}</div></div><div class="report-stat"><div class="rlabel">Orders</div><div class="rvalue">${reportSales.length}</div></div></div>
             <div class="premium-card"><div class="premium-card-head"><h3>Top Selling Items</h3><span>Sorted by sales value</span></div><div class="admin-help">Highest-selling items are shown first. Sales % = item's value ÷ total item sales. Qty % = item's quantity ÷ total units sold.</div><div class="top-selling-list">${top.map((x,i)=>{const ss=totalItemSales?x.sales/totalItemSales*100:0;const qs=totalItemQty?x.qty/totalItemQty*100:0;return `<div class="item-rank"><div class="item-rank-no">${i+1}</div><div class="item-rank-info"><div class="item-rank-name">${esc(x.name)}</div><div class="item-rank-sub">${x.qty} units • ${x.orders} orders • Qty ${qs.toFixed(1)}%</div><div class="mini-bar"><i style="width:${Math.min(100,ss)}%"></i></div></div><div style="text-align:right"><div class="item-rank-val">${money(x.sales)}</div><small style="font-size:.6rem;color:var(--text-muted)">${ss.toFixed(1)}%</small></div></div>`}).join('')||'<div class="premium-empty">No item sales found.</div>'}</div></div>
             <div class="premium-card"><div class="premium-card-head"><h3>Daily Business Report</h3><button class="premium-btn light" onclick="exportDailyReport()">Export</button></div><div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Orders</th><th>Sales</th><th>Discount</th><th>AOV</th></tr></thead><tbody>${days.map(([d,x])=>`<tr><td>${cleanDisplayDate(d)}</td><td>${x.orders}</td><td><b>${money(x.sales)}</b></td><td>${money(x.discount)}</td><td>${money(x.sales/x.orders)}</td></tr>`).join('')||'<tr><td colspan="5"><div class="premium-empty">No sales.</div></td></tr>'}</tbody></table></div></div>`;
+            panel.innerHTML += `<div class="premium-card" style="margin-top:14px"><div class="premium-card-head"><h3>All-Time P&L Archive</h3><span>Historical view only</span></div><div class="admin-help">This section is separate from the live dashboard. Use dates to inspect all historical sales and expenses, including settled periods.</div><div class="admin-form-grid"><input type="date" id="allPnlFrom"><input type="date" id="allPnlTo"><button class="premium-btn light" onclick="renderAllTimePnlArchive()">Apply Filter</button></div><div id="allTimePnlArchive"></div></div>`; renderAllTimePnlArchive();
             renderPnlSettlementPanel();
         }
+        function renderAllTimePnlArchive(){ const el=document.getElementById('allTimePnlArchive'); if(!el)return; const f=document.getElementById('allPnlFrom')?.value||'', t=document.getElementById('allPnlTo')?.value||''; const ss=(salesHistory||[]).filter(x=>{const d=saleDateKey(x);return(!f||d>=f)&&(!t||d<=t)}); const ee=(expenseHistory||[]).filter(x=>{const d=expenseDateKey(x);return(!f||d>=f)&&(!t||d<=t)}); const sales=ss.reduce((a,x)=>a+parseAmount(getVal(x,['grand_total','totalamount','total','amount'])),0), exp=ee.reduce((a,x)=>a+parseAmount(getVal(x,['amount','total'])),0); el.innerHTML=`<div class="sales-summary-grid"><div class="report-stat"><div class="rlabel">All-Time Sales</div><div class="rvalue">${money(sales)}</div></div><div class="report-stat"><div class="rlabel">All-Time Expenses</div><div class="rvalue">${money(exp)}</div></div><div class="report-stat"><div class="rlabel">All-Time P/L</div><div class="rvalue">${money(sales-exp)}</div></div></div><div class="admin-help">${ss.length} sales orders • ${ee.length} expense entries</div>`; }
         function exportDailyReport(){const by={};salesHistory.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!by[d])by[d]={orders:0,sales:0};by[d].orders++;by[d].sales+=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));});downloadCSV(Object.entries(by).sort((a,b)=>a[0].localeCompare(b[0])).map(([Date,x])=>({Date,Orders:x.orders,Sales:Math.round(x.sales),AOV:Math.round(x.sales/x.orders)})),'Viraasat-Daily-Report.csv');}
 
         function renderPremiumExpenses(){
@@ -2965,7 +2984,7 @@ Tables, billing and existing local UI remain visible.`);}
             const apple=document.querySelector('link[rel="apple-touch-icon"]');
             if(apple)apple.href=value;
         }
-        function loadViraasatLogo(){ applyViraasatLogo('icon.png'); }
+        function loadViraasatLogo(){ /* Fixed embedded Viraasat PNG; never replace it with an external file. */ return true; }
 
         // ===== GOOGLE SHEET BACKUP =====
         async function runManualGoogleSheetBackup(){
@@ -3225,13 +3244,13 @@ Tables, billing and existing local UI remain visible.`);}
         }
 
         function renderAdminStockRows(){const el=document.getElementById('adminStockMiniList');if(!el)return;const rows=Object.entries(stockData).sort((a,b)=>Number(a[1])-Number(b[1])).slice(0,15);el.innerHTML=rows.map(([name,qty])=>{const low=Number(stockMeta[name]?.low_stock_level??5);return `<div class="admin-mini-row" onclick="loadAdminStockSelect('${esc(name)}')" style="cursor:pointer"><div><b>${esc(name)}</b><small>${Number(qty)<=0?'OUT OF STOCK':Number(qty)<=low?'Low stock':'Available'} • Last update ${stockMeta[name]?.updated_at?esc(cleanDisplayDate(stockMeta[name].updated_at)):'—'}</small></div><strong>${Number(qty)||0}</strong></div>`}).join('')||'<div class="premium-empty">No stock data.</div>';}
-        function loadAdminStockSelect(name){if(!name){resetAdminStockForm(false);return;}const m=stockMeta[name]||{};document.getElementById('adminStockSearch').value=name;document.getElementById('adminStockQty').value=Number(stockData[name]||0);const lowEl=document.getElementById('adminStockLow'); if(lowEl) lowEl.value=Number(m.low_stock_level??5);}
+        function loadAdminStockSelect(name){if(!name){resetAdminStockForm(false);return;}const m=stockMeta[name]||{};const search=document.getElementById('adminStockSearch');if(search)search.value=name;const qty=document.getElementById('adminStockQty');if(qty){qty.value='';qty.placeholder=`Qty to Add (Current: ${Number(stockData[name]||0)})`;}const lowEl=document.getElementById('adminStockLow'); if(lowEl) lowEl.value=Number(m.low_stock_level??5);renderAdminStockRows();}
         function syncAdminStockSearch(v){const sel=document.getElementById('adminStockSelect');if(sel){const opt=[...sel.options].find(o=>o.value.toLowerCase()===String(v).trim().toLowerCase());sel.value=opt?opt.value:'';}}
         function startNewStockItem(){
             const sel=document.getElementById('adminStockSelect'); if(sel) sel.value='';
             const search=document.getElementById('adminStockSearch'); if(search){search.value='';search.focus();}
             const qty=document.getElementById('adminStockQty'); if(qty) qty.value='';
-            showCustomAlert('Enter the new stock item name and opening quantity, then click Add Stock.');
+            const q=document.getElementById('adminStockQty');if(q)q.placeholder='Opening Quantity'; showCustomAlert('Enter the new stock item name and opening quantity, then click Add Stock.');
         }
         function resetAdminStockForm(clear=true){if(clear&&document.getElementById('adminStockSelect'))document.getElementById('adminStockSelect').value='';['adminStockSearch','adminStockQty'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});const lowEl=document.getElementById('adminStockLow'); if(lowEl) lowEl.value=5;}
         function renderAdminStaffRows(){
@@ -3583,12 +3602,13 @@ Tables, billing and existing local UI remain visible.`);}
 
         function generateTrends() {
             try {
+                const activeSales = getCurrentUnsettledSales(); const activeExpenses = getCurrentUnsettledExpenses();
                 let totalSalesAmount = 0; let totalExpensesAmount = 0; let totalSalaryPaid = 0;
                 let d = new Date(); let todayIso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; let todayGb = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
                 let revenueToday = 0; let ordersToday = 0; let expenseCategories = {}; let staffExpenseMap = {};
                 rawChartSalesData = {}; rawChartExpenseData = {};
 
-                salesHistory.forEach(sale => { 
+                activeSales.forEach(sale => { 
                     let sTotal = parseAmount(getVal(sale, ['totalamount', 'total', 'amount'])); let sDate = String(getVal(sale, ['date', 'isodate']) || '').trim();
                     totalSalesAmount += sTotal; 
                     if(sDate) {
@@ -3598,7 +3618,7 @@ Tables, billing and existing local UI remain visible.`);}
                     }
                 });
                 
-                expenseHistory.forEach(exp => { 
+                activeExpenses.forEach(exp => { 
                     let sAmount = parseAmount(getVal(exp, ['amount', 'total'])); let sDate = getVal(exp, ['expense_date', 'date', 'isodate', 'created_at']) || ''; let eCat = getVal(exp, ['category']) || 'Other'; let eDesc = getVal(exp, ['description', 'note']) || '';
                     if(sDate) { 
                         let dateStrKey = sDate.split("T")[0].split(" ")[0]; let parsedDate = new Date(sDate);
@@ -3616,18 +3636,18 @@ Tables, billing and existing local UI remain visible.`);}
 
                 let staffHtml = ""; for(let sName in staffExpenseMap) { staffHtml += `<div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:6px;"><span>👤 ${sName}</span> <span style="font-weight:600; color:var(--danger);">- ₹${staffExpenseMap[sName].toLocaleString('en-IN')}</span></div>`; }
                 document.getElementById('staffExpenseList').innerHTML = staffHtml || "<span style='color:var(--text-muted);'>No staff payments recorded.</span>";
-                const advanceEl=document.getElementById('staffAdvanceDetails'); if(advanceEl){ const staffRows=expenseHistory.filter(exp=>['Staff Salary','Payroll'].includes(String(getVal(exp,['category'])||''))).slice(0,30); advanceEl.innerHTML=staffRows.length?staffRows.map(exp=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:6px;gap:8px"><span>${esc(getVal(exp,['date','isodate'])||'')} • ${esc(getVal(exp,['description','note'])||'Staff')}</span><b>₹${parseAmount(getVal(exp,['amount','total'])).toLocaleString('en-IN')}</b></div>`).join(''):'<span style="color:var(--text-muted)">No staff advances or payroll entries.</span>'; }
+                const advanceEl=document.getElementById('staffAdvanceDetails'); if(advanceEl){ const staffRows=activeExpenses.filter(exp=>['Staff Salary','Payroll'].includes(String(getVal(exp,['category'])||''))).slice(0,30); advanceEl.innerHTML=staffRows.length?staffRows.map(exp=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:6px;gap:8px"><span>${esc(getVal(exp,['date','isodate'])||'')} • ${esc(getVal(exp,['description','note'])||'Staff')}</span><b>₹${parseAmount(getVal(exp,['amount','total'])).toLocaleString('en-IN')}</b></div>`).join(''):'<span style="color:var(--text-muted)">No staff advances or payroll entries.</span>'; }
 
                 // KPI totals use the same canonical saleDateKey() as the Sales tab.
                 // This keeps Today's Sale, Today's Orders and the date-filtered Sales
                 // total on exactly the same calendar-day basis and avoids D1 summary
                 // timestamp/date mismatches for imported orders.
                 const canonicalToday = localISODate(new Date());
-                const canonicalTodaySales = salesHistory.filter(s => saleDateKey(s) === canonicalToday);
+                const canonicalTodaySales = activeSales.filter(s => saleDateKey(s) === canonicalToday);
                 revenueToday = canonicalTodaySales.reduce((sum, s) => sum + parseAmount(getVal(s, ['grand_total','totalamount','total','amount'])), 0);
                 ordersToday = canonicalTodaySales.length;
                 avgToday = ordersToday ? Math.round(revenueToday / ordersToday) : 0;
-                totalSalesAmount = salesHistory.reduce((sum, s) => sum + parseAmount(getVal(s, ['grand_total','totalamount','total','amount'])), 0);
+                totalSalesAmount = activeSales.reduce((sum, s) => sum + parseAmount(getVal(s, ['grand_total','totalamount','total','amount'])), 0);
                 let hasSalesAccess = true; if (typeof window.isUserAdmin !== 'undefined') { hasSalesAccess = window.isUserAdmin || (window.userPerms && window.userPerms.orders); }
 
                 if (hasSalesAccess) {
