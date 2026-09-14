@@ -1814,6 +1814,7 @@ var worker_default = {
         const today = new Date().toISOString().slice(0,10);
         if (till > today) return json({success:false,error:"Settlement date cannot be in future"},400);
         const last = await db.prepare(`SELECT till_date FROM pnl_settlements ORDER BY id DESC LIMIT 1`).first();
+        if (last?.till_date && till <= last.till_date) return json({success:false,error:`Settlement till date must be after last settlement (${last.till_date})`},400);
         const from = last?.till_date ? new Date(new Date(last.till_date + "T00:00:00Z").getTime()+86400000).toISOString().slice(0,10) : null;
         const salesWhere = from ? `date(substr(COALESCE(created_at,''),1,10)) >= date(?) AND date(substr(COALESCE(created_at,''),1,10)) <= date(?)` : `date(substr(COALESCE(created_at,''),1,10)) <= date(?)`;
         const salesBind = from ? [from,till] : [till];
@@ -1908,6 +1909,12 @@ var worker_default = {
             400
           );
         }
+        const dupDate = normalizeDate(body.expense_date) || null;
+        const dupCategory = clean(body.category) || "";
+        const dupAmount = num(body.amount);
+        const dupDescription = clean(body.description) || "";
+        const duplicate = await db.prepare(`SELECT id FROM expenses WHERE COALESCE(expense_date,'')=COALESCE(?, '') AND lower(COALESCE(category,''))=lower(?) AND CAST(amount AS REAL)=? AND lower(COALESCE(description,''))=lower(?) LIMIT 1`).bind(dupDate, dupCategory, dupAmount, dupDescription).first();
+        if (duplicate) return json({success:true, duplicate:true, id:duplicate.id, message:"Duplicate expense skipped"});
         await db.prepare(`
           INSERT INTO expenses
           (${fields.join(",")})
@@ -2431,7 +2438,9 @@ var worker_default = {
           const category = clean(row.category || row.Category || row["Expense Category"]) || "Other";
           const amount = num(row.amount ?? row.Amount ?? row["Amount (₹)"],0);
           const description = clean(row.description || row.Description || row.note || row.Note);
-          const date = clean(row.date || row.Date || row.expense_date) || todayIST();
+          const date = normalizeDate(clean(row.date || row.Date || row.expense_date) || todayIST());
+          const duplicate = await db.prepare(`SELECT id FROM expenses WHERE COALESCE(expense_date,'')=COALESCE(?, '') AND lower(COALESCE(category,''))=lower(?) AND CAST(amount AS REAL)=? AND lower(COALESCE(description,''))=lower(?) LIMIT 1`).bind(date,category,amount,description).first();
+          if (duplicate) continue;
           await db.prepare(`INSERT INTO expenses (category,amount,description,expense_date) VALUES (?,?,?,?)`).bind(category,amount,description,date).run();
           expensesImported++;
         }
