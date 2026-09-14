@@ -125,6 +125,19 @@ async function ensureSupportTables(db) {
     )
   `).run();
   await db.prepare(`
+    CREATE TABLE IF NOT EXISTS pnl_settlements (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      from_date TEXT,
+      till_date TEXT NOT NULL,
+      sales_total REAL DEFAULT 0,
+      expenses_total REAL DEFAULT 0,
+      order_count INTEGER DEFAULT 0,
+      settled_by TEXT,
+      note TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+  await db.prepare(`
     CREATE TABLE IF NOT EXISTS stock_history (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       stock_item_id INTEGER,
@@ -1404,7 +1417,7 @@ var worker_default = {
             "GET /api/tables","POST /api/tables/clear","GET /api/orders","POST /api/orders","POST /api/orders/checkout",
             "POST /api/orders/request-delete","GET /api/approvals","GET /api/approvals/debug","POST /api/approvals/resolve",
             "GET /api/expenses","POST /api/expenses","GET /api/staff","POST /api/staff","POST /api/staff/update",
-            "POST /api/staff/remove","POST /api/staff/status","POST /api/import/full","POST /api/backup/google-sheet"
+            "POST /api/staff/remove","POST /api/staff/status","GET /api/pnl/settlements","POST /api/pnl/settle","POST /api/import/full","POST /api/backup/google-sheet"
           ]
         });
       }
@@ -1788,6 +1801,28 @@ var worker_default = {
 
         return json({ success:true, message:`Request ${status}`, order_id:targetOrder, status });
       }
+      if (path === "/api/pnl/settlements" && method === "GET") {
+        await ensureSupportTables(db);
+        const rows = await db.prepare(`SELECT * FROM pnl_settlements ORDER BY id DESC`).all();
+        return json({success:true, settlements: rows.results || []});
+      }
+      if (path === "/api/pnl/settle" && method === "POST") {
+        await ensureSupportTables(db);
+        const body = await request.json();
+        const till = clean(body.till_date || body.tillDate);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(till)) return json({success:false,error:"Valid till_date YYYY-MM-DD required"},400);
+        const today = new Date().toISOString().slice(0,10);
+        if (till > today) return json({success:false,error:"Settlement date cannot be in future"},400);
+        const last = await db.prepare(`SELECT till_date FROM pnl_settlements ORDER BY id DESC LIMIT 1`).first();
+        const from = last?.till_date ? new Date(new Date(last.till_date + "T00:00:00Z").getTime()+86400000).toISOString().slice(0,10) : null;
+        const salesWhere = from ? `date(substr(COALESCE(created_at,''),1,10)) >= date(?) AND date(substr(COALESCE(created_at,''),1,10)) <= date(?)` : `date(substr(COALESCE(created_at,''),1,10)) <= date(?)`;
+        const salesBind = from ? [from,till] : [till];
+        const sr = await db.prepare(`SELECT COALESCE(SUM(CAST(total AS REAL)),0) AS total, COUNT(*) AS cnt FROM orders WHERE ${salesWhere} AND LOWER(COALESCE(order_status,'')) NOT IN ('cancelled','deleted','deletion_pending')`).bind(...salesBind).first();
+        const expenseWhere = from ? `date(substr(COALESCE(expense_date,created_at,''),1,10)) >= date(?) AND date(substr(COALESCE(expense_date,created_at,''),1,10)) <= date(?)` : `date(substr(COALESCE(expense_date,created_at,''),1,10)) <= date(?)`;
+        const er = await db.prepare(`SELECT COALESCE(SUM(CAST(amount AS REAL)),0) AS total FROM expenses WHERE ${expenseWhere}`).bind(...salesBind).first();
+        const result = await db.prepare(`INSERT INTO pnl_settlements(from_date,till_date,sales_total,expenses_total,order_count,settled_by,note) VALUES(?,?,?,?,?,?,?)`).bind(from,till,sr?.total||0,er?.total||0,sr?.cnt||0,clean(body.settled_by)||"Admin",clean(body.note)||null).run();
+        return json({success:true,id:result.meta?.last_row_id||null,from_date:from,till_date:till,sales_total:sr?.total||0,expenses_total:er?.total||0,profit_loss:(sr?.total||0)-(er?.total||0),order_count:sr?.cnt||0});
+      }
       if (path === "/api/expenses" && method === "GET") {
         const limit = Math.min(
           Math.max(
@@ -1943,9 +1978,8 @@ var worker_default = {
             400
           );
         }
-        const qty = num(
-          body.quantity ?? body.qty
-        );
+        const requestedQty = num(body.quantity ?? body.qty);
+        const operation = String(body.operation || body.action || (body.is_loss ? "loss" : "add")).toLowerCase();
         const low = num(
           body.low_stock_level,
           5
@@ -1959,10 +1993,11 @@ var worker_default = {
             WHERE lower(name)=lower(?)
             LIMIT 1
           `).bind(name).first();
-        const oldQty = num(
-          existing?.quantity,
-          0
-        );
+        const oldQty = num(existing?.quantity, 0);
+        // New stock is additive; loss subtracts from current stock. Absolute set is only
+        // allowed explicitly for new-item creation/controlled migration compatibility.
+        let qty = existing ? oldQty + (operation === "loss" ? -Math.abs(requestedQty) : operation === "set" ? requestedQty : Math.abs(requestedQty)) : Math.max(0, requestedQty);
+        if (!Number.isFinite(qty)) qty = oldQty;
         await db.prepare(`
           INSERT INTO stock_items
           (
@@ -1998,8 +2033,8 @@ var worker_default = {
             WHERE lower(name)=lower(?)
             LIMIT 1
           `).bind(name).first();
-        const action = existing ? "UPDATE" : "ADD";
-        const note = clean(body.note) || (existing ? "Admin stock correction" : "New stock item");
+        const action = existing ? (operation === "loss" ? "LOSS" : operation === "set" ? "RESET" : "ADD") : "ADD";
+        const note = clean(body.note) || (operation === "loss" ? "Stock loss" : existing ? "Stock added" : "New stock item");
         const updatedBy = clean(
           body.updated_by
         ) || "Admin";
