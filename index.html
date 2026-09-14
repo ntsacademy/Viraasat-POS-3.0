@@ -1726,6 +1726,11 @@
                 <div class="section-header" style="margin-top:0;"><h4>Staff Advance Details</h4></div>
                 <div id="staffAdvanceDetails" style="display:flex; flex-direction:column; gap:8px; font-size:0.78rem;"></div>
             </div>
+            <div class="card">
+                <div class="section-header" style="margin-top:0;"><h4>Staff Advance Ledger</h4><button class="premium-btn light" onclick="addStaffAdvanceEntry()">Give / Record Advance</button></div>
+                <div class="admin-help">D1-based staff advance records: given, returned or adjusted. These remain available by date and staff.</div>
+                <div id="staffAdvanceLedger" class="admin-mini-list"></div>
+            </div>
             
             <div class="card">
                 <div class="section-header" style="margin-top:0;"><h4>Other Expenses</h4></div>
@@ -2931,6 +2936,14 @@ Tables, billing and existing local UI remain visible.`);}
         }
         async function viewSettlementDetails(id){ const row=(pnlSettlementRows||[]).find(x=>Number(x.id)===Number(id)); if(!row){showCustomAlert('Settlement details not found.');return;} const sales=(salesHistory||[]).filter(s=>{const d=saleDateKey(s);return (!row.from_date||d>=row.from_date)&&d<=row.till_date;}); const exps=(expenseHistory||[]).filter(e=>{const d=expenseDateKey(e);return (!row.from_date||!d||d>=row.from_date)&&(!d||d<=row.till_date);}); const saleTotal=sales.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0); const expTotal=exps.reduce((a,e)=>a+parseAmount(getVal(e,['amount','total'])),0); showCustomAlert(`Settled period: ${row.from_date||'Start'} to ${row.till_date}\nOrders: ${sales.length}\nSales: ₹${saleTotal.toLocaleString('en-IN')}\nExpenses: ₹${expTotal.toLocaleString('en-IN')}\nP/L: ₹${(saleTotal-expTotal).toLocaleString('en-IN')}\nSettled by: ${row.settled_by||'Admin'}\n\nOriginal settlement snapshot: Sales ₹${Number(row.sales_total||0).toLocaleString('en-IN')} | Expenses ₹${Number(row.expenses_total||0).toLocaleString('en-IN')}`); }
 
+        async function renderStaffAdvanceLedger(){
+            const el=document.getElementById('staffAdvanceLedger'); if(!el)return;
+            try{const r=await d1Get('/staff/advances'); const rows=Array.isArray(r?.advances)?r.advances:[]; const totals={}; rows.forEach(x=>{const n=x.staff_name||'Unknown'; totals[n]=(totals[n]||0)+(String(x.entry_type).toLowerCase()==='returned'||String(x.entry_type).toLowerCase()==='adjusted'?-Number(x.amount||0):Number(x.amount||0));});
+            el.innerHTML=rows.map(x=>`<div class="admin-mini-row"><div><b>${esc(x.staff_name)}</b><small>${esc(x.entry_date)} • ${esc(x.entry_type)}${x.note?' • '+esc(x.note):''}</small></div><strong>${money(x.amount)}</strong></div>`).join('')||'<div class="premium-empty">No staff advance entries.</div>';
+            }catch(e){el.innerHTML='<div class="premium-empty">Staff advance ledger unavailable.</div>';}}
+        async function addStaffAdvanceEntry(){
+            if(!requireAdmin('staff advance'))return; const staff=prompt('Staff name:'); if(!staff)return; const amount=Number(prompt('Amount:')); if(!Number.isFinite(amount)||amount<=0){showCustomAlert('Enter valid amount.');return;} const type=prompt('Type: given / returned / adjusted','given')||'given'; const note=prompt('Note (optional):')||''; try{await d1Post('/staff/advances',{staff_name:staff,amount,entry_type:type,entry_date:localISODate(new Date()),note,created_by:localStorage.getItem('viraasat_user')||'Admin'}); await renderStaffAdvanceLedger(); showCustomAlert('Staff advance saved in D1.');}catch(e){showCustomAlert('Advance save failed: '+(e?.message||e));}}
+
         function renderPremiumReports(){
             const panel=document.getElementById('premiumPanel-reports');if(!panel)return;
             const reportSales=getCurrentUnsettledSales(); const reportExpenses=getCurrentUnsettledExpenses(); const byDate={}; reportSales.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!byDate[d])byDate[d]={orders:0,sales:0,discount:0};byDate[d].orders++;byDate[d].sales+=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));byDate[d].discount+=parseAmount(getVal(s,['discount']));});
@@ -2943,7 +2956,7 @@ Tables, billing and existing local UI remain visible.`);}
             <div class="premium-card"><div class="premium-card-head"><h3>Top Selling Items</h3><span>Sorted by sales value</span></div><div class="admin-help">Highest-selling items are shown first. Sales % = item's value ÷ total item sales. Qty % = item's quantity ÷ total units sold.</div><div class="top-selling-list">${top.map((x,i)=>{const ss=totalItemSales?x.sales/totalItemSales*100:0;const qs=totalItemQty?x.qty/totalItemQty*100:0;return `<div class="item-rank"><div class="item-rank-no">${i+1}</div><div class="item-rank-info"><div class="item-rank-name">${esc(x.name)}</div><div class="item-rank-sub">${x.qty} units • ${x.orders} orders • Qty ${qs.toFixed(1)}%</div><div class="mini-bar"><i style="width:${Math.min(100,ss)}%"></i></div></div><div style="text-align:right"><div class="item-rank-val">${money(x.sales)}</div><small style="font-size:.6rem;color:var(--text-muted)">${ss.toFixed(1)}%</small></div></div>`}).join('')||'<div class="premium-empty">No item sales found.</div>'}</div></div>
             <div class="premium-card"><div class="premium-card-head"><h3>Daily Business Report</h3><button class="premium-btn light" onclick="exportDailyReport()">Export</button></div><div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Orders</th><th>Sales</th><th>Discount</th><th>AOV</th></tr></thead><tbody>${days.map(([d,x])=>`<tr><td>${cleanDisplayDate(d)}</td><td>${x.orders}</td><td><b>${money(x.sales)}</b></td><td>${money(x.discount)}</td><td>${money(x.sales/x.orders)}</td></tr>`).join('')||'<tr><td colspan="5"><div class="premium-empty">No sales.</div></td></tr>'}</tbody></table></div></div>`;
             panel.innerHTML += `<div class="premium-card" style="margin-top:14px"><div class="premium-card-head"><h3>All-Time P&L Archive</h3><span>Historical view only</span></div><div class="admin-help">This section is separate from the live dashboard. Use dates to inspect all historical sales and expenses, including settled periods.</div><div class="admin-form-grid"><input type="date" id="allPnlFrom"><input type="date" id="allPnlTo"><button class="premium-btn light" onclick="renderAllTimePnlArchive()">Apply Filter</button></div><div id="allTimePnlArchive"></div></div>`; renderAllTimePnlArchive();
-            renderPnlSettlementPanel();
+            renderPnlSettlementPanel(); renderStaffAdvanceLedger();
         }
         function renderAllTimePnlArchive(){ const el=document.getElementById('allTimePnlArchive'); if(!el)return; const f=document.getElementById('allPnlFrom')?.value||'', t=document.getElementById('allPnlTo')?.value||''; const ss=(salesHistory||[]).filter(x=>{const d=saleDateKey(x);return(!f||d>=f)&&(!t||d<=t)}); const ee=(expenseHistory||[]).filter(x=>{const d=expenseDateKey(x);return(!f||d>=f)&&(!t||d<=t)}); const sales=ss.reduce((a,x)=>a+parseAmount(getVal(x,['grand_total','totalamount','total','amount'])),0), exp=ee.reduce((a,x)=>a+parseAmount(getVal(x,['amount','total'])),0); el.innerHTML=`<div class="sales-summary-grid"><div class="report-stat"><div class="rlabel">All-Time Sales</div><div class="rvalue">${money(sales)}</div></div><div class="report-stat"><div class="rlabel">All-Time Expenses</div><div class="rvalue">${money(exp)}</div></div><div class="report-stat"><div class="rlabel">All-Time P/L</div><div class="rvalue">${money(sales-exp)}</div></div></div><div class="admin-help">${ss.length} sales orders • ${ee.length} expense entries</div>`; }
         function exportDailyReport(){const by={};salesHistory.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!by[d])by[d]={orders:0,sales:0};by[d].orders++;by[d].sales+=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));});downloadCSV(Object.entries(by).sort((a,b)=>a[0].localeCompare(b[0])).map(([Date,x])=>({Date,Orders:x.orders,Sales:Math.round(x.sales),AOV:Math.round(x.sales/x.orders)})),'Viraasat-Daily-Report.csv');}
@@ -3147,9 +3160,10 @@ Tables, billing and existing local UI remain visible.`);}
                 <div class="admin-form-grid">
                     <select id="adminStockSelect" onchange="loadAdminStockSelect(this.value)">${stockOptionHtml()}</select>
                     <input id="adminStockSearch" placeholder="Select existing item or enter NEW item name" oninput="syncAdminStockSearch(this.value)">
-                    <input id="adminStockQty" type="number" min="0" inputmode="decimal" placeholder="Qty to Add / Opening Qty">
+                    <input id="adminStockQty" type="number" min="0" inputmode="decimal" placeholder="Quantity to Add / Opening Quantity">
                     <input id="adminStockUnit" placeholder="Unit (pcs/bottle/can/quarter)" value="pcs">
-                    <input id="adminStockLow" type="number" min="0" inputmode="decimal" placeholder="Low Stock Level" value="5">
+                    <input id="adminStockPurchaseRate" type="number" min="0" step="0.01" placeholder="Purchase Rate">
+                    <input id="adminStockLow" type="number" min="0" inputmode="decimal" placeholder="Low Stock Alert Level" value="5">
                     <button class="premium-btn" onclick="adminUpdateStockUnified()">Add Stock</button>
                     <button class="premium-btn danger" onclick="recordStockLoss()">Record Loss</button>
                     <button class="premium-btn light" onclick="startNewStockItem()">Add New Item</button>
@@ -3158,7 +3172,8 @@ Tables, billing and existing local UI remain visible.`);}
                     <b>New Stock Item Configuration</b>
                     <div class="admin-form-grid" style="margin-top:10px">
                         <select id="newStockCategory"><option value="Beers">Beers</option><option value="Cigarettes">Cigarettes</option><option value="Beverages">Beverages</option></select>
-                        <input id="newStockSellingPrice" type="number" min="0" step="0.01" placeholder="Selling Price">
+                        <input id="newStockSellingPrice" type="number" min="0" step="0.01" placeholder="Selling Price *">
+                        <input id="newStockPurchaseRate" type="number" min="0" step="0.01" placeholder="Purchase Rate *">
                         <input id="newStockGST" type="number" min="0" step="0.01" placeholder="GST %" value="0">
                     </div>
                     <div class="admin-help" style="margin-top:8px">New item will be created once in Menu + Stock. Price/GST will be used by billing; quantity/unit/low-stock will be stored in Stock.</div>
@@ -3315,7 +3330,7 @@ Tables, billing and existing local UI remain visible.`);}
                     if(!Number.isFinite(sellingPrice)||sellingPrice<0){showCustomAlert('Enter a valid Selling Price for the new item.');return;}
                     const duplicate=menuData.find(m=>String(getVal(m,['name','itemname'])).trim().toLowerCase()===name.toLowerCase());
                     let menuResult=duplicate ? {id:getVal(duplicate,['id','menu_item_id'])} : await d1Post('/menu',{name,category,price:sellingPrice,gst_percent:Number.isFinite(gst)&&gst>=0?gst:0,is_available:true});
-                    const r=await d1Post('/stock',{name,quantity:qty,operation:'set',unit,low_stock_level:low,note:'New stock item opening stock',updated_by:localStorage.getItem('viraasat_user')||'Admin'});
+                    const purchaseRate=Number(document.getElementById('newStockPurchaseRate')?.value); if(!Number.isFinite(purchaseRate)||purchaseRate<0){showCustomAlert('Enter a valid Purchase Rate for the new item.');return;} const r=await d1Post('/stock',{name,quantity:qty,operation:'set',unit,low_stock_level:low,category, purchase_rate:purchaseRate, menu_item_id:menuResult?.id||null,note:'New stock item opening stock',updated_by:localStorage.getItem('viraasat_user')||'Admin'});
                     stockData[name]=Number(r.new_quantity??qty);
                     stockMeta[name]={id:r.id||null,name,unit,low_stock_level:low,updated_at:new Date().toISOString()};
                     stockHistory.unshift({item_name:name,old_quantity:0,new_quantity:stockData[name],change_quantity:stockData[name],action:'ADD',note:'New stock item opening stock',updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});
@@ -3327,7 +3342,7 @@ Tables, billing and existing local UI remain visible.`);}
                     showCustomAlert('New item created in Menu and Stock successfully. It is now available for billing.');
                     return;
                 }
-                const r=await d1Post('/stock',{name,quantity:qty,operation:'add',unit:stockMeta[name]?.unit||unit,low_stock_level:low,note:'Stock added',updated_by:localStorage.getItem('viraasat_user')||'Admin'});
+                const purchaseRate=Number(document.getElementById('adminStockPurchaseRate')?.value||stockMeta[name]?.purchase_rate||0); const r=await d1Post('/stock',{name,quantity:qty,operation:'add',unit:stockMeta[name]?.unit||unit,low_stock_level:low,purchase_rate:Number.isFinite(purchaseRate)?purchaseRate:0,category:stockMeta[name]?.category||'',menu_item_id:stockMeta[name]?.menu_item_id||null,note:'Stock added',updated_by:localStorage.getItem('viraasat_user')||'Admin'});
                 stockData[name]=Number(r.new_quantity??(old+qty));
                 stockMeta[name]={...(stockMeta[name]||{}),name,unit:stockMeta[name]?.unit||unit,low_stock_level:low,updated_at:new Date().toISOString()};
                 stockHistory.unshift({item_name:name,old_quantity:old,new_quantity:stockData[name],change_quantity:stockData[name]-old,action:'ADD',note:'Stock added',updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});
