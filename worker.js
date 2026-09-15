@@ -1149,14 +1149,10 @@ async function createOrder(db, body) {
       0
     )
   );
-  const discount = num(body.discount);
-  const grandTotal = num(
-    body.grand_total ?? body.total,
-    Math.max(
-      subtotal - discount,
-      0
-    )
-  );
+  // Discount is authoritative on the server. Never trust a stale client grand_total.
+  const requestedDiscount = num(body.discount);
+  const discount = Math.min(Math.max(subtotal, 0), Math.max(requestedDiscount, 0));
+  const grandTotal = Math.max(subtotal - discount, 0);
   const paymentMethod = clean(
     body.payment_method || body.paymentMethod
   ) || "Cash";
