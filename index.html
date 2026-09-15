@@ -1888,7 +1888,9 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
         function getCurrentUnsettledExpenses(){ const till=latestPnlSettlementTill(); return (expenseHistory||[]).filter(x=>{ const d=expenseDateKey(x); return !till || !d || d>till; }); }
         async function refreshPnlSettlementCache(){ try{ const r=await d1Get('/pnl/settlements'); pnlSettlementRows=Array.isArray(r?.settlements)?r.settlements:[]; }catch(e){ pnlSettlementRows=[]; } } 
         let expenseHistory = []; 
-        let currentBill = []; 
+        let currentBill = [];
+        // Preserve discount entered for an open table until final checkout.
+        let runningTableDiscounts = {}; 
         let staffData = [];
         let activeTableNumber = ""; 
         let trendChartInstance = null; 
@@ -3953,7 +3955,7 @@ Tables, billing and existing local UI remain visible.`);}
             
             currentBill = (runningTables[activeTableNumber] && Array.isArray(runningTables[activeTableNumber])) ? JSON.parse(JSON.stringify(runningTables[activeTableNumber])) : [];
             lastSyncedBag = cloneBag(currentBill); bagSyncPending=null;
-            document.getElementById('discountValue').value = 0; document.getElementById('customerPhone').value = ""; document.getElementById('deliveryAddress').value = ""; document.getElementById('stockStatus').style.display = "none"; 
+            document.getElementById('discountValue').value = Number(runningTableDiscounts[activeTableNumber] || 0); document.getElementById('customerPhone').value = ""; document.getElementById('deliveryAddress').value = ""; document.getElementById('stockStatus').style.display = "none"; 
             
             updateBillTable();
             document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display = 'none'; tab.classList.remove('active'); });
@@ -4101,7 +4103,7 @@ Tables, billing and existing local UI remain visible.`);}
                     else await d1Post('/stock/sync-bag',{reservation_key:activeTableNumber==='Home Delivery'?'Home Delivery':'Takeaway',items:[]});
                     applyLocalStockDelta(before,[]);
                     lastSyncedBag=[]; bagSyncPending=null; bagSyncPromise=Promise.resolve();
-                    delete runningTables[activeTableNumber]; currentBill=[]; goBackToTables();
+                    delete runningTables[activeTableNumber]; delete runningTableDiscounts[activeTableNumber]; currentBill=[]; goBackToTables();
                 }catch(e){showCustomAlert('Could not clear table: '+e.message);}
             },null);
         }
@@ -4147,6 +4149,8 @@ Tables, billing and existing local UI remain visible.`);}
             const btn=document.getElementById('btnKOT'); btn.innerText='Saving...'; btn.disabled=true;
             try{
                 const subtotal=currentBill.reduce((a,i)=>a+Number(i.total||0),0);
+                const enteredDiscount=Math.min(subtotal,Math.max(0,parseFloat(document.getElementById('discountValue')?.value)||0));
+                runningTableDiscounts[activeTableNumber]=enteredDiscount;
                 const ctx=orderContext();
                 const orderNumber='KOT-'+Date.now();
                 const preparedItems=await prepareOrderItems(); const data=await d1Post('/orders',{order_number:orderNumber,...ctx,items:preparedItems,items_string:preparedItems.map(i=>`${i.name} (x${i.qty}) ₹${i.total}`).join(', '),subtotal,discount:0,grand_total:subtotal,total:subtotal,payment_method:'Cash',payment_status:'unpaid',order_status:'cancelled'});
@@ -4180,6 +4184,7 @@ Tables, billing and existing local UI remain visible.`);}
                 const data=await d1Post('/orders/checkout',{order_number:orderId,...ctx,customer_phone:phone,items:preparedItems,items_string:itemsString,subtotal,discount,grand_total:grandTotal,total:grandTotal,payment_method:selectedPaymentMode,payment_status:'paid',order_status:'completed',delivery_address:address});
                 auditLog('Checkout', orderId);
                 delete runningTables[activeTableNumber];
+                delete runningTableDiscounts[activeTableNumber];
                 const now=new Date();
                 salesHistory.unshift({date:now.toISOString(),isodate:now.toISOString(),time:now.toISOString(),orderid:orderId,items:itemsString,total:grandTotal,table:activeTableNumber,tablenumber:activeTableNumber,phone:phone,payment_method:selectedPaymentMode,order_status:'completed'});
                 btn.innerText='Confirm Checkout';btn.disabled=false;document.getElementById('paymentModal').style.display='none';generateTrends();goBackToTables();
