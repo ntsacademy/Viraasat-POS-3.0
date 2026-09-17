@@ -100,18 +100,7 @@ async function ensureColumn(db, table, column, definition) {
   }
 }
 __name(ensureColumn, "ensureColumn");
-async function ensureCheckoutIdSupport(db) {
-  if (!(await tableExists(db, "orders"))) return;
-  await ensureColumn(db, "orders", "checkout_id", "TEXT");
-  try {
-    await db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_checkout_id_unique ON orders(checkout_id) WHERE checkout_id IS NOT NULL AND checkout_id <> ''`).run();
-  } catch (e) {
-    console.warn("checkout_id unique index could not be created", e);
-  }
-}
-__name(ensureCheckoutIdSupport, "ensureCheckoutIdSupport");
 async function ensureSupportTables(db) {
-  await ensureCheckoutIdSupport(db);
   // Live POS table bag: keeps the current unsaved cart in D1 so every user sees it.
   if (await tableExists(db, "restaurant_tables")) {
     await ensureColumn(db, "restaurant_tables", "current_items", "TEXT");
@@ -121,6 +110,16 @@ async function ensureSupportTables(db) {
       reservation_key TEXT PRIMARY KEY,
       items TEXT,
       updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+  `).run();
+  await db.prepare(`
+    CREATE TABLE IF NOT EXISTS checkout_requests (
+      request_key TEXT PRIMARY KEY,
+      order_number TEXT,
+      order_id INTEGER,
+      status TEXT NOT NULL DEFAULT 'processing',
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      completed_at TEXT
     )
   `).run();
   await db.prepare(`
@@ -521,7 +520,9 @@ async function getStock(db) {
 }
 __name(getStock, "getStock");
 async function getStaff(db) {
-  await ensureSupportTables(db);
+  // Read-only endpoint: never run CREATE/ALTER statements during a dashboard refresh.
+  // Concurrent DDL was causing /staff requests to abort under load.
+  if (!await tableExists(db, "staff")) return [];
   // Portal should show only active staff. Removed/inactive staff remain in D1
   // for historical integrity but must not reappear after a refresh.
   const result = await db.prepare(`
@@ -569,6 +570,10 @@ async function getAllOrdersForBackup(db) {
       SELECT
         ${pick("id", "rowid AS id")},
         ${pick("order_number", "CAST(id AS TEXT) AS order_number")},
+        ${pick("order_type", "'' AS order_type")},
+        ${pick("customer_phone", "'' AS customer_phone")},
+        ${pick("items", "'' AS items")},
+        ${pick("items_string", "'' AS items_string")},
         ${pick("table_number", "NULL AS table_number")},
         ${pick("subtotal", "0 AS subtotal")},
         ${pick("discount", "0 AS discount")},
@@ -586,13 +591,23 @@ async function getAllOrdersForBackup(db) {
     const ids = batch.map(o => Number(o.id)).filter(Number.isFinite);
     const itemMap = await getOrderItemsMap(db, ids);
     for (const o of batch) {
+      const orderNumber = clean(o.order_number);
+      const status = String(o.order_status || "").toLowerCase();
+      if (orderNumber.toUpperCase().startsWith("KOT-") || ["cancelled","deleted","deletion_pending"].includes(status)) continue;
       const details = itemMap[String(o.id)] || [];
+      const itemText = details.length
+        ? details.map(i => `${clean(i.name)} (x${num(i.qty,1)}) ₹${num(i.total, num(i.price)*num(i.qty,1))}`).join(", ")
+        : clean(o.items_string);
+      const mode = clean(o.payment_method);
+      const itemsString = `${itemText}${mode ? `${itemText ? ", " : ""}[Mode: ${mode}]` : ""}`;
       out.push({
         id: o.id,
         order_id: o.id,
-        order_number: o.order_number,
+        order_number: orderNumber,
+        customer_phone: o.customer_phone || "NA",
         table_number: o.table_number,
-        items: details.length ? JSON.stringify(details) : "",
+        items: details.length ? JSON.stringify(details) : (o.items || ""),
+        items_string: itemsString,
         subtotal: num(o.subtotal),
         discount: num(o.discount),
         grand_total: num(o.grand_total),
@@ -787,10 +802,9 @@ async function getDashboard(db) {
   ]);
   const today = todayIST();
   const validOrders = orders.filter((order) => {
-    const status = String(
-      order.order_status || "completed"
-    ).toLowerCase();
-    return status !== "cancelled" && status !== "deleted";
+    const status = String(order.order_status || "completed").toLowerCase();
+    const orderNumber = String(order.order_number || "").toUpperCase();
+    return !orderNumber.startsWith("KOT-") && !["cancelled", "deleted", "deletion_pending"].includes(status);
   });
   const todayOrders = validOrders.filter(
     (order) => String(
@@ -1056,15 +1070,15 @@ async function applyStockDelta(db, itemName, delta, note, action) {
   const amount = num(delta, 0);
   if (!name || !amount) return;
   const row = await db.prepare(`SELECT id, name, quantity FROM stock_items WHERE lower(name)=lower(?) LIMIT 1`).bind(name).first();
-  if (!row) return; // Custom/non-stock item: no inventory entry.
+  if (!row) return; // Custom/non-stock item: no phantom inventory.
   const oldQty = num(row.quantity, 0);
-  const newQty = oldQty - amount; // positive delta consumes; negative delta releases.
-  if (newQty < 0) {
+  const newQty = oldQty - amount; // positive delta = consume; negative delta = release.
+  if (amount > 0 && oldQty < amount) {
     throw new Error(`Insufficient stock for ${row.name || name}. Available: ${oldQty}, required: ${amount}`);
   }
-  const updated = await db.prepare(`UPDATE stock_items SET quantity=?, updated_at=CURRENT_TIMESTAMP WHERE id=? AND quantity=? AND quantity>=?`).bind(newQty, row.id, oldQty, amount).run();
-  if (!updated?.meta?.changes) {
-    throw new Error(`Stock changed while updating ${row.name || name}. Please retry.`);
+  const updated = await db.prepare(`UPDATE stock_items SET quantity=?, updated_at=CURRENT_TIMESTAMP WHERE id=? AND (quantity - ?) = ?`).bind(newQty, row.id, amount, newQty).run();
+  if (Number(updated.meta?.changes ?? updated.changes ?? 0) !== 1) {
+    throw new Error(`Stock changed concurrently for ${row.name || name}. Please retry.`);
   }
   await db.prepare(`INSERT INTO stock_history (stock_item_id,item_name,old_quantity,new_quantity,change_quantity,action,note,updated_by) VALUES (?,?,?,?,?,?,?,?)`).bind(
     row.id, row.name || name, oldQty, newQty, -amount, action || (amount > 0 ? "RESERVE" : "RELEASE"), note || "POS stock reservation", "POS"
@@ -1076,23 +1090,13 @@ async function syncStockReservation(db, previousItems, nextItems, note) {
   const before = normalizeBagItems(previousItems);
   const after = normalizeBagItems(nextItems);
   const keys = new Set([...before.keys(), ...after.keys()]);
-  const deltas = [];
   for (const key of keys) {
     const oldQty = num(before.get(key)?.qty, 0);
     const newQty = num(after.get(key)?.qty, 0);
     const delta = newQty - oldQty;
     if (!delta) continue;
     const item = after.get(key) || before.get(key);
-    if (delta > 0) {
-      const row = await db.prepare(`SELECT name, quantity FROM stock_items WHERE lower(name)=lower(?) LIMIT 1`).bind(clean(item.name)).first();
-      if (row && num(row.quantity, 0) < delta) {
-        throw new Error(`Insufficient stock for ${row.name || item.name}. Available: ${num(row.quantity, 0)}, required: ${delta}`);
-      }
-    }
-    deltas.push([item.name, delta]);
-  }
-  for (const [name, delta] of deltas) {
-    await applyStockDelta(db, name, delta, note, delta > 0 ? "RESERVE" : "RELEASE");
+    await applyStockDelta(db, item.name, delta, note, delta > 0 ? "RESERVE" : "RELEASE");
   }
 }
 __name(syncStockReservation, "syncStockReservation");
@@ -1104,6 +1108,28 @@ async function releaseStockForItems(db, items, note) {
   }
 }
 __name(releaseStockForItems, "releaseStockForItems");
+async function claimCheckoutRequest(db, requestKey, orderNumber) {
+  const key = clean(requestKey);
+  if (!key) return { claimed: true, existing: null };
+  const inserted = await db.prepare(`INSERT OR IGNORE INTO checkout_requests(request_key,order_number,status,created_at) VALUES(?,?,?,CURRENT_TIMESTAMP)`).bind(key, clean(orderNumber) || null, "processing").run();
+  const insertedChanges = Number(inserted.meta?.changes ?? inserted.changes ?? 0);
+  const row = await db.prepare(`SELECT request_key,order_number,order_id,status,created_at FROM checkout_requests WHERE request_key=? LIMIT 1`).bind(key).first();
+  if (!row) throw new Error("Unable to register checkout request");
+  if (String(row.status).toLowerCase() === "completed" && row.order_id) return { claimed: false, existing: row };
+  if (insertedChanges !== 1) {
+    throw new Error("This checkout request is already in progress. Please do not submit it again.");
+  }
+  return { claimed: true, existing: row };
+}
+__name(claimCheckoutRequest, "claimCheckoutRequest");
+
+async function completeCheckoutRequest(db, requestKey, orderId, orderNumber) {
+  const key = clean(requestKey);
+  if (!key) return;
+  await db.prepare(`UPDATE checkout_requests SET order_id=?,order_number=?,status='completed',completed_at=CURRENT_TIMESTAMP WHERE request_key=?`).bind(orderId || null, clean(orderNumber) || null, key).run();
+}
+__name(completeCheckoutRequest, "completeCheckoutRequest");
+
 async function createOrder(db, body) {
   const cols = await getColumns(
     db,
@@ -1112,13 +1138,6 @@ async function createOrder(db, body) {
   const orderNumber = clean(
     body.order_number || body.orderNumber
   ) || makeOrderNumber();
-  const checkoutId = clean(body.checkout_id || body.checkoutId);
-  if (checkoutId && cols.includes("checkout_id")) {
-    const existingCheckout = await db.prepare(`SELECT id, order_number, grand_total FROM orders WHERE checkout_id=? LIMIT 1`).bind(checkoutId).first();
-    if (existingCheckout) {
-      return { orderId: existingCheckout.id, orderNumber: existingCheckout.order_number || orderNumber, grandTotal: num(existingCheckout.grand_total), duplicate: true, duplicate_reason: "checkout_id" };
-    }
-  }
   if (cols.includes("order_number")) {
     const existing = await db.prepare(`
         SELECT id, order_number
@@ -1202,10 +1221,6 @@ async function createOrder(db, body) {
   add(
     "order_number",
     orderNumber
-  );
-  add(
-    "checkout_id",
-    checkoutId || null
   );
   add(
     "order_type",
@@ -1662,13 +1677,10 @@ var worker_default = {
         body.order_status = "completed";
         const tableNumber = clean(body.table_number || body.tableNumber);
         const preparedItems = Array.isArray(body.items) ? body.items : [];
-        const incomingCheckoutId = clean(body.checkout_id || body.checkoutId);
-        if (incomingCheckoutId && (await tableExists(db, "orders"))) {
-          const checkoutCols = await getColumns(db, "orders");
-          if (checkoutCols.includes("checkout_id")) {
-            const alreadyDone = await db.prepare(`SELECT id, order_number, grand_total FROM orders WHERE checkout_id=? LIMIT 1`).bind(incomingCheckoutId).first();
-            if (alreadyDone) return json({success:true, orderId:alreadyDone.id, orderNumber:alreadyDone.order_number, grandTotal:num(alreadyDone.grand_total), duplicate:true, duplicate_reason:"checkout_id"});
-          }
+        const checkoutRequestKey = clean(body.checkout_id || body.checkoutId || body.client_request_id);
+        const checkoutClaim = await claimCheckoutRequest(db, checkoutRequestKey, clean(body.order_number || body.orderNumber));
+        if (!checkoutClaim.claimed && checkoutClaim.existing) {
+          return json({success:true, duplicate:true, orderId:checkoutClaim.existing.order_id, orderNumber:checkoutClaim.existing.order_number, grandTotal:num(body.grand_total ?? body.total)});
         }
         if (tableNumber && /^\d+$/.test(tableNumber)) {
           const existing = await db.prepare(`SELECT current_items FROM restaurant_tables WHERE CAST(table_number AS TEXT)=? LIMIT 1`).bind(tableNumber).first();
@@ -1684,6 +1696,7 @@ var worker_default = {
           await syncStockReservation(db, reserved, preparedItems, `${key} checkout reconciliation`);
         }
         const result = await createOrder(db, body);
+        await completeCheckoutRequest(db, checkoutRequestKey, result.orderId, result.orderNumber);
         if (tableNumber && /^\d+$/.test(tableNumber) && !result.duplicate) {
           await updateTable(db, tableNumber, "available", null, null);
         } else if (!tableNumber && !result.duplicate) {
