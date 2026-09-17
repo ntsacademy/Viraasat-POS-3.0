@@ -1893,6 +1893,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
         let activeTableNumber = ""; 
         let trendChartInstance = null; 
         let selectedPaymentMode = "Cash";
+        let pendingCheckoutRequestId = "";
         let rawChartSalesData = {}; 
         let rawChartExpenseData = {};
         // D1 dashboard summary is authoritative for home KPIs.
@@ -2224,8 +2225,8 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
         function populateStaffDropdown() {
             let sel = document.getElementById('payStaffSelect'); if (!sel) return; sel.innerHTML = "<option value=''>Select Employee</option>";
             staffData.forEach(s => {
-                let sId = getVal(s, ['empid', 'employeeid']); let sName = getVal(s, ['name']);
-                if(sId && sName) { sel.innerHTML += `<option value="${sId}">${sName} (${sId})</option>`; }
+                let sId = getVal(s, ['id','empid', 'employeeid']); let sName = getVal(s, ['name']);
+                if(sId && sName) { sel.innerHTML += `<option value="${esc(sId)}">${esc(sName)} (${esc(sId)})</option>`; }
             });
         }
 
@@ -2391,7 +2392,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
                 }else failed.push(['/menu',results[1].reason]);
                 if(results[2].status==='fulfilled'){const ts=normalizeArray(results[2].value,['tables','data','result']);tableSections=[{title:'Hut Seating',tables:[]},{title:'Ground Seating',tables:[]},{title:'Terrace Seating',tables:[]}];const amap={'Hut Seating':0,'Ground Seating':1,'Terrace Seating':2};runningTables={};ts.forEach(t=>{const n=String(t.table_number??t.tableNumber??'').trim();if(!n)return;const i=amap[String(t.seating_area||t.seatingArea||'').trim()]??1;if(!tableSections[i].tables.includes(n))tableSections[i].tables.push(n);let persistedItems=[]; try { const parsed=JSON.parse(t.current_items||t.currentItems||'[]'); if(Array.isArray(parsed)) persistedItems=parsed; } catch(e){}
 runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied' ? (persistedItems.length ? persistedItems : [{__d1Occupied:true,orderId:t.current_order_id||t.currentOrderId}]) : [];});if(!ts.length)tableSections=[{title:'Hut Seating',tables:['1','2','3','4']},{title:'Ground Seating',tables:['5','6','7']},{title:'Terrace Seating',tables:['8','9','10']}];}else failed.push(['/tables',results[2].reason]);
-                if(results[3].status==='fulfilled')salesHistory=normalizeArray(results[3].value,['orders','sales','data','result']).map(mapD1Order).filter(Boolean).filter(o=>!['kot','cancelled','deleted'].includes(String(o.order_status||'').toLowerCase())).sort((a,b)=>orderTimestamp(b)-orderTimestamp(a));else failed.push(['/orders',results[3].reason]);
+                if(results[3].status==='fulfilled')salesHistory=normalizeArray(results[3].value,['orders','sales','data','result']).map(mapD1Order).filter(Boolean).filter(o=>{const st=String(o.order_status||'').toLowerCase();const oid=String(o.order_number||o.orderid||'').toUpperCase();return !oid.startsWith('KOT-')&&!['kot','cancelled','deleted','deletion_pending'].includes(st);}).sort((a,b)=>orderTimestamp(b)-orderTimestamp(a));else failed.push(['/orders',results[3].reason]);
                 Object.keys(runningTables).forEach(key=>{const arr=runningTables[key];if(Array.isArray(arr)&&arr[0]?.__d1Occupied){const oid=String(arr[0].orderId||'');const order=salesHistory.find(o=>String(o.id||'')===oid||String(o.orderid||'')===oid);runningTables[key]=order?parseSaleItems(order):[];}});
                 if(results[4].status==='fulfilled')expenseHistory=normalizeArray(results[4].value,['expenses','data','result']);else failed.push(['/expenses',results[4].reason]);
                 if(results[5].status==='fulfilled'){const raw=normalizeArray(results[5].value,['stock','items','data','result']);stockData={};stockMeta={};raw.forEach(x=>{const name=String(getVal(x,['name','itemname','item','stockname'])||'').trim();if(!name)return;stockData[name]=Number(getVal(x,['quantity','qty','stock','currentstock','currentquantity']))||0;stockMeta[name]={id:getVal(x,['id']),name,unit:getVal(x,['unit'])||'pcs',low_stock_level:Number(getVal(x,['low_stock_level','lowstocklevel']))||5,created_at:getVal(x,['created_at'])||'',updated_at:getVal(x,['updated_at'])||''};});}else failed.push(['/stock',results[5].reason]);
@@ -4127,6 +4128,7 @@ Tables, billing and existing local UI remain visible.`);}
                 const phone=document.getElementById('customerPhone').value||'NA';
                 const address=document.getElementById('deliveryAddressBox').style.display==='flex'?document.getElementById('deliveryAddress').value:'';
                 const orderId='ORD'+Date.now();
+                if(!pendingCheckoutRequestId) pendingCheckoutRequestId='CHK-'+Date.now()+'-'+Math.random().toString(36).slice(2,10);
                 const discount=Math.max(0,parseInt(document.getElementById('discountValue').value)||0);
                 const subtotal=currentBill.reduce((a,i)=>a+Number(i.total||0),0);
                 const grandTotal=Math.max(0,subtotal-discount);
@@ -4137,10 +4139,11 @@ Tables, billing and existing local UI remain visible.`);}
                 // double stock deduction: stock is reserved on Add/Qty/Remove and
                 // the Worker checkout endpoint only reconciles any remaining delta.
                 await flushBagSyncBeforeCheckout();
-                const data=await d1Post('/orders/checkout',{order_number:orderId,...ctx,customer_phone:phone,items:preparedItems,items_string:itemsString,subtotal,discount,grand_total:grandTotal,total:grandTotal,payment_method:selectedPaymentMode,payment_status:'paid',order_status:'completed',delivery_address:address});
+                const data=await d1Post('/orders/checkout',{order_number:orderId,checkout_id:pendingCheckoutRequestId,...ctx,customer_phone:phone,items:preparedItems,items_string:itemsString,subtotal,discount,grand_total:grandTotal,total:grandTotal,payment_method:selectedPaymentMode,payment_status:'paid',order_status:'completed',delivery_address:address});
                 auditLog('Checkout', orderId);
                 delete runningTables[activeTableNumber];
                 delete runningTableDiscounts[activeTableNumber];
+                pendingCheckoutRequestId='';
                 const now=new Date();
                 salesHistory.unshift({date:now.toISOString(),isodate:now.toISOString(),time:now.toISOString(),orderid:orderId,items:itemsString,total:grandTotal,table:activeTableNumber,tablenumber:activeTableNumber,phone:phone,payment_method:selectedPaymentMode,order_status:'completed'});
                 btn.innerText='Confirm Checkout';btn.disabled=false;document.getElementById('paymentModal').style.display='none';generateTrends();goBackToTables();
