@@ -1592,16 +1592,11 @@
         <div id="premiumDashboard" class="tab-content" style="padding-top:10px;">
             <div class="premium-shell">
                 <div class="admin-compact-head">
-                    <div class="admin-compact-title">VIRAASAT <span>Admin View</span></div>
+                    <div class="admin-compact-title">VIRAASAT <span>Admin</span></div>
                     <div class="premium-live"><i></i> LIVE DATA</div>
                 </div>
                 <div class="premium-tabs" id="premiumTabs">
-                    <button class="premium-tab active" onclick="showPremiumTab('overview',this)">Overview</button>
-                    <button class="premium-tab" onclick="showPremiumTab('sales',this)">Sales</button>
-                    <button class="premium-tab" onclick="showPremiumTab('items',this)">Item Sales</button>
-                    <button class="premium-tab" onclick="showPremiumTab('inventory',this)">Inventory</button>
-                    <button class="premium-tab" onclick="showPremiumTab('reports',this)">Insights</button>
-                    <button class="premium-tab" onclick="showPremiumTab('expenses',this)">Expenses</button>
+                    <button class="premium-tab active" onclick="showPremiumTab('expenses',this)">Expenses</button>
                     <button class="premium-tab" onclick="showPremiumTab('settings',this)">Admin</button>
                 </div>
 
@@ -1738,6 +1733,24 @@
             </div>
         </div>
 
+        <!-- SIMPLE STOCK MANAGEMENT VIEW -->
+        <div id="stockManagementView" class="tab-content" style="padding-top:10px;">
+            <div class="card" style="padding:16px;">
+                <div class="section-header" style="margin-top:0;"><h4>Stock Management</h4><span>Admin controlled</span></div>
+                <div class="admin-help" style="margin-bottom:12px">All stock additions, losses and new stock items are managed here. Negative stock and duplicate stock deductions are blocked by the Worker.</div>
+                <div id="simpleStockManagementBody"></div>
+            </div>
+        </div>
+
+        <!-- SIMPLE EMPLOYEE MANAGEMENT VIEW -->
+        <div id="employeeManagementView" class="tab-content" style="padding-top:10px;">
+            <div class="card" style="padding:16px;">
+                <div class="section-header" style="margin-top:0;"><h4>Employee Management</h4><span>10-to-10 period</span></div>
+                <div class="admin-help" style="margin-bottom:12px">Salary, advance and payment records are maintained for the current 10-to-10 accounting period.</div>
+                <div id="simpleEmployeeManagementBody"></div>
+            </div>
+        </div>
+
         <!-- EXPENSES VIEW -->
         <div id="expenses" class="tab-content" style="padding-top: 10px;">
             <div class="card">
@@ -1843,21 +1856,29 @@
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></div>
             <span>Table</span>
         </button>
-        <button class="nav-item" id="navOrders" onclick="switchMainTab('salesDashboard', this)">
+        <button class="nav-item" id="navOrders" style="display:none" onclick="switchMainTab('salesDashboard', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></div>
             <span>Live sale</span>
         </button>
-        <button class="nav-item" id="navAnalytics" onclick="switchMainTab('trendView', this)">
+        <button class="nav-item" id="navAnalytics" style="display:none" onclick="switchMainTab('trendView', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></div>
             <span>P&L</span>
+        </button>
+        <button class="nav-item" id="navStockManagement" onclick="openSimpleManagement('stock', this)">
+            <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4z"></path><path d="M3 7v10l9 4 9-4V7"></path><path d="M12 11v10"></path></svg></div>
+            <span>Stock</span>
+        </button>
+        <button class="nav-item" id="navEmployeeManagement" onclick="openSimpleManagement('employee', this)">
+            <div class="icon-container"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"></circle><path d="M3 21v-2a6 6 0 0 1 12 0v2"></path><path d="M16 3.5a4 4 0 0 1 0 7.5"></path><path d="M18 14a5 5 0 0 1 3 4.5V21"></path></svg></div>
+            <span>Employees</span>
         </button>
         <button class="nav-item" id="navExpenses" onclick="switchMainTab('expenses', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"></rect><line x1="2" y1="10" x2="22" y2="10"></line></svg></div>
             <span>Expenses</span>
         </button>
-        <button class="nav-item" id="navAdmin" onclick="switchMainTab('premiumDashboard', this)">
+        <button class="nav-item" id="navAdmin" onclick="openAdminPanel(this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect></svg></div>
-            <span>Admin View</span>
+            <span>Admin</span>
         </button>
         <button class="nav-item" onclick="logoutUser()" style="color: var(--danger);">
             <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg></div>
@@ -1890,7 +1911,8 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
         let expenseHistory = []; 
         let currentBill = [];
         // Preserve discount entered for an open table until final checkout.
-        let runningTableDiscounts = {}; 
+        let runningTableDiscounts = {};
+        let checkoutSessionIds = {}; 
         let staffData = [];
         let activeTableNumber = ""; 
         let trendChartInstance = null; 
@@ -3914,8 +3936,53 @@ Tables, billing and existing local UI remain visible.`);}
             tableSections[catIdx].tables.push(tNum); localStorage.setItem('viraasat_table_sections', JSON.stringify(tableSections)); document.getElementById('addTableModal').style.display = 'none'; renderTableGrid(); 
         }
 
+        function hideMovedAdminModules(){
+            const panel=document.getElementById('premiumPanel-settings'); if(!panel)return;
+            [...panel.querySelectorAll('.admin-card')].forEach(card=>{
+                const title=card.querySelector('h3')?.textContent?.trim()||'';
+                if(/^Stock Management$/i.test(title)||/^Employee Management$/i.test(title)) card.remove();
+            });
+            [...panel.querySelectorAll('.admin-module')].forEach(btn=>{
+                if(/inventory|employee/i.test(btn.textContent||'')) btn.remove();
+            });
+        }
+        function openAdminPanel(btn){
+            switchMainTab('premiumDashboard',btn);
+            premiumActiveTab='settings';
+            const adminBtn=[...document.querySelectorAll('#premiumTabs .premium-tab')].find(x=>x.textContent.trim().toLowerCase()==='admin');
+            showPremiumTab('settings',adminBtn);
+            hideMovedAdminModules();
+        }
+        function openSimpleManagement(kind, btn){
+            const tab=kind==='stock'?'stockManagementView':'employeeManagementView';
+            switchMainTab(tab,btn);
+            if(kind==='stock') renderSimpleStockManagement(); else renderSimpleEmployeeManagement();
+        }
+        function renderSimpleStockManagement(){
+            const host=document.getElementById('simpleStockManagementBody'); if(!host)return;
+            host.innerHTML='';
+            const admin=document.getElementById('premiumPanel-settings');
+            if(admin){
+                renderPremiumAdmin();
+                const stockCard=[...admin.querySelectorAll('.admin-card')].find(x=>/^Stock Management$/i.test(x.querySelector('h3')?.textContent?.trim()||''));
+                if(stockCard) host.appendChild(stockCard);
+            }
+            renderAdminStockRows();
+        }
+        function renderSimpleEmployeeManagement(){
+            const host=document.getElementById('simpleEmployeeManagementBody'); if(!host)return;
+            host.innerHTML='';
+            const admin=document.getElementById('premiumPanel-settings');
+            if(admin){
+                renderPremiumAdmin();
+                const staffCard=[...admin.querySelectorAll('.admin-card')].find(x=>/^Employee Management$/i.test(x.querySelector('h3')?.textContent?.trim()||''));
+                if(staffCard) host.appendChild(staffCard);
+            }
+            renderAdminStaffRows();
+        }
+
         function switchMainTab(tabName, btnElement, skipHistory = false) {
-            let htmlMap = { 'premiumDashboard': `Admin View`, 'tableDashboard': `POS Tables`, 'salesDashboard': `Live sale`, 'trendView': `P&L Dashboard`, 'expenses': `Expenses`, 'premiumDashboard': `Admin View` };
+            let htmlMap = { 'premiumDashboard': `Admin View`, 'tableDashboard': `POS Tables`, 'salesDashboard': `Live sale`, 'trendView': `P&L Dashboard`, 'expenses': `Expenses`, 'stockManagementView': `Stock Management`, 'employeeManagementView': `Employee Management`, 'premiumDashboard': `Admin` };
             if(!skipHistory) { try { history.pushState({view: tabName}, '', '#' + tabName); } catch(e){} }
             
             document.querySelectorAll('.tab-content').forEach(tab => { tab.style.display = 'none'; tab.classList.remove('active'); });
@@ -3950,6 +4017,7 @@ Tables, billing and existing local UI remain visible.`);}
         function openTable(num) {
             try { history.pushState({view: 'billing'}, '', '#billing'); } catch(e){}
             activeTableNumber = (num === 'Takeaway' || num === 'Home Delivery') ? num : "Table " + num;
+            if(!checkoutSessionIds[activeTableNumber]) checkoutSessionIds[activeTableNumber]='S-'+Date.now()+'-'+Math.random().toString(36).slice(2,10);
             document.getElementById('billingTitle').innerText = activeTableNumber;
             if(num === 'Home Delivery') { document.getElementById('deliveryAddressBox').style.display = 'flex'; } else { document.getElementById('deliveryAddressBox').style.display = 'none'; }
             
@@ -4036,12 +4104,12 @@ Tables, billing and existing local UI remain visible.`);}
         function queueBagSync(){
             clearTimeout(bagSyncTimer);
             bagSyncTimer=setTimeout(()=>{
-                bagSyncPromise=syncCurrentBagNow();
+                bagSyncPromise=bagSyncPromise.catch(()=>{}).then(()=>syncCurrentBagNow());
             },120);
         }
         async function flushBagSyncBeforeCheckout(){
             clearTimeout(bagSyncTimer);
-            bagSyncPromise=syncCurrentBagNow();
+            bagSyncPromise=bagSyncPromise.catch(()=>{}).then(()=>syncCurrentBagNow());
             await bagSyncPromise;
         }
 
@@ -4103,7 +4171,7 @@ Tables, billing and existing local UI remain visible.`);}
                     else await d1Post('/stock/sync-bag',{reservation_key:activeTableNumber==='Home Delivery'?'Home Delivery':'Takeaway',items:[]});
                     applyLocalStockDelta(before,[]);
                     lastSyncedBag=[]; bagSyncPending=null; bagSyncPromise=Promise.resolve();
-                    delete runningTables[activeTableNumber]; delete runningTableDiscounts[activeTableNumber]; currentBill=[]; goBackToTables();
+                    delete runningTables[activeTableNumber]; delete runningTableDiscounts[activeTableNumber]; delete checkoutSessionIds[activeTableNumber]; currentBill=[]; goBackToTables();
                 }catch(e){showCustomAlert('Could not clear table: '+e.message);}
             },null);
         }
@@ -4177,14 +4245,16 @@ Tables, billing and existing local UI remain visible.`);}
                 const preparedItems=await prepareOrderItems();
                 const itemsString=preparedItems.map(i=>`${i.name} (x${i.qty}) ₹${i.total}`).join(', ');
                 const ctx=orderContext();
+                const checkout_id='CHK-'+btoa(unescape(encodeURIComponent(String(activeTableNumber)+'|'+String(checkoutSessionIds[activeTableNumber]||'')+'|'+JSON.stringify(preparedItems)+'|'+subtotal+'|'+discount))).replace(/[^A-Za-z0-9_-]/g,'').slice(0,180);
                 // Make the bag reservation authoritative before checkout. This prevents
                 // double stock deduction: stock is reserved on Add/Qty/Remove and
                 // the Worker checkout endpoint only reconciles any remaining delta.
                 await flushBagSyncBeforeCheckout();
-                const data=await d1Post('/orders/checkout',{order_number:orderId,...ctx,customer_phone:phone,items:preparedItems,items_string:itemsString,subtotal,discount,grand_total:grandTotal,total:grandTotal,payment_method:selectedPaymentMode,payment_status:'paid',order_status:'completed',delivery_address:address});
+                const data=await d1Post('/orders/checkout',{order_number:orderId,checkout_id,...ctx,customer_phone:phone,items:preparedItems,items_string:itemsString,subtotal,discount,grand_total:grandTotal,total:grandTotal,payment_method:selectedPaymentMode,payment_status:'paid',order_status:'completed',delivery_address:address});
                 auditLog('Checkout', orderId);
                 delete runningTables[activeTableNumber];
                 delete runningTableDiscounts[activeTableNumber];
+                delete checkoutSessionIds[activeTableNumber];
                 const now=new Date();
                 salesHistory.unshift({date:now.toISOString(),isodate:now.toISOString(),time:now.toISOString(),orderid:orderId,items:itemsString,total:grandTotal,table:activeTableNumber,tablenumber:activeTableNumber,phone:phone,payment_method:selectedPaymentMode,order_status:'completed'});
                 btn.innerText='Confirm Checkout';btn.disabled=false;document.getElementById('paymentModal').style.display='none';generateTrends();goBackToTables();
