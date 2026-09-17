@@ -1450,6 +1450,30 @@
     #premiumDashboard .import-actions > * { min-width:0 !important; }
 }
 
+
+        /* Final mobile stability and consistent navigation styling */
+        html, body { overscroll-behavior-y: none; }
+        body { -webkit-tap-highlight-color: transparent; }
+        .bottom-nav .nav-item { color: var(--text-muted); }
+        .bottom-nav .nav-item.active { color: var(--text-dark); }
+        .bottom-nav .nav-item.active .icon-container { background: #FDE8D7; color: var(--text-dark); }
+        .bottom-nav .nav-item .icon-container { min-width: 42px; min-height: 25px; display:flex; align-items:center; justify-content:center; border-radius:13px; }
+        .sales-grid, .admin-order-grid, .premium-table-wrap { min-width: 0; }
+        @media (max-width:600px) {
+          .input-row { flex-wrap: wrap; gap: 8px; }
+          .input-row .input-box { min-width: 0; width: calc(50% - 4px); }
+          #salesDashboard .card { overflow: hidden; }
+          #salesDashboard .section-header { gap: 8px; flex-wrap: wrap; }
+          #salesDashboard .section-header span { font-size: .68rem; }
+          #salesGrid .admin-order-card { width: 100%; min-width: 0; overflow-wrap: anywhere; }
+          .trend-kpi-card { min-width: 0; overflow: hidden; }
+          .trend-kpi-card .kpi-value { overflow-wrap: anywhere; }
+          .premium-card-head { align-items: flex-start; }
+          .premium-card-head span { white-space: normal; overflow-wrap: anywhere; }
+          .bottom-nav { overflow: hidden; }
+          .bottom-nav .nav-item { flex: 1 1 0; min-width: 0; }
+          .bottom-nav .nav-item span { white-space: nowrap; }
+        }
 </style>
 </head>
 <body>
@@ -1714,11 +1738,6 @@
                 <div class="section-header" style="margin-top:0;"><h4>Staff Advance Details</h4></div>
                 <div id="staffAdvanceDetails" style="display:flex; flex-direction:column; gap:8px; font-size:0.78rem;"></div>
             </div>
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Staff Advance Ledger</h4><button class="premium-btn light" onclick="addStaffAdvanceEntry()">Give / Record Advance</button></div>
-                <div class="admin-help">D1-based staff advance records: given, returned or adjusted. These remain available by date and staff.</div>
-                <div id="staffAdvanceLedger" class="admin-mini-list"></div>
-            </div>
             
             <div class="card">
                 <div class="section-header" style="margin-top:0;"><h4>Other Expenses</h4></div>
@@ -1842,12 +1861,12 @@
             <span>Table</span>
         </button>
         <button class="nav-item" id="navOrders" onclick="switchMainTab('salesDashboard', this)">
-            <div class="icon-container"><span style="font-size:20px;">🧾</span></div>
+            <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M6 2h12v20l-6-3-6 3V2z"></path><path d="M9 7h6M9 11h6"></path></svg></div>
             <span>Live Sale</span>
         </button>
         <button class="nav-item" id="navAnalytics" onclick="switchMainTab('trendView', this)">
-            <div class="icon-container"><span style="font-size:20px;">📊</span></div>
-            <span>P&L</span>
+            <div class="icon-container"><svg viewBox="0 0 24 24"><line x1="4" y1="19" x2="20" y2="19"></line><rect x="5" y="11" width="3" height="6"></rect><rect x="10.5" y="7" width="3" height="10"></rect><rect x="16" y="3" width="3" height="14"></rect></svg></div>
+            <span>P&amp;L</span>
         </button>
         <button class="nav-item" id="navStock" onclick="switchMainTab('stockManagement', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg></div>
@@ -2119,9 +2138,9 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
             let tod = hr < 12 ? 'Morning' : (hr < 17 ? 'Afternoon' : 'Evening'); 
             document.getElementById('greetText').innerText = `Good ${tod} 👋`;
 
-            const navOrders=document.getElementById('navOrders'); if(navOrders) navOrders.style.display = (isAdmin || perms.orders || true) ? 'flex' : 'none';
+            const navOrders=document.getElementById('navOrders'); if(navOrders) navOrders.style.display = (isAdmin || perms.orders) ? 'flex' : 'none';
             const btnViewAllOrders=document.getElementById('btnViewAllOrders'); if(btnViewAllOrders) btnViewAllOrders.style.display = (isAdmin || perms.orders) ? 'inline' : 'none';
-            const navAnalytics=document.getElementById('navAnalytics'); if(navAnalytics) navAnalytics.style.display = (isAdmin || perms.analytics || true) ? 'flex' : 'none';
+            const navAnalytics=document.getElementById('navAnalytics'); if(navAnalytics) navAnalytics.style.display = (isAdmin || perms.analytics) ? 'flex' : 'none';
             const navExpenses=document.getElementById('navExpenses'); if(navExpenses) navExpenses.style.display = (isAdmin || perms.expenses) ? 'flex' : 'none';
             const navStock=document.getElementById('navStock'); if(navStock) navStock.style.display = isAdmin ? 'flex' : 'none';
             const navEmployee=document.getElementById('navEmployee'); if(navEmployee) navEmployee.style.display = isAdmin ? 'flex' : 'none';
@@ -3825,7 +3844,15 @@ Tables, billing and existing local UI remain visible.`);}
             if (!tStr) return ""; try { let d = new Date(tStr); if (!isNaN(d.getTime())) return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); return tStr; } catch(e) { return tStr; } 
         }
 
+        let liveSalesFilterInitialized = false;
         function renderLiveSales(){
+            // Open Live Sale with Today selected automatically; Clear remains usable.
+            const startEl=document.getElementById('filterStartDate'), endEl=document.getElementById('filterEndDate');
+            if(!liveSalesFilterInitialized && startEl && endEl && !startEl.value && !endEl.value){
+                const now=new Date(), todayStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+                startEl.value=todayStr; endEl.value=todayStr; setActiveFilterBtn('btnFilterToday');
+                liveSalesFilterInitialized=true;
+            }
             const salesGrid=document.getElementById('salesGrid'),homeRecent=document.getElementById('homeRecentOrders');
             if(!salesGrid)return;
             salesGrid.innerHTML='';if(homeRecent)homeRecent.innerHTML='';
@@ -3909,7 +3936,7 @@ Tables, billing and existing local UI remain visible.`);}
                 }
             }
 
-            if(tabName === 'trendView') setTimeout(generateTrends, 100); if(tabName === 'premiumDashboard') setTimeout(renderPremiumDashboard, 50); if(tabName === 'stockManagement') setTimeout(renderStockManagement, 30); if(tabName === 'employeeManagement') setTimeout(renderEmployeeManagement, 30);
+            if(tabName === 'salesDashboard') setTimeout(renderLiveSales, 30); if(tabName === 'trendView') setTimeout(generateTrends, 100); if(tabName === 'premiumDashboard') setTimeout(renderPremiumDashboard, 50); if(tabName === 'stockManagement') setTimeout(renderStockManagement, 30); if(tabName === 'employeeManagement') setTimeout(renderEmployeeManagement, 30);
         }
 
         function openTable(num) {
@@ -4171,9 +4198,9 @@ Tables, billing and existing local UI remain visible.`);}
         function openExpenseDetails(id){const e=(expenseHistory||[]).find(x=>String(getVal(x,['id'])||`${expenseDateKey(x)}-${getVal(x,['category'])}-${getVal(x,['amount'])}`)===String(id));if(!e)return;const body=document.getElementById('expenseDetailsBody');if(!body)return;const receipt=getVal(e,['receipt_image']);body.innerHTML=`<div class="expense-detail-row"><span class="expense-detail-label">Category</span><span class="expense-detail-value">${esc(getVal(e,['category'])||'Other')}</span></div><div class="expense-detail-row"><span class="expense-detail-label">Amount</span><span class="expense-detail-value" style="color:var(--danger)">- ${money(getVal(e,['amount','total']))}</span></div><div class="expense-detail-row"><span class="expense-detail-label">Date</span><span class="expense-detail-value">${esc(expenseDateKey(e))}</span></div><div class="expense-detail-row"><span class="expense-detail-label">Time</span><span class="expense-detail-value">${esc(expenseTimeText(e)||'—')}</span></div><div class="expense-detail-row"><span class="expense-detail-label">Description</span><span class="expense-detail-value">${esc(getVal(e,['description','note'])||'—')}</span></div>${receipt?`<div style="margin-top:14px"><img src="${esc(receipt)}" style="max-width:100%;max-height:260px;object-fit:contain;border:1px solid var(--border);border-radius:10px"></div>`:''}`;document.getElementById('expenseDetailsModal').style.display='flex';}
 
         function setActiveFilterBtn(id) { ['btnFilterToday','btnFilterYesterday','btnFilterClear'].forEach(x=>{const b=document.getElementById(x);if(b)b.classList.remove('active');}); if(id){const b=document.getElementById(id);if(b)b.classList.add('active');} }
-        function setTodayFilter() { setActiveFilterBtn('btnFilterToday'); let now = new Date(); let todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`; document.getElementById('filterStartDate').value = todayStr; document.getElementById('filterEndDate').value = todayStr; renderLiveSales(); }
-        function setYesterdayFilter() { setActiveFilterBtn('btnFilterYesterday'); let yest = new Date(); yest.setDate(yest.getDate() - 1); let yestStr = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, '0')}-${String(yest.getDate()).padStart(2, '0')}`; document.getElementById('filterStartDate').value = yestStr; document.getElementById('filterEndDate').value = yestStr; renderLiveSales(); }
-        function resetDateFilter() { setActiveFilterBtn('btnFilterClear'); document.getElementById('filterStartDate').value = ""; document.getElementById('filterEndDate').value = ""; renderLiveSales(); }
+        function setTodayFilter() { liveSalesFilterInitialized=true; setActiveFilterBtn('btnFilterToday'); let now = new Date(); let todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`; document.getElementById('filterStartDate').value = todayStr; document.getElementById('filterEndDate').value = todayStr; renderLiveSales(); }
+        function setYesterdayFilter() { liveSalesFilterInitialized=true; setActiveFilterBtn('btnFilterYesterday'); let yest = new Date(); yest.setDate(yest.getDate() - 1); let yestStr = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, '0')}-${String(yest.getDate()).padStart(2, '0')}`; document.getElementById('filterStartDate').value = yestStr; document.getElementById('filterEndDate').value = yestStr; renderLiveSales(); }
+        function resetDateFilter() { liveSalesFilterInitialized=true; setActiveFilterBtn('btnFilterClear'); document.getElementById('filterStartDate').value = ""; document.getElementById('filterEndDate').value = ""; renderLiveSales(); }
 
         function openOrderDetails(orderId){
             const sale=salesHistory.find(s=>String(getVal(s,['orderid','order_number','id'])).trim()===String(orderId).trim());
