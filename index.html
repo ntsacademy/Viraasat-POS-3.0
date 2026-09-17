@@ -1841,6 +1841,14 @@
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></div>
             <span>Table</span>
         </button>
+        <button class="nav-item" id="navOrders" onclick="switchMainTab('salesDashboard', this)">
+            <div class="icon-container"><span style="font-size:20px;">🧾</span></div>
+            <span>Live Sale</span>
+        </button>
+        <button class="nav-item" id="navAnalytics" onclick="switchMainTab('trendView', this)">
+            <div class="icon-container"><span style="font-size:20px;">📊</span></div>
+            <span>P&L</span>
+        </button>
         <button class="nav-item" id="navStock" onclick="switchMainTab('stockManagement', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg></div>
             <span>Stock</span>
@@ -2111,9 +2119,9 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
             let tod = hr < 12 ? 'Morning' : (hr < 17 ? 'Afternoon' : 'Evening'); 
             document.getElementById('greetText').innerText = `Good ${tod} 👋`;
 
-            const navOrders=document.getElementById('navOrders'); if(navOrders) navOrders.style.display='none';
+            const navOrders=document.getElementById('navOrders'); if(navOrders) navOrders.style.display = (isAdmin || perms.orders || true) ? 'flex' : 'none';
             const btnViewAllOrders=document.getElementById('btnViewAllOrders'); if(btnViewAllOrders) btnViewAllOrders.style.display = (isAdmin || perms.orders) ? 'inline' : 'none';
-            const navAnalytics=document.getElementById('navAnalytics'); if(navAnalytics) navAnalytics.style.display='none';
+            const navAnalytics=document.getElementById('navAnalytics'); if(navAnalytics) navAnalytics.style.display = (isAdmin || perms.analytics || true) ? 'flex' : 'none';
             const navExpenses=document.getElementById('navExpenses'); if(navExpenses) navExpenses.style.display = (isAdmin || perms.expenses) ? 'flex' : 'none';
             const navStock=document.getElementById('navStock'); if(navStock) navStock.style.display = isAdmin ? 'flex' : 'none';
             const navEmployee=document.getElementById('navEmployee'); if(navEmployee) navEmployee.style.display = isAdmin ? 'flex' : 'none';
