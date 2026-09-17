@@ -1073,9 +1073,6 @@ async function applyStockDelta(db, itemName, delta, note, action) {
   if (!row) return; // Custom/non-stock item: no phantom inventory.
   const oldQty = num(row.quantity, 0);
   const newQty = oldQty - amount; // positive delta = consume; negative delta = release.
-  if (amount > 0 && oldQty < amount) {
-    throw new Error(`Insufficient stock for ${row.name || name}. Available: ${oldQty}, required: ${amount}`);
-  }
   const updated = await db.prepare(`UPDATE stock_items SET quantity=?, updated_at=CURRENT_TIMESTAMP WHERE id=? AND (quantity - ?) = ?`).bind(newQty, row.id, amount, newQty).run();
   if (Number(updated.meta?.changes ?? updated.changes ?? 0) !== 1) {
     throw new Error(`Stock changed concurrently for ${row.name || name}. Please retry.`);
