@@ -5,6 +5,8 @@
   "start_url": "./",
   "display": "standalone",
   "background_color": "#FBF9F5",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "scope": "./",
   "theme_color": "#FBF9F5",
   "orientation": "portrait",
   "icons": []
