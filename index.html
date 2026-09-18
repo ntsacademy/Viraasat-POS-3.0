@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+cc    <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1946,7 +1946,7 @@
     <script>
         // D1-only build: Google Apps Script is intentionally not used.
         const D1_API_BASE = '/api';
-        const API_TIMEOUT_MS = 10000;
+        const API_TIMEOUT_MS = 30000;
         
 const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.9-SURGICAL"; 
         
@@ -2337,23 +2337,21 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.9-SURGICAL";
         }
 
         async function d1Get(path, timeoutMs = API_TIMEOUT_MS) {
-            const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), timeoutMs);
-            try {
-                let lastError;
-                for(let attempt=0; attempt<3; attempt++){
-                    try{
-                        const response = await fetch(`${D1_API_BASE}${path}`, { method:'GET', headers:{'Accept':'application/json'}, cache:'no-store', signal:controller.signal });
-                        const data = await response.json().catch(()=>({}));
-                        if (!response.ok || data.success === false) throw new Error(data.error || `D1 API error (${response.status})`);
-                        return data;
-                    }catch(e){
-                        lastError=e;
-                        if(attempt<2) await new Promise(r=>setTimeout(r,350*(attempt+1)));
-                    }
-                }
-                throw lastError || new Error('D1 GET failed');
-            } finally { clearTimeout(timer); }
+            let lastError;
+            for(let attempt=0; attempt<3; attempt++){
+                const controller = new AbortController();
+                const timer = setTimeout(() => controller.abort(), timeoutMs);
+                try{
+                    const response = await fetch(`${D1_API_BASE}${path}`, { method:'GET', headers:{'Accept':'application/json'}, cache:'no-store', signal:controller.signal });
+                    const data = await response.json().catch(()=>({}));
+                    if (!response.ok || data.success === false) throw new Error(data.error || `D1 API error (${response.status})`);
+                    return data;
+                }catch(e){
+                    lastError=e;
+                    if(attempt<2) await new Promise(r=>setTimeout(r,350*(attempt+1)));
+                }finally{ clearTimeout(timer); }
+            }
+            throw lastError || new Error('D1 GET failed');
         }
         async function d1Post(path, body, timeoutMs = API_TIMEOUT_MS) {
             const controller = new AbortController();
@@ -2369,6 +2367,9 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.9-SURGICAL";
                 const data = await response.json().catch(()=>({}));
                 if (!response.ok || data.success === false) throw new Error(data.error || `D1 API error (${response.status})`);
                 return data;
+            } catch(e) {
+                if (e?.name === 'AbortError') throw new Error(`D1 request timed out after ${Math.round(timeoutMs/1000)} seconds`);
+                throw e;
             } finally { clearTimeout(timer); }
         }
         async function d1Put(path, body, timeoutMs = API_TIMEOUT_MS) {
@@ -2385,6 +2386,9 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.9-SURGICAL";
                 const data = await response.json().catch(()=>({}));
                 if (!response.ok || data.success === false) throw new Error(data.error || `D1 API error (${response.status})`);
                 return data;
+            } catch(e) {
+                if (e?.name === 'AbortError') throw new Error(`D1 request timed out after ${Math.round(timeoutMs/1000)} seconds`);
+                throw e;
             } finally { clearTimeout(timer); }
         }
         function normalizeArray(payload, keys) {
@@ -2456,7 +2460,10 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.9-SURGICAL";
             };
         }
 
+        let viraasatFetchDataInProgress = false;
         async function fetchData(silent=false){
+            if (viraasatFetchDataInProgress) return;
+            viraasatFetchDataInProgress = true;
             const loader=document.getElementById('loader');const expDate=document.getElementById('expDate');if(expDate&&!expDate.value)expDate.value=localISODate(new Date());const ef=document.getElementById('expFilterFrom'),et=document.getElementById('expFilterTo');if(ef&&et){ef.value='';et.value='';}if(!silent){loader.style.display='flex';loader.innerHTML='<div class="spinner"></div> <span>Syncing</span>';}
             await refreshPnlSettlementCache(); const defs=[['/dashboard',d1Get('/dashboard')],['/menu',d1Get('/menu')],['/tables',d1Get('/tables')],['/orders',d1Get('/orders?limit=5000')],['/expenses',d1Get('/expenses?limit=2000')],['/stock',d1Get('/stock')],['/staff',d1Get('/staff')],['/stock/history',d1Get('/stock/history?limit=100')]];const results=await Promise.allSettled(defs.map(x=>x[1]));const failed=[];
             try{
@@ -2498,7 +2505,7 @@ runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied' ? (p
 ${messages}
 
 Tables, billing and existing local UI remain visible.`);}
-            }catch(error){console.error('D1 Sync Error',error);renderTableGrid();renderStockDashboard();renderLiveSales();renderPremiumDashboard();renderExpenseHistoryList();hideSplashScreen();showCustomAlert(`D1 sync failed: ${error.message||error}`);}finally{if(!silent)setTimeout(()=>{loader.style.display='none';},700);}
+            }catch(error){console.error('D1 Sync Error',error);renderTableGrid();renderStockDashboard();renderLiveSales();renderPremiumDashboard();renderExpenseHistoryList();hideSplashScreen();showCustomAlert(`D1 sync failed: ${error.message||error}`);}finally{viraasatFetchDataInProgress=false;if(!silent)setTimeout(()=>{loader.style.display='none';},700);}
         }
 
         // Real-time D1 synchronization: refresh silently while the app is open.
