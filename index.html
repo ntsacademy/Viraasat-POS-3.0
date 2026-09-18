@@ -1,4 +1,4 @@
-cc    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -253,6 +253,13 @@ cc    <!DOCTYPE html>
         @media(max-width:800px){.premium-kpis{grid-template-columns:repeat(2,1fr)}.premium-grid-2,.premium-grid-3{grid-template-columns:1fr}.stock-grid{grid-template-columns:repeat(2,1fr)}.staff-grid{grid-template-columns:1fr 1fr}.premium-hero-row{align-items:flex-start}.premium-title{font-size:1.3rem}}
         @media(max-width:520px){.staff-grid{grid-template-columns:1fr}.premium-kpis{gap:8px}.pkpi{padding:13px}.pkpi .value{font-size:1.1rem}.premium-card{padding:14px}}
 
+
+        /* Salary summary mobile cards: preserve all columns without horizontal clipping. */
+        .mobile-payroll-card{display:none;border:1px solid var(--border);border-radius:12px;background:#fff;padding:12px;margin-bottom:8px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+        .mobile-payroll-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;border-bottom:1px solid #eee7df;padding-bottom:9px}
+        .mobile-payroll-head b{display:block;font-size:.82rem;line-height:1.25;overflow-wrap:anywhere}.mobile-payroll-head small{display:block;color:var(--text-muted);font-size:.62rem;margin-top:3px;line-height:1.35}.mobile-payroll-head>strong{font-size:.85rem;white-space:nowrap}
+        .mobile-payroll-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.mobile-payroll-grid div{background:#faf7f4;border-radius:8px;padding:8px;min-width:0}.mobile-payroll-grid span{display:block;color:var(--text-muted);font-size:.59rem;line-height:1.2}.mobile-payroll-grid b{display:block;font-size:.72rem;margin-top:3px;overflow-wrap:anywhere}.mobile-payroll-balance{font-size:.68rem;margin-top:9px;color:var(--text-muted)}.mobile-payroll-balance b{color:var(--success);font-size:.8rem}
+        @media(max-width:700px){#employeePayrollRows .premium-table-wrap{display:none!important}#employeePayrollRows .mobile-payroll-card{display:block!important}}
 
         /* ===== FINAL MOBILE ADMIN VIEW FIXES ===== */
         html,body{width:100%;max-width:600px!important;overflow-x:hidden;margin-left:auto;margin-right:auto}
@@ -2322,7 +2329,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.9-SURGICAL";
         }
 
         function calculateStaffBalance(){const empId=document.getElementById('payStaffSelect')?.value,infoDiv=document.getElementById('staffBalanceInfo');if(!infoDiv)return;if(!empId){infoDiv.innerHTML='';return;}const staff=staffData.find(s=>staffIdOf(s)===String(empId));if(!staff){infoDiv.innerHTML='';return;}const p=staffPayrollSummary(staff,payrollPeriodBounds());infoDiv.innerHTML=`<b>Salary:</b> ${money(p.salary)} &nbsp; | &nbsp; <b>Salary Paid:</b> ${money(p.salaryPaid)} &nbsp; <b>Advance:</b> ${money(p.advance)} &nbsp; <b>Total Taken:</b> ${money(p.totalReceived)}<br><b style="font-size:1.05rem;color:var(--success)">Balance:</b> ${money(p.balance)}`;}
-        async function submitStaffPayout(){const empId=document.getElementById('payStaffSelect')?.value,amount=Number(document.getElementById('payStaffAmount')?.value),type=document.getElementById('payStaffType')?.value||'Advance';if(!empId||!Number.isFinite(amount)||amount<=0){showCustomAlert('Please select staff and enter valid amount.');return;}const staff=staffData.find(s=>staffIdOf(s)===String(empId));if(!staff){showCustomAlert('Employee not found.');return;}const sName=getVal(staff,['name'])||'Staff',sPhone=getVal(staff,['mobile','phone'])||'',period=payrollPeriodBounds(),summary=staffPayrollSummary(staff,period);if(amount>summary.balance){showCustomAlert(`Amount exceeds current balance. Remaining balance: ${money(summary.balance)}`);return;}const fDate=localISODate(new Date());try{if(type==='Advance'){await d1Post('/staff/advances',{staff_id:Number(empId)||null,staff_name:sName,amount,entry_type:'given',entry_date:fDate,note:`Payroll advance for ${period.start} to ${period.end}`,created_by:localStorage.getItem('viraasat_user')||'Admin'});}else{const desc=`[${empId}] ${sName} - Salary Clearance`;await d1Post('/expenses',{category:'Staff Salary',amount,description:desc,expense_date:fDate});expenseHistory.push({date:fDate,isodate:fDate,category:'Staff Salary',amount,description:desc});}await refreshStaffAdvanceData();calculateStaffBalance();renderEmployeePayrollTable();document.getElementById('payStaffAmount').value='';document.getElementById('salaryActionButtons').innerHTML=`<button class="btn" onclick="printSalarySlip('${esc(sName)}','${esc(empId)}','${amount}','${esc(type)}');document.getElementById('salaryActionModal').style.display='none';">🖨️ Print Slip</button><button class="btn" style="background:#10B981;" onclick="sendWASalarySlip('${esc(sName)}','${esc(empId)}','${amount}','${esc(type)}','${esc(sPhone)}');document.getElementById('salaryActionModal').style.display='none';">📱 WhatsApp Slip</button><button class="btn btn-outline" onclick="document.getElementById('salaryActionModal').style.display='none';">Close</button>`;document.getElementById('salaryActionModal').style.display='flex';}catch(e){showCustomAlert(`${type} save failed: `+(e?.message||e));}}
+        async function submitStaffPayout(){const empId=document.getElementById('payStaffSelect')?.value,amount=Number(document.getElementById('payStaffAmount')?.value),type=document.getElementById('payStaffType')?.value||'Advance';if(!empId||!Number.isFinite(amount)||amount<=0){showCustomAlert('Please select staff and enter valid amount.');return;}const staff=staffData.find(s=>staffIdOf(s)===String(empId));if(!staff){showCustomAlert('Employee not found.');return;}const sName=getVal(staff,['name'])||'Staff',sPhone=getVal(staff,['mobile','phone'])||'',period=payrollPeriodBounds(),summary=staffPayrollSummary(staff,period);if(amount>summary.balance){showCustomAlert(`Amount exceeds current balance. Remaining balance: ${money(summary.balance)}`);return;}const fDate=localISODate(new Date());try{if(type==='Advance'){await d1Post('/staff/advances',{staff_id:Number(empId)||null,staff_name:sName,amount,entry_type:'given',entry_date:fDate,note:`Payroll advance for ${period.start} to ${period.end}`,created_by:localStorage.getItem('viraasat_user')||'Admin'});}else{const desc=`[${empId}] ${sName} - Salary Clearance`;await d1Post('/expenses',{category:'Staff Salary',amount,description:desc,expense_date:fDate});expenseHistory.push({date:fDate,isodate:fDate,category:'Staff Salary',amount,description:desc});}await refreshStaffAdvanceData();calculateStaffBalance();renderEmployeePayrollTable();if(typeof generateTrends==='function')generateTrends();document.getElementById('payStaffAmount').value='';document.getElementById('salaryActionButtons').innerHTML=`<button class="btn" onclick="printSalarySlip('${esc(sName)}','${esc(empId)}','${amount}','${esc(type)}');document.getElementById('salaryActionModal').style.display='none';">🖨️ Print Slip</button><button class="btn" style="background:#10B981;" onclick="sendWASalarySlip('${esc(sName)}','${esc(empId)}','${amount}','${esc(type)}','${esc(sPhone)}');document.getElementById('salaryActionModal').style.display='none';">📱 WhatsApp Slip</button><button class="btn btn-outline" onclick="document.getElementById('salaryActionModal').style.display='none';">Close</button>`;document.getElementById('salaryActionModal').style.display='flex';}catch(e){showCustomAlert(`${type} save failed: `+(e?.message||e));}}
 
         function printSalarySlip(sName, empId, amount, type) {
             let printSec = document.getElementById('printSection'); let d = new Date(); let dStr = d.toLocaleDateString('en-IN') + ' ' + d.toLocaleTimeString('en-IN');
@@ -2465,7 +2472,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.9-SURGICAL";
             if (viraasatFetchDataInProgress) return;
             viraasatFetchDataInProgress = true;
             const loader=document.getElementById('loader');const expDate=document.getElementById('expDate');if(expDate&&!expDate.value)expDate.value=localISODate(new Date());const ef=document.getElementById('expFilterFrom'),et=document.getElementById('expFilterTo');if(ef&&et){ef.value='';et.value='';}if(!silent){loader.style.display='flex';loader.innerHTML='<div class="spinner"></div> <span>Syncing</span>';}
-            await refreshPnlSettlementCache(); const defs=[['/dashboard',d1Get('/dashboard')],['/menu',d1Get('/menu')],['/tables',d1Get('/tables')],['/orders',d1Get('/orders?limit=5000')],['/expenses',d1Get('/expenses?limit=2000')],['/stock',d1Get('/stock')],['/staff',d1Get('/staff')],['/stock/history',d1Get('/stock/history?limit=100')]];const results=await Promise.allSettled(defs.map(x=>x[1]));const failed=[];
+            await refreshPnlSettlementCache(); const defs=[['/dashboard',d1Get('/dashboard')],['/menu',d1Get('/menu')],['/tables',d1Get('/tables')],['/orders',d1Get('/orders?limit=5000')],['/expenses',d1Get('/expenses?limit=2000')],['/stock',d1Get('/stock')],['/staff',d1Get('/staff')],['/stock/history',d1Get('/stock/history?limit=100')],['/staff/advances',d1Get('/staff/advances')]];const results=await Promise.allSettled(defs.map(x=>x[1]));const failed=[];
             try{
                 if(results[0].status==='fulfilled'){const dash=results[0].value||{};const summary=dash.summary||{};d1DashboardSummary={...summary};const ts=dash.tables||{};document.getElementById('homeTodaySale').innerText=`₹${Math.round(Number(summary.today_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeAvgOrder').innerText=`₹${Math.round(Number(summary.average_order)||0).toLocaleString('en-IN')}`;document.getElementById('homeOverallSale').innerText=`₹${Math.round(Number(summary.overall_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeActiveTables').innerText=`${Number(ts.occupied)||0} / ${Number(ts.total)||tableSections.reduce((a,x)=>a+x.tables.length,0)}`;}else failed.push(['/dashboard',results[0].reason]);
                 if(results[1].status==='fulfilled'){
@@ -2487,6 +2494,7 @@ runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied' ? (p
                 if(results[5].status==='fulfilled'){const raw=normalizeArray(results[5].value,['stock','items','data','result']);stockData={};stockMeta={};raw.forEach(x=>{const name=String(getVal(x,['name','itemname','item','stockname'])||'').trim();if(!name)return;stockData[name]=Number(getVal(x,['quantity','qty','stock','currentstock','currentquantity']))||0;stockMeta[name]={id:getVal(x,['id']),name,unit:getVal(x,['unit'])||'pcs',low_stock_level:Number(getVal(x,['low_stock_level','lowstocklevel']))||5,created_at:getVal(x,['created_at'])||'',updated_at:getVal(x,['updated_at'])||''};});}else failed.push(['/stock',results[5].reason]);
                 if(results[6].status==='fulfilled')staffData=normalizeArray(results[6].value,['staff','employees','data','result']);else failed.push(['/staff',results[6].reason]);
                 if(results[7].status==='fulfilled')stockHistory=normalizeArray(results[7].value,['history','stock_history','data','result']);else stockHistory=[];
+                if(results[8].status==='fulfilled')staffAdvanceData=normalizeArray(results[8].value,['advances','data','result']);else {staffAdvanceData=[];failed.push(['/staff/advances',results[8].reason]);}
                 applyLocalStaffState();
                 const renderSteps=[
                     ['dropdown',populateDropdown],['staff dropdown',populateStaffDropdown],
@@ -2709,6 +2717,10 @@ Tables, billing and existing local UI remain visible.`);}
         }
         function renderEmployeePayrollTable(){
             const el=document.getElementById('employeePayrollRows');if(!el)return;const period=payrollPeriodBounds(),q=String(document.getElementById('employeeSearch')?.value||'').trim().toLowerCase();const rows=(staffData||[]).filter(s=>!q||`${getVal(s,['name'])} ${getVal(s,['role'])} ${getVal(s,['mobile','phone'])}`.toLowerCase().includes(q));
+            if(window.matchMedia && window.matchMedia('(max-width:700px)').matches){
+                el.innerHTML=rows.map(s=>{const p=staffPayrollSummary(s,period);return `<div class="mobile-payroll-card"><div class="mobile-payroll-head"><div><b>${esc(getVal(s,['name'])||'Unknown')}</b><small>${esc(getVal(s,['mobile','phone'])||'')} • ${esc(getVal(s,['role'])||'Staff')}</small></div><strong>${money(p.balance)}</strong></div><div class="mobile-payroll-grid"><div><span>Monthly Salary</span><b>${money(p.salary)}</b></div><div><span>Salary Paid</span><b>${money(p.salaryPaid)}</b></div><div><span>Advance</span><b>${money(p.advance)}</b></div><div><span>Total Taken</span><b>${money(p.totalReceived)}</b></div></div><div class="mobile-payroll-balance">Remaining Balance: <b>${money(p.balance)}</b></div></div>`}).join('')||'<div class="premium-empty">No employees found.</div>';
+                return;
+            }
             el.innerHTML=`<div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Employee</th><th>Role</th><th>Monthly Salary</th><th>Salary Paid</th><th>Advance</th><th>Total Taken</th><th>Balance</th></tr></thead><tbody>${rows.map(s=>{const p=staffPayrollSummary(s,period);return `<tr><td><b>${esc(getVal(s,['name'])||'Unknown')}</b><br><small>${esc(getVal(s,['mobile','phone'])||'')}</small></td><td>${esc(getVal(s,['role'])||'Staff')}</td><td>${money(p.salary)}</td><td>${money(p.salaryPaid)}</td><td>${money(p.advance)}</td><td><b>${money(p.totalReceived)}</b></td><td><b>${money(p.balance)}</b></td></tr>`}).join('')||'<tr><td colspan="7"><div class="premium-empty">No employees found.</div></td></tr>'}</tbody></table></div>`;
         }
         function renderStockManagement(){
@@ -3841,6 +3853,22 @@ Tables, billing and existing local UI remain visible.`);}
                         rawChartExpenseData[dateStrKey] = (rawChartExpenseData[dateStrKey] || 0) + sAmount; totalExpensesAmount += sAmount; 
                         if(eCat === 'Staff Salary') { totalSalaryPaid += sAmount; let match = eDesc.match(/\[(.*?)\] (.*?) -/); let staffName = match ? match[2] : eDesc; staffExpenseMap[staffName] = (staffExpenseMap[staffName] || 0) + sAmount; } else { expenseCategories[eCat] = (expenseCategories[eCat] || 0) + sAmount; }
                     }
+                });
+
+                // Staff advances are real cash expenses and must be included in P&L,
+                // while returned/adjusted advances reduce the expense total.
+                (Array.isArray(staffAdvanceData)?staffAdvanceData:[]).forEach(adv=>{
+                    const amount=parseAmount(adv.amount); if(!amount)return;
+                    const date=String(adv.entry_date||adv.date||adv.created_at||'').trim(); if(!date)return;
+                    const key=localISODate(date)||date.split('T')[0].split(' ')[0];
+                    const type=String(adv.entry_type||'given').toLowerCase();
+                    const sign=(type==='returned'||type==='adjusted')?-1:1;
+                    const value=amount*sign;
+                    rawChartExpenseData[key]=(rawChartExpenseData[key]||0)+value;
+                    totalExpensesAmount+=value;
+                    totalSalaryPaid+=value;
+                    const staffName=String(adv.staff_name||'Staff Advance').trim()||'Staff Advance';
+                    staffExpenseMap[staffName]=(staffExpenseMap[staffName]||0)+value;
                 });
                 
                 let netProfit = totalSalesAmount - totalExpensesAmount;
