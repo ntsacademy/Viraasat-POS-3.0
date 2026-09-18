@@ -4294,6 +4294,15 @@ Tables, billing and existing local UI remain visible.`);}
 
 
 
+        // Register the service worker so Chrome recognizes this site as an installable PWA.
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(err =>
+                    console.warn('Service worker registration failed:', err)
+                );
+            });
+        }
+
         // Lightweight mobile haptic feedback for primary UI actions.
         document.addEventListener('click', (e)=>{
             const target=e.target.closest('button,.nav-item,.quick-card,.table-card,.h-order-card,.card');
