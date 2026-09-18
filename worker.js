@@ -1905,8 +1905,37 @@ var worker_default = {
         const sr = await db.prepare(`SELECT COALESCE(SUM(CAST(total AS REAL)),0) AS total, COUNT(*) AS cnt FROM orders WHERE ${salesWhere} AND LOWER(COALESCE(order_status,'')) NOT IN ('cancelled','deleted','deletion_pending')`).bind(...salesBind).first();
         const expenseWhere = from ? `date(substr(COALESCE(expense_date,created_at,''),1,10)) >= date(?) AND date(substr(COALESCE(expense_date,created_at,''),1,10)) <= date(?)` : `date(substr(COALESCE(expense_date,created_at,''),1,10)) <= date(?)`;
         const er = await db.prepare(`SELECT COALESCE(SUM(CAST(amount AS REAL)),0) AS total FROM expenses WHERE ${expenseWhere}`).bind(...salesBind).first();
+        // Safety order: FIRST create a complete Google Sheet backup, ONLY THEN delete settled D1 data.
+        // If backup fails, nothing is deleted.
+        let backupResult;
+        try {
+          backupResult = await runGoogleSheetBackup(db, env, "Settlement");
+        } catch (backupError) {
+          return json({success:false, error:`Settlement stopped: Google Sheet backup failed. No D1 data was deleted. ${backupError?.message||backupError}`}, 502);
+        }
+
         const result = await db.prepare(`INSERT INTO pnl_settlements(from_date,till_date,sales_total,expenses_total,order_count,settled_by,note) VALUES(?,?,?,?,?,?,?)`).bind(from,till,sr?.total||0,er?.total||0,sr?.cnt||0,clean(body.settled_by)||"Admin",clean(body.note)||null).run();
-        return json({success:true,id:result.meta?.last_row_id||null,from_date:from,till_date:till,sales_total:sr?.total||0,expenses_total:er?.total||0,profit_loss:(sr?.total||0)-(er?.total||0),order_count:sr?.cnt||0});
+
+        // Delete only the settled period's sales and expenses after confirmed backup.
+        const settledOrderRows = await db.prepare(`SELECT id FROM orders WHERE ${salesWhere} AND LOWER(COALESCE(order_status,'')) NOT IN ('cancelled','deleted','deletion_pending')`).bind(...salesBind).all();
+        const settledOrderIds = (settledOrderRows.results||[]).map(x=>Number(x.id)).filter(Number.isFinite);
+        if (settledOrderIds.length && await tableExists(db, 'order_items')) {
+          for (let i=0; i<settledOrderIds.length; i+=80) {
+            const chunk=settledOrderIds.slice(i,i+80); const qs=chunk.map(()=>'?').join(',');
+            await db.prepare(`DELETE FROM order_items WHERE order_id IN (${qs})`).bind(...chunk).run();
+          }
+        }
+        if (settledOrderIds.length) {
+          for (let i=0; i<settledOrderIds.length; i+=80) {
+            const chunk=settledOrderIds.slice(i,i+80); const qs=chunk.map(()=>'?').join(',');
+            await db.prepare(`DELETE FROM orders WHERE id IN (${qs})`).bind(...chunk).run();
+          }
+        }
+        const expenseRows = await db.prepare(`SELECT id FROM expenses WHERE ${expenseWhere}`).bind(...salesBind).all();
+        const deletedExpenseCount = (expenseRows.results||[]).length;
+        await db.prepare(`DELETE FROM expenses WHERE ${expenseWhere}`).bind(...salesBind).run();
+
+        return json({success:true,id:result.meta?.last_row_id||null,from_date:from,till_date:till,sales_total:sr?.total||0,expenses_total:er?.total||0,profit_loss:(sr?.total||0)-(er?.total||0),order_count:sr?.cnt||0,backup_id:backupResult.backup_id,deleted_orders:settledOrderIds.length,deleted_expenses:deletedExpenseCount});
       }
       if (path === "/api/expenses" && method === "GET") {
         const limit = Math.min(
