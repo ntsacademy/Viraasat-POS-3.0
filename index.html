@@ -1462,6 +1462,52 @@
           #stockManagementPanel .admin-mini-row small, #premiumDashboard .admin-mini-row small { white-space:normal !important; overflow-wrap:anywhere; line-height:1.25; }
           #stockManagementPanel .admin-mini-row strong, #premiumDashboard .admin-mini-row strong { flex:0 0 auto; white-space:nowrap; }
         }
+
+/* Inventory item visibility fix: keep every stock row readable on mobile and desktop. */
+#stockManagementPanel #adminStockMiniList{
+    max-height:420px !important;
+    overflow-y:auto !important;
+    overflow-x:hidden !important;
+    display:flex !important;
+    flex-direction:column !important;
+    gap:8px !important;
+    padding:4px 2px !important;
+}
+#stockManagementPanel #adminStockMiniList .admin-mini-row{
+    min-height:58px !important;
+    height:auto !important;
+    padding:10px 12px !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:space-between !important;
+    gap:12px !important;
+    overflow:visible !important;
+}
+#stockManagementPanel #adminStockMiniList .admin-mini-row > div{
+    min-width:0 !important;
+    flex:1 1 auto !important;
+    overflow:visible !important;
+}
+#stockManagementPanel #adminStockMiniList .admin-mini-row b{
+    display:block !important;
+    white-space:normal !important;
+    overflow-wrap:anywhere !important;
+    word-break:break-word !important;
+    line-height:1.25 !important;
+    font-size:.78rem !important;
+}
+#stockManagementPanel #adminStockMiniList .admin-mini-row small{
+    display:block !important;
+    white-space:normal !important;
+    overflow-wrap:anywhere !important;
+    line-height:1.2 !important;
+    margin-top:3px !important;
+}
+#stockManagementPanel #adminStockMiniList .admin-mini-row > strong{
+    flex:0 0 auto !important;
+    white-space:nowrap !important;
+    font-size:1rem !important;
+}
 </style>
 </head>
 <body>
@@ -1698,7 +1744,7 @@
         <div id="trendView" class="tab-content" style="padding-top: 10px;">
             <div class="trend-kpi-grid">
                 <div class="trend-kpi-card full-width" style="background:var(--occ-bg); border-color:var(--occ-border);">
-                    <div class="kpi-title" style="color: #D03B3B;">Net Profit (Current Unsettled Period)</div>
+                    <div class="kpi-title" style="color: #D03B3B;">Net Profit (All-Time D1 Data)</div>
                     <div class="kpi-value" id="kpiNetProfit">₹ 0</div>
                 </div>
                 <div class="trend-kpi-card"><div class="kpi-title">Total Sales</div><div class="kpi-value" id="kpiTotalSales" style="color:var(--success);">₹ 0</div></div>
@@ -2389,8 +2435,8 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
             };
         }
 
-        async function fetchData(){
-            const loader=document.getElementById('loader');const expDate=document.getElementById('expDate');if(expDate&&!expDate.value)expDate.value=localISODate(new Date());const ef=document.getElementById('expFilterFrom'),et=document.getElementById('expFilterTo');if(ef&&et){ef.value='';et.value='';}loader.style.display='flex';loader.innerHTML='<div class="spinner"></div> <span>Syncing</span>';
+        async function fetchData(silent=false){
+            const loader=document.getElementById('loader');const expDate=document.getElementById('expDate');if(expDate&&!expDate.value)expDate.value=localISODate(new Date());const ef=document.getElementById('expFilterFrom'),et=document.getElementById('expFilterTo');if(ef&&et){ef.value='';et.value='';}if(!silent){loader.style.display='flex';loader.innerHTML='<div class="spinner"></div> <span>Syncing</span>';}
             await refreshPnlSettlementCache(); const defs=[['/dashboard',d1Get('/dashboard')],['/menu',d1Get('/menu')],['/tables',d1Get('/tables')],['/orders',d1Get('/orders?limit=5000')],['/expenses',d1Get('/expenses?limit=2000')],['/stock',d1Get('/stock')],['/staff',d1Get('/staff')],['/stock/history',d1Get('/stock/history?limit=100')]];const results=await Promise.allSettled(defs.map(x=>x[1]));const failed=[];
             try{
                 if(results[0].status==='fulfilled'){const dash=results[0].value||{};const summary=dash.summary||{};d1DashboardSummary={...summary};const ts=dash.tables||{};document.getElementById('homeTodaySale').innerText=`₹${Math.round(Number(summary.today_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeAvgOrder').innerText=`₹${Math.round(Number(summary.average_order)||0).toLocaleString('en-IN')}`;document.getElementById('homeOverallSale').innerText=`₹${Math.round(Number(summary.overall_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeActiveTables').innerText=`${Number(ts.occupied)||0} / ${Number(ts.total)||tableSections.reduce((a,x)=>a+x.tables.length,0)}`;}else failed.push(['/dashboard',results[0].reason]);
@@ -2426,8 +2472,26 @@ runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied' ? (p
 ${messages}
 
 Tables, billing and existing local UI remain visible.`);}
-            }catch(error){console.error('D1 Sync Error',error);renderTableGrid();renderStockDashboard();renderLiveSales();renderPremiumDashboard();renderExpenseHistoryList();hideSplashScreen();showCustomAlert(`D1 sync failed: ${error.message||error}`);}finally{setTimeout(()=>{loader.style.display='none';},700);}
+            }catch(error){console.error('D1 Sync Error',error);renderTableGrid();renderStockDashboard();renderLiveSales();renderPremiumDashboard();renderExpenseHistoryList();hideSplashScreen();showCustomAlert(`D1 sync failed: ${error.message||error}`);}finally{if(!silent)setTimeout(()=>{loader.style.display='none';},700);}
         }
+
+        // Real-time D1 synchronization: refresh silently while the app is open.
+        // Existing manual refresh and all business logic remain unchanged.
+        let viraasatRealtimeTimer = null;
+        let viraasatSyncInProgress = false;
+        async function runRealtimeSync(){
+            if(viraasatSyncInProgress || document.visibilityState !== 'visible' || !localStorage.getItem('viraasat_user')) return;
+            viraasatSyncInProgress = true;
+            try { await fetchData(true); } catch(e) { console.warn('Realtime sync skipped:', e); }
+            finally { viraasatSyncInProgress = false; }
+        }
+        function startRealtimeSync(){
+            if(viraasatRealtimeTimer) clearInterval(viraasatRealtimeTimer);
+            viraasatRealtimeTimer = setInterval(runRealtimeSync, 15000);
+        }
+        document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') runRealtimeSync(); });
+        window.addEventListener('focus', runRealtimeSync);
+        startRealtimeSync();
 
         function normalizeSheetSale(row){
             if(!row || typeof row!=='object') return null;
@@ -3710,7 +3774,7 @@ Tables, billing and existing local UI remain visible.`);}
 
         function generateTrends() {
             try {
-                const activeSales = getCurrentUnsettledSales(); const activeExpenses = getCurrentUnsettledExpenses();
+                const activeSales = Array.isArray(salesHistory) ? salesHistory : []; const activeExpenses = Array.isArray(expenseHistory) ? expenseHistory : [];
                 let totalSalesAmount = 0; let totalExpensesAmount = 0; let totalSalaryPaid = 0;
                 let d = new Date(); let todayIso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; let todayGb = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
                 let revenueToday = 0; let ordersToday = 0; let expenseCategories = {}; let staffExpenseMap = {};
