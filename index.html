@@ -7,11 +7,7 @@
     <title>Viraasat ERP & POS</title>
     
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#FBF9F5">
-    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FBF9F5">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="color-scheme" content="light">
-    <meta name="msapplication-navbutton-color" content="#FBF9F5">
+    <meta name="theme-color" content="#f8f5ef">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="apple-touch-icon" href="icon.png">
@@ -44,7 +40,7 @@
             --border-radius: 14px;      
         }
 
-        html { font-size: 16px; touch-action: manipulation; background-color: #FFFFFF; overscroll-behavior-y: none; } 
+        html { font-size: 16px; touch-action: manipulation; background-color: #FFFFFF; overscroll-behavior-y: auto; } 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
         input, textarea, select { user-select: auto; -webkit-user-select: auto; }
         ::-webkit-scrollbar { display: none; }
@@ -53,7 +49,7 @@
             font-family: 'Nunito', system-ui, -apple-system, sans-serif; 
             background-color: var(--bg-color); color: var(--text-dark); 
             display: flex; flex-direction: column; height: 100dvh; 
-            overflow: hidden; overscroll-behavior-y: none; 
+            overflow: hidden; overscroll-behavior-y: auto; 
             padding-top: env(safe-area-inset-top); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right);
             max-width: 600px; margin: 0 auto; position: relative;
         } 
@@ -1455,90 +1451,6 @@
 }
 
 </style>
-
-<style>
-/* VIRAASAT POS — FINAL STOCK LIST MOBILE READABILITY PATCH */
-/* Presentation-only: no business logic changes. */
-html, body { color-scheme: light !important; }
-#adminStockMiniList {
-    display:flex !important;
-    flex-direction:column !important;
-    gap:6px !important;
-    width:100% !important;
-    min-width:0 !important;
-    overflow-y:auto !important;
-    overflow-x:hidden !important;
-}
-#adminStockMiniList .admin-mini-row {
-    display:flex !important;
-    align-items:center !important;
-    justify-content:space-between !important;
-    gap:10px !important;
-    width:100% !important;
-    min-width:0 !important;
-    min-height:62px !important;
-    height:auto !important;
-    padding:10px 12px !important;
-    flex:0 0 auto !important;
-    overflow:visible !important;
-    line-height:normal !important;
-}
-#adminStockMiniList .admin-mini-row > div {
-    flex:1 1 auto !important;
-    min-width:0 !important;
-    width:calc(100% - 48px) !important;
-}
-#adminStockMiniList .admin-mini-row b {
-    display:block !important;
-    max-width:100% !important;
-    white-space:normal !important;
-    overflow:visible !important;
-    text-overflow:clip !important;
-    overflow-wrap:anywhere !important;
-    word-break:break-word !important;
-    line-height:1.25 !important;
-    font-size:.76rem !important;
-}
-#adminStockMiniList .admin-mini-row small {
-    display:block !important;
-    max-width:100% !important;
-    margin-top:4px !important;
-    white-space:normal !important;
-    overflow:visible !important;
-    text-overflow:clip !important;
-    overflow-wrap:anywhere !important;
-    word-break:break-word !important;
-    line-height:1.3 !important;
-    font-size:.62rem !important;
-}
-#adminStockMiniList .admin-mini-row > strong {
-    flex:0 0 42px !important;
-    width:42px !important;
-    min-width:42px !important;
-    text-align:right !important;
-    white-space:nowrap !important;
-    line-height:1.1 !important;
-    font-size:1.05rem !important;
-}
-@media (max-width:600px) {
-    #adminStockMiniList .admin-mini-row { min-height:66px !important; padding:11px 10px !important; }
-    #adminStockMiniList .admin-mini-row b { font-size:.72rem !important; }
-    #adminStockMiniList .admin-mini-row small { font-size:.58rem !important; margin-top:4px !important; }
-}
-</style>
-
-<style>
-/* Final mobile stock-row containment: presentation only. */
-@media (max-width:600px){
-  #adminStockMiniList{gap:8px !important; padding-bottom:8px !important;}
-  #adminStockMiniList .admin-mini-row{min-height:70px !important; height:auto !important; padding:12px 12px !important; align-items:flex-start !important;}
-  #adminStockMiniList .admin-mini-row > div{min-width:0 !important; overflow:visible !important;}
-  #adminStockMiniList .admin-mini-row b{font-size:.78rem !important; line-height:1.3 !important; white-space:normal !important; overflow-wrap:anywhere !important;}
-  #adminStockMiniList .admin-mini-row small{font-size:.66rem !important; line-height:1.35 !important; white-space:normal !important; overflow-wrap:anywhere !important;}
-  #adminStockMiniList .admin-mini-row > strong{font-size:1.15rem !important; flex:0 0 48px !important; width:48px !important; padding-top:2px !important;}
-}
-</style>
-
 </head>
 <body>
 
@@ -1798,6 +1710,15 @@ html, body { color-scheme: light !important; }
                 <div class="section-header" style="margin-top:0;"><h4>Staff Expense Breakdown</h4></div>
                 <div id="staffExpenseList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
             </div>
+            <div class="card">
+                <div class="section-header" style="margin-top:0;"><h4>Staff Advance Details</h4></div>
+                <div id="staffAdvanceDetails" style="display:flex; flex-direction:column; gap:8px; font-size:0.78rem;"></div>
+            </div>
+            <div class="card">
+                <div class="section-header" style="margin-top:0;"><h4>Staff Advance Ledger</h4><button class="premium-btn light" onclick="addStaffAdvanceEntry()">Give / Record Advance</button></div>
+                <div class="admin-help">D1-based staff advance records: given, returned or adjusted. These remain available by date and staff.</div>
+                <div id="staffAdvanceLedger" class="admin-mini-list"></div>
+            </div>
             
             <div class="card">
                 <div class="section-header" style="margin-top:0;"><h4>Other Expenses</h4></div>
@@ -1920,14 +1841,6 @@ html, body { color-scheme: light !important; }
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></div>
             <span>Table</span>
         </button>
-        <button class="nav-item" id="navOrders" onclick="switchMainTab('salesDashboard', this)">
-            <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2V2z"></path><path d="M9 7h6M9 11h6M9 15h4"></path></svg></div>
-            <span>Live Sale</span>
-        </button>
-        <button class="nav-item" id="navPnl" onclick="switchMainTab('trendView', this)">
-            <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16"></path><path d="M7 15l3-4 3 2 4-6"></path></svg></div>
-            <span>P&amp;L</span>
-        </button>
         <button class="nav-item" id="navStock" onclick="switchMainTab('stockManagement', this)">
             <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg></div>
             <span>Stock</span>
@@ -1952,28 +1865,6 @@ html, body { color-scheme: light !important; }
 
     <div id="printSection"></div>
 
-    <style>
-      html, body { overscroll-behavior-y: none; }
-      body { -webkit-overflow-scrolling: touch; }
-      .bottom-nav { gap: 1px; }
-      .nav-item { min-width: 0; }
-      .nav-item span { white-space: nowrap; }
-      @media (max-width:600px) {
-        .bottom-nav { padding-left: 2px !important; padding-right: 2px !important; }
-        .nav-item { font-size: .52rem !important; padding-left: 0 !important; padding-right: 0 !important; }
-        .nav-item .icon-container { flex-shrink: 0; }
-        .tab-content { padding-bottom: 92px !important; }
-        #salesDashboard .card { padding: 12px !important; }
-        #salesDashboard .input-row { gap: 8px !important; }
-        #salesDashboard .input-box label { font-size: .68rem; }
-        #salesDashboard input[type=date] { min-width: 0 !important; padding: 0 8px !important; font-size: .78rem !important; }
-        #salesDashboard .sales-grid { grid-template-columns: minmax(0,1fr) !important; }
-        #adminStockMiniList .admin-mini-row { min-height: 48px !important; align-items: center !important; padding: 9px 10px !important; }
-        #adminStockMiniList .admin-mini-row b { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; line-height: 1.2 !important; }
-        #adminStockMiniList .admin-mini-row small { white-space: normal !important; line-height: 1.25 !important; }
-        #adminStockMiniList .admin-mini-row > strong { flex: 0 0 auto; font-size: 1rem !important; }
-      }
-    </style>
     <script>
         // D1-only build: Google Apps Script is intentionally not used.
         const D1_API_BASE = '/api';
@@ -1997,9 +1888,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
         let expenseHistory = []; 
         let currentBill = [];
         // Preserve discount entered for an open table until final checkout.
-        let runningTableDiscounts = {};
-        // A table becomes server-occupied only after Save KOT.
-        let tableSessionSaved = false;
+        let runningTableDiscounts = {}; 
         let staffData = [];
         let activeTableNumber = ""; 
         let trendChartInstance = null; 
@@ -2222,9 +2111,9 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
             let tod = hr < 12 ? 'Morning' : (hr < 17 ? 'Afternoon' : 'Evening'); 
             document.getElementById('greetText').innerText = `Good ${tod} 👋`;
 
-            const navOrders=document.getElementById('navOrders'); if(navOrders) navOrders.style.display = 'flex';
-            const btnViewAllOrders=document.getElementById('btnViewAllOrders'); if(btnViewAllOrders) btnViewAllOrders.style.display = 'inline';
-            const navAnalytics=document.getElementById('navPnl'); if(navAnalytics) navAnalytics.style.display = (isAdmin || perms.analytics) ? 'flex' : 'none';
+            const navOrders=document.getElementById('navOrders'); if(navOrders) navOrders.style.display='none';
+            const btnViewAllOrders=document.getElementById('btnViewAllOrders'); if(btnViewAllOrders) btnViewAllOrders.style.display = (isAdmin || perms.orders) ? 'inline' : 'none';
+            const navAnalytics=document.getElementById('navAnalytics'); if(navAnalytics) navAnalytics.style.display='none';
             const navExpenses=document.getElementById('navExpenses'); if(navExpenses) navExpenses.style.display = (isAdmin || perms.expenses) ? 'flex' : 'none';
             const navStock=document.getElementById('navStock'); if(navStock) navStock.style.display = isAdmin ? 'flex' : 'none';
             const navEmployee=document.getElementById('navEmployee'); if(navEmployee) navEmployee.style.display = isAdmin ? 'flex' : 'none';
@@ -3928,24 +3817,10 @@ Tables, billing and existing local UI remain visible.`);}
             if (!tStr) return ""; try { let d = new Date(tStr); if (!isNaN(d.getTime())) return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); return tStr; } catch(e) { return tStr; } 
         }
 
-        function liveSalesCycleBounds(baseDate=new Date()){
-            const d=new Date(baseDate); d.setHours(0,0,0,0);
-            const start=new Date(d.getFullYear(), d.getMonth()-(d.getDate()<10?1:0), 10);
-            const end=new Date(start.getFullYear(), start.getMonth()+1, 10);
-            return {start:localISODate(start),end:localISODate(end)};
-        }
-        let liveSalesDefaultApplied=false;
-        function applyDefaultLiveSalesCycle(){
-            const from=document.getElementById('filterStartDate'),to=document.getElementById('filterEndDate');
-            if(!from||!to)return;
-            if(from.value && to.value)return;
-            const b=liveSalesCycleBounds(); from.value=b.start; to.value=b.end; liveSalesDefaultApplied=true; setActiveFilterBtn(null);
-        }
         function renderLiveSales(){
             const salesGrid=document.getElementById('salesGrid'),homeRecent=document.getElementById('homeRecentOrders');
             if(!salesGrid)return;
             salesGrid.innerHTML='';if(homeRecent)homeRecent.innerHTML='';
-            applyDefaultLiveSalesCycle();
             const startDate=document.getElementById('filterStartDate')?.value||'',endDate=document.getElementById('filterEndDate')?.value||'';
             const filtered=salesHistory.filter(s=>{const d=saleDateKey(s);return(!startDate||d>=startDate)&&(!endDate||d<=endDate);})
                 .slice().sort((a,b)=>new Date(getVal(b,['date','isodate','created_at']))-new Date(getVal(a,['date','isodate','created_at'])));
@@ -4026,7 +3901,6 @@ Tables, billing and existing local UI remain visible.`);}
                 }
             }
 
-            if(tabName === 'salesDashboard') setTimeout(()=>{ applyDefaultLiveSalesCycle(); renderLiveSales(); }, 30);
             if(tabName === 'trendView') setTimeout(generateTrends, 100); if(tabName === 'premiumDashboard') setTimeout(renderPremiumDashboard, 50); if(tabName === 'stockManagement') setTimeout(renderStockManagement, 30); if(tabName === 'employeeManagement') setTimeout(renderEmployeeManagement, 30);
         }
 
@@ -4036,9 +3910,7 @@ Tables, billing and existing local UI remain visible.`);}
             document.getElementById('billingTitle').innerText = activeTableNumber;
             if(num === 'Home Delivery') { document.getElementById('deliveryAddressBox').style.display = 'flex'; } else { document.getElementById('deliveryAddressBox').style.display = 'none'; }
             
-            const existingSavedBag = (runningTables[activeTableNumber] && Array.isArray(runningTables[activeTableNumber])) ? runningTables[activeTableNumber] : [];
-            tableSessionSaved = existingSavedBag.length > 0;
-            currentBill = JSON.parse(JSON.stringify(existingSavedBag));
+            currentBill = (runningTables[activeTableNumber] && Array.isArray(runningTables[activeTableNumber])) ? JSON.parse(JSON.stringify(runningTables[activeTableNumber])) : [];
             lastSyncedBag = cloneBag(currentBill); bagSyncPending=null;
             document.getElementById('discountValue').value = Number(runningTableDiscounts[activeTableNumber] || 0); document.getElementById('customerPhone').value = ""; document.getElementById('deliveryAddress').value = ""; document.getElementById('stockStatus').style.display = "none"; 
             
@@ -4138,8 +4010,8 @@ Tables, billing and existing local UI remain visible.`);}
             if (!selectedItem) { showCustomAlert("Item not in menu. Use Custom Item box."); return; }
             let itemPrice = parseInt(getVal(selectedItem, ['price'])); let existingItem = currentBill.find(i => i.name === getVal(selectedItem, ['itemname', 'name']));
             if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ id:Number(getVal(selectedItem,['id','menu_item_id']))||null, menu_item_id:Number(getVal(selectedItem,['id','menu_item_id']))||null, name: getVal(selectedItem, ['itemname', 'name']), price: itemPrice, qty: qty, total: itemPrice * qty }); }
-            if(tableSessionSaved) runningTables[activeTableNumber]=cloneBag(currentBill);
-            updateBillTable(); if(tableSessionSaved) { renderTableGrid(); queueBagSync(); }
+            runningTables[activeTableNumber]=cloneBag(currentBill);
+            updateBillTable(); renderTableGrid(); queueBagSync();
         }
 
         function addCustomItem() {
@@ -4148,15 +4020,15 @@ Tables, billing and existing local UI remain visible.`);}
             if (!name || !price || price <= 0) { showCustomAlert("Enter valid custom item."); return; }
             let existingItem = currentBill.find(i => i.name === name + " (Custom)");
             if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ name: name + " (Custom)", price: price, qty: qty, total: price * qty }); }
-            if(tableSessionSaved) runningTables[activeTableNumber]=cloneBag(currentBill);
-            updateBillTable(); if(tableSessionSaved) { renderTableGrid(); queueBagSync(); } document.getElementById('customName').value = ""; document.getElementById('customPrice').value = ""; document.getElementById('customQty').value = 1;
+            runningTables[activeTableNumber]=cloneBag(currentBill);
+            updateBillTable(); renderTableGrid(); queueBagSync(); document.getElementById('customName').value = ""; document.getElementById('customPrice').value = ""; document.getElementById('customQty').value = 1;
         }
 
         function changeQty(index, amount) {
             const before=cloneBag(currentBill);
             currentBill[index].qty += amount; if(currentBill[index].qty <= 0) { currentBill.splice(index, 1); } else { currentBill[index].total = currentBill[index].price * currentBill[index].qty; }
-            if(tableSessionSaved) runningTables[activeTableNumber]=cloneBag(currentBill);
-            updateBillTable(); if(tableSessionSaved) { renderTableGrid(); queueBagSync(); }
+            runningTables[activeTableNumber]=cloneBag(currentBill);
+            updateBillTable(); renderTableGrid(); queueBagSync();
         }
 
         function updateBillTable() {
@@ -4173,14 +4045,13 @@ Tables, billing and existing local UI remain visible.`);}
         function removeItem(index) {
             const before=cloneBag(currentBill);
             currentBill.splice(index, 1);
-            if(tableSessionSaved) runningTables[activeTableNumber]=cloneBag(currentBill);
-            updateBillTable(); if(tableSessionSaved) { renderTableGrid(); queueBagSync(); }
+            runningTables[activeTableNumber]=cloneBag(currentBill);
+            updateBillTable(); renderTableGrid(); queueBagSync();
         }
 
         function clearTableWithoutCheckout() {
             showCustomConfirm(`Are you sure you want to clear ${activeTableNumber}?`, async()=>{
                 try{
-                    if(!tableSessionSaved){ currentBill=[]; delete runningTables[activeTableNumber]; delete runningTableDiscounts[activeTableNumber]; goBackToTables(); return; }
                     clearTimeout(bagSyncTimer);
                     ++bagSyncRequest;
                     const tableNumber=activeTableNumber.replace(/^Table\s+/,'');
@@ -4238,35 +4109,20 @@ Tables, billing and existing local UI remain visible.`);}
                 const enteredDiscount=Math.min(subtotal,Math.max(0,parseFloat(document.getElementById('discountValue')?.value)||0));
                 runningTableDiscounts[activeTableNumber]=enteredDiscount;
                 const ctx=orderContext();
-                const wasAlreadySaved=tableSessionSaved;
                 const orderNumber='KOT-'+Date.now();
-                const preparedItems=await prepareOrderItems();
-                // Claim/occupy the table and deduct stock exactly at Save KOT.
-                // A fresh session cannot overwrite another user's already-saved KOT.
-                if(/^\d+$/.test(String(ctx.table_number||''))){
-                    await d1Post('/tables/sync-bag',{table_number:ctx.table_number,items:preparedItems,claim:!wasAlreadySaved});
-                }else{
-                    await d1Post('/stock/sync-bag',{reservation_key:ctx.order_type==='Delivery'?'Home Delivery':'Takeaway',items:preparedItems,claim:!wasAlreadySaved});
-                }
-                // Do not create another KOT when an already-running table is saved again.
-                // The existing running KOT is updated through the authoritative bag above.
-                if(!wasAlreadySaved){
-                    await d1Post('/orders',{order_number:orderNumber,...ctx,items:preparedItems,items_string:preparedItems.map(i=>`${i.name} (x${i.qty}) ₹${i.total}`).join(', '),subtotal,discount:0,grand_total:subtotal,total:subtotal,payment_method:'Cash',payment_status:'unpaid',order_status:'cancelled'});
-                }
-                tableSessionSaved=true; runningTables[activeTableNumber]=preparedItems; lastSyncedBag=cloneBag(preparedItems);
-                if(!wasAlreadySaved) applyLocalStockDelta([],preparedItems);
-                auditLog(wasAlreadySaved?'KOT Updated':'KOT Saved', orderNumber);
+                const preparedItems=await prepareOrderItems(); const data=await d1Post('/orders',{order_number:orderNumber,...ctx,items:preparedItems,items_string:preparedItems.map(i=>`${i.name} (x${i.qty}) ₹${i.total}`).join(', '),subtotal,discount:0,grand_total:subtotal,total:subtotal,payment_method:'Cash',payment_status:'unpaid',order_status:'cancelled'});
+                runningTables[activeTableNumber]=preparedItems;
+                auditLog('KOT Saved', orderNumber);
                 btn.innerText='Save KOT'; btn.disabled=false; goBackToTables();
             }catch(e){
                 btn.innerText='Save KOT'; btn.disabled=false; showCustomAlert('KOT save failed: '+e.message);
             }
         }
 
-        function openPaymentModal() { if (currentBill.length === 0) return; if(!tableSessionSaved){ showCustomAlert('Please Save KOT before checkout.'); return; } document.getElementById('paymentModal').style.display='flex'; }
+        function openPaymentModal() { if (currentBill.length === 0) return; document.getElementById('paymentModal').style.display='flex'; }
         function selectPaymentMode(mode) { selectedPaymentMode=mode; document.querySelectorAll('.pay-btn').forEach(btn=>btn.classList.remove('selected')); const el=document.getElementById('pay'+mode); if(el)el.classList.add('selected'); }
 
         async function processFinalCheckout() {
-            if(!tableSessionSaved){ showCustomAlert('Please Save KOT before checkout.'); return; }
             const btn=document.getElementById('btnFinalCheckout'); btn.innerText='Processing...'; btn.disabled=true;
             try{
                 const phone=document.getElementById('customerPhone').value||'NA';
@@ -4309,7 +4165,7 @@ Tables, billing and existing local UI remain visible.`);}
         function setActiveFilterBtn(id) { ['btnFilterToday','btnFilterYesterday','btnFilterClear'].forEach(x=>{const b=document.getElementById(x);if(b)b.classList.remove('active');}); if(id){const b=document.getElementById(id);if(b)b.classList.add('active');} }
         function setTodayFilter() { setActiveFilterBtn('btnFilterToday'); let now = new Date(); let todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`; document.getElementById('filterStartDate').value = todayStr; document.getElementById('filterEndDate').value = todayStr; renderLiveSales(); }
         function setYesterdayFilter() { setActiveFilterBtn('btnFilterYesterday'); let yest = new Date(); yest.setDate(yest.getDate() - 1); let yestStr = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, '0')}-${String(yest.getDate()).padStart(2, '0')}`; document.getElementById('filterStartDate').value = yestStr; document.getElementById('filterEndDate').value = yestStr; renderLiveSales(); }
-        function resetDateFilter() { liveSalesDefaultApplied=true; setActiveFilterBtn('btnFilterClear'); document.getElementById('filterStartDate').value = ""; document.getElementById('filterEndDate').value = ""; renderLiveSales(); }
+        function resetDateFilter() { setActiveFilterBtn('btnFilterClear'); document.getElementById('filterStartDate').value = ""; document.getElementById('filterEndDate').value = ""; renderLiveSales(); }
 
         function openOrderDetails(orderId){
             const sale=salesHistory.find(s=>String(getVal(s,['orderid','order_number','id'])).trim()===String(orderId).trim());
