@@ -1431,6 +1431,11 @@ var worker_default = {
         }
       );
     }
+    // Serve Cloudflare static assets (PWA files/icons) before API routing.
+    // Keep all existing /api/* business logic unchanged.
+    if (env.ASSETS && !path.startsWith("/api/") && path !== "/api") {
+      return env.ASSETS.fetch(request);
+    }
     try {
       const db = env.DB;
       if (!db) {
