@@ -4,8 +4,8 @@
   "description": "Viraasat Restaurant Point of Sale",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#f8f5ef",
-  "theme_color": "#1a1a1a",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
   "orientation": "portrait",
   "icons": []
 }
