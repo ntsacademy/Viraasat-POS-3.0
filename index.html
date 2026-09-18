@@ -40,7 +40,7 @@
             --border-radius: 14px;      
         }
 
-        html { font-size: 16px; touch-action: manipulation; background-color: #FFFFFF; overscroll-behavior-y: auto; } 
+        html { font-size: 16px; touch-action: manipulation; background-color: #FFFFFF; overscroll-behavior-y: none; } 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
         input, textarea, select { user-select: auto; -webkit-user-select: auto; }
         ::-webkit-scrollbar { display: none; }
@@ -49,7 +49,7 @@
             font-family: 'Nunito', system-ui, -apple-system, sans-serif; 
             background-color: var(--bg-color); color: var(--text-dark); 
             display: flex; flex-direction: column; height: 100dvh; 
-            overflow: hidden; overscroll-behavior-y: auto; 
+            overflow: hidden; overscroll-behavior-y: none; 
             padding-top: env(safe-area-inset-top); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right);
             max-width: 600px; margin: 0 auto; position: relative;
         } 
@@ -234,7 +234,7 @@
         .item-rank-val{font-weight:900;font-size:.78rem}
         .stock-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
         .stock-box{border:1px solid var(--border);border-radius:14px;padding:13px;background:#fff}
-        .stock-box.low{border-color:#F1B6C1;background:#FFF8F9}.stock-box-name{font-size:.74rem;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.stock-box-qty{font-size:1.15rem;font-weight:900;margin-top:7px}.stock-box small{font-size:.62rem;color:var(--text-muted)}
+        .stock-box.low{border-color:#F1B6C1;background:#FFF8F9}.stock-box-name{font-size:.74rem;font-weight:800;white-space:normal;overflow-wrap:anywhere;word-break:break-word;line-height:1.2;min-height:2.2em}.stock-box-qty{font-size:1.15rem;font-weight:900;margin-top:7px}.stock-box small{font-size:.62rem;color:var(--text-muted)}
         .admin-order-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.admin-order-card{border:1px solid var(--border);border-radius:14px;padding:14px;background:#fff;cursor:pointer;transition:.15s}.admin-order-card:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(0,0,0,.06)}.admin-order-title{font-size:1rem;font-weight:900}.admin-order-id{font-size:.72rem;color:#756f68;margin-top:4px}.admin-order-items{font-size:.78rem;line-height:1.45;color:#746d65;margin-top:12px;min-height:42px}.admin-order-bottom{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px}.admin-order-time{font-size:.72rem;font-weight:800;background:#f4f0ea;border:1px solid #e6dfd5;border-radius:8px;padding:8px 10px}.admin-order-total{font-size:1rem;font-weight:900;color:#f06b00;background:#fff0d7;border:1px solid #ffd27a;border-radius:9px;padding:8px 12px}.modal-overlay .modal-card{background:#fff !important;opacity:1 !important;color:var(--text-dark);border:1px solid var(--border);box-shadow:0 20px 60px rgba(0,0,0,.18);backdrop-filter:none}.expense-detail-row{background:#fff}.expense-detail-value{color:var(--text-dark)}
 .expense-click-card{cursor:pointer}.expense-detail-row{display:grid;grid-template-columns:110px 1fr;gap:18px;align-items:start;padding:14px 4px;border-bottom:1px solid #e9e3db;background:#fff !important}.expense-detail-label{font-size:.78rem;color:#817a72;font-weight:600}.expense-detail-value{font-weight:800;text-align:right;color:#211d1a !important;word-break:break-word}.approval-row{display:flex;justify-content:space-between;align-items:center;gap:10px}.approval-row+.approval-row{margin-top:8px}@media(max-width:700px){.admin-order-grid{grid-template-columns:1fr}}
         .status-toggle{border:0;border-radius:999px;padding:6px 10px;font-size:.64rem;font-weight:900;cursor:pointer}
@@ -331,6 +331,7 @@
         .premium-card-head{margin-bottom:9px;gap:6px}.premium-card-head h3{font-size:.78rem}.premium-card-head span{font-size:.58rem}
         .premium-toolbar{gap:6px;margin-bottom:9px}.premium-toolbar .premium-btn,.premium-toolbar label{height:36px;font-size:.64rem;padding:0 9px}
         .stock-grid{gap:7px}.stock-box{padding:9px;border-radius:11px}.stock-box-name{font-size:.63rem}.stock-box-qty{font-size:1rem;margin-top:5px}.stock-box small{font-size:.55rem}
+        @media(max-width:600px){ .stock-grid{grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}.stock-box{min-height:74px}.stock-box-name{font-size:.66rem;white-space:normal;line-height:1.18;min-height:2.35em}.stock-box small{display:block;line-height:1.15;white-space:normal;overflow-wrap:anywhere} }
         .bottom-nav{height:66px;padding:5px 4px 4px;gap:1px}
         .nav-item{font-size:.54rem;gap:2px;padding:3px 0;min-width:0}
         .nav-item svg{width:18px;height:18px}.nav-item.active .icon-container{width:42px;height:25px;border-radius:13px}
@@ -1714,11 +1715,6 @@
                 <div class="section-header" style="margin-top:0;"><h4>Staff Advance Details</h4></div>
                 <div id="staffAdvanceDetails" style="display:flex; flex-direction:column; gap:8px; font-size:0.78rem;"></div>
             </div>
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Staff Advance Ledger</h4><button class="premium-btn light" onclick="addStaffAdvanceEntry()">Give / Record Advance</button></div>
-                <div class="admin-help">D1-based staff advance records: given, returned or adjusted. These remain available by date and staff.</div>
-                <div id="staffAdvanceLedger" class="admin-mini-list"></div>
-            </div>
             
             <div class="card">
                 <div class="section-header" style="margin-top:0;"><h4>Other Expenses</h4></div>
@@ -1841,12 +1837,12 @@
             <div class="icon-container"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></div>
             <span>Table</span>
         </button>
-        <button class="nav-item" id="navOrders" onclick="switchMainTab('salesDashboard', this)">
-            <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M6 2h12v20l-3-2-3 2-3-2-3 2V2z"></path><path d="M9 7h6M9 11h6M9 15h4"></path></svg></div>
+        <button class="nav-item" id="navOrders" onclick="switchMainTab('salesDashboard', this)" style="display:none;">
+            <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M6 2h12v20H6z"></path><path d="M8 6h8M8 10h8M8 14h5"></path></svg></div>
             <span>Live Sale</span>
         </button>
-        <button class="nav-item" id="navPnl" onclick="switchMainTab('trendView', this)">
-            <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16"></path><path d="M7 15l3-4 3 2 4-6"></path></svg></div>
+        <button class="nav-item" id="navAnalytics" onclick="switchMainTab('trendView', this)" style="display:none;">
+            <div class="icon-container"><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16"></path><path d="M7 15l3-4 3 2 5-7"></path></svg></div>
             <span>P&amp;L</span>
         </button>
         <button class="nav-item" id="navStock" onclick="switchMainTab('stockManagement', this)">
@@ -1873,28 +1869,6 @@
 
     <div id="printSection"></div>
 
-    <style>
-      html, body { overscroll-behavior-y: none; }
-      body { -webkit-overflow-scrolling: touch; }
-      .bottom-nav { gap: 1px; }
-      .nav-item { min-width: 0; }
-      .nav-item span { white-space: nowrap; }
-      @media (max-width:600px) {
-        .bottom-nav { padding-left: 2px !important; padding-right: 2px !important; }
-        .nav-item { font-size: .52rem !important; padding-left: 0 !important; padding-right: 0 !important; }
-        .nav-item .icon-container { flex-shrink: 0; }
-        .tab-content { padding-bottom: 92px !important; }
-        #salesDashboard .card { padding: 12px !important; }
-        #salesDashboard .input-row { gap: 8px !important; }
-        #salesDashboard .input-box label { font-size: .68rem; }
-        #salesDashboard input[type=date] { min-width: 0 !important; padding: 0 8px !important; font-size: .78rem !important; }
-        #salesDashboard .sales-grid { grid-template-columns: minmax(0,1fr) !important; }
-        #adminStockMiniList .admin-mini-row { min-height: 48px !important; align-items: center !important; padding: 9px 10px !important; }
-        #adminStockMiniList .admin-mini-row b { white-space: normal !important; overflow: visible !important; text-overflow: clip !important; line-height: 1.2 !important; }
-        #adminStockMiniList .admin-mini-row small { white-space: normal !important; line-height: 1.25 !important; }
-        #adminStockMiniList .admin-mini-row > strong { flex: 0 0 auto; font-size: 1rem !important; }
-      }
-    </style>
     <script>
         // D1-only build: Google Apps Script is intentionally not used.
         const D1_API_BASE = '/api';
@@ -1918,9 +1892,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
         let expenseHistory = []; 
         let currentBill = [];
         // Preserve discount entered for an open table until final checkout.
-        let runningTableDiscounts = {};
-        // A table becomes server-occupied only after Save KOT.
-        let tableSessionSaved = false;
+        let runningTableDiscounts = {}; 
         let staffData = [];
         let activeTableNumber = ""; 
         let trendChartInstance = null; 
@@ -2066,6 +2038,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
                     document.getElementById('appMain').style.display = 'block';
                     document.getElementById('appBottomNav').style.display = 'flex';
                     applyAdminRights(savedMobile);
+                    setBusinessCycleFilter(true);
                     switchMainTab('tableDashboard', document.getElementById('navTable'), true);
                     enforceBackTrap(); hardBlockBack();
                     // Show the actual POS immediately; D1 sync runs in the background.
@@ -2143,9 +2116,11 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
             let tod = hr < 12 ? 'Morning' : (hr < 17 ? 'Afternoon' : 'Evening'); 
             document.getElementById('greetText').innerText = `Good ${tod} 👋`;
 
-            const navOrders=document.getElementById('navOrders'); if(navOrders) navOrders.style.display='none';
-            const btnViewAllOrders=document.getElementById('btnViewAllOrders'); if(btnViewAllOrders) btnViewAllOrders.style.display = (isAdmin || perms.orders) ? 'inline' : 'none';
-            const navAnalytics=document.getElementById('navAnalytics'); if(navAnalytics) navAnalytics.style.display='none';
+            const canViewSales = isAdmin || !!perms.orders;
+            const canViewAnalytics = isAdmin || !!perms.analytics;
+            const navOrders=document.getElementById('navOrders'); if(navOrders) navOrders.style.display = canViewSales ? 'flex' : 'none';
+            const btnViewAllOrders=document.getElementById('btnViewAllOrders'); if(btnViewAllOrders) btnViewAllOrders.style.display = canViewSales ? 'inline' : 'none';
+            const navAnalytics=document.getElementById('navAnalytics'); if(navAnalytics) navAnalytics.style.display = canViewAnalytics ? 'flex' : 'none';
             const navExpenses=document.getElementById('navExpenses'); if(navExpenses) navExpenses.style.display = (isAdmin || perms.expenses) ? 'flex' : 'none';
             const navStock=document.getElementById('navStock'); if(navStock) navStock.style.display = isAdmin ? 'flex' : 'none';
             const navEmployee=document.getElementById('navEmployee'); if(navEmployee) navEmployee.style.display = isAdmin ? 'flex' : 'none';
@@ -2425,6 +2400,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
                 if(results[2].status==='fulfilled'){const ts=normalizeArray(results[2].value,['tables','data','result']);tableSections=[{title:'Hut Seating',tables:[]},{title:'Ground Seating',tables:[]},{title:'Terrace Seating',tables:[]}];const amap={'Hut Seating':0,'Ground Seating':1,'Terrace Seating':2};runningTables={};ts.forEach(t=>{const n=String(t.table_number??t.tableNumber??'').trim();if(!n)return;const i=amap[String(t.seating_area||t.seatingArea||'').trim()]??1;if(!tableSections[i].tables.includes(n))tableSections[i].tables.push(n);let persistedItems=[]; try { const parsed=JSON.parse(t.current_items||t.currentItems||'[]'); if(Array.isArray(parsed)) persistedItems=parsed; } catch(e){}
 runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied' ? (persistedItems.length ? persistedItems : [{__d1Occupied:true,orderId:t.current_order_id||t.currentOrderId}]) : [];});if(!ts.length)tableSections=[{title:'Hut Seating',tables:['1','2','3','4']},{title:'Ground Seating',tables:['5','6','7']},{title:'Terrace Seating',tables:['8','9','10']}];}else failed.push(['/tables',results[2].reason]);
                 if(results[3].status==='fulfilled')salesHistory=normalizeArray(results[3].value,['orders','sales','data','result']).map(mapD1Order).filter(Boolean).filter(o=>{const st=String(o.order_status||'').toLowerCase();const oid=String(o.order_number||o.orderid||'').toUpperCase();return !oid.startsWith('KOT-')&&!['kot','cancelled','deleted','deletion_pending'].includes(st);}).sort((a,b)=>orderTimestamp(b)-orderTimestamp(a));else failed.push(['/orders',results[3].reason]);
+                setBusinessCycleFilter(true);
                 Object.keys(runningTables).forEach(key=>{const arr=runningTables[key];if(Array.isArray(arr)&&arr[0]?.__d1Occupied){const oid=String(arr[0].orderId||'');const order=salesHistory.find(o=>String(o.id||'')===oid||String(o.orderid||'')===oid);runningTables[key]=order?parseSaleItems(order):[];}});
                 if(results[4].status==='fulfilled')expenseHistory=normalizeArray(results[4].value,['expenses','data','result']);else failed.push(['/expenses',results[4].reason]);
                 if(results[5].status==='fulfilled'){const raw=normalizeArray(results[5].value,['stock','items','data','result']);stockData={};stockMeta={};raw.forEach(x=>{const name=String(getVal(x,['name','itemname','item','stockname'])||'').trim();if(!name)return;stockData[name]=Number(getVal(x,['quantity','qty','stock','currentstock','currentquantity']))||0;stockMeta[name]={id:getVal(x,['id']),name,unit:getVal(x,['unit'])||'pcs',low_stock_level:Number(getVal(x,['low_stock_level','lowstocklevel']))||5,created_at:getVal(x,['created_at'])||'',updated_at:getVal(x,['updated_at'])||''};});}else failed.push(['/stock',results[5].reason]);
@@ -3849,23 +3825,32 @@ Tables, billing and existing local UI remain visible.`);}
             if (!tStr) return ""; try { let d = new Date(tStr); if (!isNaN(d.getTime())) return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }); return tStr; } catch(e) { return tStr; } 
         }
 
-        function liveSalesCycleBounds(baseDate=new Date()){
-            const d=new Date(baseDate); d.setHours(0,0,0,0);
-            const start=new Date(d.getFullYear(), d.getMonth()-(d.getDate()<10?1:0), 10);
-            const end=new Date(start.getFullYear(), start.getMonth()+1, 10);
-            return {start:localISODate(start),end:localISODate(end)};
+        function getBusinessCycleRange(baseDate = new Date()) {
+            const d = new Date(baseDate);
+            const y = d.getFullYear(), m = d.getMonth(), day = d.getDate();
+            let start, end;
+            if (day >= 10) {
+                start = new Date(y, m, 10);
+                end = new Date(y, m + 1, 10);
+            } else {
+                start = new Date(y, m - 1, 10);
+                end = new Date(y, m, 10);
+            }
+            const iso = x => `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`;
+            return { start: iso(start), end: iso(end) };
         }
-        let liveSalesDefaultApplied=false;
-        function applyDefaultLiveSalesCycle(){
-            const from=document.getElementById('filterStartDate'),to=document.getElementById('filterEndDate');
-            if(!from||!to||liveSalesDefaultApplied)return;
-            const b=liveSalesCycleBounds(); from.value=b.start; to.value=b.end; liveSalesDefaultApplied=true;
+        function setBusinessCycleFilter(silent=false) {
+            const range=getBusinessCycleRange(new Date());
+            const from=document.getElementById('filterStartDate'), to=document.getElementById('filterEndDate');
+            if(from) from.value=range.start; if(to) to.value=range.end;
+            setActiveFilterBtn(null);
+            if(!silent) renderLiveSales();
         }
+
         function renderLiveSales(){
             const salesGrid=document.getElementById('salesGrid'),homeRecent=document.getElementById('homeRecentOrders');
             if(!salesGrid)return;
             salesGrid.innerHTML='';if(homeRecent)homeRecent.innerHTML='';
-            applyDefaultLiveSalesCycle();
             const startDate=document.getElementById('filterStartDate')?.value||'',endDate=document.getElementById('filterEndDate')?.value||'';
             const filtered=salesHistory.filter(s=>{const d=saleDateKey(s);return(!startDate||d>=startDate)&&(!endDate||d<=endDate);})
                 .slice().sort((a,b)=>new Date(getVal(b,['date','isodate','created_at']))-new Date(getVal(a,['date','isodate','created_at'])));
@@ -3955,9 +3940,7 @@ Tables, billing and existing local UI remain visible.`);}
             document.getElementById('billingTitle').innerText = activeTableNumber;
             if(num === 'Home Delivery') { document.getElementById('deliveryAddressBox').style.display = 'flex'; } else { document.getElementById('deliveryAddressBox').style.display = 'none'; }
             
-            const existingSavedBag = (runningTables[activeTableNumber] && Array.isArray(runningTables[activeTableNumber])) ? runningTables[activeTableNumber] : [];
-            tableSessionSaved = existingSavedBag.length > 0;
-            currentBill = JSON.parse(JSON.stringify(existingSavedBag));
+            currentBill = (runningTables[activeTableNumber] && Array.isArray(runningTables[activeTableNumber])) ? JSON.parse(JSON.stringify(runningTables[activeTableNumber])) : [];
             lastSyncedBag = cloneBag(currentBill); bagSyncPending=null;
             document.getElementById('discountValue').value = Number(runningTableDiscounts[activeTableNumber] || 0); document.getElementById('customerPhone').value = ""; document.getElementById('deliveryAddress').value = ""; document.getElementById('stockStatus').style.display = "none"; 
             
@@ -4057,8 +4040,7 @@ Tables, billing and existing local UI remain visible.`);}
             if (!selectedItem) { showCustomAlert("Item not in menu. Use Custom Item box."); return; }
             let itemPrice = parseInt(getVal(selectedItem, ['price'])); let existingItem = currentBill.find(i => i.name === getVal(selectedItem, ['itemname', 'name']));
             if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ id:Number(getVal(selectedItem,['id','menu_item_id']))||null, menu_item_id:Number(getVal(selectedItem,['id','menu_item_id']))||null, name: getVal(selectedItem, ['itemname', 'name']), price: itemPrice, qty: qty, total: itemPrice * qty }); }
-            if(tableSessionSaved) runningTables[activeTableNumber]=cloneBag(currentBill);
-            updateBillTable(); if(tableSessionSaved) { renderTableGrid(); queueBagSync(); }
+            updateBillTable();
         }
 
         function addCustomItem() {
@@ -4067,15 +4049,13 @@ Tables, billing and existing local UI remain visible.`);}
             if (!name || !price || price <= 0) { showCustomAlert("Enter valid custom item."); return; }
             let existingItem = currentBill.find(i => i.name === name + " (Custom)");
             if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ name: name + " (Custom)", price: price, qty: qty, total: price * qty }); }
-            if(tableSessionSaved) runningTables[activeTableNumber]=cloneBag(currentBill);
-            updateBillTable(); if(tableSessionSaved) { renderTableGrid(); queueBagSync(); } document.getElementById('customName').value = ""; document.getElementById('customPrice').value = ""; document.getElementById('customQty').value = 1;
+            updateBillTable(); document.getElementById('customName').value = ""; document.getElementById('customPrice').value = ""; document.getElementById('customQty').value = 1;
         }
 
         function changeQty(index, amount) {
             const before=cloneBag(currentBill);
             currentBill[index].qty += amount; if(currentBill[index].qty <= 0) { currentBill.splice(index, 1); } else { currentBill[index].total = currentBill[index].price * currentBill[index].qty; }
-            if(tableSessionSaved) runningTables[activeTableNumber]=cloneBag(currentBill);
-            updateBillTable(); if(tableSessionSaved) { renderTableGrid(); queueBagSync(); }
+            updateBillTable();
         }
 
         function updateBillTable() {
@@ -4092,14 +4072,12 @@ Tables, billing and existing local UI remain visible.`);}
         function removeItem(index) {
             const before=cloneBag(currentBill);
             currentBill.splice(index, 1);
-            if(tableSessionSaved) runningTables[activeTableNumber]=cloneBag(currentBill);
-            updateBillTable(); if(tableSessionSaved) { renderTableGrid(); queueBagSync(); }
+            updateBillTable();
         }
 
         function clearTableWithoutCheckout() {
             showCustomConfirm(`Are you sure you want to clear ${activeTableNumber}?`, async()=>{
                 try{
-                    if(!tableSessionSaved){ currentBill=[]; delete runningTables[activeTableNumber]; delete runningTableDiscounts[activeTableNumber]; goBackToTables(); return; }
                     clearTimeout(bagSyncTimer);
                     ++bagSyncRequest;
                     const tableNumber=activeTableNumber.replace(/^Table\s+/,'');
@@ -4157,35 +4135,22 @@ Tables, billing and existing local UI remain visible.`);}
                 const enteredDiscount=Math.min(subtotal,Math.max(0,parseFloat(document.getElementById('discountValue')?.value)||0));
                 runningTableDiscounts[activeTableNumber]=enteredDiscount;
                 const ctx=orderContext();
-                const wasAlreadySaved=tableSessionSaved;
                 const orderNumber='KOT-'+Date.now();
-                const preparedItems=await prepareOrderItems();
-                // Claim/occupy the table and deduct stock exactly at Save KOT.
-                // A fresh session cannot overwrite another user's already-saved KOT.
-                if(/^\d+$/.test(String(ctx.table_number||''))){
-                    await d1Post('/tables/sync-bag',{table_number:ctx.table_number,items:preparedItems,claim:!wasAlreadySaved});
-                }else{
-                    await d1Post('/stock/sync-bag',{reservation_key:ctx.order_type==='Delivery'?'Home Delivery':'Takeaway',items:preparedItems,claim:!wasAlreadySaved});
-                }
-                // Do not create another KOT when an already-running table is saved again.
-                // The existing running KOT is updated through the authoritative bag above.
-                if(!wasAlreadySaved){
-                    await d1Post('/orders',{order_number:orderNumber,...ctx,items:preparedItems,items_string:preparedItems.map(i=>`${i.name} (x${i.qty}) ₹${i.total}`).join(', '),subtotal,discount:0,grand_total:subtotal,total:subtotal,payment_method:'Cash',payment_status:'unpaid',order_status:'cancelled'});
-                }
-                tableSessionSaved=true; runningTables[activeTableNumber]=preparedItems; lastSyncedBag=cloneBag(preparedItems);
-                if(!wasAlreadySaved) applyLocalStockDelta([],preparedItems);
-                auditLog(wasAlreadySaved?'KOT Updated':'KOT Saved', orderNumber);
+                const preparedItems=await prepareOrderItems(); const data=await d1Post('/orders',{order_number:orderNumber,...ctx,items:preparedItems,items_string:preparedItems.map(i=>`${i.name} (x${i.qty}) ₹${i.total}`).join(', '),subtotal,discount:0,grand_total:subtotal,total:subtotal,payment_method:'Cash',payment_status:'unpaid',order_status:'cancelled'});
+                runningTables[activeTableNumber]=preparedItems;
+                // Occupy/reserve only after an explicit successful Save KOT.
+                await syncCurrentBagNow();
+                auditLog('KOT Saved', orderNumber);
                 btn.innerText='Save KOT'; btn.disabled=false; goBackToTables();
             }catch(e){
                 btn.innerText='Save KOT'; btn.disabled=false; showCustomAlert('KOT save failed: '+e.message);
             }
         }
 
-        function openPaymentModal() { if (currentBill.length === 0) return; if(!tableSessionSaved){ showCustomAlert('Please Save KOT before checkout.'); return; } document.getElementById('paymentModal').style.display='flex'; }
+        function openPaymentModal() { if (currentBill.length === 0) return; document.getElementById('paymentModal').style.display='flex'; }
         function selectPaymentMode(mode) { selectedPaymentMode=mode; document.querySelectorAll('.pay-btn').forEach(btn=>btn.classList.remove('selected')); const el=document.getElementById('pay'+mode); if(el)el.classList.add('selected'); }
 
         async function processFinalCheckout() {
-            if(!tableSessionSaved){ showCustomAlert('Please Save KOT before checkout.'); return; }
             const btn=document.getElementById('btnFinalCheckout'); btn.innerText='Processing...'; btn.disabled=true;
             try{
                 const phone=document.getElementById('customerPhone').value||'NA';
@@ -4228,7 +4193,7 @@ Tables, billing and existing local UI remain visible.`);}
         function setActiveFilterBtn(id) { ['btnFilterToday','btnFilterYesterday','btnFilterClear'].forEach(x=>{const b=document.getElementById(x);if(b)b.classList.remove('active');}); if(id){const b=document.getElementById(id);if(b)b.classList.add('active');} }
         function setTodayFilter() { setActiveFilterBtn('btnFilterToday'); let now = new Date(); let todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`; document.getElementById('filterStartDate').value = todayStr; document.getElementById('filterEndDate').value = todayStr; renderLiveSales(); }
         function setYesterdayFilter() { setActiveFilterBtn('btnFilterYesterday'); let yest = new Date(); yest.setDate(yest.getDate() - 1); let yestStr = `${yest.getFullYear()}-${String(yest.getMonth() + 1).padStart(2, '0')}-${String(yest.getDate()).padStart(2, '0')}`; document.getElementById('filterStartDate').value = yestStr; document.getElementById('filterEndDate').value = yestStr; renderLiveSales(); }
-        function resetDateFilter() { liveSalesDefaultApplied=true; setActiveFilterBtn('btnFilterClear'); document.getElementById('filterStartDate').value = ""; document.getElementById('filterEndDate').value = ""; renderLiveSales(); }
+        function resetDateFilter() { setActiveFilterBtn('btnFilterClear'); document.getElementById('filterStartDate').value = ""; document.getElementById('filterEndDate').value = ""; renderLiveSales(); }
 
         function openOrderDetails(orderId){
             const sale=salesHistory.find(s=>String(getVal(s,['orderid','order_number','id'])).trim()===String(orderId).trim());
