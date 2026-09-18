@@ -1508,6 +1508,27 @@
     white-space:nowrap !important;
     font-size:1rem !important;
 }
+
+/* FINAL surgical inventory readability patch. */
+#stockManagementPanel #adminStockMiniList .admin-mini-row{
+    position:relative !important;
+    box-sizing:border-box !important;
+    min-height:64px !important;
+    height:auto !important;
+    margin:0 !important;
+    padding:10px 12px !important;
+    line-height:normal !important;
+    align-items:center !important;
+    background:var(--surface) !important;
+}
+#stockManagementPanel #adminStockMiniList .admin-mini-row b,
+#stockManagementPanel #adminStockMiniList .admin-mini-row small{
+    position:static !important;
+    height:auto !important;
+    line-height:1.3 !important;
+    overflow:visible !important;
+}
+#stockManagementPanel #adminStockMiniList .admin-mini-row small{margin-top:4px !important;}
 </style>
 </head>
 <body>
@@ -1927,7 +1948,7 @@
         const D1_API_BASE = '/api';
         const API_TIMEOUT_MS = 10000;
         
-const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6"; 
+const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.9-SURGICAL"; 
         
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
@@ -2091,7 +2112,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
                     document.getElementById('appMain').style.display = 'block';
                     document.getElementById('appBottomNav').style.display = 'flex';
                     applyAdminRights(savedMobile);
-                    setBusinessCycleFilter(true);
+                    // Keep Live Sale date fields user-controlled. Blank dates mean All Sales.
                     switchMainTab('tableDashboard', document.getElementById('navTable'), true);
                     enforceBackTrap(); hardBlockBack();
                     // Show the actual POS immediately; D1 sync runs in the background.
@@ -2453,7 +2474,7 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
                 if(results[2].status==='fulfilled'){const ts=normalizeArray(results[2].value,['tables','data','result']);tableSections=[{title:'Hut Seating',tables:[]},{title:'Ground Seating',tables:[]},{title:'Terrace Seating',tables:[]}];const amap={'Hut Seating':0,'Ground Seating':1,'Terrace Seating':2};runningTables={};ts.forEach(t=>{const n=String(t.table_number??t.tableNumber??'').trim();if(!n)return;const i=amap[String(t.seating_area||t.seatingArea||'').trim()]??1;if(!tableSections[i].tables.includes(n))tableSections[i].tables.push(n);let persistedItems=[]; try { const parsed=JSON.parse(t.current_items||t.currentItems||'[]'); if(Array.isArray(parsed)) persistedItems=parsed; } catch(e){}
 runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied' ? (persistedItems.length ? persistedItems : [{__d1Occupied:true,orderId:t.current_order_id||t.currentOrderId}]) : [];});if(!ts.length)tableSections=[{title:'Hut Seating',tables:['1','2','3','4']},{title:'Ground Seating',tables:['5','6','7']},{title:'Terrace Seating',tables:['8','9','10']}];}else failed.push(['/tables',results[2].reason]);
                 if(results[3].status==='fulfilled')salesHistory=normalizeArray(results[3].value,['orders','sales','data','result']).map(mapD1Order).filter(Boolean).filter(o=>{const st=String(o.order_status||'').toLowerCase();const oid=String(o.order_number||o.orderid||'').toUpperCase();return !oid.startsWith('KOT-')&&!['kot','cancelled','deleted','deletion_pending'].includes(st);}).sort((a,b)=>orderTimestamp(b)-orderTimestamp(a));else failed.push(['/orders',results[3].reason]);
-                setBusinessCycleFilter(true);
+                // Keep Live Sale date fields user-controlled. Blank dates mean All Sales.
                 Object.keys(runningTables).forEach(key=>{const arr=runningTables[key];if(Array.isArray(arr)&&arr[0]?.__d1Occupied){const oid=String(arr[0].orderId||'');const order=salesHistory.find(o=>String(o.id||'')===oid||String(o.orderid||'')===oid);runningTables[key]=order?parseSaleItems(order):[];}});
                 if(results[4].status==='fulfilled')expenseHistory=normalizeArray(results[4].value,['expenses','data','result']);else failed.push(['/expenses',results[4].reason]);
                 if(results[5].status==='fulfilled'){const raw=normalizeArray(results[5].value,['stock','items','data','result']);stockData={};stockMeta={};raw.forEach(x=>{const name=String(getVal(x,['name','itemname','item','stockname'])||'').trim();if(!name)return;stockData[name]=Number(getVal(x,['quantity','qty','stock','currentstock','currentquantity']))||0;stockMeta[name]={id:getVal(x,['id']),name,unit:getVal(x,['unit'])||'pcs',low_stock_level:Number(getVal(x,['low_stock_level','lowstocklevel']))||5,created_at:getVal(x,['created_at'])||'',updated_at:getVal(x,['updated_at'])||''};});}else failed.push(['/stock',results[5].reason]);
@@ -2463,7 +2484,12 @@ runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied' ? (p
                 const renderSteps=[
                     ['dropdown',populateDropdown],['staff dropdown',populateStaffDropdown],
                     ['tables',renderTableGrid],['stock dashboard',renderStockDashboard],['stock status',checkStockDisplay],
-                    ['expense history',renderExpenseHistoryList]
+                    ['expense history',renderExpenseHistoryList],
+                    // Always render data-driven screens immediately after D1 sync.
+                    // Previously Live Sale/P&L were only rendered after a filter click.
+                    ['live sales',renderLiveSales],
+                    ['p&l trends',generateTrends],
+                    ['premium dashboard',renderPremiumDashboard]
                 ];
                 renderSteps.forEach(([name,fn])=>{try{if(typeof fn==='function')fn();}catch(err){console.error(`UI render failed: ${name}`,err);}});
                 hideSplashScreen();
@@ -2492,6 +2518,15 @@ Tables, billing and existing local UI remain visible.`);}
         document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') runRealtimeSync(); });
         window.addEventListener('focus', runRealtimeSync);
         startRealtimeSync();
+
+        // Surgical post-activity refresh. Existing business logic remains unchanged.
+        async function refreshDashboardAfterActivity(){
+            try{
+                await fetchData(true);
+            }catch(e){
+                console.warn('Post-activity dashboard refresh failed:', e);
+            }
+        }
 
         function normalizeSheetSale(row){
             if(!row || typeof row!=='object') return null;
@@ -3371,7 +3406,7 @@ Tables, billing and existing local UI remain visible.`);}
                 showCustomAlert(result.message||'Future selling price updated successfully.');
             }catch(e){showCustomAlert('Price update failed: '+(e?.message||e));}
         }
-        function renderAdminStockRows(){const el=document.getElementById('adminStockMiniList');if(!el)return;const rows=Object.entries(stockData).sort((a,b)=>Number(a[1])-Number(b[1])).slice(0,15);el.innerHTML=rows.map(([name,qty])=>{const low=Number(stockMeta[name]?.low_stock_level??5);return `<div class="admin-mini-row" onclick="loadAdminStockSelect('${esc(name)}')" style="cursor:pointer"><div><b>${esc(name)}</b><small>${Number(qty)<=0?'OUT OF STOCK':Number(qty)<=low?'Low stock':'Available'} • Last update ${stockMeta[name]?.updated_at?esc(cleanDisplayDate(stockMeta[name].updated_at)):'—'}</small></div><strong>${Number(qty)||0}</strong></div>`}).join('')||'<div class="premium-empty">No stock data.</div>';}
+        function renderAdminStockRows(){const el=document.getElementById('adminStockMiniList');if(!el)return;const rows=Object.entries(stockData).sort((a,b)=>Number(a[1])-Number(b[1]));el.innerHTML=rows.map(([name,qty])=>{const low=Number(stockMeta[name]?.low_stock_level??5);return `<div class="admin-mini-row" onclick="loadAdminStockSelect('${esc(name)}')" style="cursor:pointer"><div><b>${esc(name)}</b><small>${Number(qty)<=0?'OUT OF STOCK':Number(qty)<=low?'Low stock':'Available'} • Last update ${stockMeta[name]?.updated_at?esc(cleanDisplayDate(stockMeta[name].updated_at)):'—'}</small></div><strong>${Number(qty)||0}</strong></div>`}).join('')||'<div class="premium-empty">No stock data.</div>';}
         function loadAdminStockSelect(name){if(!name){resetAdminStockForm(false);return;}const m=stockMeta[name]||{};const search=document.getElementById('adminStockSearch');if(search)search.value=name;const qty=document.getElementById('adminStockQty');if(qty){qty.value='';qty.placeholder=`Qty to Add (Current: ${Number(stockData[name]||0)})`;}const lowEl=document.getElementById('adminStockLow'); if(lowEl) lowEl.value=Number(m.low_stock_level??5);renderAdminStockRows();}
         function syncAdminStockSearch(v){const sel=document.getElementById('adminStockSelect');if(sel){const opt=[...sel.options].find(o=>o.value.toLowerCase()===String(v).trim().toLowerCase());sel.value=opt?opt.value:'';}}
         function startNewStockItem(){
@@ -3443,6 +3478,7 @@ Tables, billing and existing local UI remain visible.`);}
                 stockHistory.unshift({item_name:name,old_quantity:old,new_quantity:stockData[name],change_quantity:stockData[name]-old,action:'ADD',note:'Stock added',updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});
                 auditLog('Stock Added',`${name}: ${old} → ${stockData[name]}`);
                 renderStockDashboard();renderPremiumInventory();renderPremiumAdmin();
+                await refreshDashboardAfterActivity();
                 showCustomAlert(`Added ${qty} ${unit} to ${name}. Current stock: ${stockData[name]}`);
             }catch(e){showCustomAlert('Stock update failed: '+(e?.message||e));}
         }
@@ -3452,12 +3488,12 @@ Tables, billing and existing local UI remain visible.`);}
             const loss=Number(prompt(`Enter loss quantity for ${name||'selected item'}:`));
             if(!name||!Number.isFinite(loss)||loss<=0){showCustomAlert('Select item and enter valid loss quantity.');return;}
             const note=prompt('Loss reason (optional):')||'Stock loss';
-            try{const old=Number(stockData[name]||0);const r=await d1Post('/stock',{name,quantity:loss,operation:'loss',unit:stockMeta[name]?.unit||'pcs',low_stock_level:Number(stockMeta[name]?.low_stock_level??5),note,updated_by:localStorage.getItem('viraasat_user')||'Admin'});stockData[name]=Number(r.new_quantity??(old-loss));stockHistory.unshift({item_name:name,old_quantity:old,new_quantity:stockData[name],change_quantity:-loss,action:'LOSS',note,updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});renderStockDashboard();renderPremiumInventory();renderPremiumAdmin();showCustomAlert(`Loss recorded. Current stock: ${stockData[name]}`);}catch(e){showCustomAlert('Loss update failed: '+(e?.message||e));}
+            try{const old=Number(stockData[name]||0);const r=await d1Post('/stock',{name,quantity:loss,operation:'loss',unit:stockMeta[name]?.unit||'pcs',low_stock_level:Number(stockMeta[name]?.low_stock_level??5),note,updated_by:localStorage.getItem('viraasat_user')||'Admin'});stockData[name]=Number(r.new_quantity??(old-loss));stockHistory.unshift({item_name:name,old_quantity:old,new_quantity:stockData[name],change_quantity:-loss,action:'LOSS',note,updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});renderStockDashboard();renderPremiumInventory();renderPremiumAdmin();await refreshDashboardAfterActivity();showCustomAlert(`Loss recorded. Current stock: ${stockData[name]}`);}catch(e){showCustomAlert('Loss update failed: '+(e?.message||e));}
         }
         async function adminAddMenuUnified(){
             const name=document.getElementById('adminMenuName')?.value.trim(); const price=Number(document.getElementById('adminMenuPrice')?.value); const category=document.getElementById('adminMenuCategory')?.value.trim()||'Other';
             if(!name||!Number.isFinite(price)||price<=0){showCustomAlert('Enter item name and valid price.');return;}
-            try{const existing=menuData.find(m=>String(getVal(m,['name','itemname'])).toLowerCase()===name.toLowerCase());if(existing){showCustomAlert('Menu item already exists.');return;}const r=await d1Post('/menu',{name,category,price,is_available:true});menuData.push({id:Number(r.id||0),name,itemname:name,category,price,is_available:1});populateDropdown();auditLog('Menu Added',`${name} ₹${price}`);document.getElementById('adminMenuName').value='';document.getElementById('adminMenuPrice').value='';renderPremiumAdmin();showCustomAlert('Menu item added.');}catch(e){showCustomAlert('Menu save failed: '+e.message);}
+            try{const existing=menuData.find(m=>String(getVal(m,['name','itemname'])).toLowerCase()===name.toLowerCase());if(existing){showCustomAlert('Menu item already exists.');return;}const r=await d1Post('/menu',{name,category,price,is_available:true});menuData.push({id:Number(r.id||0),name,itemname:name,category,price,is_available:1});populateDropdown();auditLog('Menu Added',`${name} ₹${price}`);await refreshDashboardAfterActivity();document.getElementById('adminMenuName').value='';document.getElementById('adminMenuPrice').value='';renderPremiumAdmin();showCustomAlert('Menu item added.');}catch(e){showCustomAlert('Menu save failed: '+e.message);}
         }
         function registerPOSUser(){
             const mobile=document.getElementById('userMobile')?.value.trim(); const pass=document.getElementById('userPass')?.value.trim();
@@ -3923,7 +3959,8 @@ Tables, billing and existing local UI remain visible.`);}
             if(!salesGrid)return;
             salesGrid.innerHTML='';if(homeRecent)homeRecent.innerHTML='';
             let startDate=document.getElementById('filterStartDate')?.value||'',endDate=document.getElementById('filterEndDate')?.value||'';
-            if(!startDate && !endDate){ const r=getBusinessCycleRange(new Date()); startDate=r.start; endDate=r.end; const f=document.getElementById('filterStartDate'), t=document.getElementById('filterEndDate'); if(f)f.value=startDate; if(t)t.value=endDate; }
+            // When both date fields are blank, show all completed sales.
+            // Do not silently inject a date range because that makes Live Sale look empty.
             const filtered=salesHistory.filter(s=>{const d=saleDateKey(s);return(!startDate||d>=startDate)&&(!endDate||d<=endDate);})
                 .slice().sort((a,b)=>new Date(getVal(b,['date','isodate','created_at']))-new Date(getVal(a,['date','isodate','created_at'])));
             const total=filtered.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0);
@@ -4158,7 +4195,7 @@ Tables, billing and existing local UI remain visible.`);}
                     else await d1Post('/stock/sync-bag',{reservation_key:activeTableNumber==='Home Delivery'?'Home Delivery':'Takeaway',items:[]});
                     applyLocalStockDelta(before,[]);
                     lastSyncedBag=[]; bagSyncPending=null; bagSyncPromise=Promise.resolve();
-                    delete runningTables[activeTableNumber]; delete runningTableDiscounts[activeTableNumber]; currentBill=[]; goBackToTables();
+                    delete runningTables[activeTableNumber]; delete runningTableDiscounts[activeTableNumber]; currentBill=[]; await refreshDashboardAfterActivity(); goBackToTables();
                 }catch(e){showCustomAlert('Could not clear table: '+e.message);}
             },null);
         }
@@ -4212,6 +4249,7 @@ Tables, billing and existing local UI remain visible.`);}
                 runningTables[activeTableNumber]=preparedItems;
                 // Occupy/reserve only after an explicit successful Save KOT.
                 await syncCurrentBagNow();
+                await refreshDashboardAfterActivity();
                 auditLog('KOT Saved', orderNumber);
                 btn.innerText='Save KOT'; btn.disabled=false; goBackToTables();
             }catch(e){
@@ -4240,6 +4278,7 @@ Tables, billing and existing local UI remain visible.`);}
                 // the Worker checkout endpoint only reconciles any remaining delta.
                 await flushBagSyncBeforeCheckout();
                 const data=await d1Post('/orders/checkout',{order_number:orderId,checkout_id:pendingCheckoutRequestId,...ctx,customer_phone:phone,items:preparedItems,items_string:itemsString,subtotal,discount,grand_total:grandTotal,total:grandTotal,payment_method:selectedPaymentMode,payment_status:'paid',order_status:'completed',delivery_address:address});
+                await refreshDashboardAfterActivity();
                 auditLog('Checkout', orderId);
                 delete runningTables[activeTableNumber];
                 delete runningTableDiscounts[activeTableNumber];
