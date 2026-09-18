@@ -100,7 +100,7 @@ async function ensureColumn(db, table, column, definition) {
   }
 }
 __name(ensureColumn, "ensureColumn");
-async function ensureSupportTables(db) {
+async function ensureSupportTablesUncached(db) {
   // Live POS table bag: keeps the current unsaved cart in D1 so every user sees it.
   if (await tableExists(db, "restaurant_tables")) {
     await ensureColumn(db, "restaurant_tables", "current_items", "TEXT");
@@ -264,6 +264,16 @@ async function ensureSupportTables(db) {
   await ensureColumn(db, "deletion_requests", "reviewed_at", "TEXT");
   await ensureColumn(db, "deletion_requests", "created_at", "TEXT DEFAULT CURRENT_TIMESTAMP");
 }
+let supportTablesInitPromise = null;
+async function ensureSupportTables(db) {
+  if (supportTablesInitPromise) return supportTablesInitPromise;
+  supportTablesInitPromise = ensureSupportTablesUncached(db).catch((error) => {
+    supportTablesInitPromise = null;
+    throw error;
+  });
+  return supportTablesInitPromise;
+}
+__name(ensureSupportTablesUncached, "ensureSupportTablesUncached");
 __name(ensureSupportTables, "ensureSupportTables");
 async function getMenu(db) {
   if (!await tableExists(db, "menu_items")) {
