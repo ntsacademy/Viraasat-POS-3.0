@@ -1607,10 +1607,7 @@ var worker_default = {
         if (!tableNumber || !/^\d+$/.test(tableNumber)) {
           return json({success:false,error:"Valid dining table number is required"},400);
         }
-        const existingTable = await db.prepare(`SELECT status, current_order_id, current_items FROM restaurant_tables WHERE CAST(table_number AS TEXT)=? LIMIT 1`).bind(tableNumber).first();
-        if (body.claim === true && String(existingTable?.status||'').toLowerCase() === 'occupied') {
-          return json({success:false,error:`Table ${tableNumber} is already occupied. Another user has already saved a KOT on this table.`},409);
-        }
+        const existingTable = await db.prepare(`SELECT current_order_id, current_items FROM restaurant_tables WHERE CAST(table_number AS TEXT)=? LIMIT 1`).bind(tableNumber).first();
         const preservedOrderId = existingTable?.current_order_id ?? null;
         let previousItems = [];
         try { const parsed = JSON.parse(existingTable?.current_items || '[]'); if (Array.isArray(parsed)) previousItems = parsed; } catch {}
@@ -1625,9 +1622,6 @@ var worker_default = {
         const items = Array.isArray(body.items) ? body.items : [];
         if (!key) return json({success:false,error:"Reservation key is required"},400);
         const existing = await db.prepare(`SELECT items FROM active_bag_reservations WHERE reservation_key=? LIMIT 1`).bind(key).first();
-        if (body.claim === true && existing?.items) {
-          return json({success:false,error:`${key} is already occupied. Another user has already saved a KOT.`},409);
-        }
         let previousItems=[];
         try { const parsed=JSON.parse(existing?.items||'[]'); if(Array.isArray(parsed)) previousItems=parsed; } catch {}
         await syncStockReservation(db, previousItems, items, `${key} bag changed`);
