@@ -8,6 +8,8 @@
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#FBF9F5">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#FBF9F5">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="color-scheme" content="light">
     <meta name="msapplication-navbutton-color" content="#FBF9F5">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -42,7 +44,7 @@
             --border-radius: 14px;      
         }
 
-        html { font-size: 16px; touch-action: manipulation; background-color: #FFFFFF; overscroll-behavior-y: auto; } 
+        html { font-size: 16px; touch-action: manipulation; background-color: #FFFFFF; overscroll-behavior-y: none; } 
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; -webkit-user-select: none; }
         input, textarea, select { user-select: auto; -webkit-user-select: auto; }
         ::-webkit-scrollbar { display: none; }
@@ -51,7 +53,7 @@
             font-family: 'Nunito', system-ui, -apple-system, sans-serif; 
             background-color: var(--bg-color); color: var(--text-dark); 
             display: flex; flex-direction: column; height: 100dvh; 
-            overflow: hidden; overscroll-behavior-y: auto; 
+            overflow: hidden; overscroll-behavior-y: none; 
             padding-top: env(safe-area-inset-top); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right);
             max-width: 600px; margin: 0 auto; position: relative;
         } 
@@ -1796,15 +1798,6 @@ html, body { color-scheme: light !important; }
                 <div class="section-header" style="margin-top:0;"><h4>Staff Expense Breakdown</h4></div>
                 <div id="staffExpenseList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
             </div>
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Staff Advance Details</h4></div>
-                <div id="staffAdvanceDetails" style="display:flex; flex-direction:column; gap:8px; font-size:0.78rem;"></div>
-            </div>
-            <div class="card">
-                <div class="section-header" style="margin-top:0;"><h4>Staff Advance Ledger</h4><button class="premium-btn light" onclick="addStaffAdvanceEntry()">Give / Record Advance</button></div>
-                <div class="admin-help">D1-based staff advance records: given, returned or adjusted. These remain available by date and staff.</div>
-                <div id="staffAdvanceLedger" class="admin-mini-list"></div>
-            </div>
             
             <div class="card">
                 <div class="section-header" style="margin-top:0;"><h4>Other Expenses</h4></div>
@@ -2229,8 +2222,8 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.6";
             let tod = hr < 12 ? 'Morning' : (hr < 17 ? 'Afternoon' : 'Evening'); 
             document.getElementById('greetText').innerText = `Good ${tod} 👋`;
 
-            const navOrders=document.getElementById('navOrders'); if(navOrders) navOrders.style.display = (isAdmin || perms.orders) ? 'flex' : 'none';
-            const btnViewAllOrders=document.getElementById('btnViewAllOrders'); if(btnViewAllOrders) btnViewAllOrders.style.display = (isAdmin || perms.orders) ? 'inline' : 'none';
+            const navOrders=document.getElementById('navOrders'); if(navOrders) navOrders.style.display = 'flex';
+            const btnViewAllOrders=document.getElementById('btnViewAllOrders'); if(btnViewAllOrders) btnViewAllOrders.style.display = 'inline';
             const navAnalytics=document.getElementById('navPnl'); if(navAnalytics) navAnalytics.style.display = (isAdmin || perms.analytics) ? 'flex' : 'none';
             const navExpenses=document.getElementById('navExpenses'); if(navExpenses) navExpenses.style.display = (isAdmin || perms.expenses) ? 'flex' : 'none';
             const navStock=document.getElementById('navStock'); if(navStock) navStock.style.display = isAdmin ? 'flex' : 'none';
@@ -3945,7 +3938,7 @@ Tables, billing and existing local UI remain visible.`);}
         function applyDefaultLiveSalesCycle(){
             const from=document.getElementById('filterStartDate'),to=document.getElementById('filterEndDate');
             if(!from||!to)return;
-            if(liveSalesDefaultApplied && from.value && to.value)return;
+            if(from.value && to.value)return;
             const b=liveSalesCycleBounds(); from.value=b.start; to.value=b.end; liveSalesDefaultApplied=true; setActiveFilterBtn(null);
         }
         function renderLiveSales(){
