@@ -3,10 +3,24 @@
   "short_name": "Viraasat POS",
   "description": "Viraasat Restaurant Point of Sale",
   "start_url": "./",
-  "display": "standalone",
-  "background_color": "#FBF9F5",
   "scope": "./",
-  "theme_color": "#FBF9F5",
+  "display": "standalone",
+  "display_override": ["standalone"],
+  "background_color": "#f8f5ef",
+  "theme_color": "#f8f5ef",
   "orientation": "portrait",
-  "icons": []
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }
