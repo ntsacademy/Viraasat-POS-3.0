@@ -1,4 +1,4 @@
-const CACHE_NAME = "viraasat-pos-dynamic-v2";
+const CACHE_NAME = "viraasat-pos-dynamic-v3";
 
 // Install: Skip waiting to force immediate update
 self.addEventListener("install", event => {
