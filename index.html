@@ -1955,7 +1955,7 @@
         const D1_API_BASE = '/api';
         const API_TIMEOUT_MS = 30000;
         
-const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.9-SURGICAL"; 
+const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0"; 
         
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
@@ -2343,31 +2343,167 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.9-SURGICAL";
             window.open(`https://wa.me/91${sPhone}?text=${encodeURIComponent(slipText)}`, '_blank');
         }
 
+        // Offline-first transport layer. Existing business functions continue to use d1Get/d1Post.
+        const OFFLINE_DB_NAME = 'viraasat_pos_offline_v1';
+        const OFFLINE_DB_VERSION = 1;
+        const OFFLINE_CACHE_STORE = 'cache';
+        const OFFLINE_QUEUE_STORE = 'queue';
+        const OFFLINE_QUEUE_PATHS = new Set([
+            '/orders','/orders/checkout','/tables/sync-bag','/stock/sync-bag',
+            '/tables/clear','/stock','/expenses'
+        ]);
+        let offlineDbPromise = null;
+        let offlineFlushRunning = false;
+
+        function openOfflineDB(){
+            if(offlineDbPromise) return offlineDbPromise;
+            offlineDbPromise = new Promise((resolve,reject)=>{
+                if(!window.indexedDB){ reject(new Error('IndexedDB unavailable')); return; }
+                const req=indexedDB.open(OFFLINE_DB_NAME,OFFLINE_DB_VERSION);
+                req.onupgradeneeded=()=>{
+                    const db=req.result;
+                    if(!db.objectStoreNames.contains(OFFLINE_CACHE_STORE)) db.createObjectStore(OFFLINE_CACHE_STORE);
+                    if(!db.objectStoreNames.contains(OFFLINE_QUEUE_STORE)){
+                        const store=db.createObjectStore(OFFLINE_QUEUE_STORE,{keyPath:'id',autoIncrement:true});
+                        store.createIndex('createdAt','createdAt',{unique:false});
+                    }
+                };
+                req.onsuccess=()=>resolve(req.result);
+                req.onerror=()=>reject(req.error||new Error('Offline database unavailable'));
+            });
+            return offlineDbPromise;
+        }
+        async function offlineCachePut(key,value){
+            try{
+                const db=await openOfflineDB();
+                await new Promise((resolve,reject)=>{
+                    const tx=db.transaction(OFFLINE_CACHE_STORE,'readwrite');
+                    tx.objectStore(OFFLINE_CACHE_STORE).put({savedAt:Date.now(),value},key);
+                    tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
+                });
+            }catch(e){ console.warn('Offline cache write skipped:',e); }
+        }
+        async function offlineCacheGet(key){
+            try{
+                const db=await openOfflineDB();
+                return await new Promise((resolve,reject)=>{
+                    const tx=db.transaction(OFFLINE_CACHE_STORE,'readonly');
+                    const req=tx.objectStore(OFFLINE_CACHE_STORE).get(key);
+                    req.onsuccess=()=>resolve(req.result?.value??null);
+                    req.onerror=()=>reject(req.error);
+                });
+            }catch(e){ return null; }
+        }
+        async function offlineQueueAdd(path,body){
+            const db=await openOfflineDB();
+            const payload={...body};
+            delete payload.__offlineReplay;
+            if(!payload.operation_id){
+                payload.operation_id = payload.checkout_id || payload.order_number ||
+                    `OP-${Date.now()}-${Math.random().toString(36).slice(2,10)}`;
+            }
+            return await new Promise((resolve,reject)=>{
+                const tx=db.transaction(OFFLINE_QUEUE_STORE,'readwrite');
+                const req=tx.objectStore(OFFLINE_QUEUE_STORE).add({
+                    path,body:payload,createdAt:Date.now(),attempts:0
+                });
+                req.onsuccess=()=>resolve(payload.operation_id);
+                req.onerror=()=>reject(req.error);
+            });
+        }
+        async function offlineQueueAll(){
+            try{
+                const db=await openOfflineDB();
+                return await new Promise((resolve,reject)=>{
+                    const tx=db.transaction(OFFLINE_QUEUE_STORE,'readonly');
+                    const req=tx.objectStore(OFFLINE_QUEUE_STORE).getAll();
+                    req.onsuccess=()=>resolve((req.result||[]).sort((a,b)=>Number(a.createdAt)-Number(b.createdAt)));
+                    req.onerror=()=>reject(req.error);
+                });
+            }catch(e){ return []; }
+        }
+        async function offlineQueueDelete(id){
+            try{
+                const db=await openOfflineDB();
+                await new Promise((resolve,reject)=>{
+                    const tx=db.transaction(OFFLINE_QUEUE_STORE,'readwrite');
+                    tx.objectStore(OFFLINE_QUEUE_STORE).delete(id);
+                    tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);
+                });
+            }catch(e){ console.warn('Offline queue delete skipped:',e); }
+        }
+        async function flushOfflineMutationQueue(){
+            if(offlineFlushRunning || navigator.onLine===false) return;
+            offlineFlushRunning=true;
+            try{
+                const queue=await offlineQueueAll();
+                for(const item of queue){
+                    if(navigator.onLine===false) break;
+                    try{
+                        await d1Post(item.path,{...item.body,__offlineReplay:true});
+                        await offlineQueueDelete(item.id);
+                    }catch(e){
+                        console.warn('Offline sync paused:',item.path,e);
+                        break;
+                    }
+                }
+                if(queue.length && typeof refreshDashboardAfterActivity==='function'){
+                    try{ await refreshDashboardAfterActivity(); }catch(_){}
+                }
+            }finally{ offlineFlushRunning=false; }
+        }
+        window.addEventListener('online',()=>{ setTimeout(flushOfflineMutationQueue,150); });
+        setInterval(()=>{ if(navigator.onLine!==false) flushOfflineMutationQueue(); },5000);
+
         async function d1Get(path, timeoutMs = API_TIMEOUT_MS) {
+            if(navigator.onLine===false){
+                const cached=await offlineCacheGet(path);
+                if(cached!==null) return cached;
+                throw new Error('Offline: no cached data available for this screen.');
+            }
             let lastError;
             for(let attempt=0; attempt<3; attempt++){
                 const controller = new AbortController();
                 const timer = setTimeout(() => controller.abort(), timeoutMs);
                 try{
-                    const response = await fetch(`${D1_API_BASE}${path}`, { method:'GET', headers:{'Accept':'application/json'}, cache:'no-store', signal:controller.signal });
-                    const data = await response.json().catch(()=>({}));
-                    if (!response.ok || data.success === false) throw new Error(data.error || `D1 API error (${response.status})`);
+                    const response = await fetch(`${D1_API_BASE}${path}`, {
+                        method:'GET',
+                        headers:{'Accept':'application/json'},
+                        cache:'no-store',
+                        signal:controller.signal
+                    });
+                    const data=await response.json().catch(()=>({}));
+                    if(!response.ok || data.success===false) throw new Error(data.error || `D1 API error (${response.status})`);
+                    await offlineCachePut(path,data);
                     return data;
                 }catch(e){
                     lastError=e;
                     if(attempt<2) await new Promise(r=>setTimeout(r,350*(attempt+1)));
                 }finally{ clearTimeout(timer); }
             }
+            const cached=await offlineCacheGet(path);
+            if(cached!==null) return cached;
             throw lastError || new Error('D1 GET failed');
         }
+
         async function d1Post(path, body, timeoutMs = API_TIMEOUT_MS) {
+            let payload={...(body||{})};
+            const canQueue=OFFLINE_QUEUE_PATHS.has(path);
+            if(canQueue && !payload.operation_id){
+                payload.operation_id = payload.checkout_id || payload.order_number ||
+                    `OP-${Date.now()}-${Math.random().toString(36).slice(2,10)}`;
+            }
+            if(navigator.onLine===false && canQueue && !payload.__offlineReplay){
+                const operationId=await offlineQueueAdd(path,payload);
+                return {success:true,offline_queued:true,operation_id:operationId,queued_path:path};
+            }
             const controller = new AbortController();
             const timer = setTimeout(() => controller.abort(), timeoutMs);
             try {
                 const response = await fetch(`${D1_API_BASE}${path}`, {
                     method:'POST',
                     headers:{'Content-Type':'application/json','Accept':'application/json'},
-                    body:JSON.stringify(body),
+                    body:JSON.stringify(payload),
                     cache:'no-store',
                     signal:controller.signal
                 });
@@ -2471,10 +2607,66 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.9-SURGICAL";
         async function fetchData(silent=false){
             if (viraasatFetchDataInProgress) return;
             viraasatFetchDataInProgress = true;
-            const loader=document.getElementById('loader');const expDate=document.getElementById('expDate');if(expDate&&!expDate.value)expDate.value=localISODate(new Date());const ef=document.getElementById('expFilterFrom'),et=document.getElementById('expFilterTo');if(ef&&et){ef.value='';et.value='';}if(!silent){loader.style.display='flex';loader.innerHTML='<div class="spinner"></div> <span>Syncing</span>';}
-            await refreshPnlSettlementCache(); const defs=[['/dashboard',d1Get('/dashboard')],['/menu',d1Get('/menu')],['/tables',d1Get('/tables')],['/orders',d1Get('/orders?limit=5000')],['/expenses',d1Get('/expenses?limit=2000')],['/stock',d1Get('/stock')],['/staff',d1Get('/staff')],['/stock/history',d1Get('/stock/history?limit=100')],['/staff/advances',d1Get('/staff/advances')]];const results=await Promise.allSettled(defs.map(x=>x[1]));const failed=[];
+            const loader=document.getElementById('loader');
+            const expDate=document.getElementById('expDate');
+            if(expDate&&!expDate.value)expDate.value=localISODate(new Date());
+            const ef=document.getElementById('expFilterFrom'),et=document.getElementById('expFilterTo');
+            if(ef&&et){ef.value='';et.value='';}
+            if(!silent){loader.style.display='flex';loader.innerHTML='<div class="spinner"></div> <span>Syncing</span>';}
+
+            await refreshPnlSettlementCache();
+            // Dashboard already contains tables/stock/staff snapshots. Do not fetch the same
+            // datasets again; this keeps the UI layout and business logic unchanged while
+            // cutting several round-trips on every refresh.
+            const defs=[
+                ['/dashboard',d1Get('/dashboard')],
+                ['/menu',d1Get('/menu')],
+                ['/orders',d1Get('/orders?limit=5000')],
+                ['/expenses',d1Get('/expenses?limit=2000')],
+                ['/stock/history',d1Get('/stock/history?limit=100')],
+                ['/staff/advances',d1Get('/staff/advances')]
+            ];
+            const results=await Promise.allSettled(defs.map(x=>x[1]));
+            const failed=[];
             try{
-                if(results[0].status==='fulfilled'){const dash=results[0].value||{};const summary=dash.summary||{};d1DashboardSummary={...summary};const ts=dash.tables||{};document.getElementById('homeTodaySale').innerText=`₹${Math.round(Number(summary.today_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeAvgOrder').innerText=`₹${Math.round(Number(summary.average_order)||0).toLocaleString('en-IN')}`;document.getElementById('homeOverallSale').innerText=`₹${Math.round(Number(summary.overall_sales)||0).toLocaleString('en-IN')}`;document.getElementById('homeActiveTables').innerText=`${Number(ts.occupied)||0} / ${Number(ts.total)||tableSections.reduce((a,x)=>a+x.tables.length,0)}`;}else failed.push(['/dashboard',results[0].reason]);
+                if(results[0].status==='fulfilled'){
+                    const dash=results[0].value||{};
+                    const summary=dash.summary||{};
+                    d1DashboardSummary={...summary};
+                    const ts=dash.tables||{};
+                    document.getElementById('homeTodaySale').innerText=`₹${Math.round(Number(summary.today_sales)||0).toLocaleString('en-IN')}`;
+                    document.getElementById('homeAvgOrder').innerText=`₹${Math.round(Number(summary.average_order)||0).toLocaleString('en-IN')}`;
+                    document.getElementById('homeOverallSale').innerText=`₹${Math.round(Number(summary.overall_sales)||0).toLocaleString('en-IN')}`;
+                    document.getElementById('homeActiveTables').innerText=`${Number(ts.occupied)||0} / ${Number(ts.total)||tableSections.reduce((a,x)=>a+x.tables.length,0)}`;
+
+                    const rawTables=Array.isArray(dash.table_data)?dash.table_data:[];
+                    tableSections=[{title:'Hut Seating',tables:[]},{title:'Ground Seating',tables:[]},{title:'Terrace Seating',tables:[]}];
+                    const amap={'Hut Seating':0,'Ground Seating':1,'Terrace Seating':2};
+                    runningTables={};
+                    rawTables.forEach(t=>{
+                        const n=String(t.table_number??t.tableNumber??'').trim();
+                        if(!n)return;
+                        const i=amap[String(t.seating_area||t.seatingArea||'').trim()]??1;
+                        if(!tableSections[i].tables.includes(n))tableSections[i].tables.push(n);
+                        let persistedItems=[];
+                        try{const parsed=JSON.parse(t.current_items||t.currentItems||'[]');if(Array.isArray(parsed))persistedItems=parsed;}catch(_){}
+                        runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied'
+                            ? (persistedItems.length?persistedItems:[{__d1Occupied:true,orderId:t.current_order_id||t.currentOrderId}])
+                            : [];
+                    });
+                    if(!rawTables.length)tableSections=[{title:'Hut Seating',tables:['1','2','3','4']},{title:'Ground Seating',tables:['5','6','7']},{title:'Terrace Seating',tables:['8','9','10']}];
+
+                    const rawStock=normalizeArray({stock:dash.stock},['stock','items','data','result']);
+                    stockData={};stockMeta={};
+                    rawStock.forEach(x=>{
+                        const name=String(getVal(x,['name','itemname','item','stockname'])||'').trim();
+                        if(!name)return;
+                        stockData[name]=Number(getVal(x,['quantity','qty','stock','currentstock','currentquantity']))||0;
+                        stockMeta[name]={id:getVal(x,['id']),name,unit:getVal(x,['unit'])||'pcs',low_stock_level:Number(getVal(x,['low_stock_level','lowstocklevel']))||5,created_at:getVal(x,['created_at'])||'',updated_at:getVal(x,['updated_at'])||''};
+                    });
+                    staffData=Array.isArray(dash.staff)?dash.staff:[];
+                }else failed.push(['/dashboard',results[0].reason]);
+
                 if(results[1].status==='fulfilled'){
                     const rawMenu=normalizeArray(results[1].value,['items','menu','data','result']);
                     const seen=new Set();
@@ -2482,56 +2674,122 @@ const APP_VERSION = "D1-ENTERPRISE-FIX-D1-ENTERPRISE-FIX-6.9-SURGICAL";
                         const name=String(getVal(item,['itemname','name'])||'').trim();
                         const key=name.toLowerCase();
                         if(!key||seen.has(key))return false;
-                        seen.add(key); return true;
+                        seen.add(key);return true;
                     });
                 }else failed.push(['/menu',results[1].reason]);
-                if(results[2].status==='fulfilled'){const ts=normalizeArray(results[2].value,['tables','data','result']);tableSections=[{title:'Hut Seating',tables:[]},{title:'Ground Seating',tables:[]},{title:'Terrace Seating',tables:[]}];const amap={'Hut Seating':0,'Ground Seating':1,'Terrace Seating':2};runningTables={};ts.forEach(t=>{const n=String(t.table_number??t.tableNumber??'').trim();if(!n)return;const i=amap[String(t.seating_area||t.seatingArea||'').trim()]??1;if(!tableSections[i].tables.includes(n))tableSections[i].tables.push(n);let persistedItems=[]; try { const parsed=JSON.parse(t.current_items||t.currentItems||'[]'); if(Array.isArray(parsed)) persistedItems=parsed; } catch(e){}
-runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied' ? (persistedItems.length ? persistedItems : [{__d1Occupied:true,orderId:t.current_order_id||t.currentOrderId}]) : [];});if(!ts.length)tableSections=[{title:'Hut Seating',tables:['1','2','3','4']},{title:'Ground Seating',tables:['5','6','7']},{title:'Terrace Seating',tables:['8','9','10']}];}else failed.push(['/tables',results[2].reason]);
-                if(results[3].status==='fulfilled')salesHistory=normalizeArray(results[3].value,['orders','sales','data','result']).map(mapD1Order).filter(Boolean).filter(o=>{const st=String(o.order_status||'').toLowerCase();const oid=String(o.order_number||o.orderid||'').toUpperCase();return !oid.startsWith('KOT-')&&!['kot','cancelled','deleted','deletion_pending'].includes(st);}).sort((a,b)=>orderTimestamp(b)-orderTimestamp(a));else failed.push(['/orders',results[3].reason]);
-                // Keep Live Sale date fields user-controlled. Blank dates mean All Sales.
-                Object.keys(runningTables).forEach(key=>{const arr=runningTables[key];if(Array.isArray(arr)&&arr[0]?.__d1Occupied){const oid=String(arr[0].orderId||'');const order=salesHistory.find(o=>String(o.id||'')===oid||String(o.orderid||'')===oid);runningTables[key]=order?parseSaleItems(order):[];}});
-                if(results[4].status==='fulfilled')expenseHistory=normalizeArray(results[4].value,['expenses','data','result']);else failed.push(['/expenses',results[4].reason]);
-                if(results[5].status==='fulfilled'){const raw=normalizeArray(results[5].value,['stock','items','data','result']);stockData={};stockMeta={};raw.forEach(x=>{const name=String(getVal(x,['name','itemname','item','stockname'])||'').trim();if(!name)return;stockData[name]=Number(getVal(x,['quantity','qty','stock','currentstock','currentquantity']))||0;stockMeta[name]={id:getVal(x,['id']),name,unit:getVal(x,['unit'])||'pcs',low_stock_level:Number(getVal(x,['low_stock_level','lowstocklevel']))||5,created_at:getVal(x,['created_at'])||'',updated_at:getVal(x,['updated_at'])||''};});}else failed.push(['/stock',results[5].reason]);
-                if(results[6].status==='fulfilled')staffData=normalizeArray(results[6].value,['staff','employees','data','result']);else failed.push(['/staff',results[6].reason]);
-                if(results[7].status==='fulfilled')stockHistory=normalizeArray(results[7].value,['history','stock_history','data','result']);else stockHistory=[];
-                if(results[8].status==='fulfilled')staffAdvanceData=normalizeArray(results[8].value,['advances','data','result']);else {staffAdvanceData=[];failed.push(['/staff/advances',results[8].reason]);}
+
+                if(results[2].status==='fulfilled'){
+                    salesHistory=normalizeArray(results[2].value,['orders','sales','data','result']).map(mapD1Order).filter(Boolean)
+                        .filter(o=>{
+                            const st=String(o.order_status||'').toLowerCase();
+                            const oid=String(o.order_number||o.orderid||'').toUpperCase();
+                            return !oid.startsWith('KOT-')&&!['kot','cancelled','deleted','deletion_pending'].includes(st);
+                        }).sort((a,b)=>orderTimestamp(b)-orderTimestamp(a));
+                }else failed.push(['/orders',results[2].reason]);
+
+                Object.keys(runningTables).forEach(key=>{
+                    const arr=runningTables[key];
+                    if(Array.isArray(arr)&&arr[0]?.__d1Occupied){
+                        const oid=String(arr[0].orderId||'');
+                        const order=salesHistory.find(o=>String(o.id||'')===oid||String(o.orderid||'')===oid);
+                        runningTables[key]=order?parseSaleItems(order):[];
+                    }
+                });
+
+                if(results[3].status==='fulfilled')expenseHistory=normalizeArray(results[3].value,['expenses','data','result']);
+                else failed.push(['/expenses',results[3].reason]);
+
+                if(results[4].status==='fulfilled')stockHistory=normalizeArray(results[4].value,['history','stock_history','data','result']);
+                else stockHistory=[];
+
+                if(results[5].status==='fulfilled')staffAdvanceData=normalizeArray(results[5].value,['advances','data','result']);
+                else {staffAdvanceData=[];failed.push(['/staff/advances',results[5].reason]);}
+
                 applyLocalStaffState();
                 const renderSteps=[
                     ['dropdown',populateDropdown],['staff dropdown',populateStaffDropdown],
                     ['tables',renderTableGrid],['stock dashboard',renderStockDashboard],['stock status',checkStockDisplay],
                     ['expense history',renderExpenseHistoryList],
-                    // Always render data-driven screens immediately after D1 sync.
-                    // Previously Live Sale/P&L were only rendered after a filter click.
-                    ['live sales',renderLiveSales],
-                    ['p&l trends',generateTrends],
+                    ['live sales',renderLiveSales],['p&l trends',generateTrends],
                     ['premium dashboard',renderPremiumDashboard]
                 ];
                 renderSteps.forEach(([name,fn])=>{try{if(typeof fn==='function')fn();}catch(err){console.error(`UI render failed: ${name}`,err);}});
                 hideSplashScreen();
-                if(failed.length){const messages=failed.map(([path,e])=>`${path}: ${e?.message||e}`).join(' | ');console.warn('Partial D1 sync',failed);try{await d1Get('/test-db',5000);}catch(he){console.error('D1 health',he);}showCustomAlert(`Some D1 endpoints failed.
-
-${messages}
-
-Tables, billing and existing local UI remain visible.`);}
-            }catch(error){console.error('D1 Sync Error',error);renderTableGrid();renderStockDashboard();renderLiveSales();renderPremiumDashboard();renderExpenseHistoryList();hideSplashScreen();showCustomAlert(`D1 sync failed: ${error.message||error}`);}finally{viraasatFetchDataInProgress=false;if(!silent)setTimeout(()=>{loader.style.display='none';},700);}
+                if(failed.length){
+                    const messages=failed.map(([path,e])=>`${path}: ${e?.message||e}`).join(' | ');
+                    console.warn('Partial D1 sync',failed);
+                    try{await d1Get('/test-db',5000);}catch(he){console.error('D1 health',he);}
+                    showCustomAlert(`Some D1 endpoints failed.\n\n${messages}\n\nCached/local data remains visible.`);
+                }
+            }catch(error){
+                console.error('D1 Sync Error',error);
+                renderTableGrid();renderStockDashboard();renderLiveSales();renderPremiumDashboard();renderExpenseHistoryList();
+                hideSplashScreen();
+                showCustomAlert(`D1 sync failed: ${error.message||error}`);
+            }finally{
+                viraasatFetchDataInProgress=false;
+                if(!silent)setTimeout(()=>{loader.style.display='none';},700);
+            }
         }
 
-        // Real-time D1 synchronization: refresh silently while the app is open.
-        // Existing manual refresh and all business logic remain unchanged.
+        // Real-time D1 synchronization: lightweight snapshot only.
         let viraasatRealtimeTimer = null;
         let viraasatSyncInProgress = false;
+        async function refreshDashboardSnapshotOnly(){
+            if(viraasatSyncInProgress || navigator.onLine===false) return;
+            viraasatSyncInProgress=true;
+            try{
+                const dash=await d1Get('/dashboard');
+                const summary=dash.summary||{};
+                d1DashboardSummary={...summary};
+                const ts=dash.tables||{};
+                const todayEl=document.getElementById('homeTodaySale');
+                const avgEl=document.getElementById('homeAvgOrder');
+                const overallEl=document.getElementById('homeOverallSale');
+                const tablesEl=document.getElementById('homeActiveTables');
+                if(todayEl)todayEl.innerText=`₹${Math.round(Number(summary.today_sales)||0).toLocaleString('en-IN')}`;
+                if(avgEl)avgEl.innerText=`₹${Math.round(Number(summary.average_order)||0).toLocaleString('en-IN')}`;
+                if(overallEl)overallEl.innerText=`₹${Math.round(Number(summary.overall_sales)||0).toLocaleString('en-IN')}`;
+                if(tablesEl)tablesEl.innerText=`${Number(ts.occupied)||0} / ${Number(ts.total)||0}`;
+                if(Array.isArray(dash.stock)){
+                    stockData={};
+                    stockMeta={};
+                    dash.stock.forEach(x=>{
+                        const name=String(getVal(x,['name','itemname','item','stockname'])||'').trim();
+                        if(!name)return;
+                        stockData[name]=Number(getVal(x,['quantity','qty','stock','currentstock','currentquantity']))||0;
+                        stockMeta[name]={id:getVal(x,['id']),name,unit:getVal(x,['unit'])||'pcs',low_stock_level:Number(getVal(x,['low_stock_level','lowstocklevel']))||5};
+                    });
+                    try{renderStockDashboard();checkStockDisplay();}catch(_){}
+                }
+                if(Array.isArray(dash.staff)) staffData=dash.staff;
+                if(Array.isArray(dash.table_data)){
+                    dash.table_data.forEach(t=>{
+                        const n=String(t.table_number??t.tableNumber??'').trim();
+                        if(!n)return;
+                        const key=`Table ${n}`;
+                        const status=String(t.status||'').toLowerCase();
+                        if(status==='occupied'){
+                            let items=[];
+                            try{const parsed=JSON.parse(t.current_items||'[]');if(Array.isArray(parsed))items=parsed;}catch(_){}
+                            runningTables[key]=items;
+                        }else delete runningTables[key];
+                    });
+                    try{renderTableGrid();}catch(_){}
+                }
+            }catch(e){console.warn('Lightweight realtime sync skipped:',e);}
+            finally{viraasatSyncInProgress=false;}
+        }
         async function runRealtimeSync(){
-            if(viraasatSyncInProgress || document.visibilityState !== 'visible' || !localStorage.getItem('viraasat_user')) return;
-            viraasatSyncInProgress = true;
-            try { await fetchData(true); } catch(e) { console.warn('Realtime sync skipped:', e); }
-            finally { viraasatSyncInProgress = false; }
+            if(document.visibilityState!=='visible'||!localStorage.getItem('viraasat_user'))return;
+            await refreshDashboardSnapshotOnly();
         }
         function startRealtimeSync(){
-            if(viraasatRealtimeTimer) clearInterval(viraasatRealtimeTimer);
-            viraasatRealtimeTimer = setInterval(runRealtimeSync, 15000);
+            if(viraasatRealtimeTimer)clearInterval(viraasatRealtimeTimer);
+            viraasatRealtimeTimer=setInterval(runRealtimeSync,15000);
         }
-        document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') runRealtimeSync(); });
-        window.addEventListener('focus', runRealtimeSync);
+        document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')runRealtimeSync();});
+        window.addEventListener('focus',runRealtimeSync);
         startRealtimeSync();
 
         // Surgical post-activity refresh. Existing business logic remains unchanged.
@@ -3093,10 +3351,30 @@ Tables, billing and existing local UI remain visible.`);}
         async function renderStaffAdvanceLedger(){
             const el=document.getElementById('staffAdvanceLedger'); if(!el)return;
             try{const r=await d1Get('/staff/advances'); const rows=Array.isArray(r?.advances)?r.advances:[]; const totals={}; rows.forEach(x=>{const n=x.staff_name||'Unknown'; totals[n]=(totals[n]||0)+(String(x.entry_type).toLowerCase()==='returned'||String(x.entry_type).toLowerCase()==='adjusted'?-Number(x.amount||0):Number(x.amount||0));});
-            el.innerHTML=rows.map(x=>`<div class="admin-mini-row"><div><b>${esc(x.staff_name)}</b><small>${esc(x.entry_date)} • ${esc(x.entry_type)}${x.note?' • '+esc(x.note):''}</small></div><strong>${money(x.amount)}</strong></div>`).join('')||'<div class="premium-empty">No staff advance entries.</div>';
+            el.innerHTML=rows.map(x=>`<div class="admin-mini-row"><div><b>${esc(x.staff_name)}</b><small>${esc(x.entry_date)} • ${esc(x.entry_type)}${x.note?' • '+esc(x.note):''}</small></div><div style="display:flex;align-items:center;gap:8px"><strong>${money(x.amount)}</strong><button class="premium-btn light" style="padding:5px 9px;font-size:.72rem" onclick="editStaffAdvanceEntry(${Number(x.id)||0})">Edit</button></div></div>`).join('')||'<div class="premium-empty">No staff advance entries.</div>';
             }catch(e){el.innerHTML='<div class="premium-empty">Staff advance ledger unavailable.</div>';}}
         async function addStaffAdvanceEntry(){
             if(!requireAdmin('staff advance'))return; const staff=prompt('Staff name:'); if(!staff)return; const amount=Number(prompt('Amount:')); if(!Number.isFinite(amount)||amount<=0){showCustomAlert('Enter valid amount.');return;} const type=prompt('Type: given / returned / adjusted','given')||'given'; const note=prompt('Note (optional):')||''; try{await d1Post('/staff/advances',{staff_name:staff,amount,entry_type:type,entry_date:localISODate(new Date()),note,created_by:localStorage.getItem('viraasat_user')||'Admin'}); await renderStaffAdvanceLedger(); showCustomAlert('Staff advance saved in D1.');}catch(e){showCustomAlert('Advance save failed: '+(e?.message||e));}}
+        async function editStaffAdvanceEntry(id){
+            if(!requireAdmin('staff advance update'))return;
+            if(!id)return;
+            const row=(staffAdvanceData||[]).find(x=>Number(x.id)===Number(id));
+            if(!row){showCustomAlert('Salary advance entry not found.');return;}
+            const amount=Number(prompt('Amount:',row.amount));
+            if(!Number.isFinite(amount)||amount<=0){showCustomAlert('Enter valid amount.');return;}
+            const type=prompt('Type: given / returned / adjusted',row.entry_type||'given')||row.entry_type||'given';
+            const date=prompt('Date (YYYY-MM-DD):',localISODate(row.entry_date||new Date()))||row.entry_date||localISODate(new Date());
+            const note=prompt('Note:',row.note||'') ?? (row.note||'');
+            try{
+                await d1Put('/staff/advances',{id:Number(id),staff_id:row.staff_id||null,staff_name:row.staff_name,amount,entry_type:type,entry_date:date,note});
+                await refreshStaffAdvanceData();
+                await renderStaffAdvanceLedger();
+                calculateStaffBalance();
+                renderEmployeePayrollTable();
+                if(typeof generateTrends==='function')generateTrends();
+                showCustomAlert('Salary advance updated successfully.');
+            }catch(e){showCustomAlert('Advance update failed: '+(e?.message||e));}
+        }
 
         function renderPremiumReports(){
             const panel=document.getElementById('premiumPanel-reports');if(!panel)return;
@@ -3112,7 +3390,7 @@ Tables, billing and existing local UI remain visible.`);}
             panel.innerHTML += `<div class="premium-card" style="margin-top:14px"><div class="premium-card-head"><h3>All-Time P&L Archive</h3><span>Historical view only</span></div><div class="admin-help">This section is separate from the live dashboard. Use dates to inspect all historical sales and expenses, including settled periods.</div><div class="admin-form-grid"><input type="date" id="allPnlFrom"><input type="date" id="allPnlTo"><button class="premium-btn light" onclick="renderAllTimePnlArchive()">Apply Filter</button></div><div id="allTimePnlArchive"></div></div>`; renderAllTimePnlArchive();
             renderPnlSettlementPanel(); renderStaffAdvanceLedger();
         }
-        function renderAllTimePnlArchive(){ const el=document.getElementById('allTimePnlArchive'); if(!el)return; const f=document.getElementById('allPnlFrom')?.value||'', t=document.getElementById('allPnlTo')?.value||''; const ss=(salesHistory||[]).filter(x=>{const d=saleDateKey(x);return(!f||d>=f)&&(!t||d<=t)}); const ee=(expenseHistory||[]).filter(x=>{const d=expenseDateKey(x);return(!f||d>=f)&&(!t||d<=t)}); const sales=ss.reduce((a,x)=>a+parseAmount(getVal(x,['grand_total','totalamount','total','amount'])),0), exp=ee.reduce((a,x)=>a+parseAmount(getVal(x,['amount','total'])),0); el.innerHTML=`<div class="sales-summary-grid"><div class="report-stat"><div class="rlabel">All-Time Sales</div><div class="rvalue">${money(sales)}</div></div><div class="report-stat"><div class="rlabel">All-Time Expenses</div><div class="rvalue">${money(exp)}</div></div><div class="report-stat"><div class="rlabel">All-Time P/L</div><div class="rvalue">${money(sales-exp)}</div></div></div><div class="admin-help">${ss.length} sales orders • ${ee.length} expense entries</div>`; }
+        function renderAllTimePnlArchive(){ const el=document.getElementById('allTimePnlArchive'); if(!el)return; const f=document.getElementById('allPnlFrom')?.value||'', t=document.getElementById('allPnlTo')?.value||''; const ss=(salesHistory||[]).filter(x=>{const d=saleDateKey(x);return(!f||d>=f)&&(!t||d<=t)}); const ee=(expenseHistory||[]).filter(x=>{const d=expenseDateKey(x);return(!f||d>=f)&&(!t||d<=t)}); const aa=(staffAdvanceData||[]).filter(x=>{const d=localISODate(x.entry_date||x.date||x.created_at);return(!f||d>=f)&&(!t||d<=t)}); const sales=ss.reduce((a,x)=>a+parseAmount(getVal(x,['grand_total','totalamount','total','amount'])),0), exp=ee.reduce((a,x)=>a+parseAmount(getVal(x,['amount','total'])),0), advances=aa.reduce((a,x)=>{const v=parseAmount(x.amount),type=String(x.entry_type||'given').toLowerCase();return a+(type==='returned'||type==='adjusted'?-v:v)},0), totalExp=exp+advances; el.innerHTML=`<div class="sales-summary-grid"><div class="report-stat"><div class="rlabel">All-Time Sales</div><div class="rvalue">${money(sales)}</div></div><div class="report-stat"><div class="rlabel">All-Time Expenses</div><div class="rvalue">${money(totalExp)}</div></div><div class="report-stat"><div class="rlabel">All-Time P/L</div><div class="rvalue">${money(sales-totalExp)}</div></div></div><div class="admin-help">${ss.length} sales orders • ${ee.length} expense entries • ${aa.length} salary advance entries</div>`; }
         function exportDailyReport(){const by={};salesHistory.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!by[d])by[d]={orders:0,sales:0};by[d].orders++;by[d].sales+=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));});downloadCSV(Object.entries(by).sort((a,b)=>a[0].localeCompare(b[0])).map(([Date,x])=>({Date,Orders:x.orders,Sales:Math.round(x.sales),AOV:Math.round(x.sales/x.orders)})),'Viraasat-Daily-Report.csv');}
 
         function renderPremiumExpenses(){
@@ -4313,6 +4591,12 @@ Tables, billing and existing local UI remain visible.`);}
                 // the Worker checkout endpoint only reconciles any remaining delta.
                 await flushBagSyncBeforeCheckout();
                 const data=await d1Post('/orders/checkout',{order_number:orderId,checkout_id:pendingCheckoutRequestId,...ctx,customer_phone:phone,items:preparedItems,items_string:itemsString,subtotal,discount,grand_total:grandTotal,total:grandTotal,payment_method:selectedPaymentMode,payment_status:'paid',order_status:'completed',delivery_address:address});
+                if(data?.offline_queued){
+                    btn.innerText='Confirm Checkout';btn.disabled=false;
+                    document.getElementById('paymentModal').style.display='none';
+                    showCustomAlert('Internet is offline. Checkout is safely saved and will sync automatically when internet returns. Do not pay again.');
+                    return;
+                }
                 await refreshDashboardAfterActivity();
                 auditLog('Checkout', orderId);
                 delete runningTables[activeTableNumber];
