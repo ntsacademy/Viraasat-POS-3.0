@@ -123,6 +123,16 @@ async function ensureSupportTablesUncached(db) {
     )
   `).run();
   await db.prepare(`
+    CREATE TABLE IF NOT EXISTS offline_operations (
+      operation_id TEXT PRIMARY KEY,
+      path TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'completed',
+      response_json TEXT,
+      created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+      completed_at TEXT
+    )
+  `).run();
+  await db.prepare(`
     CREATE TABLE IF NOT EXISTS stock_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL UNIQUE,
@@ -263,6 +273,10 @@ async function ensureSupportTablesUncached(db) {
   await ensureColumn(db, "deletion_requests", "reviewed_by", "TEXT");
   await ensureColumn(db, "deletion_requests", "reviewed_at", "TEXT");
   await ensureColumn(db, "deletion_requests", "created_at", "TEXT DEFAULT CURRENT_TIMESTAMP");
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_orders_created_status ON orders(created_at, order_status)`).run();
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_expenses_date ON expenses(expense_date, created_at)`).run();
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_staff_advances_date ON staff_advances(entry_date, entry_type)`).run();
+  await db.prepare(`CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id)`).run();
 }
 let supportTablesInitPromise = null;
 async function ensureSupportTables(db) {
@@ -797,79 +811,98 @@ async function runGoogleSheetBackup(db, env, backupType = "Manual") {
 }
 
 async function getDashboard(db) {
+  const today = todayIST();
   const [
-    orders,
-    expenses,
+    salesToday,
+    salesOverall,
+    expenseToday,
+    expenseOverall,
+    advanceToday,
+    advanceOverall,
+    orderCountToday,
     tables,
     stock,
     staff
   ] = await Promise.all([
-    getOrders(db, 5e3),
-    getExpenses(db, 5e3),
+    db.prepare(`
+      SELECT COALESCE(SUM(CAST(COALESCE(total,0) AS REAL)),0) AS total
+      FROM orders
+      WHERE substr(COALESCE(created_at,''),1,10)=?
+        AND UPPER(COALESCE(order_number,'')) NOT LIKE 'KOT-%'
+        AND LOWER(COALESCE(order_status,'')) NOT IN ('cancelled','deleted','deletion_pending')
+    `).bind(today).first(),
+    db.prepare(`
+      SELECT COALESCE(SUM(CAST(COALESCE(total,0) AS REAL)),0) AS total
+      FROM orders
+      WHERE UPPER(COALESCE(order_number,'')) NOT LIKE 'KOT-%'
+        AND LOWER(COALESCE(order_status,'')) NOT IN ('cancelled','deleted','deletion_pending')
+    `).first(),
+    db.prepare(`
+      SELECT COALESCE(SUM(CAST(amount AS REAL)),0) AS total
+      FROM expenses
+      WHERE substr(COALESCE(expense_date,created_at,''),1,10)=?
+    `).bind(today).first(),
+    db.prepare(`
+      SELECT COALESCE(SUM(CAST(amount AS REAL)),0) AS total
+      FROM expenses
+    `).first(),
+    db.prepare(`
+      SELECT COALESCE(SUM(
+        CASE WHEN LOWER(COALESCE(entry_type,'given')) IN ('returned','adjusted')
+             THEN -CAST(amount AS REAL) ELSE CAST(amount AS REAL) END
+      ),0) AS total
+      FROM staff_advances
+      WHERE entry_date=?
+    `).bind(today).first(),
+    db.prepare(`
+      SELECT COALESCE(SUM(
+        CASE WHEN LOWER(COALESCE(entry_type,'given')) IN ('returned','adjusted')
+             THEN -CAST(amount AS REAL) ELSE CAST(amount AS REAL) END
+      ),0) AS total
+      FROM staff_advances
+    `).first(),
+    db.prepare(`
+      SELECT COUNT(*) AS cnt
+      FROM orders
+      WHERE substr(COALESCE(created_at,''),1,10)=?
+        AND UPPER(COALESCE(order_number,'')) NOT LIKE 'KOT-%'
+        AND LOWER(COALESCE(order_status,'')) NOT IN ('cancelled','deleted','deletion_pending')
+    `).bind(today).first(),
     getTables(db),
     getStock(db),
     getStaff(db)
   ]);
-  const today = todayIST();
-  const validOrders = orders.filter((order) => {
-    const status = String(order.order_status || "completed").toLowerCase();
-    const orderNumber = String(order.order_number || "").toUpperCase();
-    return !orderNumber.startsWith("KOT-") && !["cancelled", "deleted", "deletion_pending"].includes(status);
-  });
-  const todayOrders = validOrders.filter(
-    (order) => String(
-      order.created_at || ""
-    ).startsWith(today)
-  );
-  const todaySales = todayOrders.reduce(
-    (sum, order) => sum + num(order.grand_total),
-    0
-  );
-  const overallSales = validOrders.reduce(
-    (sum, order) => sum + num(order.grand_total),
-    0
-  );
-  const totalExpenses = expenses.reduce(
-    (sum, exp) => sum + num(exp.amount),
-    0
-  );
-  const todayExpenses = expenses.filter(
-    (exp) => String(
-      exp.expense_date || exp.created_at || ""
-    ).startsWith(today)
-  ).reduce(
-    (sum, exp) => sum + num(exp.amount),
-    0
-  );
-  const averageOrder = todayOrders.length ? todaySales / todayOrders.length : 0;
+
+  const todaySales = num(salesToday?.total);
+  const overallSales = num(salesOverall?.total);
+  const todayExpenses = num(expenseToday?.total) + num(advanceToday?.total);
+  const totalExpenses = num(expenseOverall?.total) + num(advanceOverall?.total);
+  const todayOrders = Number(orderCountToday?.cnt || 0);
   const occupiedTables = tables.filter(
-    (table) => String(
-      table.status || ""
-    ).toLowerCase() === "occupied"
+    (table) => String(table.status || "").toLowerCase() === "occupied"
   ).length;
-  const activeStaff = staff.filter(
-    (s) => Number(s.is_active) === 1
-  ).length;
+  const activeStaff = staff.filter((s) => Number(s.is_active) === 1).length;
+
   return {
     success: true,
     summary: {
       today_sales: todaySales,
-      today_orders: todayOrders.length,
-      average_order: averageOrder,
+      today_orders: todayOrders,
+      average_order: todayOrders ? todaySales / todayOrders : 0,
       overall_sales: overallSales,
       total_expenses: totalExpenses,
       today_expenses: todayExpenses,
+      staff_advances_today: num(advanceToday?.total),
+      staff_advances_total: num(advanceOverall?.total),
       net_profit: overallSales - totalExpenses,
       active_staff: activeStaff
     },
     tables: {
       total: tables.length,
       occupied: occupiedTables,
-      available: Math.max(
-        tables.length - occupiedTables,
-        0
-      )
+      available: Math.max(tables.length - occupiedTables, 0)
     },
+    table_data: tables,
     stock,
     staff
   };
@@ -1115,6 +1148,57 @@ async function releaseStockForItems(db, items, note) {
   }
 }
 __name(releaseStockForItems, "releaseStockForItems");
+async function getCompletedOfflineOperation(db, operationId) {
+  const key = clean(operationId);
+  if (!key) return null;
+  const row = await db.prepare(`
+    SELECT operation_id, response_json, status
+    FROM offline_operations
+    WHERE operation_id=? LIMIT 1
+  `).bind(key).first();
+  if (!row || String(row.status).toLowerCase() !== "completed") return null;
+  try {
+    return row.response_json ? JSON.parse(row.response_json) : null;
+  } catch {
+    return null;
+  }
+}
+async function beginOfflineOperation(db, operationId, path) {
+  const key = clean(operationId);
+  if (!key) return { key:null, existing:null };
+  const existing = await db.prepare(`
+    SELECT operation_id, response_json, status
+    FROM offline_operations
+    WHERE operation_id=? LIMIT 1
+  `).bind(key).first();
+  if (existing?.status === "completed") {
+    let response = null;
+    try { response = existing.response_json ? JSON.parse(existing.response_json) : null; } catch {}
+    return { key, existing:response };
+  }
+  if (existing?.status === "processing") {
+    throw new Error(`Operation ${key} is already being processed. Please retry after sync status is confirmed.`);
+  }
+  const inserted = await db.prepare(`
+    INSERT OR IGNORE INTO offline_operations(operation_id,path,status,created_at)
+    VALUES(?,?, 'processing', CURRENT_TIMESTAMP)
+  `).bind(key,path).run();
+  const changes = Number(inserted.meta?.changes ?? inserted.changes ?? 0);
+  if(changes !== 1){
+    throw new Error(`Operation ${key} is already being processed. Please retry after sync status is confirmed.`);
+  }
+  return { key, existing:null };
+}
+async function finishOfflineOperation(db, operationId, response) {
+  const key = clean(operationId);
+  if (!key) return;
+  await db.prepare(`
+    UPDATE offline_operations
+    SET status='completed', response_json=?, completed_at=CURRENT_TIMESTAMP
+    WHERE operation_id=?
+  `).bind(JSON.stringify(response || {}), key).run();
+}
+
 async function claimCheckoutRequest(db, requestKey, orderNumber) {
   const key = clean(requestKey);
   if (!key) return { claimed: true, existing: null };
@@ -1606,17 +1690,23 @@ var worker_default = {
       if (path === "/api/tables/clear" && method === "POST") {
         await ensureSupportTables(db);
         const body = await request.json();
+        const op = await beginOfflineOperation(db, body.operation_id || body.operationId, path);
+        if (op.existing) return json(op.existing);
         const tableNumber = clean(body.table_number || body.tableNumber);
         const existing = await db.prepare(`SELECT current_items FROM restaurant_tables WHERE CAST(table_number AS TEXT)=? LIMIT 1`).bind(tableNumber).first();
         let previousItems=[];
         try { const parsed=JSON.parse(existing?.current_items||'[]'); if(Array.isArray(parsed)) previousItems=parsed; } catch {}
         await releaseStockForItems(db, previousItems, `Table ${tableNumber} cleared`);
         await updateTable(db, tableNumber, "available", null, null);
-        return json({success:true});
+        const response={success:true};
+        await finishOfflineOperation(db, op.key, response);
+        return json(response);
       }
       if (path === "/api/tables/sync-bag" && method === "POST") {
         await ensureSupportTables(db);
         const body = await request.json();
+        const op = await beginOfflineOperation(db, body.operation_id || body.operationId, path);
+        if (op.existing) return json(op.existing);
         const tableNumber = clean(body.table_number || body.tableNumber);
         const items = Array.isArray(body.items) ? body.items : [];
         if (!tableNumber || !/^\d+$/.test(tableNumber)) {
@@ -1628,11 +1718,15 @@ var worker_default = {
         try { const parsed = JSON.parse(existingTable?.current_items || '[]'); if (Array.isArray(parsed)) previousItems = parsed; } catch {}
         await syncStockReservation(db, previousItems, items, `Table ${tableNumber} bag changed`);
         await updateTable(db, tableNumber, items.length ? "occupied" : "available", items.length ? preservedOrderId : null, JSON.stringify(items));
-        return json({success:true,table_number:tableNumber,status:items.length?"occupied":"available",current_order_id:items.length?preservedOrderId:null,items});
+        const response={success:true,table_number:tableNumber,status:items.length?"occupied":"available",current_order_id:items.length?preservedOrderId:null,items};
+        await finishOfflineOperation(db, op.key, response);
+        return json(response);
       }
       if (path === "/api/stock/sync-bag" && method === "POST") {
         await ensureSupportTables(db);
         const body = await request.json();
+        const op = await beginOfflineOperation(db, body.operation_id || body.operationId, path);
+        if (op.existing) return json(op.existing);
         const key = clean(body.reservation_key || body.reservationKey);
         const items = Array.isArray(body.items) ? body.items : [];
         if (!key) return json({success:false,error:"Reservation key is required"},400);
@@ -1645,7 +1739,9 @@ var worker_default = {
         } else {
           await db.prepare(`DELETE FROM active_bag_reservations WHERE reservation_key=?`).bind(key).run();
         }
-        return json({success:true,reservation_key:key,items});
+        const response={success:true,reservation_key:key,items};
+        await finishOfflineOperation(db, op.key, response);
+        return json(response);
       }
       if (path === "/api/orders" && method === "GET") {
         const limit = url.searchParams.get(
@@ -1915,6 +2011,16 @@ var worker_default = {
         const sr = await db.prepare(`SELECT COALESCE(SUM(CAST(total AS REAL)),0) AS total, COUNT(*) AS cnt FROM orders WHERE ${salesWhere} AND LOWER(COALESCE(order_status,'')) NOT IN ('cancelled','deleted','deletion_pending')`).bind(...salesBind).first();
         const expenseWhere = from ? `date(substr(COALESCE(expense_date,created_at,''),1,10)) >= date(?) AND date(substr(COALESCE(expense_date,created_at,''),1,10)) <= date(?)` : `date(substr(COALESCE(expense_date,created_at,''),1,10)) <= date(?)`;
         const er = await db.prepare(`SELECT COALESCE(SUM(CAST(amount AS REAL)),0) AS total FROM expenses WHERE ${expenseWhere}`).bind(...salesBind).first();
+        const advanceWhere = from ? `date(entry_date) >= date(?) AND date(entry_date) <= date(?)` : `date(entry_date) <= date(?)`;
+        const ar = await db.prepare(`
+          SELECT COALESCE(SUM(
+            CASE WHEN LOWER(COALESCE(entry_type,'given')) IN ('returned','adjusted')
+                 THEN -CAST(amount AS REAL) ELSE CAST(amount AS REAL) END
+          ),0) AS total
+          FROM staff_advances
+          WHERE ${advanceWhere}
+        `).bind(...salesBind).first();
+        const settlementExpensesTotal = num(er?.total) + num(ar?.total);
         // Safety order: FIRST create a complete Google Sheet backup, ONLY THEN delete settled D1 data.
         // If backup fails, nothing is deleted.
         let backupResult;
@@ -1924,7 +2030,7 @@ var worker_default = {
           return json({success:false, error:`Settlement stopped: Google Sheet backup failed. No D1 data was deleted. ${backupError?.message||backupError}`}, 502);
         }
 
-        const result = await db.prepare(`INSERT INTO pnl_settlements(from_date,till_date,sales_total,expenses_total,order_count,settled_by,note) VALUES(?,?,?,?,?,?,?)`).bind(from,till,sr?.total||0,er?.total||0,sr?.cnt||0,clean(body.settled_by)||"Admin",clean(body.note)||null).run();
+        const result = await db.prepare(`INSERT INTO pnl_settlements(from_date,till_date,sales_total,expenses_total,order_count,settled_by,note) VALUES(?,?,?,?,?,?,?)`).bind(from,till,sr?.total||0,settlementExpensesTotal,sr?.cnt||0,clean(body.settled_by)||"Admin",clean(body.note)||null).run();
 
         // Delete only the settled period's sales and expenses after confirmed backup.
         const settledOrderRows = await db.prepare(`SELECT id FROM orders WHERE ${salesWhere} AND LOWER(COALESCE(order_status,'')) NOT IN ('cancelled','deleted','deletion_pending')`).bind(...salesBind).all();
@@ -1944,8 +2050,11 @@ var worker_default = {
         const expenseRows = await db.prepare(`SELECT id FROM expenses WHERE ${expenseWhere}`).bind(...salesBind).all();
         const deletedExpenseCount = (expenseRows.results||[]).length;
         await db.prepare(`DELETE FROM expenses WHERE ${expenseWhere}`).bind(...salesBind).run();
+        const advanceRows = await db.prepare(`SELECT id FROM staff_advances WHERE ${advanceWhere}`).bind(...salesBind).all();
+        const deletedAdvanceCount = (advanceRows.results||[]).length;
+        await db.prepare(`DELETE FROM staff_advances WHERE ${advanceWhere}`).bind(...salesBind).run();
 
-        return json({success:true,id:result.meta?.last_row_id||null,from_date:from,till_date:till,sales_total:sr?.total||0,expenses_total:er?.total||0,profit_loss:(sr?.total||0)-(er?.total||0),order_count:sr?.cnt||0,backup_id:backupResult.backup_id,deleted_orders:settledOrderIds.length,deleted_expenses:deletedExpenseCount});
+        return json({success:true,id:result.meta?.last_row_id||null,from_date:from,till_date:till,sales_total:sr?.total||0,expenses_total:settlementExpensesTotal,profit_loss:num(sr?.total||0)-settlementExpensesTotal,order_count:sr?.cnt||0,backup_id:backupResult.backup_id,deleted_orders:settledOrderIds.length,deleted_expenses:deletedExpenseCount,deleted_advances:deletedAdvanceCount});
       }
       if (path === "/api/expenses" && method === "GET") {
         const limit = Math.min(
@@ -1973,6 +2082,8 @@ var worker_default = {
           db
         );
         const body = await request.json();
+        const op = await beginOfflineOperation(db, body.operation_id || body.operationId, path);
+        if (op.existing) return json(op.existing);
         const cols = await getColumns(
           db,
           "expenses"
@@ -2037,16 +2148,20 @@ var worker_default = {
         const dupAmount = num(body.amount);
         const dupDescription = clean(body.description) || "";
         const duplicate = await db.prepare(`SELECT id FROM expenses WHERE COALESCE(expense_date,'')=COALESCE(?, '') AND lower(COALESCE(category,''))=lower(?) AND CAST(amount AS REAL)=? AND lower(COALESCE(description,''))=lower(?) LIMIT 1`).bind(dupDate, dupCategory, dupAmount, dupDescription).first();
-        if (duplicate) return json({success:true, duplicate:true, id:duplicate.id, message:"Duplicate expense skipped"});
+        if (duplicate) {
+          const response={success:true, duplicate:true, id:duplicate.id, message:"Duplicate expense skipped"};
+          await finishOfflineOperation(db, op.key, response);
+          return json(response);
+        }
         await db.prepare(`
           INSERT INTO expenses
           (${fields.join(",")})
           VALUES
           (${fields.map(() => "?").join(",")})
         `).bind(...values).run();
-        return json({
-          success: true
-        });
+        const response={success:true};
+        await finishOfflineOperation(db, op.key, response);
+        return json(response);
       }
       if (path === "/api/stock" && method === "GET") {
         return json({
@@ -2096,6 +2211,8 @@ var worker_default = {
           db
         );
         const body = await request.json();
+        const op = await beginOfflineOperation(db, body.operation_id || body.operationId, path);
+        if (op.existing) return json(op.existing);
         const name = clean(
           body.name || body.item
         );
@@ -2200,18 +2317,37 @@ var worker_default = {
           note,
           updatedBy
         ).run();
-        return json({
+        const response = {
           success: true,
           id: current?.id || null,
           old_quantity: oldQty,
           new_quantity: qty,
           updated_at: current?.updated_at || null
-        });
+        };
+        await finishOfflineOperation(db, op.key, response);
+        return json(response);
       }
       if (path === "/api/staff/advances" && method === "GET") {
         await ensureSupportTables(db);
         const rows = await db.prepare(`SELECT * FROM staff_advances ORDER BY entry_date DESC, id DESC LIMIT 1000`).all();
         return json({success:true, advances:rows.results||[]});
+      }
+      if (path === "/api/staff/advances" && (method === "PUT" || method === "PATCH")) {
+        await ensureSupportTables(db);
+        const body=await request.json();
+        const id=Number(body.id);
+        if(!Number.isInteger(id)||id<=0) return json({success:false,error:'Valid advance id required'},400);
+        const existing=await db.prepare(`SELECT * FROM staff_advances WHERE id=? LIMIT 1`).bind(id).first();
+        if(!existing) return json({success:false,error:'Salary advance entry not found'},404);
+        const amount=body.amount===undefined?Number(existing.amount):num(body.amount);
+        if(!Number.isFinite(amount)||amount<=0) return json({success:false,error:'Positive amount required'},400);
+        const type=clean(body.entry_type||body.type)||existing.entry_type||'given';
+        const date=clean(body.entry_date||body.date)||existing.entry_date||todayIST();
+        const staffName=clean(body.staff_name||body.staffName)||existing.staff_name;
+        const note=body.note===undefined?existing.note:clean(body.note);
+        await db.prepare(`UPDATE staff_advances SET staff_id=?,staff_name=?,amount=?,entry_type=?,entry_date=?,note=? WHERE id=?`)
+          .bind(body.staff_id===undefined?existing.staff_id:(body.staff_id?num(body.staff_id):null),staffName,amount,type,date,note,id).run();
+        return json({success:true,id,updated:true});
       }
       if (path === "/api/staff/advances" && method === "POST") {
         await ensureSupportTables(db);
