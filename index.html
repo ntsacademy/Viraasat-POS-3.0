@@ -4501,6 +4501,10 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
             showCustomConfirm(`Are you sure you want to clear ${activeTableNumber}?`, async()=>{
                 try{
                     clearTimeout(bagSyncTimer);
+                    // Wait for any already-running bag sync to finish before clearing.
+                    // Otherwise an older request can reach D1 after /tables/clear and
+                    // reserve the stock again.
+                    try{ await bagSyncPromise; }catch(_){}
                     ++bagSyncRequest;
                     const tableNumber=activeTableNumber.replace(/^Table\s+/,'');
                     const before=cloneBag(currentBill);
@@ -4558,10 +4562,15 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
                 runningTableDiscounts[activeTableNumber]=enteredDiscount;
                 const ctx=orderContext();
                 const orderNumber='KOT-'+Date.now();
-                const preparedItems=await prepareOrderItems(); const data=await d1Post('/orders',{order_number:orderNumber,...ctx,items:preparedItems,items_string:preparedItems.map(i=>`${i.name} (x${i.qty}) ₹${i.total}`).join(', '),subtotal,discount:0,grand_total:subtotal,total:subtotal,payment_method:'Cash',payment_status:'unpaid',order_status:'cancelled'});
-                runningTables[activeTableNumber]=preparedItems;
-                // Occupy/reserve only after an explicit successful Save KOT.
+                const preparedItems=await prepareOrderItems();
+
+                // Save KOT must reserve/deduct stock before the order writes the
+                // table's current_items. Otherwise /orders would make the bag look
+                // already synced and /sync-bag would see zero delta.
                 await syncCurrentBagNow();
+
+                await d1Post('/orders',{order_number:orderNumber,...ctx,items:preparedItems,items_string:preparedItems.map(i=>`${i.name} (x${i.qty}) ₹${i.total}`).join(', '),subtotal,discount:0,grand_total:subtotal,total:subtotal,payment_method:'Cash',payment_status:'unpaid',order_status:'cancelled'});
+                runningTables[activeTableNumber]=preparedItems;
                 await refreshDashboardAfterActivity();
                 auditLog('KOT Saved', orderNumber);
                 btn.innerText='Save KOT'; btn.disabled=false; goBackToTables();
