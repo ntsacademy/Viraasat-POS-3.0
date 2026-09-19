@@ -1801,6 +1801,10 @@
                 <div class="section-header" style="margin-top:0;"><h4>Other Expenses</h4></div>
                 <div id="expenseBreakdownList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
             </div>
+            <div class="card">
+                <div class="section-header" style="margin-top:0;"><h4>Stock Loss Breakdown</h4></div>
+                <div id="stockLossList" style="display:flex; flex-direction:column; gap:10px; font-size:0.9rem;"></div>
+            </div>
         </div>
 
         <!-- STOCK MANAGEMENT VIEW -->
@@ -1824,7 +1828,7 @@
                     <div class="input-box"><label>Note (Optional)</label><input type="text" id="expDescription" placeholder="Add details"></div>
                     <div class="input-box"><label>Receipt / Expense Image</label><input type="file" id="expReceipt" accept="image/*" capture="environment" onchange="previewExpenseReceipt(this)"><div id="expReceiptPreview" style="display:none;margin-top:8px;"></div></div>
                 </div>
-                <button class="btn" onclick="submitExpense()">Save Expense</button>
+                <button class="btn" onclick="submitExpense(this)">Save Expense</button>
             </div>
             <div class="card" style="margin-top:14px;">
                 <div class="section-header" style="margin-top:0;"><h4>Expense History</h4><div style="display:flex;align-items:center;gap:8px"><span id="expenseListCount">0 entries</span><button class="premium-btn light" onclick="exportExpenses()">Export</button></div></div>
@@ -1955,7 +1959,7 @@
         const D1_API_BASE = '/api';
         const API_TIMEOUT_MS = 30000;
         
-const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0"; 
+const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-8.2-LOSS-PNL-LOADER"; 
         
         const ADMIN_NUMBERS = ['7611010105', '8947831562', '7230091644'];
 
@@ -2318,18 +2322,24 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
             });
         }
 
-        function addStaffUI() {
-            let name = document.getElementById('newStaffName').value.trim(); let mobile = document.getElementById('newStaffMobile').value.trim(); let role = document.getElementById('newStaffRole').value; let salary = parseInt(document.getElementById('newStaffSalary').value); let joinDate = document.getElementById('newStaffDate').value; 
-            if(!name || mobile.length < 10 || isNaN(salary)) { showCustomAlert("Please fill all details correctly."); return; }
-            d1Post('/staff', { name: name, mobile: mobile, role: role, salary: salary, join_date: joinDate })
-            .then(data => {
-                showCustomAlert(`${name} added successfully! Emp ID: ${data.id || '—'}`);
-                document.getElementById('newStaffName').value = ""; document.getElementById('newStaffMobile').value = ""; document.getElementById('newStaffSalary').value = ""; document.getElementById('newStaffDate').value = ""; fetchData(); 
-            });
+        async function addStaffUI(button) {
+            const name=document.getElementById('newStaffName').value.trim(), mobile=document.getElementById('newStaffMobile').value.trim(), role=document.getElementById('newStaffRole').value, salary=parseInt(document.getElementById('newStaffSalary').value), joinDate=document.getElementById('newStaffDate').value;
+            if(!name||mobile.length<10||isNaN(salary)){showCustomAlert('Please fill all details correctly.');return;}
+            return withActionLock(button,'Saving employee...',async()=>{try{const data=await d1Post('/staff',{name,mobile,role,salary,join_date:joinDate});showCustomAlert(`${name} added successfully! Emp ID: ${data.id||'—'}`);document.getElementById('newStaffName').value='';document.getElementById('newStaffMobile').value='';document.getElementById('newStaffSalary').value='';document.getElementById('newStaffDate').value='';await fetchData();}catch(e){showCustomAlert('Employee save failed: '+(e?.message||e));throw e;}});
         }
 
         function calculateStaffBalance(){const empId=document.getElementById('payStaffSelect')?.value,infoDiv=document.getElementById('staffBalanceInfo');if(!infoDiv)return;if(!empId){infoDiv.innerHTML='';return;}const staff=staffData.find(s=>staffIdOf(s)===String(empId));if(!staff){infoDiv.innerHTML='';return;}const p=staffPayrollSummary(staff,payrollPeriodBounds());infoDiv.innerHTML=`<b>Salary:</b> ${money(p.salary)} &nbsp; | &nbsp; <b>Salary Paid:</b> ${money(p.salaryPaid)} &nbsp; <b>Advance:</b> ${money(p.advance)} &nbsp; <b>Total Taken:</b> ${money(p.totalReceived)}<br><b style="font-size:1.05rem;color:var(--success)">Balance:</b> ${money(p.balance)}`;}
-        async function submitStaffPayout(){const empId=document.getElementById('payStaffSelect')?.value,amount=Number(document.getElementById('payStaffAmount')?.value),type=document.getElementById('payStaffType')?.value||'Advance';if(!empId||!Number.isFinite(amount)||amount<=0){showCustomAlert('Please select staff and enter valid amount.');return;}const staff=staffData.find(s=>staffIdOf(s)===String(empId));if(!staff){showCustomAlert('Employee not found.');return;}const sName=getVal(staff,['name'])||'Staff',sPhone=getVal(staff,['mobile','phone'])||'',period=payrollPeriodBounds(),summary=staffPayrollSummary(staff,period);if(amount>summary.balance){showCustomAlert(`Amount exceeds current balance. Remaining balance: ${money(summary.balance)}`);return;}const fDate=localISODate(new Date());try{if(type==='Advance'){await d1Post('/staff/advances',{staff_id:Number(empId)||null,staff_name:sName,amount,entry_type:'given',entry_date:fDate,note:`Payroll advance for ${period.start} to ${period.end}`,created_by:localStorage.getItem('viraasat_user')||'Admin'});}else{const desc=`[${empId}] ${sName} - Salary Clearance`;await d1Post('/expenses',{category:'Staff Salary',amount,description:desc,expense_date:fDate});expenseHistory.push({date:fDate,isodate:fDate,category:'Staff Salary',amount,description:desc});}await refreshStaffAdvanceData();calculateStaffBalance();renderEmployeePayrollTable();if(typeof generateTrends==='function')generateTrends();document.getElementById('payStaffAmount').value='';document.getElementById('salaryActionButtons').innerHTML=`<button class="btn" onclick="printSalarySlip('${esc(sName)}','${esc(empId)}','${amount}','${esc(type)}');document.getElementById('salaryActionModal').style.display='none';">🖨️ Print Slip</button><button class="btn" style="background:#10B981;" onclick="sendWASalarySlip('${esc(sName)}','${esc(empId)}','${amount}','${esc(type)}','${esc(sPhone)}');document.getElementById('salaryActionModal').style.display='none';">📱 WhatsApp Slip</button><button class="btn btn-outline" onclick="document.getElementById('salaryActionModal').style.display='none';">Close</button>`;document.getElementById('salaryActionModal').style.display='flex';}catch(e){showCustomAlert(`${type} save failed: `+(e?.message||e));}}
+        async function submitStaffPayout(button){
+            const empId=document.getElementById('payStaffSelect')?.value,amount=Number(document.getElementById('payStaffAmount')?.value),type=document.getElementById('payStaffType')?.value||'Advance';
+            if(!empId||!Number.isFinite(amount)||amount<=0){showCustomAlert('Please select staff and enter valid amount.');return;}
+            const staff=staffData.find(s=>staffIdOf(s)===String(empId));if(!staff){showCustomAlert('Employee not found.');return;}
+            const sName=getVal(staff,['name'])||'Staff',sPhone=getVal(staff,['mobile','phone'])||'',period=payrollPeriodBounds(),summary=staffPayrollSummary(staff,period);if(amount>summary.balance){showCustomAlert(`Amount exceeds current balance. Remaining balance: ${money(summary.balance)}`);return;}
+            return withActionLock(button,type==='Advance'?'Saving advance...':'Recording salary...',async()=>{try{
+                const fDate=localISODate(new Date());
+                if(type==='Advance'){await d1Post('/staff/advances',{staff_id:Number(empId)||null,staff_name:sName,amount,entry_type:'given',entry_date:fDate,note:`Payroll advance for ${period.start} to ${period.end}`,created_by:localStorage.getItem('viraasat_user')||'Admin'});}else{const desc=`[${empId}] ${sName} - Salary Clearance`;await d1Post('/expenses',{category:'Staff Salary',amount,description:desc,expense_date:fDate});expenseHistory.push({date:fDate,isodate:fDate,category:'Staff Salary',amount,description:desc});}
+                await refreshStaffAdvanceData();calculateStaffBalance();renderEmployeePayrollTable();if(typeof generateTrends==='function')generateTrends();document.getElementById('payStaffAmount').value='';document.getElementById('salaryActionButtons').innerHTML=`<button class="btn" onclick="printSalarySlip('${esc(sName)}','${esc(empId)}','${amount}','${esc(type)}');document.getElementById('salaryActionModal').style.display='none';">🖨️ Print Slip</button><button class="btn" style="background:#10B981;" onclick="sendWASalarySlip('${esc(sName)}','${esc(empId)}','${amount}','${esc(type)}','${esc(sPhone)}');document.getElementById('salaryActionModal').style.display='none';">📱 WhatsApp Slip</button><button class="btn btn-outline" onclick="document.getElementById('salaryActionModal').style.display='none';">Close</button>`;document.getElementById('salaryActionModal').style.display='flex';
+            }catch(e){showCustomAlert(`${type} save failed: `+(e?.message||e));throw e;}});
+        }
 
         function printSalarySlip(sName, empId, amount, type) {
             let printSec = document.getElementById('printSection'); let d = new Date(); let dStr = d.toLocaleDateString('en-IN') + ' ' + d.toLocaleTimeString('en-IN');
@@ -2454,6 +2464,25 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
         }
         window.addEventListener('online',()=>{ setTimeout(flushOfflineMutationQueue,150); });
         setInterval(()=>{ if(navigator.onLine!==false) flushOfflineMutationQueue(); },30000);
+
+        /* V8.2 ACTION SAFETY LOADER — visual-only overlay; existing layout/CSS remains untouched. */
+        function ensureActionLoader(){
+            let el=document.getElementById('viraasatActionLoader');
+            if(el)return el;
+            el=document.createElement('div'); el.id='viraasatActionLoader';
+            el.innerHTML='<div style="width:58px;height:58px;border-radius:50%;border:4px solid rgba(255,255,255,.28);border-top-color:#fff;animation:viraasatSpin .8s linear infinite;box-shadow:0 8px 30px rgba(0,0,0,.28)"></div><div id="viraasatActionLoaderText" style="font-weight:800;font-size:14px;letter-spacing:.2px">Updating...</div>';
+            Object.assign(el.style,{position:'fixed',inset:'0',zIndex:'2147483647',display:'none',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:'14px',background:'rgba(20,16,12,.58)',backdropFilter:'blur(3px)',color:'#fff',fontFamily:'inherit',pointerEvents:'all'});
+            const st=document.createElement('style'); st.id='viraasatActionLoaderStyle'; st.textContent='@keyframes viraasatSpin{to{transform:rotate(360deg)}}'; document.head.appendChild(st); document.body.appendChild(el); return el;
+        }
+        function showActionLoading(text='Updating...'){const el=ensureActionLoader();const t=document.getElementById('viraasatActionLoaderText');if(t)t.textContent=text;el.style.display='flex';}
+        function hideActionLoading(){const el=document.getElementById('viraasatActionLoader');if(el)el.style.display='none';}
+        async function withActionLock(button,text,fn){
+            if(button?.dataset?.actionBusy==='1')return;
+            if(button) { button.dataset.actionBusy='1'; button.disabled=true; button.dataset.originalText=button.innerText||''; }
+            showActionLoading(text);
+            try{return await fn();}
+            finally{hideActionLoading();if(button){button.disabled=false;button.dataset.actionBusy='0';if(button.dataset.originalText)button.innerText=button.dataset.originalText;}}
+        }
 
         async function d1Get(path, timeoutMs = API_TIMEOUT_MS) {
             if(navigator.onLine===false){
@@ -2970,7 +2999,7 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
         async function refreshStaffAdvanceData(){try{const r=await d1Get('/staff/advances');staffAdvanceData=Array.isArray(r?.advances)?r.advances:[];}catch(e){staffAdvanceData=[];}}
         async function renderEmployeeManagement(){
             const panel=document.getElementById('employeeManagementPanel');if(!panel)return;const period=payrollPeriodBounds();
-            panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Employee Management</h3><span>${activeStaffCount()} active • ${staffData.length} total</span></div><div class="premium-toolbar compact-toolbar"><input id="employeeSearch" placeholder="Search employee..." oninput="renderEmployeePayrollTable()"><button class="premium-btn" onclick="document.getElementById('newStaffName').focus()">Add Employee</button><button class="premium-btn light" onclick="exportStaff()">Export</button></div><div class="admin-form-grid"><input id="newStaffName" placeholder="Full name"><input id="newStaffMobile" inputmode="numeric" placeholder="Mobile"><select id="newStaffRole"><option>Manager</option><option>Chef</option><option>Cashier</option><option>Waiter</option><option>Cleaner</option><option>Helper</option></select><input id="newStaffSalary" type="number" inputmode="numeric" min="0" placeholder="Monthly salary"><input id="newStaffDate" type="date"><button class="premium-btn" onclick="addStaffUI()">Register Employee</button></div></div><div class="premium-card"><div class="premium-card-head"><h3>Staff Payroll &amp; Advance</h3><span>Cycle: ${cleanDisplayDate(period.start)} – ${cleanDisplayDate(period.end)}</span></div><div class="admin-form-grid"><select id="payStaffSelect" onchange="calculateStaffBalance()"><option value="">Select Employee</option></select><input id="payStaffAmount" type="number" min="1" step="1" placeholder="Amount (₹)" inputmode="numeric"><select id="payStaffType"><option value="Advance">Advance</option><option value="Salary Clearance">Salary Clearance</option></select><button class="premium-btn" onclick="submitStaffPayout()">Pay &amp; Record</button></div><div id="staffBalanceInfo" class="admin-help" style="margin-top:10px;"></div></div><div class="premium-card"><div class="premium-card-head"><h3>Employee Salary Summary</h3><span>Current 10-to-10 cycle</span></div><div id="employeePayrollRows"></div></div>`;
+            panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Employee Management</h3><span>${activeStaffCount()} active • ${staffData.length} total</span></div><div class="premium-toolbar compact-toolbar"><input id="employeeSearch" placeholder="Search employee..." oninput="renderEmployeePayrollTable()"><button class="premium-btn" onclick="document.getElementById('newStaffName').focus()">Add Employee</button><button class="premium-btn light" onclick="exportStaff()">Export</button></div><div class="admin-form-grid"><input id="newStaffName" placeholder="Full name"><input id="newStaffMobile" inputmode="numeric" placeholder="Mobile"><select id="newStaffRole"><option>Manager</option><option>Chef</option><option>Cashier</option><option>Waiter</option><option>Cleaner</option><option>Helper</option></select><input id="newStaffSalary" type="number" inputmode="numeric" min="0" placeholder="Monthly salary"><input id="newStaffDate" type="date"><button class="premium-btn" onclick="addStaffUI(this)">Register Employee</button></div></div><div class="premium-card"><div class="premium-card-head"><h3>Staff Payroll &amp; Advance</h3><span>Cycle: ${cleanDisplayDate(period.start)} – ${cleanDisplayDate(period.end)}</span></div><div class="admin-form-grid"><select id="payStaffSelect" onchange="calculateStaffBalance()"><option value="">Select Employee</option></select><input id="payStaffAmount" type="number" min="1" step="1" placeholder="Amount (₹)" inputmode="numeric"><select id="payStaffType"><option value="Advance">Advance</option><option value="Salary Clearance">Salary Clearance</option></select><button class="premium-btn" onclick="submitStaffPayout(this)">Pay &amp; Record</button></div><div id="staffBalanceInfo" class="admin-help" style="margin-top:10px;"></div></div><div class="premium-card"><div class="premium-card-head"><h3>Employee Salary Summary</h3><span>Current 10-to-10 cycle</span></div><div id="employeePayrollRows"></div></div>`;
             populateStaffDropdown();await refreshStaffAdvanceData();renderEmployeePayrollTable();
         }
         function renderEmployeePayrollTable(){
@@ -2984,7 +3013,7 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
         function renderStockManagement(){
             const panel=document.getElementById('stockManagementPanel');if(!panel)return;
             if(!window.isUserAdmin){panel.innerHTML='<div class="premium-card"><div class="premium-empty">Stock Management is restricted to Admin.</div></div>';return;}
-            panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Stock Management</h3><span>${Object.keys(stockData).length} items • Admin only</span></div><div class="admin-form-grid"><select id="adminStockSelect" onchange="loadAdminStockSelect(this.value)">${stockOptionHtml()}</select><input id="adminStockSearch" placeholder="Select existing item or enter NEW item name" oninput="syncAdminStockSearch(this.value)"><input id="adminStockQty" type="number" min="0" inputmode="decimal" placeholder="Quantity to Add / Opening Quantity"><input id="adminStockUnit" placeholder="Unit (pcs/bottle/can/quarter)" value="pcs"><input id="adminStockPurchaseRate" type="number" min="0" step="0.01" placeholder="Purchase Rate"><input id="adminStockLow" type="number" min="0" inputmode="decimal" placeholder="Low Stock Alert Level" value="5"><button class="premium-btn" onclick="adminUpdateStockUnified()">Add Stock</button><button class="premium-btn danger" onclick="recordStockLoss()">Record Loss</button><button class="premium-btn light" onclick="startNewStockItem()">Add New Item</button></div><div id="newStockConfigBox" style="display:none;margin-top:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface)"><b>New Stock Item Configuration</b><div class="admin-form-grid" style="margin-top:10px"><select id="newStockCategory"><option value="Beers">Beers</option><option value="Cigarettes">Cigarettes</option><option value="Beverages">Beverages</option></select><input id="newStockSellingPrice" type="number" min="0" step="0.01" placeholder="Selling Price *"><input id="newStockPurchaseRate" type="number" min="0" step="0.01" placeholder="Purchase Rate *"><input id="newStockGST" type="number" min="0" step="0.01" placeholder="GST %" value="0"></div><div class="admin-help" style="margin-top:8px">New item will be created once in Menu + Stock. Price/GST will be used by billing; quantity/unit/low-stock will be stored in Stock.</div></div><div class="admin-help">Existing item: select it and enter only the additional quantity. New item: click <b>Add New Item</b>, enter name, category, selling price, GST, unit, opening quantity and low-stock level.</div><div id="adminStockMiniList" class="admin-mini-list"></div></div>`;renderAdminStockRows();
+            panel.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Stock Management</h3><span>${Object.keys(stockData).length} items • Admin only</span></div><div class="admin-form-grid"><select id="adminStockSelect" onchange="loadAdminStockSelect(this.value)">${stockOptionHtml()}</select><input id="adminStockSearch" placeholder="Select existing item or enter NEW item name" oninput="syncAdminStockSearch(this.value)"><input id="adminStockQty" type="number" min="0" inputmode="decimal" placeholder="Quantity to Add / Opening Quantity"><input id="adminStockUnit" placeholder="Unit (pcs/bottle/can/quarter)" value="pcs"><input id="adminStockPurchaseRate" type="number" min="0" step="0.01" placeholder="Purchase Rate"><input id="adminStockLow" type="number" min="0" inputmode="decimal" placeholder="Low Stock Alert Level" value="5"><button class="premium-btn" onclick="adminUpdateStockUnified(this)">Add Stock</button><button class="premium-btn danger" onclick="recordStockLoss(this)">Record Loss</button><button class="premium-btn light" onclick="startNewStockItem()">Add New Item</button></div><div id="newStockConfigBox" style="display:none;margin-top:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface)"><b>New Stock Item Configuration</b><div class="admin-form-grid" style="margin-top:10px"><select id="newStockCategory"><option value="Beers">Beers</option><option value="Cigarettes">Cigarettes</option><option value="Beverages">Beverages</option></select><input id="newStockSellingPrice" type="number" min="0" step="0.01" placeholder="Selling Price *"><input id="newStockPurchaseRate" type="number" min="0" step="0.01" placeholder="Purchase Rate *"><input id="newStockGST" type="number" min="0" step="0.01" placeholder="GST %" value="0"></div><div class="admin-help" style="margin-top:8px">New item will be created once in Menu + Stock. Price/GST will be used by billing; quantity/unit/low-stock will be stored in Stock.</div></div><div class="admin-help">Existing item: select it and enter only the additional quantity. New item: click <b>Add New Item</b>, enter name, category, selling price, GST, unit, opening quantity and low-stock level.</div><div id="adminStockMiniList" class="admin-mini-list"></div></div>`;renderAdminStockRows();
         }
 
         function renderPremiumDashboard(){
@@ -3334,7 +3363,8 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
         function exportExpenses(){downloadCSV(expenseHistory.map(e=>({Date:getVal(e,['date','isodate']),Category:getVal(e,['category']),Description:getVal(e,['description','note']),Amount:parseAmount(getVal(e,['amount','total']))})),'Viraasat-Expenses.csv');}
 
         async function loadPnlSettlements(){try{const r=await d1Get('/pnl/settlements');return r.settlements||[];}catch(e){return [];}}
-        async function settlePnlTillDate(){if(!requireAdmin('P&L settlement'))return;const till=document.getElementById('pnlTillDate')?.value||localISODate(new Date());if(!confirm(`Settle P&L till ${till}? This will close this period in the dashboard.`))return;try{const r=await d1Post('/pnl/settle',{till_date:till,settled_by:localStorage.getItem('viraasat_user')||'Admin'});await refreshPnlSettlementCache(); showCustomAlert(`P&L settled till ${till}. Sales ₹${Number(r.sales_total||0).toLocaleString('en-IN')} | Expenses ₹${Number(r.expenses_total||0).toLocaleString('en-IN')}`);generateTrends();renderPremiumReports();renderPnlSettlementPanel();}catch(e){showCustomAlert('P&L settlement failed: '+(e?.message||e));}}
+        async function settlePnlTillDate(button){if(!requireAdmin('P&L settlement'))return;const till=document.getElementById('pnlTillDate')?.value||localISODate(new Date());if(!confirm(`Settle P&L till ${till}? This will close this period in the dashboard.`))return;return withActionLock(button,'Settling P&L...',async()=>{try{const r=await d1Post('/pnl/settle',{till_date:till,settled_by:localStorage.getItem('viraasat_user')||'Admin'});await refreshPnlSettlementCache();showCustomAlert(`P&L settled till ${till}. Sales ₹${Number(r.sales_total||0).toLocaleString('en-IN')} | Expenses ₹${Number(r.expenses_total||0).toLocaleString('en-IN')} | Loss ₹${Number(r.loss_total||0).toLocaleString('en-IN')}`);generateTrends();renderPremiumReports();renderPnlSettlementPanel();}catch(e){showCustomAlert('P&L settlement failed: '+(e?.message||e));throw e;}});}
+
         async function renderPnlSettlementPanel(){
             const host=document.getElementById('pnlSettlementHost'); if(!host)return;
             await refreshPnlSettlementCache();
@@ -3343,10 +3373,10 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
             const from=last?new Date(new Date(last+'T00:00:00Z').getTime()+86400000).toISOString().slice(0,10):'Start';
             host.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>P&L Settlement</h3><span>Current dashboard shows only unsettled data</span></div>
             <div class="admin-help"><b>Current open period:</b> ${esc(from)} → Today. Settled data is excluded from the main KPIs and remains available below in history.</div>
-            <div class="admin-form-grid"><input id="pnlTillDate" type="date" value="${localISODate(new Date())}" max="${localISODate(new Date())}"><button class="premium-btn" onclick="settlePnlTillDate()">Settle Till Date</button></div>
-            <div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>From</th><th>Till</th><th>Sales</th><th>Expenses</th><th>P/L</th><th>Settled On</th><th>Details</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.from_date||'Start')}</td><td>${esc(x.till_date||'')}</td><td>${money(x.sales_total)}</td><td>${money(x.expenses_total)}</td><td><b>${money(Number(x.sales_total||0)-Number(x.expenses_total||0))}</b></td><td>${esc(x.created_at||'')}</td><td><button class="premium-btn light" onclick="viewSettlementDetails(${Number(x.id)||0})">View</button></td></tr>`).join('')||'<tr><td colspan="7">No settlements yet.</td></tr>'}</tbody></table></div></div>`;
+            <div class="admin-form-grid"><input id="pnlTillDate" type="date" value="${localISODate(new Date())}" max="${localISODate(new Date())}"><button class="premium-btn" onclick="settlePnlTillDate(this)">Settle Till Date</button></div>
+            <div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>From</th><th>Till</th><th>Sales</th><th>Expenses</th><th>Loss</th><th>P/L</th><th>Settled On</th><th>Details</th></tr></thead><tbody>${rows.map(x=>`<tr><td>${esc(x.from_date||'Start')}</td><td>${esc(x.till_date||'')}</td><td>${money(x.sales_total)}</td><td>${money(x.expenses_total)}</td><td>${money(x.loss_total||0)}</td><td><b>${money(Number(x.sales_total||0)-Number(x.expenses_total||0)-Number(x.loss_total||0))}</b></td><td>${esc(x.created_at||'')}</td><td><button class="premium-btn light" onclick="viewSettlementDetails(${Number(x.id)||0})">View</button></td></tr>`).join('')||'<tr><td colspan="8">No settlements yet.</td></tr>'}</tbody></table></div></div>`;
         }
-        async function viewSettlementDetails(id){ const row=(pnlSettlementRows||[]).find(x=>Number(x.id)===Number(id)); if(!row){showCustomAlert('Settlement details not found.');return;} const sales=(salesHistory||[]).filter(s=>{const d=saleDateKey(s);return (!row.from_date||d>=row.from_date)&&d<=row.till_date;}); const exps=(expenseHistory||[]).filter(e=>{const d=expenseDateKey(e);return (!row.from_date||!d||d>=row.from_date)&&(!d||d<=row.till_date);}); const saleTotal=sales.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0); const expTotal=exps.reduce((a,e)=>a+parseAmount(getVal(e,['amount','total'])),0); showCustomAlert(`Settled period: ${row.from_date||'Start'} to ${row.till_date}\nOrders: ${sales.length}\nSales: ₹${saleTotal.toLocaleString('en-IN')}\nExpenses: ₹${expTotal.toLocaleString('en-IN')}\nP/L: ₹${(saleTotal-expTotal).toLocaleString('en-IN')}\nSettled by: ${row.settled_by||'Admin'}\n\nOriginal settlement snapshot: Sales ₹${Number(row.sales_total||0).toLocaleString('en-IN')} | Expenses ₹${Number(row.expenses_total||0).toLocaleString('en-IN')}`); }
+        async function viewSettlementDetails(id){ const row=(pnlSettlementRows||[]).find(x=>Number(x.id)===Number(id)); if(!row){showCustomAlert('Settlement details not found.');return;} const sales=(salesHistory||[]).filter(s=>{const d=saleDateKey(s);return (!row.from_date||d>=row.from_date)&&d<=row.till_date;}); const exps=(expenseHistory||[]).filter(e=>{const d=expenseDateKey(e);return (!row.from_date||!d||d>=row.from_date)&&(!d||d<=row.till_date);}); const saleTotal=sales.reduce((a,s)=>a+parseAmount(getVal(s,['grand_total','totalamount','total','amount'])),0); const expTotal=exps.reduce((a,e)=>a+parseAmount(getVal(e,['amount','total'])),0); showCustomAlert(`Settled period: ${row.from_date||'Start'} to ${row.till_date}\nOrders: ${sales.length}\nSales: ₹${saleTotal.toLocaleString('en-IN')}\nExpenses: ₹${expTotal.toLocaleString('en-IN')}\nP/L: ₹${(saleTotal-expTotal-Number(row.loss_total||0)).toLocaleString('en-IN')}\nStock Loss: ₹${Number(row.loss_total||0).toLocaleString('en-IN')}\nSettled by: ${row.settled_by||'Admin'}\n\nOriginal settlement snapshot: Sales ₹${Number(row.sales_total||0).toLocaleString('en-IN')} | Expenses ₹${Number(row.expenses_total||0).toLocaleString('en-IN')}`); }
 
         async function renderStaffAdvanceLedger(){
             const el=document.getElementById('staffAdvanceLedger'); if(!el)return;
@@ -3388,10 +3418,18 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
             <div class="premium-card"><div class="premium-card-head"><h3>Top Selling Items</h3><span>Sorted by sales value</span></div><div class="admin-help">Highest-selling items are shown first. Sales % = item's value ÷ total item sales. Qty % = item's quantity ÷ total units sold.</div><div class="top-selling-list">${top.map((x,i)=>{const ss=totalItemSales?x.sales/totalItemSales*100:0;const qs=totalItemQty?x.qty/totalItemQty*100:0;return `<div class="item-rank"><div class="item-rank-no">${i+1}</div><div class="item-rank-info"><div class="item-rank-name">${esc(x.name)}</div><div class="item-rank-sub">${x.qty} units • ${x.orders} orders • Qty ${qs.toFixed(1)}%</div><div class="mini-bar"><i style="width:${Math.min(100,ss)}%"></i></div></div><div style="text-align:right"><div class="item-rank-val">${money(x.sales)}</div><small style="font-size:.6rem;color:var(--text-muted)">${ss.toFixed(1)}%</small></div></div>`}).join('')||'<div class="premium-empty">No item sales found.</div>'}</div></div>
             <div class="premium-card"><div class="premium-card-head"><h3>Daily Business Report</h3><button class="premium-btn light" onclick="exportDailyReport()">Export</button></div><div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date</th><th>Orders</th><th>Sales</th><th>Discount</th><th>AOV</th></tr></thead><tbody>${days.map(([d,x])=>`<tr><td>${cleanDisplayDate(d)}</td><td>${x.orders}</td><td><b>${money(x.sales)}</b></td><td>${money(x.discount)}</td><td>${money(x.sales/x.orders)}</td></tr>`).join('')||'<tr><td colspan="5"><div class="premium-empty">No sales.</div></td></tr>'}</tbody></table></div></div>`;
             panel.innerHTML += `<div class="premium-card" style="margin-top:14px"><div class="premium-card-head"><h3>All-Time P&L Archive</h3><span>Historical view only</span></div><div class="admin-help">This section is separate from the live dashboard. Use dates to inspect all historical sales and expenses, including settled periods.</div><div class="admin-form-grid"><input type="date" id="allPnlFrom"><input type="date" id="allPnlTo"><button class="premium-btn light" onclick="renderAllTimePnlArchive()">Apply Filter</button></div><div id="allTimePnlArchive"></div></div>`; renderAllTimePnlArchive();
+            panel.innerHTML += `<div id="pnlLossHost" style="margin-top:14px"></div>`; renderLossPnlPanel();
             renderPnlSettlementPanel(); renderStaffAdvanceLedger();
         }
-        function renderAllTimePnlArchive(){ const el=document.getElementById('allTimePnlArchive'); if(!el)return; const f=document.getElementById('allPnlFrom')?.value||'', t=document.getElementById('allPnlTo')?.value||''; const ss=(salesHistory||[]).filter(x=>{const d=saleDateKey(x);return(!f||d>=f)&&(!t||d<=t)}); const ee=(expenseHistory||[]).filter(x=>{const d=expenseDateKey(x);return(!f||d>=f)&&(!t||d<=t)}); const aa=(staffAdvanceData||[]).filter(x=>{const d=localISODate(x.entry_date||x.date||x.created_at);return(!f||d>=f)&&(!t||d<=t)}); const sales=ss.reduce((a,x)=>a+parseAmount(getVal(x,['grand_total','totalamount','total','amount'])),0), exp=ee.reduce((a,x)=>a+parseAmount(getVal(x,['amount','total'])),0), advances=aa.reduce((a,x)=>{const v=parseAmount(x.amount),type=String(x.entry_type||'given').toLowerCase();return a+(type==='returned'||type==='adjusted'?-v:v)},0), totalExp=exp+advances; el.innerHTML=`<div class="sales-summary-grid"><div class="report-stat"><div class="rlabel">All-Time Sales</div><div class="rvalue">${money(sales)}</div></div><div class="report-stat"><div class="rlabel">All-Time Expenses</div><div class="rvalue">${money(totalExp)}</div></div><div class="report-stat"><div class="rlabel">All-Time P/L</div><div class="rvalue">${money(sales-totalExp)}</div></div></div><div class="admin-help">${ss.length} sales orders • ${ee.length} expense entries • ${aa.length} salary advance entries</div>`; }
+        function renderAllTimePnlArchive(){ const el=document.getElementById('allTimePnlArchive'); if(!el)return; const f=document.getElementById('allPnlFrom')?.value||'', t=document.getElementById('allPnlTo')?.value||''; const ss=(salesHistory||[]).filter(x=>{const d=saleDateKey(x);return(!f||d>=f)&&(!t||d<=t)}); const ee=(expenseHistory||[]).filter(x=>{const d=expenseDateKey(x);return(!f||d>=f)&&(!t||d<=t)}); const aa=(staffAdvanceData||[]).filter(x=>{const d=localISODate(x.entry_date||x.date||x.created_at);return(!f||d>=f)&&(!t||d<=t)}); const ll=(stockHistory||[]).filter(x=>String(x.action||'').toUpperCase()==='LOSS').filter(x=>{const d=localISODate(x.created_at);return(!f||d>=f)&&(!t||d<=t)}); const sales=ss.reduce((a,x)=>a+parseAmount(getVal(x,['grand_total','totalamount','total','amount'])),0), exp=ee.reduce((a,x)=>a+parseAmount(getVal(x,['amount','total'])),0), advances=aa.reduce((a,x)=>{const v=parseAmount(x.amount),type=String(x.entry_type||'given').toLowerCase();return a+(type==='returned'||type==='adjusted'?-v:v)},0), totalExp=exp+advances+ll.reduce((a,x)=>a+Number(x.loss_value||0),0); el.innerHTML=`<div class="sales-summary-grid"><div class="report-stat"><div class="rlabel">All-Time Sales</div><div class="rvalue">${money(sales)}</div></div><div class="report-stat"><div class="rlabel">All-Time Expenses</div><div class="rvalue">${money(totalExp)}</div></div><div class="report-stat"><div class="rlabel">All-Time P/L</div><div class="rvalue">${money(sales-totalExp)}</div></div></div><div class="admin-help">${ss.length} sales orders • ${ee.length} expense entries • ${aa.length} salary advance entries • ${ll.length} stock loss entries</div>`; }
         function exportDailyReport(){const by={};salesHistory.forEach(s=>{const d=saleDateKey(s);if(!d)return;if(!by[d])by[d]={orders:0,sales:0};by[d].orders++;by[d].sales+=parseAmount(getVal(s,['grand_total','totalamount','total','amount']));});downloadCSV(Object.entries(by).sort((a,b)=>a[0].localeCompare(b[0])).map(([Date,x])=>({Date,Orders:x.orders,Sales:Math.round(x.sales),AOV:Math.round(x.sales/x.orders)})),'Viraasat-Daily-Report.csv');}
+
+        function renderLossPnlPanel(){
+            const host=document.getElementById('pnlLossHost');if(!host)return;
+            const rows=(stockHistory||[]).filter(r=>String(r.action||'').toUpperCase()==='LOSS').slice().sort((a,b)=>String(b.created_at||'').localeCompare(String(a.created_at||'')));
+            const total=rows.reduce((a,r)=>a+Number(r.loss_value||0),0);
+            host.innerHTML=`<div class="premium-card"><div class="premium-card-head"><h3>Stock Loss</h3><span>Included in P&L at purchase cost</span></div><div class="sales-summary-grid"><div class="report-stat"><div class="rlabel">Loss Value</div><div class="rvalue">${money(total)}</div></div><div class="report-stat"><div class="rlabel">Loss Records</div><div class="rvalue">${rows.length}</div></div></div><div class="premium-table-wrap"><table class="premium-table"><thead><tr><th>Date/Time</th><th>Item</th><th>Qty</th><th>Unit Cost</th><th>Loss</th><th>Reason</th><th>By</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r.created_at?esc(cleanDisplayDate(r.created_at)+' '+cleanDisplayTime(r.created_at)):'—'}</td><td><b>${esc(r.item_name||'')}</b></td><td>${Math.abs(Number(r.change_quantity||0))}</td><td>${money(r.unit_cost||0)}</td><td><b>${money(r.loss_value||0)}</b></td><td>${esc(r.note||'Stock loss')}</td><td>${esc(r.updated_by||'Admin')}</td></tr>`).join('')||'<tr><td colspan="7">No stock loss records.</td></tr>'}</tbody></table></div></div>`;
+        }
 
         function renderPremiumExpenses(){
             // Kept as a safe refresh hook because the main Expenses screen is the live expense editor.
@@ -3614,7 +3652,7 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
                     <select id="adminFuturePriceItem" onchange="loadFutureMenuPrice()"><option value="">Select existing menu item</option></select>
                     <input id="adminFutureCurrentPrice" type="text" readonly placeholder="Current price">
                     <input id="adminFutureNewPrice" type="number" min="0.01" step="0.01" placeholder="New selling price">
-                    <button class="premium-btn" onclick="updateFutureMenuPrice()">Update Future Price</button>
+                    <button class="premium-btn" onclick="updateFutureMenuPrice(this)">Update Future Price</button>
                 </div>
             </div>
             <div class="premium-card admin-card">
@@ -3686,23 +3724,11 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
             const item=(menuData||[]).find(m=>Number(getVal(m,['id','menu_item_id']))===id);
             const el=document.getElementById('adminFutureCurrentPrice'); if(el)el.value=item?`₹${parseAmount(getVal(item,['price','sellingprice','rate'])).toFixed(2)}`:'';
         }
-        async function updateFutureMenuPrice(){
-            if(!requireAdmin('menu price update'))return;
-            const id=Number(document.getElementById('adminFuturePriceItem')?.value||0);
-            const price=Number(document.getElementById('adminFutureNewPrice')?.value);
-            if(!id){showCustomAlert('Select an existing menu item.');return;}
-            if(!Number.isFinite(price)||price<=0){showCustomAlert('Enter a valid future selling price.');return;}
-            if(!confirm('Update this price for future bills only? Existing orders and history will remain unchanged.'))return;
-            try{
-                const result=await d1Put('/menu',{id,price});
-                const item=(menuData||[]).find(m=>Number(getVal(m,['id','menu_item_id']))===id);
-                if(item)item.price=price;
-                populateDropdown(); renderFutureMenuPriceEditor();
-                const input=document.getElementById('adminFutureNewPrice'); if(input)input.value='';
-                auditLog('Future Menu Price Updated',`${result.name||''} | ₹${result.old_price||0} → ₹${price}`);
-                showCustomAlert(result.message||'Future selling price updated successfully.');
-            }catch(e){showCustomAlert('Price update failed: '+(e?.message||e));}
+        async function updateFutureMenuPrice(button){
+            if(!requireAdmin('menu price update'))return; const id=Number(document.getElementById('adminFuturePriceItem')?.value||0),price=Number(document.getElementById('adminFutureNewPrice')?.value); if(!id){showCustomAlert('Select an existing menu item.');return;} if(!Number.isFinite(price)||price<=0){showCustomAlert('Enter a valid future selling price.');return;} if(!confirm('Update this price for future bills only? Existing orders and history will remain unchanged.'))return;
+            return withActionLock(button,'Updating price...',async()=>{try{const result=await d1Put('/menu',{id,price});const item=(menuData||[]).find(m=>Number(getVal(m,['id','menu_item_id']))===id);if(item)item.price=price;populateDropdown();renderFutureMenuPriceEditor();const input=document.getElementById('adminFutureNewPrice');if(input)input.value='';auditLog('Future Menu Price Updated',`${result.name||''} | ₹${result.old_price||0} → ₹${price}`);showCustomAlert(result.message||'Future selling price updated successfully.');}catch(e){showCustomAlert('Price update failed: '+(e?.message||e));throw e;}});
         }
+
         function renderAdminStockRows(){const el=document.getElementById('adminStockMiniList');if(!el)return;const rows=Object.entries(stockData).sort((a,b)=>Number(a[1])-Number(b[1]));el.innerHTML=rows.map(([name,qty])=>{const low=Number(stockMeta[name]?.low_stock_level??5);return `<div class="admin-mini-row" onclick="loadAdminStockSelect('${esc(name)}')" style="cursor:pointer"><div><b>${esc(name)}</b><small>${Number(qty)<=0?'OUT OF STOCK':Number(qty)<=low?'Low stock':'Available'} • Last update ${stockMeta[name]?.updated_at?esc(cleanDisplayDate(stockMeta[name].updated_at)):'—'}</small></div><strong>${Number(qty)||0}</strong></div>`}).join('')||'<div class="premium-empty">No stock data.</div>';}
         function loadAdminStockSelect(name){if(!name){resetAdminStockForm(false);return;}const m=stockMeta[name]||{};const search=document.getElementById('adminStockSearch');if(search)search.value=name;const qty=document.getElementById('adminStockQty');if(qty){qty.value='';qty.placeholder=`Qty to Add (Current: ${Number(stockData[name]||0)})`;}const lowEl=document.getElementById('adminStockLow'); if(lowEl) lowEl.value=Number(m.low_stock_level??5);renderAdminStockRows();}
         function syncAdminStockSearch(v){const sel=document.getElementById('adminStockSelect');if(sel){const opt=[...sel.options].find(o=>o.value.toLowerCase()===String(v).trim().toLowerCase());sel.value=opt?opt.value:'';}}
@@ -3736,7 +3762,8 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
             const entries=Object.entries(userPermissions||{});
             el.innerHTML=entries.map(([mobile,p])=>`<div class="admin-user-row"><div><b>${esc(mobile)}</b><small>${esc(p.role||'cashier')} • Sales ${p.orders?'Yes':'No'} • P&L ${p.analytics?'Yes':'No'} • Expenses ${p.expenses?'Yes':'No'}</small></div><button class="premium-btn danger" onclick="removeUser('${esc(mobile)}');renderAdminUsersRows()">Remove</button></div>`).join('')||'<div class="premium-empty">No additional POS users registered.</div>';
         }
-        async function adminUpdateStockUnified(){
+        async function adminUpdateStockUnified(button){
+            return withActionLock(button,'Updating stock...',async()=>{
             if(!requireAdmin('inventory update'))return;
             const selected=document.getElementById('adminStockSelect')?.value||'';
             const typed=document.getElementById('adminStockSearch')?.value.trim()||'';
@@ -3778,15 +3805,20 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
                 await refreshDashboardAfterActivity();
                 showCustomAlert(`Added ${qty} ${unit} to ${name}. Current stock: ${stockData[name]}`);
             }catch(e){showCustomAlert('Stock update failed: '+(e?.message||e));}
+            });
         }
-        async function recordStockLoss(){
+
+        async function recordStockLoss(button){
+            return withActionLock(button,'Recording stock loss...',async()=>{
             if(!requireAdmin('stock loss'))return;
             const name=document.getElementById('adminStockSearch')?.value.trim()||document.getElementById('adminStockSelect')?.value||'';
             const loss=Number(prompt(`Enter loss quantity for ${name||'selected item'}:`));
             if(!name||!Number.isFinite(loss)||loss<=0){showCustomAlert('Select item and enter valid loss quantity.');return;}
             const note=prompt('Loss reason (optional):')||'Stock loss';
-            try{const old=Number(stockData[name]||0);const r=await d1Post('/stock',{name,quantity:loss,operation:'loss',unit:stockMeta[name]?.unit||'pcs',low_stock_level:Number(stockMeta[name]?.low_stock_level??5),note,updated_by:localStorage.getItem('viraasat_user')||'Admin'});stockData[name]=Number(r.new_quantity??(old-loss));stockHistory.unshift({item_name:name,old_quantity:old,new_quantity:stockData[name],change_quantity:-loss,action:'LOSS',note,updated_by:localStorage.getItem('viraasat_user')||'Admin',created_at:new Date().toISOString()});renderStockDashboard();renderPremiumInventory();renderPremiumAdmin();await refreshDashboardAfterActivity();showCustomAlert(`Loss recorded. Current stock: ${stockData[name]}`);}catch(e){showCustomAlert('Loss update failed: '+(e?.message||e));}
+            try{const old=Number(stockData[name]||0);const r=await d1Post('/stock',{name,quantity:loss,operation:'loss',unit:stockMeta[name]?.unit||'pcs',low_stock_level:Number(stockMeta[name]?.low_stock_level??5),note,updated_by:localStorage.getItem('viraasat_user')||'Admin'});stockData[name]=Number(r.new_quantity??(old-loss));stockHistory.unshift({item_name:name,old_quantity:old,new_quantity:stockData[name],change_quantity:-loss,action:'LOSS',note,updated_by:localStorage.getItem('viraasat_user')||'Admin',unit_cost:Number(r.unit_cost||stockMeta[name]?.purchase_rate||0),loss_value:Number(r.loss_value||loss*Number(stockMeta[name]?.purchase_rate||0)),created_at:r.created_at||new Date().toISOString()});renderStockDashboard();renderPremiumInventory();renderPremiumAdmin();await refreshDashboardAfterActivity();showCustomAlert(`Loss recorded. Current stock: ${stockData[name]}`);}catch(e){showCustomAlert('Loss update failed: '+(e?.message||e));}
+            });
         }
+
         async function adminAddMenuUnified(){
             const name=document.getElementById('adminMenuName')?.value.trim(); const price=Number(document.getElementById('adminMenuPrice')?.value); const category=document.getElementById('adminMenuCategory')?.value.trim()||'Other';
             if(!name||!Number.isFinite(price)||price<=0){showCustomAlert('Enter item name and valid price.');return;}
@@ -4107,8 +4139,8 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
 
         function generateTrends() {
             try {
-                const activeSales = Array.isArray(salesHistory) ? salesHistory : []; const activeExpenses = Array.isArray(expenseHistory) ? expenseHistory : [];
-                let totalSalesAmount = 0; let totalExpensesAmount = 0; let totalSalaryPaid = 0;
+                const activeSales = Array.isArray(salesHistory) ? salesHistory : []; const activeExpenses = Array.isArray(expenseHistory) ? expenseHistory : []; const activeStockHistory = Array.isArray(stockHistory) ? stockHistory : [];
+                let totalSalesAmount = 0; let totalExpensesAmount = 0; let totalSalaryPaid = 0; let totalStockLoss = 0;
                 let d = new Date(); let todayIso = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; let todayGb = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
                 let revenueToday = 0; let ordersToday = 0; let expenseCategories = {}; let staffExpenseMap = {};
                 rawChartSalesData = {}; rawChartExpenseData = {};
@@ -4149,11 +4181,17 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
                     staffExpenseMap[staffName]=(staffExpenseMap[staffName]||0)+value;
                 });
                 
+                // Stock loss is a real P&L cost at the purchase-cost snapshot stored in stock_history.
+                const lossRows=activeStockHistory.filter(r=>String(r.action||'').toUpperCase()==='LOSS');
+                lossRows.forEach(loss=>{const value=Number(loss.loss_value||0);if(!Number.isFinite(value)||value<=0)return;totalStockLoss+=value;const key=localISODate(loss.created_at)||String(loss.created_at||'').split('T')[0].split(' ')[0];if(key)rawChartExpenseData[key]=(rawChartExpenseData[key]||0)+value;});
+                totalExpensesAmount += totalStockLoss;
+
                 let netProfit = totalSalesAmount - totalExpensesAmount;
                 document.getElementById('kpiTotalSales').innerText = `₹ ${totalSalesAmount.toLocaleString('en-IN')}`; document.getElementById('kpiTotalExpenses').innerText = `₹ ${totalExpensesAmount.toLocaleString('en-IN')}`; document.getElementById('kpiNetProfit').innerText = `₹ ${netProfit.toLocaleString('en-IN')}`; document.getElementById('kpiTotalSalary').innerText = `₹ ${totalSalaryPaid.toLocaleString('en-IN')}`; document.getElementById('kpiTotalStaff').innerText = staffData.length;
                 
                 let breakdownHtml = ""; for(let cat in expenseCategories) { breakdownHtml += `<div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:6px;"><span>${cat}</span> <span style="font-weight:600; color:var(--danger);">- ₹${expenseCategories[cat].toLocaleString('en-IN')}</span></div>`; }
                 document.getElementById('expenseBreakdownList').innerHTML = breakdownHtml || "<span style='color:var(--text-muted);'>No other expenses logged.</span>";
+                const lossEl=document.getElementById('stockLossList'); if(lossEl){ const lossMap={}; lossRows.slice(0,100).forEach(r=>{const n=String(r.item_name||'Stock Loss');lossMap[n]=(lossMap[n]||0)+Number(r.loss_value||0);}); const lossHtml=Object.entries(lossMap).map(([name,val])=>`<div style="display:flex;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:6px;gap:8px"><span>⚠️ ${esc(name)}</span><span style="font-weight:600;color:var(--danger);">- ₹${Number(val).toLocaleString('en-IN')}</span></div>`).join(''); lossEl.innerHTML=lossHtml||"<span style='color:var(--text-muted);'>No stock loss recorded.</span>"; }
 
                 let staffHtml = ""; for(let sName in staffExpenseMap) { staffHtml += `<div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--border); padding-bottom:6px;"><span>👤 ${sName}</span> <span style="font-weight:600; color:var(--danger);">- ₹${staffExpenseMap[sName].toLocaleString('en-IN')}</span></div>`; }
                 document.getElementById('staffExpenseList').innerHTML = staffHtml || "<span style='color:var(--text-muted);'>No staff payments recorded.</span>";
@@ -4532,6 +4570,7 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
         function clearTableWithoutCheckout() {
             showCustomConfirm(`Are you sure you want to clear ${activeTableNumber}?`, async()=>{
                 try{
+                    showActionLoading('Clearing table & restoring stock...');
                     clearTimeout(bagSyncTimer);
                     // Wait for any already-running bag sync to finish before clearing.
                     // Otherwise an older request can reach D1 after /tables/clear and
@@ -4547,6 +4586,7 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
                     lastSyncedBag=[]; bagSyncPending=null; bagSyncOperationId=''; bagSyncPromise=Promise.resolve();
                     delete runningTables[activeTableNumber]; delete runningTableDiscounts[activeTableNumber]; currentBill=[]; await refreshDashboardAfterActivity(); goBackToTables();
                 }catch(e){showCustomAlert('Could not clear table: '+e.message);}
+                finally{hideActionLoading();}
             },null);
         }
 
@@ -4588,7 +4628,7 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
 
         async function saveKOT() {
             if (currentBill.length === 0) { showCustomAlert('Cart is empty!'); return; }
-            const btn=document.getElementById('btnKOT'); btn.innerText='Saving...'; btn.disabled=true;
+            const btn=document.getElementById('btnKOT'); btn.innerText='Saving...'; btn.disabled=true; showActionLoading('Saving KOT & updating stock...');
             try{
                 const subtotal=currentBill.reduce((a,i)=>a+Number(i.total||0),0);
                 const enteredDiscount=Math.min(subtotal,Math.max(0,parseFloat(document.getElementById('discountValue')?.value)||0));
@@ -4608,9 +4648,9 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
                 await refreshDashboardAfterActivity();
                 auditLog('KOT Saved', orderNumber);
                 pendingKOTRequestId='';
-                btn.innerText='Save KOT'; btn.disabled=false; goBackToTables();
+                btn.innerText='Save KOT'; btn.disabled=false; hideActionLoading(); goBackToTables();
             }catch(e){
-                btn.innerText='Save KOT'; btn.disabled=false; showCustomAlert('KOT save failed: '+e.message);
+                btn.innerText='Save KOT'; btn.disabled=false; hideActionLoading(); showCustomAlert('KOT save failed: '+e.message);
             }
         }
 
@@ -4618,7 +4658,7 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
         function selectPaymentMode(mode) { selectedPaymentMode=mode; document.querySelectorAll('.pay-btn').forEach(btn=>btn.classList.remove('selected')); const el=document.getElementById('pay'+mode); if(el)el.classList.add('selected'); }
 
         async function processFinalCheckout() {
-            const btn=document.getElementById('btnFinalCheckout'); btn.innerText='Processing...'; btn.disabled=true;
+            const btn=document.getElementById('btnFinalCheckout'); btn.innerText='Processing...'; btn.disabled=true; showActionLoading('Processing checkout & stock...');
             try{
                 const phone=document.getElementById('customerPhone').value||'NA';
                 const address=document.getElementById('deliveryAddressBox').style.display==='flex'?document.getElementById('deliveryAddress').value:'';
@@ -4636,7 +4676,7 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
                 await flushBagSyncBeforeCheckout();
                 const data=await d1Post('/orders/checkout',{order_number:orderId,checkout_id:pendingCheckoutRequestId,...ctx,customer_phone:phone,items:preparedItems,items_string:itemsString,subtotal,discount,grand_total:grandTotal,total:grandTotal,payment_method:selectedPaymentMode,payment_status:'paid',order_status:'completed',delivery_address:address});
                 if(data?.offline_queued){
-                    btn.innerText='Confirm Checkout';btn.disabled=false;
+                    btn.innerText='Confirm Checkout';btn.disabled=false;hideActionLoading();
                     document.getElementById('paymentModal').style.display='none';
                     showCustomAlert('Internet is offline. Checkout is safely saved and will sync automatically when internet returns. Do not pay again.');
                     return;
@@ -4648,15 +4688,16 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
                 pendingCheckoutRequestId='';
                 const now=new Date();
                 salesHistory.unshift({date:now.toISOString(),isodate:now.toISOString(),time:now.toISOString(),orderid:orderId,items:itemsString,total:grandTotal,table:activeTableNumber,tablenumber:activeTableNumber,phone:phone,payment_method:selectedPaymentMode,order_status:'completed'});
-                btn.innerText='Confirm Checkout';btn.disabled=false;document.getElementById('paymentModal').style.display='none';generateTrends();goBackToTables();
+                btn.innerText='Confirm Checkout';btn.disabled=false;hideActionLoading();document.getElementById('paymentModal').style.display='none';generateTrends();goBackToTables();
                 showCustomAlert('Checkout completed successfully.');
-            }catch(e){btn.innerText='Confirm Checkout';btn.disabled=false;showCustomAlert('Checkout failed: '+e.message);}
+            }catch(e){btn.innerText='Confirm Checkout';btn.disabled=false;hideActionLoading();showCustomAlert('Checkout failed: '+e.message);}
         }
 
         let expenseReceiptBase64='';
         function previewExpenseReceipt(input){const file=input?.files?.[0],box=document.getElementById('expReceiptPreview');if(!box)return;if(!file){clearExpenseReceipt();return;}if(file.size>2*1024*1024){showCustomAlert('Receipt image should be under 2 MB.');input.value='';return;}const r=new FileReader();r.onload=()=>{expenseReceiptBase64=String(r.result||'');box.style.display='block';box.innerHTML=`<img src="${expenseReceiptBase64}" style="max-width:120px;max-height:120px;border:1px solid var(--border);border-radius:8px;display:block"><button class="premium-btn light" style="margin-top:6px" onclick="clearExpenseReceipt()">Remove Image</button>`;};r.readAsDataURL(file);}
         function clearExpenseReceipt(){expenseReceiptBase64='';const i=document.getElementById('expReceipt');if(i)i.value='';const b=document.getElementById('expReceiptPreview');if(b){b.style.display='none';b.innerHTML='';}}
-        async function submitExpense(){const category=document.getElementById('expCategory').value,amount=Number(document.getElementById('expAmount').value)||0;if(amount<=0){showCustomAlert('Enter valid amount.');return;}try{const description=document.getElementById('expDescription').value||'NA',expenseDate=document.getElementById('expDate').value||localISODate(new Date());await d1Post('/expenses',{category,amount,description,expense_date:expenseDate,receipt_image:expenseReceiptBase64||''});await fetchData();auditLog('Expense Added',`${category} ₹${amount}`);document.getElementById('expAmount').value='';document.getElementById('expDescription').value='';clearExpenseReceipt();document.getElementById('expDate').value=localISODate(new Date());generateTrends();renderPremiumExpenses();renderExpenseHistoryList();showCustomAlert('Expense Saved!');}catch(e){showCustomAlert('Expense save failed: '+e.message);}}
+        async function submitExpense(button){const category=document.getElementById('expCategory').value,amount=Number(document.getElementById('expAmount').value)||0;if(amount<=0){showCustomAlert('Enter valid amount.');return;}return withActionLock(button,'Saving expense...',async()=>{try{const description=document.getElementById('expDescription').value||'NA',expenseDate=document.getElementById('expDate').value||localISODate(new Date());await d1Post('/expenses',{category,amount,description,expense_date:expenseDate,receipt_image:expenseReceiptBase64||''});await fetchData();auditLog('Expense Added',`${category} ₹${amount}`);document.getElementById('expAmount').value='';document.getElementById('expDescription').value='';clearExpenseReceipt();document.getElementById('expDate').value=localISODate(new Date());generateTrends();renderPremiumExpenses();renderExpenseHistoryList();showCustomAlert('Expense Saved!');}catch(e){showCustomAlert('Expense save failed: '+e.message);throw e;}});}
+
         function expenseDateKey(e){return localISODate(getVal(e,['expense_date','date','isodate','created_at']));}
         function setExpenseQuickFilter(type){const today=localISODate(new Date()),from=document.getElementById('expFilterFrom'),to=document.getElementById('expFilterTo');['expFilterToday','expFilterYesterday','expFilter15','expFilter30','expFilterAll'].forEach(id=>document.getElementById(id)?.classList.remove('active'));const map={today:'expFilterToday',yesterday:'expFilterYesterday','15':'expFilter15','30':'expFilter30',all:'expFilterAll'};document.getElementById(map[type])?.classList.add('active');if(type==='today'){from.value=today;to.value=today;}else if(type==='yesterday'){const d=new Date();d.setDate(d.getDate()-1);from.value=localISODate(d);to.value=localISODate(d);}else if(type==='15'){const d=new Date();d.setDate(d.getDate()-14);from.value=localISODate(d);to.value=today;}else if(type==='30'){const d=new Date();d.setMonth(d.getMonth()-1);from.value=localISODate(d);to.value=today;}else{from.value='';to.value='';}renderExpenseHistoryList();}
         function renderExpenseHistoryList(){const el=document.getElementById('expenseHistoryList');if(!el)return;const from=document.getElementById('expFilterFrom')?.value||'',to=document.getElementById('expFilterTo')?.value||'';const rows=expenseHistory.filter(e=>{const d=expenseDateKey(e);return(!from||d>=from)&&(!to||d<=to);}).sort((a,b)=>expenseTimestamp(b)-expenseTimestamp(a));const total=rows.reduce((a,e)=>a+parseAmount(getVal(e,['amount','total'])),0);const count=document.getElementById('expenseListCount');if(count)count.innerText=`${rows.length} entries • ₹${total.toLocaleString('en-IN')}`;el.innerHTML=rows.length?rows.map(e=>{const receipt=getVal(e,['receipt_image']);const eid=getVal(e,['id'])||`${expenseDateKey(e)}-${getVal(e,['category'])}-${getVal(e,['amount'])}`;return `<div class="card expense-click-card" style="padding:12px;margin-bottom:8px" onclick="openExpenseDetails('${esc(eid)}')"><div style="display:flex;justify-content:space-between;gap:10px"><div><b>${esc(getVal(e,['category'])||'Other')}</b><div style="font-size:.72rem;color:var(--text-muted)">${esc(expenseDateKey(e))} • ${esc(expenseTimeText(e))}</div></div><strong style="color:var(--danger)">- ${money(getVal(e,['amount','total']))}</strong></div>${getVal(e,['description','note'])?`<div style="font-size:.72rem;color:var(--text-muted);margin-top:7px">${esc(getVal(e,['description','note']))}</div>`:''}${receipt?`<div style="margin-top:8px"><span style="font-size:.68rem;color:var(--text-muted)">Receipt attached</span></div>`:''}</div>`}).join(''):'<div class="premium-empty">No expenses for the selected period.</div>';}
