@@ -885,6 +885,22 @@ async function getDashboard(db) {
     (table) => String(table.status || "").toLowerCase() === "occupied"
   ).length;
   const activeStaff = staff.filter((s) => Number(s.is_active) === 1).length;
+  // Takeaway and Home Delivery do not have restaurant_tables rows. Keep their
+  // active KOT bags in the same dashboard snapshot so a normal refresh does
+  // not make a saved KOT appear to disappear or lose its stock reservation.
+  let active_bags = [];
+  try {
+    const bagRows = await db.prepare(`
+      SELECT reservation_key, items, updated_at
+      FROM active_bag_reservations
+      WHERE reservation_key IN ('Takeaway','Home Delivery')
+    `).all();
+    active_bags = (bagRows.results || []).map((r) => {
+      let items = [];
+      try { const parsed = JSON.parse(r.items || '[]'); if (Array.isArray(parsed)) items = parsed; } catch {}
+      return { reservation_key: String(r.reservation_key || ''), items, updated_at: r.updated_at || null };
+    });
+  } catch (_) {}
 
   return {
     success: true,
@@ -906,6 +922,7 @@ async function getDashboard(db) {
       available: Math.max(tables.length - occupiedTables, 0)
     },
     table_data: tables,
+    active_bags,
     stock,
     staff
   };
