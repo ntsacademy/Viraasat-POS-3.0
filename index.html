@@ -2465,23 +2465,59 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-8.2-LOSS-PNL-LOADER";
         window.addEventListener('online',()=>{ setTimeout(flushOfflineMutationQueue,150); });
         setInterval(()=>{ if(navigator.onLine!==false) flushOfflineMutationQueue(); },30000);
 
-        /* V8.2 ACTION SAFETY LOADER — visual-only overlay; existing layout/CSS remains untouched. */
+        /* V8.3 PREMIUM ACTION LOADER — visual-only feedback; existing layout/CSS remains untouched. */
         function ensureActionLoader(){
             let el=document.getElementById('viraasatActionLoader');
             if(el)return el;
             el=document.createElement('div'); el.id='viraasatActionLoader';
-            el.innerHTML='<div style="width:58px;height:58px;border-radius:50%;border:4px solid rgba(255,255,255,.28);border-top-color:#fff;animation:viraasatSpin .8s linear infinite;box-shadow:0 8px 30px rgba(0,0,0,.28)"></div><div id="viraasatActionLoaderText" style="font-weight:800;font-size:14px;letter-spacing:.2px">Updating...</div>';
-            Object.assign(el.style,{position:'fixed',inset:'0',zIndex:'2147483647',display:'none',alignItems:'center',justifyContent:'center',flexDirection:'column',gap:'14px',background:'rgba(20,16,12,.58)',backdropFilter:'blur(3px)',color:'#fff',fontFamily:'inherit',pointerEvents:'all'});
-            const st=document.createElement('style'); st.id='viraasatActionLoaderStyle'; st.textContent='@keyframes viraasatSpin{to{transform:rotate(360deg)}}'; document.head.appendChild(st); document.body.appendChild(el); return el;
+            el.innerHTML=`
+                <div class="v-action-loader-card">
+                    <div class="v-action-loader-orbit"><div class="v-action-loader-dot"></div></div>
+                    <div id="viraasatActionLoaderIcon" class="v-action-loader-icon">↻</div>
+                    <div id="viraasatActionLoaderText" class="v-action-loader-text">Updating...</div>
+                    <div id="viraasatActionLoaderSub" class="v-action-loader-sub">Please wait…</div>
+                    <div class="v-action-loader-track"><div class="v-action-loader-bar"></div></div>
+                </div>`;
+            Object.assign(el.style,{position:'fixed',inset:'0',zIndex:'2147483647',display:'none',alignItems:'center',justifyContent:'center',background:'rgba(12,12,14,.48)',backdropFilter:'blur(5px)',color:'#fff',fontFamily:'inherit',pointerEvents:'all'});
+            const st=document.createElement('style'); st.id='viraasatActionLoaderStyle'; st.textContent=`
+                @keyframes viraasatSpin{to{transform:rotate(360deg)}}
+                @keyframes viraasatPulse{0%,100%{transform:scale(.96);opacity:.72}50%{transform:scale(1.04);opacity:1}}
+                @keyframes viraasatShimmer{0%{transform:translateX(-110%)}100%{transform:translateX(220%)}}
+                @keyframes viraasatSuccess{0%{transform:scale(.55);opacity:0}70%{transform:scale(1.08)}100%{transform:scale(1);opacity:1}}
+                .v-action-loader-card{min-width:230px;max-width:300px;padding:25px 28px 22px;border-radius:20px;background:rgba(24,24,28,.94);border:1px solid rgba(255,255,255,.14);box-shadow:0 20px 70px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08);display:flex;align-items:center;flex-direction:column;gap:9px}
+                .v-action-loader-orbit{width:64px;height:64px;border-radius:50%;border:3px solid rgba(255,255,255,.14);border-top-color:rgba(255,255,255,.96);border-right-color:rgba(255,255,255,.55);animation:viraasatSpin .78s linear infinite;display:flex;align-items:center;justify-content:center;box-shadow:0 0 28px rgba(255,255,255,.09)}
+                .v-action-loader-dot{width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:0 0 16px rgba(255,255,255,.8);animation:viraasatPulse 1.15s ease-in-out infinite}
+                .v-action-loader-icon{position:absolute;width:64px;height:64px;display:flex;align-items:center;justify-content:center;font-size:23px;font-weight:900;opacity:.95;pointer-events:none}
+                .v-action-loader-text{font-weight:850;font-size:15px;letter-spacing:.15px;text-align:center}
+                .v-action-loader-sub{font-size:11px;opacity:.66;text-align:center;min-height:15px}
+                .v-action-loader-track{width:100%;height:3px;border-radius:99px;background:rgba(255,255,255,.1);overflow:hidden;margin-top:5px}
+                .v-action-loader-bar{width:38%;height:100%;border-radius:99px;background:rgba(255,255,255,.92);box-shadow:0 0 12px rgba(255,255,255,.5);animation:viraasatShimmer 1.15s ease-in-out infinite}
+                .v-action-loader-success{animation:viraasatSuccess .38s ease-out both;color:#fff}
+            `; document.head.appendChild(st); document.body.appendChild(el); return el;
         }
-        function showActionLoading(text='Updating...'){const el=ensureActionLoader();const t=document.getElementById('viraasatActionLoaderText');if(t)t.textContent=text;el.style.display='flex';}
+        function showActionLoading(text='Updating...',sub='Please wait…'){
+            const el=ensureActionLoader();
+            const t=document.getElementById('viraasatActionLoaderText'), s=document.getElementById('viraasatActionLoaderSub'), icon=document.getElementById('viraasatActionLoaderIcon'), orbit=el.querySelector('.v-action-loader-orbit'), bar=el.querySelector('.v-action-loader-bar');
+            if(t)t.textContent=text;if(s)s.textContent=sub;if(icon){icon.textContent='↻';icon.classList.remove('v-action-loader-success');}
+            if(orbit)orbit.style.display='flex';if(bar)bar.style.display='block';el.style.display='flex';
+        }
+        function completeActionLoading(text='✓ Updated',sub='Saved successfully'){
+            const el=document.getElementById('viraasatActionLoader');if(!el)return Promise.resolve();
+            const t=document.getElementById('viraasatActionLoaderText'), s=document.getElementById('viraasatActionLoaderSub'), icon=document.getElementById('viraasatActionLoaderIcon'), orbit=el.querySelector('.v-action-loader-orbit'), bar=el.querySelector('.v-action-loader-bar');
+            if(t)t.textContent=text;if(s)s.textContent=sub;if(orbit)orbit.style.display='none';if(bar)bar.style.display='none';if(icon){icon.textContent='✓';icon.classList.add('v-action-loader-success');}
+            return new Promise(resolve=>setTimeout(()=>{el.style.display='none';resolve();},650));
+        }
         function hideActionLoading(){const el=document.getElementById('viraasatActionLoader');if(el)el.style.display='none';}
         async function withActionLock(button,text,fn){
             if(button?.dataset?.actionBusy==='1')return;
             if(button) { button.dataset.actionBusy='1'; button.disabled=true; button.dataset.originalText=button.innerText||''; }
             showActionLoading(text);
-            try{return await fn();}
-            finally{hideActionLoading();if(button){button.disabled=false;button.dataset.actionBusy='0';if(button.dataset.originalText)button.innerText=button.dataset.originalText;}}
+            try{
+                const result=await fn();
+                await completeActionLoading();
+                return result;
+            }catch(e){hideActionLoading();throw e;}
+            finally{if(button){button.disabled=false;button.dataset.actionBusy='0';if(button.dataset.originalText)button.innerText=button.dataset.originalText;}}
         }
 
         async function d1Get(path, timeoutMs = API_TIMEOUT_MS) {
@@ -2682,6 +2718,18 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-8.2-LOSS-PNL-LOADER";
                         runningTables[`Table ${n}`]=String(t.status||'').toLowerCase()==='occupied'
                             ? (persistedItems.length?persistedItems:[{__d1Occupied:true,orderId:t.current_order_id||t.currentOrderId}])
                             : [];
+                    });
+                    // Takeaway and Home Delivery are stored in active_bag_reservations,
+                    // not restaurant_tables. Restore them after every dashboard refresh
+                    // so a successful KOT remains visible and its reserved stock can
+                    // always be released by Clear Table / checkout.
+                    const activeBags=Array.isArray(dash.active_bags)?dash.active_bags:[];
+                    activeBags.forEach(b=>{
+                        const key=String(b.reservation_key||'').trim();
+                        if(key!=='Takeaway'&&key!=='Home Delivery')return;
+                        let items=[];
+                        try{const parsed=Array.isArray(b.items)?b.items:JSON.parse(b.items||'[]');if(Array.isArray(parsed))items=parsed;}catch(_){}
+                        runningTables[key]=items;
                     });
                     if(!rawTables.length)tableSections=[{title:'Hut Seating',tables:['1','2','3','4']},{title:'Ground Seating',tables:['5','6','7']},{title:'Terrace Seating',tables:['8','9','10']}];
 
@@ -4584,9 +4632,8 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-8.2-LOSS-PNL-LOADER";
                     else await d1Post('/stock/sync-bag',{reservation_key:activeTableNumber==='Home Delivery'?'Home Delivery':'Takeaway',items:[],operation_id:clearOperationId});
                     applyLocalStockDelta(before,[]);
                     lastSyncedBag=[]; bagSyncPending=null; bagSyncOperationId=''; bagSyncPromise=Promise.resolve();
-                    delete runningTables[activeTableNumber]; delete runningTableDiscounts[activeTableNumber]; currentBill=[]; await refreshDashboardAfterActivity(); goBackToTables();
-                }catch(e){showCustomAlert('Could not clear table: '+e.message);}
-                finally{hideActionLoading();}
+                    delete runningTables[activeTableNumber]; delete runningTableDiscounts[activeTableNumber]; currentBill=[]; await refreshDashboardAfterActivity(); await completeActionLoading('✓ Updated','Table cleared & stock restored'); goBackToTables();
+                }catch(e){hideActionLoading();showCustomAlert('Could not clear table: '+e.message);}
             },null);
         }
 
@@ -4648,7 +4695,7 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-8.2-LOSS-PNL-LOADER";
                 await refreshDashboardAfterActivity();
                 auditLog('KOT Saved', orderNumber);
                 pendingKOTRequestId='';
-                btn.innerText='Save KOT'; btn.disabled=false; hideActionLoading(); goBackToTables();
+                btn.innerText='Save KOT'; btn.disabled=false; await completeActionLoading('✓ Updated','KOT saved & stock updated'); goBackToTables();
             }catch(e){
                 btn.innerText='Save KOT'; btn.disabled=false; hideActionLoading(); showCustomAlert('KOT save failed: '+e.message);
             }
@@ -4676,7 +4723,7 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-8.2-LOSS-PNL-LOADER";
                 await flushBagSyncBeforeCheckout();
                 const data=await d1Post('/orders/checkout',{order_number:orderId,checkout_id:pendingCheckoutRequestId,...ctx,customer_phone:phone,items:preparedItems,items_string:itemsString,subtotal,discount,grand_total:grandTotal,total:grandTotal,payment_method:selectedPaymentMode,payment_status:'paid',order_status:'completed',delivery_address:address});
                 if(data?.offline_queued){
-                    btn.innerText='Confirm Checkout';btn.disabled=false;hideActionLoading();
+                    btn.innerText='Confirm Checkout';btn.disabled=false;await completeActionLoading('✓ Saved','Offline checkout queued safely');
                     document.getElementById('paymentModal').style.display='none';
                     showCustomAlert('Internet is offline. Checkout is safely saved and will sync automatically when internet returns. Do not pay again.');
                     return;
@@ -4688,7 +4735,7 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-8.2-LOSS-PNL-LOADER";
                 pendingCheckoutRequestId='';
                 const now=new Date();
                 salesHistory.unshift({date:now.toISOString(),isodate:now.toISOString(),time:now.toISOString(),orderid:orderId,items:itemsString,total:grandTotal,table:activeTableNumber,tablenumber:activeTableNumber,phone:phone,payment_method:selectedPaymentMode,order_status:'completed'});
-                btn.innerText='Confirm Checkout';btn.disabled=false;hideActionLoading();document.getElementById('paymentModal').style.display='none';generateTrends();goBackToTables();
+                btn.innerText='Confirm Checkout';btn.disabled=false;await completeActionLoading('✓ Updated','Checkout completed & stock updated');document.getElementById('paymentModal').style.display='none';generateTrends();goBackToTables();
                 showCustomAlert('Checkout completed successfully.');
             }catch(e){btn.innerText='Confirm Checkout';btn.disabled=false;hideActionLoading();showCustomAlert('Checkout failed: '+e.message);}
         }
