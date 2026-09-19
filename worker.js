@@ -1756,11 +1756,11 @@ var worker_default = {
         });
       }
       if (path === "/api/orders" && method === "POST") {
+        await ensureSupportTables(db);
         const body = await request.json();
-        const result = await createOrder(
-          db,
-          body
-        );
+        const op = await beginOfflineOperation(db, body.operation_id || body.operationId, path);
+        if (op.existing) return json(op.existing);
+        const result = await createOrder(db, body);
         const tableNumber = clean(
           body.table_number || body.tableNumber
         );
@@ -1773,10 +1773,9 @@ var worker_default = {
             JSON.stringify(Array.isArray(body.items) ? body.items : [])
           );
         }
-        return json({
-          success: true,
-          ...result
-        });
+        const response={success:true,...result};
+        await finishOfflineOperation(db, op.key, response);
+        return json(response);
       }
       if (path === "/api/orders/checkout" && method === "POST") {
         await ensureSupportTables(db);
