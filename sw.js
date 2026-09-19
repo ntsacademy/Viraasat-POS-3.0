@@ -1,47 +1,44 @@
-const CACHE_NAME = "viraasat-pos-dynamic-v4";
+const CACHE_NAME = "viraasat-pos-shell-v7";
+const SHELL_ASSETS = [
+    "./",
+    "./index.html",
+    "./style.css",
+    "./app.js",
+    "./manifest.json",
+    "./sw.js",
+    "./icons/icon-192.png",
+    "./icons/icon-512.png"
+];
 
-// Install: Skip waiting to force immediate update
 self.addEventListener("install", event => {
-    self.skipWaiting();
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+            .then(cache => cache.addAll(SHELL_ASSETS).catch(() => {}))
+            .then(() => self.skipWaiting())
+    );
 });
 
-// Activate: Clean up old caches
 self.addEventListener("activate", event => {
     event.waitUntil(
-        caches.keys().then(cacheNames => {
-            return Promise.all(
-                cacheNames.map(cache => {
-                    if (cache !== CACHE_NAME) {
-                        return caches.delete(cache);
-                    }
-                })
-            );
-        })
+        caches.keys().then(cacheNames =>
+            Promise.all(
+                cacheNames.map(cache => cache === CACHE_NAME ? null : caches.delete(cache))
+            )
+        ).then(() => self.clients.claim())
     );
-    self.clients.claim();
 });
 
-// Fetch: Network First, Fallback to Cache
 self.addEventListener("fetch", event => {
-    // Only cache GET requests
     if (event.request.method !== "GET") return;
-
-    // Do not cache API calls
     if (event.request.url.includes("/api/")) return;
 
     event.respondWith(
         fetch(event.request)
             .then(networkResponse => {
-                // Save the newest version to cache
                 const responseClone = networkResponse.clone();
-                caches.open(CACHE_NAME).then(cache => {
-                    cache.put(event.request, responseClone);
-                });
+                caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone)).catch(() => {});
                 return networkResponse;
             })
-            .catch(() => {
-                // If offline, serve from cache
-                return caches.match(event.request);
-            })
+            .catch(() => caches.match(event.request).then(cached => cached || caches.match("./index.html")))
     );
 });
