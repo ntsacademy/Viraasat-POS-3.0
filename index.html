@@ -2453,7 +2453,7 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
             }finally{ offlineFlushRunning=false; }
         }
         window.addEventListener('online',()=>{ setTimeout(flushOfflineMutationQueue,150); });
-        setInterval(()=>{ if(navigator.onLine!==false) flushOfflineMutationQueue(); },5000);
+        setInterval(()=>{ if(navigator.onLine!==false) flushOfflineMutationQueue(); },30000);
 
         async function d1Get(path, timeoutMs = API_TIMEOUT_MS) {
             if(navigator.onLine===false){
@@ -2786,7 +2786,7 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
         }
         function startRealtimeSync(){
             if(viraasatRealtimeTimer)clearInterval(viraasatRealtimeTimer);
-            viraasatRealtimeTimer=setInterval(runRealtimeSync,15000);
+            viraasatRealtimeTimer=setInterval(runRealtimeSync,30000);
         }
         document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')runRealtimeSync();});
         window.addEventListener('focus',runRealtimeSync);
@@ -4363,7 +4363,7 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
             if(num === 'Home Delivery') { document.getElementById('deliveryAddressBox').style.display = 'flex'; } else { document.getElementById('deliveryAddressBox').style.display = 'none'; }
             
             currentBill = (runningTables[activeTableNumber] && Array.isArray(runningTables[activeTableNumber])) ? JSON.parse(JSON.stringify(runningTables[activeTableNumber])) : [];
-            lastSyncedBag = cloneBag(currentBill); bagSyncPending=null;
+            lastSyncedBag = cloneBag(currentBill); bagSyncPending=null; bagSyncOperationId=''; pendingKOTRequestId='';
             document.getElementById('discountValue').value = Number(runningTableDiscounts[activeTableNumber] || 0); document.getElementById('customerPhone').value = ""; document.getElementById('deliveryAddress').value = ""; document.getElementById('stockStatus').style.display = "none"; 
             
             updateBillTable();
@@ -4394,6 +4394,8 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
         let bagSyncRequest=0;
         let bagSyncPromise=Promise.resolve();
         let lastSyncedBag=[];
+        let bagSyncOperationId='';
+        let pendingKOTRequestId='';
 
         function cloneBag(items){
             return Array.isArray(items) ? JSON.parse(JSON.stringify(items)) : [];
@@ -4419,39 +4421,65 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
             renderStockDashboard();
             checkStockDisplay();
         }
-        async function syncCurrentBagNow(){
-            const requestId=++bagSyncRequest;
-            const items=cloneBag(currentBill);
+        function bagsEquivalent(a,b){
+            const normalize=items=>Object.entries(bagQtyMap(items)).sort((x,y)=>x[0].localeCompare(y[0]));
+            return JSON.stringify(normalize(a))===JSON.stringify(normalize(b));
+        }
+        function newBagSyncOperationId(){
+            return `BAG-${Date.now()}-${Math.random().toString(36).slice(2,10)}`;
+        }
+        function markBagDirty(){
+            ++bagSyncRequest;
+            bagSyncOperationId=newBagSyncOperationId();
+            bagSyncPending=true;
+        }
+        async function syncBagSnapshot(items, operationId){
             const tableNumber=String(activeTableNumber||'').replace(/^Table\s+/,'').trim();
-            try{
-                if(/^\d+$/.test(tableNumber)){
-                    await d1Post('/tables/sync-bag',{table_number:tableNumber,items});
-                }else{
-                    const key=activeTableNumber==='Home Delivery'?'Home Delivery':'Takeaway';
-                    await d1Post('/stock/sync-bag',{reservation_key:key,items});
-                }
-                if(requestId===bagSyncRequest){
+            if(bagsEquivalent(lastSyncedBag,items)) {
+                bagSyncPending=null;
+                return {success:true,noop:true};
+            }
+            if(!operationId) operationId=newBagSyncOperationId();
+            if(/^\d+$/.test(tableNumber)){
+                return await d1Post('/tables/sync-bag',{table_number:tableNumber,items,operation_id:operationId});
+            }
+            const key=activeTableNumber==='Home Delivery'?'Home Delivery':'Takeaway';
+            return await d1Post('/stock/sync-bag',{reservation_key:key,items,operation_id:operationId});
+        }
+        async function syncCurrentBagNow(){
+            clearTimeout(bagSyncTimer);
+            const items=cloneBag(currentBill);
+            const operationId=bagSyncOperationId || newBagSyncOperationId();
+            bagSyncOperationId=operationId;
+            // Serialize bag writes. This prevents an older network response from
+            // reaching D1 after a newer quantity change and overwriting it.
+            const task=async()=>{
+                try{
+                    const result=await syncBagSnapshot(items,operationId);
                     applyLocalStockDelta(lastSyncedBag,items);
                     lastSyncedBag=cloneBag(items);
+                    if(JSON.stringify(items)===JSON.stringify(currentBill)) bagSyncOperationId='';
                     bagSyncPending=null;
-                }
-            }catch(e){
-                if(requestId===bagSyncRequest){
+                    return result;
+                }catch(e){
                     bagSyncPending=true;
-                    console.warn('Bag sync failed; checkout will retry.',e);
+                    console.warn('Bag sync failed; same operation will be retried.',e);
+                    throw e;
                 }
-            }
+            };
+            bagSyncPromise=bagSyncPromise.catch(()=>{}).then(task);
+            return await bagSyncPromise;
         }
         function queueBagSync(){
             clearTimeout(bagSyncTimer);
+            if(!bagSyncOperationId) bagSyncOperationId=newBagSyncOperationId();
             bagSyncTimer=setTimeout(()=>{
-                bagSyncPromise=syncCurrentBagNow();
+                syncCurrentBagNow().catch(()=>{});
             },120);
         }
         async function flushBagSyncBeforeCheckout(){
             clearTimeout(bagSyncTimer);
-            bagSyncPromise=syncCurrentBagNow();
-            await bagSyncPromise;
+            await syncCurrentBagNow();
         }
 
         function addToBill() {
@@ -4462,6 +4490,7 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
             if (!selectedItem) { showCustomAlert("Item not in menu. Use Custom Item box."); return; }
             let itemPrice = parseInt(getVal(selectedItem, ['price'])); let existingItem = currentBill.find(i => i.name === getVal(selectedItem, ['itemname', 'name']));
             if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ id:Number(getVal(selectedItem,['id','menu_item_id']))||null, menu_item_id:Number(getVal(selectedItem,['id','menu_item_id']))||null, name: getVal(selectedItem, ['itemname', 'name']), price: itemPrice, qty: qty, total: itemPrice * qty }); }
+            markBagDirty();
             updateBillTable();
         }
 
@@ -4471,12 +4500,14 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
             if (!name || !price || price <= 0) { showCustomAlert("Enter valid custom item."); return; }
             let existingItem = currentBill.find(i => i.name === name + " (Custom)");
             if(existingItem) { existingItem.qty += qty; existingItem.total = existingItem.price * existingItem.qty; } else { currentBill.push({ name: name + " (Custom)", price: price, qty: qty, total: price * qty }); }
+            markBagDirty();
             updateBillTable(); document.getElementById('customName').value = ""; document.getElementById('customPrice').value = ""; document.getElementById('customQty').value = 1;
         }
 
         function changeQty(index, amount) {
             const before=cloneBag(currentBill);
             currentBill[index].qty += amount; if(currentBill[index].qty <= 0) { currentBill.splice(index, 1); } else { currentBill[index].total = currentBill[index].price * currentBill[index].qty; }
+            markBagDirty();
             updateBillTable();
         }
 
@@ -4494,6 +4525,7 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
         function removeItem(index) {
             const before=cloneBag(currentBill);
             currentBill.splice(index, 1);
+            markBagDirty();
             updateBillTable();
         }
 
@@ -4508,10 +4540,11 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
                     ++bagSyncRequest;
                     const tableNumber=activeTableNumber.replace(/^Table\s+/,'');
                     const before=cloneBag(currentBill);
-                    if(/^\d+$/.test(tableNumber)) await d1Post('/tables/clear',{table_number:tableNumber});
-                    else await d1Post('/stock/sync-bag',{reservation_key:activeTableNumber==='Home Delivery'?'Home Delivery':'Takeaway',items:[]});
+                    const clearOperationId=`CLEAR-${Date.now()}-${Math.random().toString(36).slice(2,10)}`;
+                    if(/^\d+$/.test(tableNumber)) await d1Post('/tables/clear',{table_number:tableNumber,operation_id:clearOperationId});
+                    else await d1Post('/stock/sync-bag',{reservation_key:activeTableNumber==='Home Delivery'?'Home Delivery':'Takeaway',items:[],operation_id:clearOperationId});
                     applyLocalStockDelta(before,[]);
-                    lastSyncedBag=[]; bagSyncPending=null; bagSyncPromise=Promise.resolve();
+                    lastSyncedBag=[]; bagSyncPending=null; bagSyncOperationId=''; bagSyncPromise=Promise.resolve();
                     delete runningTables[activeTableNumber]; delete runningTableDiscounts[activeTableNumber]; currentBill=[]; await refreshDashboardAfterActivity(); goBackToTables();
                 }catch(e){showCustomAlert('Could not clear table: '+e.message);}
             },null);
@@ -4561,7 +4594,8 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
                 const enteredDiscount=Math.min(subtotal,Math.max(0,parseFloat(document.getElementById('discountValue')?.value)||0));
                 runningTableDiscounts[activeTableNumber]=enteredDiscount;
                 const ctx=orderContext();
-                const orderNumber='KOT-'+Date.now();
+                if(!pendingKOTRequestId) pendingKOTRequestId=`KOT-${Date.now()}-${Math.random().toString(36).slice(2,10)}`;
+                const orderNumber=pendingKOTRequestId;
                 const preparedItems=await prepareOrderItems();
 
                 // Save KOT must reserve/deduct stock before the order writes the
@@ -4569,10 +4603,11 @@ const APP_VERSION = "D1-ENTERPRISE-OFFLINE-SYNC-7.0";
                 // already synced and /sync-bag would see zero delta.
                 await syncCurrentBagNow();
 
-                await d1Post('/orders',{order_number:orderNumber,...ctx,items:preparedItems,items_string:preparedItems.map(i=>`${i.name} (x${i.qty}) ₹${i.total}`).join(', '),subtotal,discount:0,grand_total:subtotal,total:subtotal,payment_method:'Cash',payment_status:'unpaid',order_status:'cancelled'});
+                await d1Post('/orders',{operation_id:pendingKOTRequestId,order_number:orderNumber,...ctx,items:preparedItems,items_string:preparedItems.map(i=>`${i.name} (x${i.qty}) ₹${i.total}`).join(', '),subtotal,discount:0,grand_total:subtotal,total:subtotal,payment_method:'Cash',payment_status:'unpaid',order_status:'cancelled'});
                 runningTables[activeTableNumber]=preparedItems;
                 await refreshDashboardAfterActivity();
                 auditLog('KOT Saved', orderNumber);
+                pendingKOTRequestId='';
                 btn.innerText='Save KOT'; btn.disabled=false; goBackToTables();
             }catch(e){
                 btn.innerText='Save KOT'; btn.disabled=false; showCustomAlert('KOT save failed: '+e.message);
