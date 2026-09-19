@@ -173,6 +173,7 @@ async function ensureSupportTablesUncached(db) {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `).run();
+  await ensureColumn(db, "pnl_settlements", "loss_total", "REAL DEFAULT 0");
   await db.prepare(`
     CREATE TABLE IF NOT EXISTS stock_history (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -187,6 +188,8 @@ async function ensureSupportTablesUncached(db) {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )
   `).run();
+  await ensureColumn(db, "stock_history", "unit_cost", "REAL DEFAULT 0");
+  await ensureColumn(db, "stock_history", "loss_value", "REAL DEFAULT 0");
   await db.prepare(`
     CREATE TABLE IF NOT EXISTS staff (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -2019,6 +2022,9 @@ var worker_default = {
           FROM staff_advances
           WHERE ${advanceWhere}
         `).bind(...salesBind).first();
+        const lossWhere = from ? `date(substr(COALESCE(created_at,''),1,10)) >= date(?) AND date(substr(COALESCE(created_at,''),1,10)) <= date(?) AND UPPER(COALESCE(action,''))='LOSS'` : `date(substr(COALESCE(created_at,''),1,10)) <= date(?) AND UPPER(COALESCE(action,''))='LOSS'`;
+        const lr = await db.prepare(`SELECT COALESCE(SUM(CAST(loss_value AS REAL)),0) AS total FROM stock_history WHERE ${lossWhere}`).bind(...salesBind).first();
+        const lossTotal = num(lr?.total);
         const settlementExpensesTotal = num(er?.total) + num(ar?.total);
         // Safety order: FIRST create a complete Google Sheet backup, ONLY THEN delete settled D1 data.
         // If backup fails, nothing is deleted.
@@ -2029,7 +2035,7 @@ var worker_default = {
           return json({success:false, error:`Settlement stopped: Google Sheet backup failed. No D1 data was deleted. ${backupError?.message||backupError}`}, 502);
         }
 
-        const result = await db.prepare(`INSERT INTO pnl_settlements(from_date,till_date,sales_total,expenses_total,order_count,settled_by,note) VALUES(?,?,?,?,?,?,?)`).bind(from,till,sr?.total||0,settlementExpensesTotal,sr?.cnt||0,clean(body.settled_by)||"Admin",clean(body.note)||null).run();
+        const result = await db.prepare(`INSERT INTO pnl_settlements(from_date,till_date,sales_total,expenses_total,loss_total,order_count,settled_by,note) VALUES(?,?,?,?,?,?,?,?)`).bind(from,till,sr?.total||0,settlementExpensesTotal,lossTotal,sr?.cnt||0,clean(body.settled_by)||"Admin",clean(body.note)||null).run();
 
         // Delete only the settled period's sales and expenses after confirmed backup.
         const settledOrderRows = await db.prepare(`SELECT id FROM orders WHERE ${salesWhere} AND LOWER(COALESCE(order_status,'')) NOT IN ('cancelled','deleted','deletion_pending')`).bind(...salesBind).all();
@@ -2053,7 +2059,7 @@ var worker_default = {
         const deletedAdvanceCount = (advanceRows.results||[]).length;
         await db.prepare(`DELETE FROM staff_advances WHERE ${advanceWhere}`).bind(...salesBind).run();
 
-        return json({success:true,id:result.meta?.last_row_id||null,from_date:from,till_date:till,sales_total:sr?.total||0,expenses_total:settlementExpensesTotal,profit_loss:num(sr?.total||0)-settlementExpensesTotal,order_count:sr?.cnt||0,backup_id:backupResult.backup_id,deleted_orders:settledOrderIds.length,deleted_expenses:deletedExpenseCount,deleted_advances:deletedAdvanceCount});
+        return json({success:true,id:result.meta?.last_row_id||null,from_date:from,till_date:till,sales_total:sr?.total||0,expenses_total:settlementExpensesTotal,loss_total:lossTotal,profit_loss:num(sr?.total||0)-settlementExpensesTotal-lossTotal,order_count:sr?.cnt||0,backup_id:backupResult.backup_id,deleted_orders:settledOrderIds.length,deleted_expenses:deletedExpenseCount,deleted_advances:deletedAdvanceCount});
       }
       if (path === "/api/expenses" && method === "GET") {
         const limit = Math.min(
@@ -2195,6 +2201,8 @@ var worker_default = {
               action,
               note,
               updated_by,
+              unit_cost,
+              loss_value,
               created_at
             FROM stock_history
             ORDER BY id DESC
@@ -2289,6 +2297,8 @@ var worker_default = {
           `).bind(name).first();
         const action = existing ? (operation === "loss" ? "LOSS" : operation === "set" ? "RESET" : "ADD") : "ADD";
         const note = clean(body.note) || (operation === "loss" ? "Stock loss" : existing ? "Stock added" : "New stock item");
+        const unitCost = operation === "loss" ? num(existing?.purchase_rate, 0) : 0;
+        const lossValue = operation === "loss" ? Math.abs(qty - oldQty) * unitCost : 0;
         const updatedBy = clean(
           body.updated_by
         ) || "Admin";
@@ -2302,10 +2312,12 @@ var worker_default = {
             change_quantity,
             action,
             note,
-            updated_by
+            updated_by,
+            unit_cost,
+            loss_value
           )
           VALUES
-          (?, ?, ?, ?, ?, ?, ?, ?)
+          (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           current?.id || null,
           name,
@@ -2314,13 +2326,17 @@ var worker_default = {
           qty - oldQty,
           action,
           note,
-          updatedBy
+          updatedBy,
+          unitCost,
+          lossValue
         ).run();
         const response = {
           success: true,
           id: current?.id || null,
           old_quantity: oldQty,
           new_quantity: qty,
+          unit_cost: unitCost,
+          loss_value: lossValue,
           updated_at: current?.updated_at || null
         };
         await finishOfflineOperation(db, op.key, response);
