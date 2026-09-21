@@ -587,11 +587,30 @@ const BACKUP_BATCH_SIZE = 1000;
 
 async function getAllOrdersForBackup(db) {
   if (!(await tableExists(db, "orders"))) return [];
+
   const cols = await getColumns(db, "orders");
-  const pick = (column, fallback) => cols.includes(column) ? column : fallback;
-  const grandTotalExp = cols.includes("grand_total") ? "grand_total" : cols.includes("total") ? "total AS grand_total" : "0 AS grand_total";
+  const pick = (column, fallback) =>
+    cols.includes(column) ? column : fallback;
+
+  const grandTotalExp =
+    cols.includes("grand_total")
+      ? "grand_total"
+      : cols.includes("total")
+        ? "total AS grand_total"
+        : "0 AS grand_total";
+
+  const createdByExp =
+    cols.includes("created_by")
+      ? "created_by"
+      : cols.includes("user_id")
+        ? "user_id AS created_by"
+        : cols.includes("username")
+          ? "username AS created_by"
+          : "'' AS created_by";
+
   const out = [];
   let lastId = 0;
+
   while (true) {
     const result = await db.prepare(`
       SELECT
@@ -607,60 +626,235 @@ async function getAllOrdersForBackup(db) {
         ${grandTotalExp},
         ${pick("payment_method", "'' AS payment_method")},
         ${pick("order_status", "'completed' AS order_status")},
-        ${pick("created_at", "NULL AS created_at")}
+        ${pick("created_at", "NULL AS created_at")},
+        ${createdByExp}
       FROM orders
       WHERE id > ?
       ORDER BY id ASC
       LIMIT ?
     `).bind(lastId, BACKUP_BATCH_SIZE).all();
+
     const batch = result.results || [];
     if (!batch.length) break;
+
     const ids = batch.map(o => Number(o.id)).filter(Number.isFinite);
     const itemMap = await getOrderItemsMap(db, ids);
+
     for (const o of batch) {
       const orderNumber = clean(o.order_number);
       const status = String(o.order_status || "").toLowerCase();
-      if (orderNumber.toUpperCase().startsWith("KOT-") || ["cancelled","deleted","deletion_pending"].includes(status)) continue;
+
+      if (
+        orderNumber.toUpperCase().startsWith("KOT-") ||
+        ["cancelled", "deleted", "deletion_pending"].includes(status)
+      ) continue;
+
       const details = itemMap[String(o.id)] || [];
+
       const itemText = details.length
-        ? details.map(i => `${clean(i.name)} (x${num(i.qty,1)}) ₹${num(i.total, num(i.price)*num(i.qty,1))}`).join(", ")
+        ? details
+            .map((i) => {
+              const itemName = clean(i.name);
+              const qty = num(i.qty, 1);
+              const itemTotal = num(i.total, num(i.price) * qty);
+              return `${itemName} (x${qty}) ₹${itemTotal}`;
+            })
+            .join(", ")
         : clean(o.items_string);
-      const mode = clean(o.payment_method);
-      const itemsString = `${itemText}${mode ? `${itemText ? ", " : ""}[Mode: ${mode}]` : ""}`;
+
+      const orderType = clean(o.order_type);
+
+      let tableDisplay = "";
+      if (clean(o.table_number) && /^\d+$/.test(clean(o.table_number))) {
+        tableDisplay = `Table ${clean(o.table_number)}`;
+      } else if (
+        orderType.toLowerCase() === "delivery" ||
+        orderType.toLowerCase() === "home delivery"
+      ) {
+        tableDisplay = "Delivery";
+      } else {
+        tableDisplay = "Takeaway";
+      }
+
+      const createdAt = clean(o.created_at);
+      let orderDate = "";
+      let orderTime = "";
+
+      if (createdAt) {
+        const parsedDate = new Date(createdAt);
+        if (!Number.isNaN(parsedDate.getTime())) {
+          orderDate = new Intl.DateTimeFormat("en-CA", {
+            timeZone: "Asia/Kolkata",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit"
+          }).format(parsedDate);
+
+          orderTime = new Intl.DateTimeFormat("en-IN", {
+            timeZone: "Asia/Kolkata",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false
+          }).format(parsedDate);
+        } else {
+          const parts = createdAt.split(/[T ]/);
+          orderDate = parts[0] || "";
+          orderTime = parts[1] || "";
+        }
+      }
+
       out.push({
-        id: o.id,
-        order_id: o.id,
+        date: orderDate,
+        time: orderTime,
         order_number: orderNumber,
-        customer_phone: o.customer_phone || "NA",
-        table_number: o.table_number,
-        items: details.length ? JSON.stringify(details) : (o.items || ""),
-        items_string: itemsString,
+        table_number: tableDisplay,
+        items: itemText,
         subtotal: num(o.subtotal),
         discount: num(o.discount),
         grand_total: num(o.grand_total),
-        payment_method: o.payment_method || "",
-        status: o.order_status || "",
-        created_by: "",
-        created_at: o.created_at || "",
-        updated_at: o.created_at || ""
+        payment_method: clean(o.payment_method),
+        id: o.id,
+        order_id: o.id,
+        order_type: orderType,
+        customer_phone: clean(o.customer_phone) || "NA",
+        order_status: clean(o.order_status),
+        created_by: clean(o.created_by),
+        created_at: createdAt,
+        updated_at: createdAt,
+        item_details: details
       });
     }
+
     if (!ids.length || batch.length < BACKUP_BATCH_SIZE) break;
     lastId = Math.max(...ids);
   }
+
   return out;
 }
 
 async function getBackupData(db) {
   await ensureSupportTables(db);
 
-  const [sales, menuRaw, staffRaw, stockRaw, expensesRaw, approvalsRaw] = await Promise.all([
+  const [
+    sales,
+    menuRaw,
+    staffRaw,
+    stockRaw,
+    expensesRaw,
+    approvalsRaw,
+    advancesRaw,
+    lossesRaw
+  ] = await Promise.all([
     getAllOrdersForBackup(db),
-    tableExists(db, "menu_items") ? db.prepare(`SELECT id,name,category,price,gst_percent,is_available,created_at,updated_at FROM menu_items ORDER BY id ASC`).all() : { results: [] },
-    db.prepare(`SELECT id,name,mobile,role,salary,join_date,is_active,created_at,updated_at FROM staff ORDER BY id ASC`).all(),
-    db.prepare(`SELECT id,name,quantity,unit,low_stock_level,is_active,category,purchase_rate,menu_item_id,created_at,updated_at FROM stock_items ORDER BY id ASC`).all(),
-    db.prepare(`SELECT id,category,amount,description,expense_date,created_at FROM expenses ORDER BY id ASC`).all(),
-    db.prepare(`SELECT id,order_id,requested_by,reason,status,reviewed_by,reviewed_at,created_at FROM deletion_requests ORDER BY id ASC`).all()
+
+    tableExists(db, "menu_items")
+      ? db.prepare(`
+          SELECT
+            id,
+            name,
+            category,
+            price,
+            gst_percent,
+            is_available,
+            created_at,
+            updated_at
+          FROM menu_items
+          ORDER BY id ASC
+        `).all()
+      : { results: [] },
+
+    db.prepare(`
+      SELECT
+        id,
+        name,
+        mobile,
+        role,
+        salary,
+        join_date,
+        is_active,
+        created_at,
+        updated_at
+      FROM staff
+      ORDER BY id ASC
+    `).all(),
+
+    db.prepare(`
+      SELECT
+        id,
+        name,
+        quantity,
+        unit,
+        low_stock_level,
+        is_active,
+        category,
+        purchase_rate,
+        menu_item_id,
+        created_at,
+        updated_at
+      FROM stock_items
+      ORDER BY id ASC
+    `).all(),
+
+    db.prepare(`
+      SELECT
+        id,
+        category,
+        amount,
+        description,
+        expense_date,
+        created_at
+      FROM expenses
+      ORDER BY id ASC
+    `).all(),
+
+    db.prepare(`
+      SELECT
+        id,
+        order_id,
+        requested_by,
+        reason,
+        status,
+        reviewed_by,
+        reviewed_at,
+        created_at
+      FROM deletion_requests
+      ORDER BY id ASC
+    `).all(),
+
+    db.prepare(`
+      SELECT
+        id,
+        staff_id,
+        staff_name,
+        amount,
+        entry_type,
+        entry_date,
+        note,
+        created_by,
+        created_at
+      FROM staff_advances
+      ORDER BY id ASC
+    `).all(),
+
+    db.prepare(`
+      SELECT
+        id,
+        stock_item_id,
+        item_name,
+        old_quantity,
+        new_quantity,
+        change_quantity,
+        action,
+        note,
+        updated_by,
+        unit_cost,
+        loss_value,
+        created_at
+      FROM stock_history
+      WHERE UPPER(COALESCE(action,'')) = 'LOSS'
+      ORDER BY id ASC
+    `).all()
   ]);
 
   const menu = (menuRaw.results || []).map(r => ({
@@ -688,10 +882,13 @@ async function getBackupData(db) {
 
   const stock = (stockRaw.results || []).map(r => ({
     id: r.id,
-    name: r.name || "",
-    quantity: num(r.quantity),
+    item_name: r.name || "",
+    current_stock: num(r.quantity),
     unit: r.unit || "pcs",
     threshold: num(r.low_stock_level, 5),
+    category: r.category || "",
+    purchase_price: num(r.purchase_rate),
+    menu_item_id: r.menu_item_id || null,
     status: Number(r.is_active ?? 1) === 1 ? "active" : "inactive",
     updated_at: r.updated_at || r.created_at || ""
   }));
@@ -719,10 +916,91 @@ async function getBackupData(db) {
     reviewed_at: r.reviewed_at || ""
   }));
 
+  const staffAdvances = (advancesRaw.results || []).map(r => {
+    const createdAt = clean(r.created_at);
+    let date = clean(r.entry_date);
+    let time = "";
+
+    if (createdAt) {
+      const d = new Date(createdAt);
+      if (!Number.isNaN(d.getTime())) {
+        time = new Intl.DateTimeFormat("en-IN", {
+          timeZone: "Asia/Kolkata",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false
+        }).format(d);
+      }
+    }
+
+    return {
+      date,
+      time,
+      id: r.id,
+      staff_id: r.staff_id || null,
+      staff_name: r.staff_name || "",
+      amount: num(r.amount),
+      entry_type: r.entry_type || "given",
+      note: r.note || "",
+      created_by: r.created_by || "",
+      created_at: createdAt
+    };
+  });
+
+  const losses = (lossesRaw.results || []).map(r => {
+    const createdAt = clean(r.created_at);
+    let date = "";
+    let time = "";
+
+    if (createdAt) {
+      const d = new Date(createdAt);
+      if (!Number.isNaN(d.getTime())) {
+        date = new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Asia/Kolkata",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        }).format(d);
+
+        time = new Intl.DateTimeFormat("en-IN", {
+          timeZone: "Asia/Kolkata",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false
+        }).format(d);
+      } else {
+        const parts = createdAt.split(/[T ]/);
+        date = parts[0] || "";
+        time = parts[1] || "";
+      }
+    }
+
+    return {
+      date,
+      time,
+      id: r.id,
+      stock_item_id: r.stock_item_id || null,
+      item: r.item_name || "",
+      quantity: Math.abs(num(r.change_quantity)),
+      purchase_cost: num(r.unit_cost),
+      loss_value: num(r.loss_value),
+      reason: r.note || "",
+      user: r.updated_by || "",
+      created_at: createdAt
+    };
+  });
+
   let users = [];
   if (await tableExists(db, "users")) {
     const cols = await getColumns(db, "users");
-    const result = await db.prepare(`SELECT * FROM users ORDER BY ${cols.includes("id") ? "id" : "rowid"} ASC`).all();
+    const result = await db.prepare(`
+      SELECT *
+      FROM users
+      ORDER BY ${cols.includes("id") ? "id" : "rowid"} ASC
+    `).all();
+
     users = (result.results || []).map(r => ({
       id: r.id ?? r.rowid ?? "",
       mobile: r.mobile ?? r.phone ?? "",
@@ -739,7 +1017,12 @@ async function getBackupData(db) {
   let auditLogs = [];
   if (await tableExists(db, "audit_logs")) {
     const cols = await getColumns(db, "audit_logs");
-    const result = await db.prepare(`SELECT * FROM audit_logs ORDER BY ${cols.includes("id") ? "id" : "rowid"} ASC`).all();
+    const result = await db.prepare(`
+      SELECT *
+      FROM audit_logs
+      ORDER BY ${cols.includes("id") ? "id" : "rowid"} ASC
+    `).all();
+
     auditLogs = (result.results || []).map(r => ({
       id: r.id ?? r.rowid ?? "",
       action: r.action ?? r.event ?? "",
@@ -757,12 +1040,16 @@ async function getBackupData(db) {
     Expenses: expenses,
     Users: users,
     Approvals: approvals,
-    "Audit Logs": auditLogs
+    "Audit Logs": auditLogs,
+    "Staff Advance": staffAdvances,
+    Losses: losses
   };
 }
 
 async function runGoogleSheetBackup(db, env, backupType = "Manual") {
-  const backupId = `BKP-${Date.now()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+  const backupId =
+    `BKP-${Date.now()}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+
   const backupTime = new Date().toISOString();
   const data = await getBackupData(db);
 
@@ -783,6 +1070,7 @@ async function runGoogleSheetBackup(db, env, backupType = "Manual") {
   });
 
   const responseText = await response.text();
+
   let result;
   try {
     result = JSON.parse(responseText);
@@ -791,7 +1079,9 @@ async function runGoogleSheetBackup(db, env, backupType = "Manual") {
   }
 
   if (!response.ok || result.ok !== true) {
-    throw new Error(`Google Sheet backup failed (${response.status}): ${responseText.slice(0, 500)}`);
+    throw new Error(
+      `Google Sheet backup failed (${response.status}): ${responseText.slice(0, 500)}`
+    );
   }
 
   return {
@@ -807,7 +1097,9 @@ async function runGoogleSheetBackup(db, env, backupType = "Manual") {
       expenses: data.Expenses.length,
       users: data.Users.length,
       approvals: data.Approvals.length,
-      audit_logs: data["Audit Logs"].length
+      audit_logs: data["Audit Logs"].length,
+      staff_advance: data["Staff Advance"].length,
+      losses: data.Losses.length
     },
     google_response: result
   };
