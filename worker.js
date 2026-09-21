@@ -348,6 +348,7 @@ __name(getTables, "getTables");
 async function getOrderItemsMap(db, orderIds) {
   const map = {};
   if (!orderIds.length || !await tableExists(db, "order_items")) return map;
+
   const cols = await getColumns(db, "order_items");
   const has = (c) => cols.includes(c);
   const nameExpr = has("item_name") ? "item_name" : has("name") ? "name" : "''";
@@ -357,8 +358,38 @@ async function getOrderItemsMap(db, orderIds) {
   const menuIdExpr = has("menu_item_id") ? "menu_item_id" : "NULL";
   const oidExpr = has("order_id") ? "order_id" : "NULL";
 
-  // Cloudflare D1/SQLite has a bound-variable limit. Never bind thousands of
-  // order IDs in one IN (...) clause; dashboard can request up to 5,000 orders.
+  // Use one range query instead of many IN(...) queries. This materially
+  // reduces D1 round-trips during backup and prevents the 30-second timeout.
+  const numericIds = orderIds.map(Number).filter(Number.isFinite);
+  if (numericIds.length) {
+    const minId = Math.min(...numericIds);
+    const maxId = Math.max(...numericIds);
+    const rows = await db.prepare(`
+      SELECT ${oidExpr} AS order_id, ${menuIdExpr} AS menu_item_id,
+             ${nameExpr} AS item_name, ${qtyExpr} AS quantity,
+             ${priceExpr} AS price, ${totalExpr} AS total
+      FROM order_items
+      WHERE order_id BETWEEN ? AND ?
+      ORDER BY order_id DESC, rowid ASC
+    `).bind(minId, maxId).all();
+
+    for (const r of rows.results || []) {
+      const key = String(r.order_id);
+      if (!map[key]) map[key] = [];
+      map[key].push({
+        id: r.menu_item_id || null,
+        name: r.item_name || "",
+        qty: num(r.quantity, 1),
+        quantity: num(r.quantity, 1),
+        price: num(r.price),
+        unit_price: num(r.price),
+        total: num(r.total)
+      });
+    }
+    return map;
+  }
+
+  // Safe fallback for any non-numeric legacy order IDs.
   const CHUNK_SIZE = 80;
   for (let offset = 0; offset < orderIds.length; offset += CHUNK_SIZE) {
     const chunk = orderIds.slice(offset, offset + CHUNK_SIZE);
@@ -651,16 +682,51 @@ async function getAllOrdersForBackup(db) {
 
       const details = itemMap[String(o.id)] || [];
 
-      const itemText = details.length
-        ? details
+      const normalizeBackupItem = (item) => {
+        if (item === null || item === undefined) return null;
+        if (typeof item === "string") {
+          const text = clean(item);
+          return text ? { name: text, qty: 1, total: 0 } : null;
+        }
+        if (typeof item !== "object") {
+          const text = clean(item);
+          return text ? { name: text, qty: 1, total: 0 } : null;
+        }
+        const name = clean(
+          item.name ?? item.item_name ?? item.item ?? item.title ?? item.label ?? ""
+        );
+        const qty = num(item.qty ?? item.quantity, 1);
+        const price = num(item.price ?? item.unit_price, 0);
+        const total = num(item.total, price * qty);
+        return name ? { name, qty, price, total } : null;
+      };
+
+      let backupDetails = details
+        .map(normalizeBackupItem)
+        .filter(Boolean);
+
+      // Legacy orders may have item objects stored in orders.items instead of
+      // order_items. Convert them to the same human-readable backup format.
+      if (!backupDetails.length && clean(o.items)) {
+        let legacyItems = o.items;
+        if (typeof legacyItems === "string") {
+          try { legacyItems = JSON.parse(legacyItems); } catch (_) {}
+        }
+        if (Array.isArray(legacyItems)) {
+          backupDetails = legacyItems
+            .map(normalizeBackupItem)
+            .filter(Boolean);
+        }
+      }
+
+      const itemText = backupDetails.length
+        ? backupDetails
             .map((i) => {
-              const itemName = clean(i.name);
-              const qty = num(i.qty, 1);
-              const itemTotal = num(i.total, num(i.price) * qty);
-              return `${itemName} (x${qty}) ₹${itemTotal}`;
+              const itemTotal = num(i.total, num(i.price) * num(i.qty, 1));
+              return `${i.name} (x${num(i.qty, 1)}) ₹${itemTotal}`;
             })
             .join(", ")
-        : clean(o.items_string);
+        : clean(o.items_string || o.items);
 
       const orderType = clean(o.order_type);
 
@@ -709,7 +775,7 @@ async function getAllOrdersForBackup(db) {
         time: orderTime,
         order_number: orderNumber,
         table_number: tableDisplay,
-        items: itemText,
+        items: clean(itemText),
         subtotal: num(o.subtotal),
         discount: num(o.discount),
         grand_total: num(o.grand_total),
@@ -732,6 +798,38 @@ async function getAllOrdersForBackup(db) {
 
   return out;
 }
+
+async function getBackupRowsByIdBatches(db, tableName, batchSize = 500) {
+  if (!await tableExists(db, tableName)) return [];
+
+  const cols = await getColumns(db, tableName);
+  const idExpr = cols.includes("id") ? "id" : "rowid";
+  const rowsOut = [];
+  let lastId = 0;
+
+  while (true) {
+    const result = await db.prepare(`
+      SELECT *
+      FROM ${tableName}
+      WHERE ${idExpr} > ?
+      ORDER BY ${idExpr} ASC
+      LIMIT ?
+    `).bind(lastId, batchSize).all();
+
+    const batch = result.results || [];
+    if (!batch.length) break;
+    rowsOut.push(...batch);
+
+    const ids = batch
+      .map(r => Number(r.id ?? r.rowid))
+      .filter(Number.isFinite);
+    if (!ids.length || batch.length < batchSize) break;
+    lastId = Math.max(...ids);
+  }
+
+  return rowsOut;
+}
+__name(getBackupRowsByIdBatches, "getBackupRowsByIdBatches");
 
 async function getBackupData(db) {
   await ensureSupportTables(db);
@@ -994,12 +1092,7 @@ async function getBackupData(db) {
 
   let users = [];
   if (await tableExists(db, "users")) {
-    const cols = await getColumns(db, "users");
-    const result = await db.prepare(`
-      SELECT *
-      FROM users
-      ORDER BY ${cols.includes("id") ? "id" : "rowid"} ASC
-    `).all();
+    const result = { results: await getBackupRowsByIdBatches(db, "users", 500) };
 
     users = (result.results || []).map(r => ({
       id: r.id ?? r.rowid ?? "",
@@ -1016,12 +1109,7 @@ async function getBackupData(db) {
 
   let auditLogs = [];
   if (await tableExists(db, "audit_logs")) {
-    const cols = await getColumns(db, "audit_logs");
-    const result = await db.prepare(`
-      SELECT *
-      FROM audit_logs
-      ORDER BY ${cols.includes("id") ? "id" : "rowid"} ASC
-    `).all();
+    const result = { results: await getBackupRowsByIdBatches(db, "audit_logs", 500) };
 
     auditLogs = (result.results || []).map(r => ({
       id: r.id ?? r.rowid ?? "",
